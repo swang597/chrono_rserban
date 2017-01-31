@@ -23,6 +23,7 @@ ENDIF()
 # Programs that can work with or without OpenGL
 SET(DEMOS
     box_granular
+    jcol_example
 )
 
 # ------------------------------------------------------------------------------
