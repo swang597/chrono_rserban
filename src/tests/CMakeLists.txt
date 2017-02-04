@@ -28,4 +28,6 @@ if(ENABLE_MODULE_PARALLEL AND ENABLE_MODULE_OPENGL)
   add_subdirectory(parallel)
 endif()
 
-
+if(ENABLE_MODULE_VEHICLE AND ENABLE_MODULE_IRRLICHT)
+	add_subdirectory(vehicle)
+endif()
