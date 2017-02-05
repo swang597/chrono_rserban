@@ -41,7 +41,7 @@ using std::endl;
 
 std::shared_ptr<ChBody> CreateBracketA(ChSystemParallel* system) {
 
-    auto BracketA = std::make_shared<ChBody>(new ChCollisionModelParallel, ChMaterialSurfaceBase::DVI);
+    auto BracketA = std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>(), ChMaterialSurfaceBase::DVI);
 
     BracketA->SetMass(0.256);
     BracketA->SetPos(ChVector<>(0, 0, 0));
@@ -55,9 +55,7 @@ std::shared_ptr<ChBody> CreateBracketA(ChSystemParallel* system) {
 
     system->AddBody(BracketA);
 
-
-
-    auto cm = ((ChCollisionModelParallel*) BracketA->GetCollisionModel())->mData;
+    auto cm = std::static_pointer_cast<ChCollisionModelParallel>(BracketA->GetCollisionModel())->mData;
 
     custom_vector<real3> aabb_min;
     custom_vector<real3> aabb_max;
@@ -145,13 +143,13 @@ int main(int argc, char* argv[]) {
 
     msystem->GetSettings()->solver.tolerance = 1e-3;
 
-    msystem->GetSettings()->solver.solver_mode = SLIDING;
+    msystem->GetSettings()->solver.solver_mode = SolverMode::SLIDING;
     msystem->GetSettings()->solver.max_iteration_normal = 30;
     msystem->GetSettings()->solver.max_iteration_sliding = 30;
     msystem->GetSettings()->solver.max_iteration_spinning = 0;
     msystem->GetSettings()->solver.alpha = 0;
     msystem->GetSettings()->solver.contact_recovery_speed = 0.1;
-    msystem->ChangeSolverType(APGDREF);
+    msystem->ChangeSolverType(SolverType::APGDREF);
 
     msystem->GetSettings()->collision.collision_envelope = 0.05;
 
