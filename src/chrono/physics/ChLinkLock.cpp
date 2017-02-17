@@ -21,7 +21,7 @@ namespace chrono {
 CH_FACTORY_REGISTER(ChLinkLock)
 
 ChLinkLock::ChLinkLock()
-    : type(LNK_SPHERICAL),
+    : type(LinkType::SPHERICAL),
       relC(CSYSNORM),
       relC_dt(CSYSNULL),
       relC_dtdt(CSYSNULL),
@@ -29,7 +29,7 @@ ChLinkLock::ChLinkLock()
       deltaC_dt(CSYSNULL),
       deltaC_dtdt(CSYSNULL),
       motion_axis(VECT_Z),
-      angleset(ANGLESET_ANGLE_AXIS) {
+      angleset(AngleSet::ANGLE_AXIS) {
     // matrices used by lock formulation
     Cq1_temp = new ChMatrixDynamic<>(7, BODY_QDOF);
     Cq2_temp = new ChMatrixDynamic<>(7, BODY_QDOF);
@@ -52,15 +52,15 @@ ChLinkLock::ChLinkLock()
     limit_Rp = new ChLinkLimit;  // the polar limit;
     limit_Rp->Set_polar(true);
 
+    // delete the class mask created by base constructor
     if (mask)
-        delete mask;            // delete the class mask created by base constructor, and,
-    mask = new ChLinkMaskLF();  // create the LF-mask (the extended version,for
-                                // lock-formulation)
-                                // instead.
+        delete mask;
+    // create instead the LF-mask (the extended version, for lock-formulation)
+    mask = new ChLinkMaskLF();  
 
-    BuildLinkType(LNK_SPHERICAL);  // default type: spherical link
-                                   // Sets the mask
-                                   // Sets up all the matrices and  n. of DOC and DOF,
+    // default type: spherical link
+    // Sets the mask, all the matrices, and number of DOC and DOF
+    BuildLinkType(LinkType::SPHERICAL);
 }
 
 ChLinkLock::ChLinkLock(const ChLinkLock& other) : ChLinkMasked(other) {
@@ -138,67 +138,66 @@ ChLinkLock::~ChLinkLock() {
     // DestroyLinkType()
 }
 
-void ChLinkLock::BuildLinkType(int link_type) {
+void ChLinkLock::BuildLinkType(LinkType link_type) {
     type = link_type;
 
     ChLinkMaskLF m_mask;
 
-    // Note that the SetLockMask() sets the costraints for the
-    // link coordinates: (X,Y,Z, E0,E1,E2,E3)
-
-    // default.. free
-    m_mask.SetLockMask(false, false, false, false, false, false, false);
-
-    if (type == LNK_FREE)
-        m_mask.SetLockMask(false, false, false, false, false, false, false);
-
-    if (type == LNK_LOCK)
-        m_mask.SetLockMask(true, true, true, false, true, true, true);
-
-    if (type == LNK_SPHERICAL)
-        m_mask.SetLockMask(true, true, true, false, false, false, false);
-
-    if (type == LNK_POINTPLANE)
-        m_mask.SetLockMask(false, false, true, false, false, false, false);
-
-    if (type == LNK_POINTLINE)
-        m_mask.SetLockMask(false, true, true, false, false, false, false);
-
-    if (type == LNK_REVOLUTE)
-        m_mask.SetLockMask(true, true, true, false, true, true, false);
-
-    if (type == LNK_CYLINDRICAL)
-        m_mask.SetLockMask(true, true, false, false, true, true, false);
-
-    if (type == LNK_PRISMATIC)
-        m_mask.SetLockMask(true, true, false, false, true, true, true);
-
-    if (type == LNK_PLANEPLANE)
-        m_mask.SetLockMask(false, false, true, false, true, true, false);
-
-    if (type == LNK_OLDHAM)
-        m_mask.SetLockMask(false, false, true, false, true, true, true);
-
-    if (type == LNK_ALIGN)
-        m_mask.SetLockMask(false, false, false, false, true, true, true);
-
-    if (type == LNK_PARALLEL)
-        m_mask.SetLockMask(false, false, false, false, true, true, false);
-
-    if (type == LNK_PERPEND)
-        m_mask.SetLockMask(false, false, false, false, true, false, true);
-
-    if (type == LNK_REVOLUTEPRISMATIC)
-        m_mask.SetLockMask(false, true, true, false, true, true, false);
+    // SetLockMask() sets the costraints for the link coordinates: (X,Y,Z, E0,E1,E2,E3)
+    switch (type) {
+        case LinkType::FREE:
+            m_mask.SetLockMask(false, false, false, false, false, false, false);
+            break;
+        case LinkType::LOCK:
+            m_mask.SetLockMask(true, true, true, false, true, true, true);
+            break;
+        case LinkType::SPHERICAL:
+            m_mask.SetLockMask(true, true, true, false, false, false, false);
+            break;
+        case LinkType::POINTPLANE:
+            m_mask.SetLockMask(false, false, true, false, false, false, false);
+            break;
+        case LinkType::POINTLINE:
+            m_mask.SetLockMask(false, true, true, false, false, false, false);
+            break;
+        case LinkType::REVOLUTE:
+            m_mask.SetLockMask(true, true, true, false, true, true, false);
+            break;
+        case LinkType::CYLINDRICAL:
+            m_mask.SetLockMask(true, true, false, false, true, true, false);
+            break;
+        case LinkType::PRISMATIC:
+            m_mask.SetLockMask(true, true, false, false, true, true, true);
+            break;
+        case LinkType::PLANEPLANE:
+            m_mask.SetLockMask(false, false, true, false, true, true, false);
+            break;
+        case LinkType::OLDHAM:
+            m_mask.SetLockMask(false, false, true, false, true, true, true);
+            break;
+        case LinkType::ALIGN:
+            m_mask.SetLockMask(false, false, false, false, true, true, true);
+        case LinkType::PARALLEL:
+            m_mask.SetLockMask(false, false, false, false, true, true, false);
+            break;
+        case LinkType::PERPEND:
+            m_mask.SetLockMask(false, false, false, false, true, false, true);
+            break;
+        case LinkType::REVOLUTEPRISMATIC:
+            m_mask.SetLockMask(false, true, true, false, true, true, false);
+            break;
+        default:
+            m_mask.SetLockMask(false, false, false, false, false, false, false);
+            break;
+    }
 
     BuildLink(&m_mask);
 }
 
-void ChLinkLock::ChangeLinkType(int new_link_type) {
+void ChLinkLock::ChangeLinkType(LinkType new_link_type) {
     DestroyLink();
     BuildLinkType(new_link_type);
 
-    // Also...
     // reset all motions and limits!
 
     if (motion_X)
@@ -221,7 +220,7 @@ void ChLinkLock::ChangeLinkType(int new_link_type) {
     motion_ang2 = new ChFunction_Const(0);
     motion_ang3 = new ChFunction_Const(0);
     motion_axis = VECT_Z;
-    angleset = ANGLESET_ANGLE_AXIS;
+    angleset = AngleSet::ANGLE_AXIS;
 
     if (limit_X)
         delete limit_X;
@@ -327,7 +326,7 @@ void ChLinkLock::UpdateTime(double time) {
     deltaC_dtdt.pos.z = motion_Z->Get_y_dxdx(time);
 
     switch (angleset) {
-        case ANGLESET_ANGLE_AXIS:
+        case AngleSet::ANGLE_AXIS:
             ang = motion_ang->Get_y(time);
             ang_dt = motion_ang->Get_y_dx(time);
             ang_dtdt = motion_ang->Get_y_dxdx(time);
@@ -342,10 +341,10 @@ void ChLinkLock::UpdateTime(double time) {
                 deltaC_dtdt.rot = QNULL;
             }
             break;
-        case ANGLESET_EULERO:
-        case ANGLESET_CARDANO:
-        case ANGLESET_HPB:
-        case ANGLESET_RXYZ:
+        case AngleSet::EULERO:
+        case AngleSet::CARDANO:
+        case AngleSet::HPB:
+        case AngleSet::RXYZ:
             Vector vangles, vangles_dt, vangles_dtdt;
             vangles.x = motion_ang->Get_y(time);
             vangles.y = motion_ang2->Get_y(time);
@@ -1994,6 +1993,40 @@ void ChLinkLock::ConstraintsFetch_react(double factor) {
 ///////// FILE I/O
 /////////
 
+// Trick to avoid putting the following mapper macro inside the class definition in .h file:
+// enclose macros in local 'my_enum_mappers', just to avoid avoiding cluttering of the parent class.
+class my_enum_mappers : public ChLinkLock {
+  public:
+    CH_ENUM_MAPPER_BEGIN(LinkType);
+    CH_ENUM_VAL(LinkType::LOCK);
+    CH_ENUM_VAL(LinkType::SPHERICAL);
+    CH_ENUM_VAL(LinkType::POINTPLANE);
+    CH_ENUM_VAL(LinkType::POINTLINE);
+    CH_ENUM_VAL(LinkType::CYLINDRICAL);
+    CH_ENUM_VAL(LinkType::PRISMATIC);
+    CH_ENUM_VAL(LinkType::PLANEPLANE);
+    CH_ENUM_VAL(LinkType::OLDHAM);
+    CH_ENUM_VAL(LinkType::REVOLUTE);
+    CH_ENUM_VAL(LinkType::FREE);
+    CH_ENUM_VAL(LinkType::ALIGN);
+    CH_ENUM_VAL(LinkType::PARALLEL);
+    CH_ENUM_VAL(LinkType::PERPEND);
+    CH_ENUM_VAL(LinkType::TRAJECTORY);
+    CH_ENUM_VAL(LinkType::CLEARANCE);
+    CH_ENUM_VAL(LinkType::REVOLUTEPRISMATIC);
+    CH_ENUM_MAPPER_END(LinkType);
+
+    CH_ENUM_MAPPER_BEGIN(AngleSet);
+    CH_ENUM_VAL(AngleSet::ANGLE_AXIS);
+    CH_ENUM_VAL(AngleSet::EULERO);
+    CH_ENUM_VAL(AngleSet::CARDANO);
+    CH_ENUM_VAL(AngleSet::HPB);
+    CH_ENUM_VAL(AngleSet::RXYZ);
+    CH_ENUM_VAL(AngleSet::RODRIGUEZ);
+    CH_ENUM_VAL(AngleSet::QUATERNION);
+    CH_ENUM_MAPPER_END(AngleSet);
+};
+
 void ChLinkLock::ArchiveOUT(ChArchiveOut& marchive) {
     // version number
     marchive.VersionWrite(1);
@@ -2002,7 +2035,8 @@ void ChLinkLock::ArchiveOUT(ChArchiveOut& marchive) {
     ChLinkMasked::ArchiveOUT(marchive);
 
     // serialize all member data:
-    marchive << CHNVP(type);
+    my_enum_mappers::LinkType_mapper typemapper;
+    marchive << CHNVP(typemapper(type), "link_type");
     marchive << CHNVP(motion_X);
     marchive << CHNVP(motion_Y);
     marchive << CHNVP(motion_Z);
@@ -2010,7 +2044,8 @@ void ChLinkLock::ArchiveOUT(ChArchiveOut& marchive) {
     marchive << CHNVP(motion_ang2);
     marchive << CHNVP(motion_ang3);
     marchive << CHNVP(motion_axis);
-    marchive << CHNVP(angleset);
+    my_enum_mappers::AngleSet_mapper setmapper;
+    marchive << CHNVP(setmapper(angleset), "angle_set");
     marchive << CHNVP(limit_X);
     marchive << CHNVP(limit_Y);
     marchive << CHNVP(limit_Z);
@@ -2030,10 +2065,10 @@ void ChLinkLock::ArchiveIN(ChArchiveIn& marchive) {
     ChLinkMasked::ArchiveIN(marchive);
 
     // deserialize all member data:
-    int ifoo;
-    marchive >> CHNVP(ifoo);
-    ChangeLinkType(ifoo);  // this also setup mask flags and lot of stuff,
-                           // simplifying the serialization
+    my_enum_mappers::LinkType_mapper typemapper;
+    LinkType link_type;
+    marchive >> CHNVP(typemapper(link_type), "link_type");
+    ChangeLinkType(link_type);
     marchive >> CHNVP(motion_X);
     marchive >> CHNVP(motion_Y);
     marchive >> CHNVP(motion_Z);
@@ -2041,7 +2076,8 @@ void ChLinkLock::ArchiveIN(ChArchiveIn& marchive) {
     marchive >> CHNVP(motion_ang2);
     marchive >> CHNVP(motion_ang3);
     marchive >> CHNVP(motion_axis);
-    marchive >> CHNVP(angleset);
+    my_enum_mappers::AngleSet_mapper setmapper;
+    marchive >> CHNVP(setmapper(angleset), "angle_set");
     marchive >> CHNVP(limit_X);
     marchive >> CHNVP(limit_Y);
     marchive >> CHNVP(limit_Z);
