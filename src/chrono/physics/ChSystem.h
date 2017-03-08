@@ -280,7 +280,7 @@ class ChApi ChSystem : public ChAssembly, public ChIntegrableIIorder {
 
     /// Initial system setup before analysis.
     /// This function must be called once the system construction is completed.
-    void SetupInitial();
+    void SetupInitial() override;
 
     //
     // DATABASE HANDLING.
@@ -864,6 +864,8 @@ class ChApi ChSystem : public ChAssembly, public ChIntegrableIIorder {
   private:
     bool last_err;  ///< indicates error over the last kinematic/dynamics/statics
 };
+
+CH_CLASS_VERSION(ChSystem,0)
 
 }  // end namespace chrono
 

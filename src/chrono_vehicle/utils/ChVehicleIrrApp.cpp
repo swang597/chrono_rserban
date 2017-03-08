@@ -67,6 +67,8 @@ bool ChCameraEventReceiver::OnEvent(const SEvent& event) {
             case KEY_RIGHT:
                 m_app->m_camera.Turn(-1);
                 return true;
+            default:
+                break;
         }
     } else {
         switch (event.KeyInput.Key) {
@@ -85,6 +87,8 @@ bool ChCameraEventReceiver::OnEvent(const SEvent& event) {
             case KEY_KEY_V:
                 m_app->m_vehicle->LogConstraintViolations();
                 return true;
+            default:
+                break;
         }
     }
 
@@ -125,8 +129,8 @@ ChVehicleIrrApp::ChVehicleIrrApp(ChVehicle* vehicle,
         GetSceneManager()->getRootSceneNode(), core::vector3df(0, 0, 0), core::vector3df(0, 0, 0));
 
     camera->setUpVector(core::vector3df(0, 0, 1));
-    camera->setPosition(core::vector3df((f32)cam_pos.x, (f32)cam_pos.y, (f32)cam_pos.z));
-    camera->setTarget(core::vector3df((f32)cam_target.x, (f32)cam_target.y, (f32)cam_target.z));
+    camera->setPosition(core::vector3df((f32)cam_pos.x(), (f32)cam_pos.y(), (f32)cam_pos.z()));
+    camera->setTarget(core::vector3df((f32)cam_target.x(), (f32)cam_target.y(), (f32)cam_target.z()));
 
 #ifdef CHRONO_IRRKLANG
     m_sound_engine = 0;
@@ -218,8 +222,8 @@ void ChVehicleIrrApp::Advance(double step) {
 
     scene::ICameraSceneNode* camera = GetSceneManager()->getActiveCamera();
 
-    camera->setPosition(core::vector3df((f32)cam_pos.x, (f32)cam_pos.y, (f32)cam_pos.z));
-    camera->setTarget(core::vector3df((f32)cam_target.x, (f32)cam_target.y, (f32)cam_target.z));
+    camera->setPosition(core::vector3df((f32)cam_pos.x(), (f32)cam_pos.y(), (f32)cam_pos.z()));
+    camera->setTarget(core::vector3df((f32)cam_target.x(), (f32)cam_target.y(), (f32)cam_target.z()));
 
 #ifdef CHRONO_IRRKLANG
     static int stepsbetweensound = 0;

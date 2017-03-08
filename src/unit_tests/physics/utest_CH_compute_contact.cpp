@@ -208,6 +208,8 @@ bool test_computecontact(ChMaterialSurfaceBase::ContactMethod method) {
             system->SetTolForce(1e-6);
             break;
         }
+        default:
+            break;
     }
 
     // ----------------
@@ -240,8 +242,8 @@ bool test_computecontact(ChMaterialSurfaceBase::ContactMethod method) {
         ////         << "  force =  " << contact_force.y << "\n";
 
         if (system->GetChTime() > start_time) {
-            if (std::abs(1 - contact_force.y / total_weight) > rtol) {
-                GetLog() << "t = " << system->GetChTime() << "  force =  " << contact_force.y << "\n";
+            if (std::abs(1 - contact_force.y() / total_weight) > rtol) {
+                GetLog() << "t = " << system->GetChTime() << "  force =  " << contact_force.y() << "\n";
                 passed = false;
                 break;
             }

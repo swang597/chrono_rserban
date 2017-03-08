@@ -75,7 +75,7 @@ class ChApi ChLinkRevoluteTranslational : public ChLink {
     /// Get the link coordinate system, expressed relative to Body2 (translational side).
     /// This represents the 'main' reference of the link: reaction forces
     /// and reaction torques are reported in this coordinate system.
-    virtual ChCoordsys<> GetLinkRelativeCoords();
+    virtual ChCoordsys<> GetLinkRelativeCoords() override;
 
     /// Get the joint violation (residuals of the constraint equations)
     ChMatrix<>* GetC() { return m_C; }
@@ -199,6 +199,8 @@ class ChApi ChLinkRevoluteTranslational : public ChLink {
     // order of the constraints: par1, par2, dot, dist.
     double m_multipliers[4];  ///< Lagrange multipliers
 };
+
+CH_CLASS_VERSION(ChLinkRevoluteTranslational,0)
 
 }  // end namespace chrono
 

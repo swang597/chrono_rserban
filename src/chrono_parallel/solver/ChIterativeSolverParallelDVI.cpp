@@ -7,12 +7,12 @@ using namespace chrono;
 
 #define CLEAR_RESERVE_RESIZE(M, nnz, rows, cols)                                             \
     {                                                                                        \
-        uint current = M.capacity();                                                         \
+        uint current = (uint)M.capacity();                                                         \
         if (current > 0) {                                                                   \
             clear(M);                                                                        \
         }                                                                                    \
-        if (current < nnz) {                                                                 \
-            M.reserve(nnz * 1.1);                                                            \
+        if (current < (unsigned)nnz) {                                                                 \
+            M.reserve(nnz * (size_t)1.1);                                                            \
             LOG(INFO) << "Increase Capacity of: " << str(M) << " " << current << " " << nnz; \
         }                                                                                    \
         M.resize(rows, cols, false);                                                         \
@@ -170,7 +170,7 @@ void ChIterativeSolverParallelDVI::RunTimeStep() {
         AtIterationEnd(data_manager->measures.solver.maxd_hist[i], data_manager->measures.solver.maxdeltalambda_hist[i],
                        i);
     }
-    tot_iterations = data_manager->measures.solver.maxd_hist.size();
+    tot_iterations = (int)data_manager->measures.solver.maxd_hist.size();
 
     LOG(TRACE) << "ChIterativeSolverParallelDVI::RunTimeStep E solve: "
                << data_manager->system_timer.GetTime("ChIterativeSolverParallel_Solve")
@@ -232,6 +232,8 @@ void ChIterativeSolverParallelDVI::ComputeD() {
         case SolverMode::SPINNING:
             nnz_total += nnz_normal + nnz_tangential + nnz_spinning;
             num_rows += num_normal + num_tangential + num_spinning;
+            break;
+        default:
             break;
     }
 
@@ -427,5 +429,7 @@ void ChIterativeSolverParallelDVI::ChangeSolverType(SolverType type) {
         case SolverType::GAUSS_SEIDEL:
             solver = new ChSolverParallelGS();
             break;
+        default:
+                break;
     }
 }

@@ -78,7 +78,7 @@ class ChApi ChLinkBase : public ChPhysicsItem {
 
     /// Get the master coordinate system for the assets, in absolute reference.
     /// (should be implemented by children classes)
-    virtual ChFrame<> GetAssetsFrame(unsigned int nclone = 0) { return ChFrame<>(GetLinkAbsoluteCoords()); }
+    virtual ChFrame<> GetAssetsFrame(unsigned int nclone = 0) override { return ChFrame<>(GetLinkAbsoluteCoords()); }
 
     /// To get reaction force, expressed in link coordinate system:
     virtual ChVector<> Get_react_force() { return VNULL; }
@@ -101,6 +101,8 @@ class ChApi ChLinkBase : public ChPhysicsItem {
     /// Method to allow deserialization of transient data from archives.
     virtual void ArchiveIN(ChArchiveIn& marchive) override;
 };
+
+CH_CLASS_VERSION(ChLinkBase,0)
 
 }  // end namespace
 

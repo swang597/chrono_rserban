@@ -167,6 +167,8 @@ void ChConstraintRigidRigid::host_Project_single(int index, vec2* ids, real3* fr
             func_Project_sliding(index, ids, friction, cohesion, gamma);
             func_Project_spinning(index, ids, friction, gamma);
         } break;
+        default:
+            break;
     }
 }
 
@@ -178,25 +180,27 @@ void ChConstraintRigidRigid::Project(real* gamma) {
     switch (data_manager->settings.solver.local_solver_mode) {
         case SolverMode::NORMAL: {
 #pragma omp parallel for
-            for (int index = 0; index < data_manager->num_rigid_contacts; index++) {
+            for (int index = 0; index < (signed)data_manager->num_rigid_contacts; index++) {
                 func_Project_normal(index, bids.data(), cohesion.data(), gamma);
             }
         } break;
 
         case SolverMode::SLIDING: {
 #pragma omp parallel for
-            for (int index = 0; index < data_manager->num_rigid_contacts; index++) {
+            for (int index = 0; index < (signed)data_manager->num_rigid_contacts; index++) {
                 func_Project_sliding(index, bids.data(), friction.data(), cohesion.data(), gamma);
             }
         } break;
 
         case SolverMode::SPINNING: {
 #pragma omp parallel for
-            for (int index = 0; index < data_manager->num_rigid_contacts; index++) {
+            for (int index = 0; index < (signed)data_manager->num_rigid_contacts; index++) {
                 func_Project_sliding(index, bids.data(), friction.data(), cohesion.data(), gamma);
                 func_Project_spinning(index, bids.data(), friction.data(), gamma);
             }
         } break;
+        default:
+            break;
     }
 }
 void ChConstraintRigidRigid::Project_Single(int index, real* gamma) {
@@ -218,6 +222,8 @@ void ChConstraintRigidRigid::Project_Single(int index, real* gamma) {
             func_Project_sliding(index, bids.data(), friction.data(), cohesion.data(), gamma);
             func_Project_spinning(index, bids.data(), friction.data(), gamma);
         } break;
+        default:
+            break;
     }
 }
 
@@ -227,7 +233,7 @@ void ChConstraintRigidRigid::Build_b() {
     }
 
 #pragma omp parallel for
-    for (int index = 0; index < data_manager->num_rigid_contacts; index++) {
+    for (int index = 0; index < (signed)data_manager->num_rigid_contacts; index++) {
         real bi = 0;
         real depth = data_manager->host_data.dpth_rigid_rigid[index];
 
@@ -276,7 +282,7 @@ void ChConstraintRigidRigid::Build_s() {
     v_new = M_invk + M_invD * gamma;
 
 #pragma omp parallel for
-    for (int index = 0; index < data_manager->num_rigid_contacts; index++) {
+    for (int index = 0; index < (signed)data_manager->num_rigid_contacts; index++) {
         real fric = data_manager->host_data.fric_rigid_rigid[index].x;
         vec2 body_id = ids[index];
 
@@ -321,7 +327,7 @@ void ChConstraintRigidRigid::Build_E() {
     uint num_contacts = data_manager->num_rigid_contacts;
 
 #pragma omp parallel for
-    for (int index = 0; index < data_manager->num_rigid_contacts; index++) {
+    for (int index = 0; index < (signed)data_manager->num_rigid_contacts; index++) {
         vec2 body = data_manager->host_data.bids_rigid_rigid[index];
 
         real4 cA = data_manager->host_data.compliance_data[body.x];
@@ -362,7 +368,7 @@ void ChConstraintRigidRigid::Build_D() {
     const std::vector<std::shared_ptr<ChBody>>* body_list = data_manager->body_list;
 
 #pragma omp parallel for
-    for (int index = 0; index < data_manager->num_rigid_contacts; index++) {
+    for (int index = 0; index < (signed)data_manager->num_rigid_contacts; index++) {
         real3 U = norm[index], V, W;
         real3 T3, T4, T5, T6, T7, T8;
         real3 TA, TB, TC;
@@ -420,7 +426,7 @@ void ChConstraintRigidRigid::GenerateSparsity() {
 
     const vec2* ids = data_manager->host_data.bids_rigid_rigid.data();
 
-    for (int index = 0; index < data_manager->num_rigid_contacts; index++) {
+    for (int index = 0; index < (signed)data_manager->num_rigid_contacts; index++) {
         vec2 body_id = ids[index];
         int row = index;
         int off = 0;
@@ -432,7 +438,7 @@ void ChConstraintRigidRigid::GenerateSparsity() {
     }
 
     if (solver_mode == SolverMode::SLIDING || solver_mode == SolverMode::SPINNING) {
-        for (int index = 0; index < data_manager->num_rigid_contacts; index++) {
+        for (int index = 0; index < (signed)data_manager->num_rigid_contacts; index++) {
             vec2 body_id = ids[index];
             int row = index;
             int off = data_manager->num_rigid_contacts;
@@ -450,7 +456,7 @@ void ChConstraintRigidRigid::GenerateSparsity() {
     }
 
     if (solver_mode == SolverMode::SPINNING) {
-        for (int index = 0; index < data_manager->num_rigid_contacts; index++) {
+        for (int index = 0; index < (signed)data_manager->num_rigid_contacts; index++) {
             vec2 body_id = ids[index];
             int row = index;
             int off = 3 * data_manager->num_rigid_contacts;

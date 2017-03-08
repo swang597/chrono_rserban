@@ -36,10 +36,17 @@
 #include "chrono_vehicle/wheeled_vehicle/ChWheel.h"
 #include "chrono_vehicle/wheeled_vehicle/ChTire.h"
 
+/**
+    @addtogroup vehicle_wheeled
+    @{
+        @defgroup vehicle_wheeled_test_rig Suspension test rig classes
+    @}
+*/
+
 namespace chrono {
 namespace vehicle {
 
-/// @addtogroup vehicle_wheeled_utils
+/// @addtogroup vehicle_wheeled_test_rig
 /// @{
 
 /// Definition of a suspension test rig.
@@ -49,6 +56,7 @@ class CH_VEHICLE_API ChSuspensionTestRig : public ChVehicle {
     ChSuspensionTestRig(
         const std::string& filename,         ///< JSON file with vehicle specification
         int axle_index,                      ///< index of the suspension to be tested
+        double displ_limit,                  ///< limits for post displacement
         std::shared_ptr<ChTire> tire_left,   ///< left tire
         std::shared_ptr<ChTire> tire_right,  ///< right tire
         ChMaterialSurfaceBase::ContactMethod contact_method = ChMaterialSurfaceBase::DVI  ///< contact method
@@ -65,11 +73,14 @@ class CH_VEHICLE_API ChSuspensionTestRig : public ChVehicle {
     /// Destructor
     ~ChSuspensionTestRig() {}
 
-    /// Set the actuator function on the left wheel
-    void SetActuator_func_L(const std::shared_ptr<ChFunction>& funcL) { m_actuator_L = funcL; }
+    /// Set the limits for post displacement.
+    /// Each post will move between [-val, +val].
+    void SetDisplacementLimit(double val) { m_displ_limit = val; }
 
-    /// Set the actuator function on the right wheel
-    void SetActuator_func_R(const std::shared_ptr<ChFunction>& funcR) { m_actuator_R = funcR; }
+    /// Set the actuator function on the specified post (currently NOT USED).
+    void SetActuatorFunction(VehicleSide side, const std::shared_ptr<ChFunction>& func) {
+        m_actuator_func[side] = func;
+    }
 
     /// Get a handle to the specified wheel body.
     std::shared_ptr<ChBody> GetWheelBody(VehicleSide side) const { return m_suspension->GetSpindle(side); }
@@ -89,12 +100,18 @@ class CH_VEHICLE_API ChSuspensionTestRig : public ChVehicle {
     /// Get the complete state for the specified wheel.
     WheelState GetWheelState(VehicleSide side) const;
 
+    /// Get a handle to the specified post body.
+    std::shared_ptr<ChBody> GetPostBody(VehicleSide side) const { return m_post[side]; }
+
+    /// Get the global location of the specified post body.
+    const ChVector<>& GetPostPos(VehicleSide side) const { return m_post[side]->GetPos(); }
+
     double GetActuatorDisp(VehicleSide side);
     double GetActuatorForce(VehicleSide side);
     double GetActuatorMarkerDist(VehicleSide side);
 
     /// Return true if a steering system is attached.
-    bool HasSteering() const { return m_steering != 0; }
+    bool HasSteering() const { return m_steering != nullptr; }
 
     /// Get the rig total mass.
     /// This includes the mass of the suspension and wheels, and (if present) the mass of the
@@ -121,56 +138,67 @@ class CH_VEHICLE_API ChSuspensionTestRig : public ChVehicle {
     /// Set visualization type for the wheel subsystems.
     void SetWheelVisualizationType(VisualizationType vis);
 
+    /// Set visualization type for the tire subsystems.
+    void SetTireVisualizationType(VisualizationType vis);
+
     /// Update the state at the current time.
     /// steering between -1 and +1, and no force need be applied if using external actuation
-    void Synchronize(double time,                   ///< [in] current time
-                     double steering,               ///< [in] current steering input [-1,+1]
-                     double disp_L,                 ///< [in] left post displacement
-                     double disp_R,                 ///< [in] right post displacement
-                     const TireForces& tire_forces  ///< [in] tires force to apply to wheel
+    void Synchronize(double time,      ///< [in] current time
+                     double steering,  ///< [in] current steering input [-1,+1]
+                     double disp_L,    ///< [in] left post displacement
+                     double disp_R     ///< [in] right post displacement
                      );
+
+    /// Advance the state of the suspension test rig by the specified time step.
+    /// Note that this function also advances the tire states.
+    virtual void Advance(double step) override;
 
     /// Log current constraint violations.
     virtual void LogConstraintViolations() override;
 
   private:
+    /// Definition of a terrain object for use by a suspension test rig.
+    class Terrain : public ChTerrain {
+      public:
+        Terrain();
+        virtual double GetHeight(double x, double y) const override;
+        virtual ChVector<> GetNormal(double x, double y) const override;
+        double m_height_L;
+        double m_height_R;
+    };
+
+    /// Utility functions to load subsystems from JSON files.
     void LoadSteering(const std::string& filename);
     void LoadSuspension(const std::string& filename);
     void LoadWheel(const std::string& filename, int side);
-    static void AddVisualize_post(std::shared_ptr<ChBody> post_body,
-        std::shared_ptr<ChBody> ground_body,
-                                  double height,
-                                  double rad,
-                                  const ChColor& color);
+
+    /// Utility function to add visualization to post bodies.
+    void AddVisualize_post(VehicleSide side, const ChColor& color);
 
     std::shared_ptr<ChSuspension> m_suspension;  ///< handle to suspension subsystem
     std::shared_ptr<ChSteering> m_steering;      ///< handle to the steering subsystem
     std::shared_ptr<ChShaft> m_dummy_shaft;      ///< dummy driveshaft
-    ChWheelList m_wheels;                        ///< list of handles to wheel subsystems
-    ChTireList m_tires;                          ///< list of handles to tire subsystems
+    std::shared_ptr<ChWheel> m_wheel[2];         ///< handles to wheel subsystems
+    std::shared_ptr<ChTire> m_tire[2];           ///< handles to tire subsystems
 
-    std::shared_ptr<ChBody> m_post_L;                         ///< left shaker post
-    std::shared_ptr<ChBody> m_post_R;                         ///< right shaker post
-    std::shared_ptr<ChLinkLockPrismatic> m_post_L_prismatic;  ///< left post prismatic joint
-    std::shared_ptr<ChLinkLockPrismatic> m_post_R_prismatic;  ///< right post prismatic joint
-    std::shared_ptr<ChLinkLinActuator> m_post_L_linact;       ///< actuate left post
-    std::shared_ptr<ChLinkLinActuator> m_post_R_linact;       ///< actuate right post
-    std::shared_ptr<ChLinkLockPointPlane> m_post_L_ptPlane;   ///< actuate L suspension to a specified height
-    std::shared_ptr<ChLinkLockPointPlane> m_post_R_ptPlane;   ///< actuate R suspension to a specified height
+    std::shared_ptr<ChBody> m_post[2];                         ///< handles to post bodies
+    std::shared_ptr<ChLinkLockPrismatic> m_post_prismatic[2];  ///< handles to post prismatic joints
+    std::shared_ptr<ChLinkLinActuator> m_post_linact[2];       ///< handles to post linear actuators
+    std::shared_ptr<ChFunction> m_actuator_func[2];            ///< actuator functions applied to left/right posts
 
-    std::shared_ptr<ChFunction> m_actuator_L;  ///< actuator function applied to left wheel
-    std::shared_ptr<ChFunction> m_actuator_R;  ///< actuator function applied to right wheel
+    double m_displ_limit;  ///< scale factor for post displacement
 
-    double m_steer;    ///< cached steering driver input
-    double m_displ_L;  ///< cached left post displacement
-    double m_displ_R;  ///< cached right post displacement
+    Terrain m_terrain;  ///< terrain object to provide height to the tires
 
     ChVector<> m_suspLoc;
     ChVector<> m_steeringLoc;
     ChQuaternion<> m_steeringRot;
+
+    static const double m_post_radius;  ///< radius of the post cylindrical platform
+    static const double m_post_height;  ///< height of the post cylindrical platform
 };
 
-/// @} vehicle_wheeled_utils
+/// @} vehicle_wheeled_test_rig
 
 }  // end namespace vehicle
 }  // end namespace chrono

@@ -83,11 +83,11 @@ void AddContainer(ChSystemParallelDEM* sys) {
   double hthick = 0.1;
 
   bin->GetCollisionModel()->ClearModel();
-  utils::AddBoxGeometry(bin.get(), ChVector<>(hdim.x, hdim.y, hthick), ChVector<>(0, 0, -hthick));
-  utils::AddBoxGeometry(bin.get(), ChVector<>(hthick, hdim.y, hdim.z), ChVector<>(-hdim.x - hthick, 0, hdim.z));
-  utils::AddBoxGeometry(bin.get(), ChVector<>(hthick, hdim.y, hdim.z), ChVector<>(hdim.x + hthick, 0, hdim.z));
-  utils::AddBoxGeometry(bin.get(), ChVector<>(hdim.x, hthick, hdim.z), ChVector<>(0, -hdim.y - hthick, hdim.z));
-  utils::AddBoxGeometry(bin.get(), ChVector<>(hdim.x, hthick, hdim.z), ChVector<>(0, hdim.y + hthick, hdim.z));
+  utils::AddBoxGeometry(bin.get(), ChVector<>(hdim.x(), hdim.y(), hthick), ChVector<>(0, 0, -hthick));
+  utils::AddBoxGeometry(bin.get(), ChVector<>(hthick, hdim.y(), hdim.z()), ChVector<>(-hdim.x() - hthick, 0, hdim.z()));
+  utils::AddBoxGeometry(bin.get(), ChVector<>(hthick, hdim.y(), hdim.z()), ChVector<>(hdim.x() + hthick, 0, hdim.z()));
+  utils::AddBoxGeometry(bin.get(), ChVector<>(hdim.x(), hthick, hdim.z()), ChVector<>(0, -hdim.y() - hthick, hdim.z()));
+  utils::AddBoxGeometry(bin.get(), ChVector<>(hdim.x(), hthick, hdim.z()), ChVector<>(0, hdim.y() + hthick, hdim.z()));
   bin->GetCollisionModel()->SetFamily(1);
   bin->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(2);
   bin->GetCollisionModel()->BuildModel();
@@ -236,8 +236,8 @@ int main(int argc, char* argv[]) {
   }
 #else
   // Run simulation for specified time
-  int num_steps = std::ceil(time_end / time_step);
-  int out_steps = std::ceil((1 / time_step) / out_fps);
+  int num_steps = (int)std::ceil(time_end / time_step);
+  int out_steps = (int)std::ceil((1 / time_step) / out_fps);
   int out_frame = 0;
   double time = 0;
   for (int i = 0; i < num_steps; i++) {

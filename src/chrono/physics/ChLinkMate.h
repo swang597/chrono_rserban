@@ -53,6 +53,8 @@ class ChApi ChLinkMate : public ChLink {
     virtual void ArchiveIN(ChArchiveIn& marchive) override;
 };
 
+CH_CLASS_VERSION(ChLinkMate,0)
+
 // -----------------------------------------------------------------------------
 
 /// Generic mate constraint, where one can select which DOFs must be constrained
@@ -203,7 +205,7 @@ class ChApi ChLinkMateGeneric : public ChLinkMate {
     virtual void ConstraintsBiReset() override;
     virtual void ConstraintsBiLoad_C(double factor = 1, double recovery_clamp = 0.1, bool do_clamp = false) override;
     virtual void ConstraintsBiLoad_Ct(double factor = 1) override;
-    virtual void ConstraintsLoadJacobians();
+    virtual void ConstraintsLoadJacobians() override;
     virtual void ConstraintsFetch_react(double factor = 1) override;
 
     //
@@ -220,6 +222,9 @@ class ChApi ChLinkMateGeneric : public ChLinkMate {
     void SetupLinkMask();
     void ChangedLinkMask();
 };
+
+CH_CLASS_VERSION(ChLinkMateGeneric,0)
+
 
 // -----------------------------------------------------------------------------
 
@@ -276,6 +281,9 @@ class ChApi ChLinkMatePlane : public ChLinkMateGeneric {
     virtual void ArchiveIN(ChArchiveIn& marchive) override;
 };
 
+CH_CLASS_VERSION(ChLinkMatePlane,0)
+
+
 // -----------------------------------------------------------------------------
 
 /// Mate constraint of coaxial type. This correspond to the
@@ -321,6 +329,9 @@ class ChApi ChLinkMateCoaxial : public ChLinkMateGeneric {
     virtual void ArchiveIN(ChArchiveIn& marchive) override;
 };
 
+CH_CLASS_VERSION(ChLinkMateCoaxial,0)
+
+
 // -----------------------------------------------------------------------------
 
 /// Mate constraint of spherical type. This correspond to the
@@ -349,6 +360,9 @@ class ChApi ChLinkMateSpherical : public ChLinkMateGeneric {
                     ChVector<> mpt2   ///< point, master, for 2nd body (rel. or abs., see flag above)
                     );
 };
+
+CH_CLASS_VERSION(ChLinkMateSpherical,0)
+
 
 // -----------------------------------------------------------------------------
 
@@ -396,6 +410,9 @@ class ChApi ChLinkMateXdistance : public ChLinkMateGeneric {
     virtual void ArchiveIN(ChArchiveIn& marchive) override;
 };
 
+CH_CLASS_VERSION(ChLinkMateXdistance,0)
+
+
 // -----------------------------------------------------------------------------
 
 /// Mate constraint of parallel type. This correspond to the
@@ -441,6 +458,9 @@ class ChApi ChLinkMateParallel : public ChLinkMateGeneric {
     /// Method to allow deserialization of transient data from archives.
     virtual void ArchiveIN(ChArchiveIn& marchive) override;
 };
+
+CH_CLASS_VERSION(ChLinkMateParallel,0)
+
 
 // -----------------------------------------------------------------------------
 
@@ -489,6 +509,8 @@ class ChApi ChLinkMateOrthogonal : public ChLinkMateGeneric {
     virtual void ArchiveIN(ChArchiveIn& marchive) override;
 };
 
+CH_CLASS_VERSION(ChLinkMateOrthogonal,0)
+
 
 // -----------------------------------------------------------------------------
 
@@ -517,6 +539,7 @@ class ChApi ChLinkMateFix : public ChLinkMateGeneric {
                     );
 };
 
+CH_CLASS_VERSION(ChLinkMateFix,0)
 
 }  // end namespace chrono
 

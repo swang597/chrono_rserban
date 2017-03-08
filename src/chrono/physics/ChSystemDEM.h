@@ -127,10 +127,10 @@ class ChApi ChSystemDEM : public ChSystem {
     //
 
     /// Method to allow serialization of transient data to archives.
-    virtual void ArchiveOUT(ChArchiveOut& marchive);
+    virtual void ArchiveOUT(ChArchiveOut& marchive) override;
 
     /// Method to allow deserialization of transient data from archives.
-    virtual void ArchiveIN(ChArchiveIn& marchive);
+    virtual void ArchiveIN(ChArchiveIn& marchive) override;
 
   private:
     bool m_use_mat_props;                        ///< if true, derive contact parameters from mat. props.
@@ -141,6 +141,8 @@ class ChApi ChSystemDEM : public ChSystem {
     double m_minSlipVelocity;                    ///< slip velocity below which no tangential forces are generated
     double m_characteristicVelocity;             ///< characteristic impact velocity (Hooke model)
 };
+
+CH_CLASS_VERSION(ChSystemDEM,0)
 
 }  // end namespace chrono
 
