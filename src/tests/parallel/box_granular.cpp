@@ -344,7 +344,7 @@ int main(int argc, char** argv) {
 
     for (int il = 0; il < num_layers; il++) {
         gen.createObjectsBox(utils::POISSON_DISK, h_sep, center, hdims);
-        center.z += v_sep;
+        center.z() += v_sep;
     }
 
     unsigned int num_particles = gen.getTotalNumBodies();
@@ -395,7 +395,7 @@ int main(int argc, char** argv) {
     track->SetBodyFixed(false);
     track->SetMass(mass_t);
     track->SetInertiaXX(inertia_t);
-    track->SetPos(ChVector<>(0, 0, hZ + center.z));
+    track->SetPos(ChVector<>(0, 0, hZ + center.z()));
     track->SetRot(ChQuaternion<>(1, 0, 0, 0));
     track->SetCollide(true);
 
@@ -444,7 +444,7 @@ int main(int argc, char** argv) {
     if (render) {
         opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
         gl_window.Initialize(1280, 720, "Settling test", system);
-        gl_window.SetCamera(ChVector<>(0, -4, center.z), ChVector<>(0, 0, center.z), ChVector<>(0, 0, 1), 0.05f);
+        gl_window.SetCamera(ChVector<>(0, -4, center.z()), ChVector<>(0, 0, center.z()), ChVector<>(0, 0, 1), 0.05f);
         gl_window.SetRenderMode(opengl::WIREFRAME);
     }
 
@@ -470,7 +470,7 @@ int main(int argc, char** argv) {
             out_frame++;
             next_out_frame += out_steps;
 
-            double height = track->GetPos().z - hZ;
+            double height = track->GetPos().z() - hZ;
             std::cout << "---  " << height << std::endl;
         }
 

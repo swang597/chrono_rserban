@@ -141,9 +141,9 @@ int main(int argc, char* argv[]) {
     // ---------------
 
     ChVector<> fwd_dir = initRot.GetXaxis();
-    ChVector<> loc = ChVector<>(initLoc.x, initLoc.y, bump_height - bump_radius) + fwd_dir * dist_to_bump;
+    ChVector<> loc = ChVector<>(initLoc.x(), initLoc.y(), bump_height - bump_radius) + fwd_dir * dist_to_bump;
 
-    std::cout << loc.x << "  " << loc.y << "  " << loc.z << std::endl;
+    std::cout << loc.x() << "  " << loc.y() << "  " << loc.z() << std::endl;
 
     auto bump = std::shared_ptr<ChBody>(my_hmmwv.GetSystem()->NewBody());
     bump->SetPos(loc);
@@ -251,9 +251,9 @@ int main(int argc, char* argv[]) {
         ChVector<> com_acc_abs = chassis_body->GetPos_dtdt();
         ChVector<> flw_acc_abs = wheel_body->GetPos_dtdt();
 
-        double vert_drv_acc_abs = filter_drv_acc.Add(drv_acc_abs.z);
-        double vert_com_acc_abs = filter_com_acc.Add(com_acc_abs.z);
-        double vert_flw_acc_abs = filter_flw_acc.Add(flw_acc_abs.z);
+        double vert_drv_acc_abs = filter_drv_acc.Add(drv_acc_abs.z());
+        double vert_com_acc_abs = filter_com_acc.Add(com_acc_abs.z());
+        double vert_flw_acc_abs = filter_flw_acc.Add(flw_acc_abs.z());
 
         // Collect output
         if (state_output) {
@@ -286,8 +286,8 @@ int main(int argc, char* argv[]) {
         // Update sentinel and target location markers for the path-follower controller.
         const ChVector<>& pS = driver_follower.GetSteeringController().GetSentinelLocation();
         const ChVector<>& pT = driver_follower.GetSteeringController().GetTargetLocation();
-        ballS->setPosition(irr::core::vector3df((irr::f32)pS.x, (irr::f32)pS.y, (irr::f32)pS.z));
-        ballT->setPosition(irr::core::vector3df((irr::f32)pT.x, (irr::f32)pT.y, (irr::f32)pT.z));
+        ballS->setPosition(irr::core::vector3df((irr::f32)pS.x(), (irr::f32)pS.y(), (irr::f32)pS.z()));
+        ballT->setPosition(irr::core::vector3df((irr::f32)pT.x(), (irr::f32)pT.y(), (irr::f32)pT.z()));
 
         // Render scene and output POV-Ray data
         if (sim_frame % render_steps == 0) {
