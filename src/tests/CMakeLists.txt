@@ -24,6 +24,10 @@ endif("${isSystemDir}" STREQUAL "-1")
 
 message(STATUS "==== Test programs ====")
 
+if(ENABLE_MODULE_POSTPROCESS)
+  add_subdirectory(postprocess)
+endif()
+
 if(ENABLE_MODULE_PARALLEL AND ENABLE_MODULE_OPENGL)
   add_subdirectory(parallel)
 endif()
