@@ -34,6 +34,10 @@ namespace vehicle {
 /// @addtogroup vehicle
 /// @{
 
+// -----------------------------------------------------------------------------
+// Utility classes and structures for data exchange
+// -----------------------------------------------------------------------------
+
 /// Enum for the side (left/right) of a vehicle.
 enum VehicleSide {
     LEFT = 0,  ///< left side of vehicle is always 0
@@ -116,6 +120,10 @@ struct TrackShoeForce {
 
 /// Vector of tire force structures.
 typedef std::vector<TrackShoeForce> TrackShoeForces;
+
+// -----------------------------------------------------------------------------
+// Utility functor classes for force elements
+// -----------------------------------------------------------------------------
 
 /// Utility class for specifying a linear translational spring force.
 class LinearSpringForce : public ChSpringForceCallback {
@@ -287,6 +295,10 @@ class MapDamperTorque : public ChRotSpringTorqueCallback {
     ChFunction_Recorder m_map;
 };
 
+// -----------------------------------------------------------------------------
+// Enums and flags for wheeled and tracked vehicles
+// -----------------------------------------------------------------------------
+
 /// Enum for visualization types.
 enum class VisualizationType {
     NONE,        ///< no visualization
@@ -330,6 +342,15 @@ enum class DrivelineType {
     SIMPLE
 };
 
+/// Enumerations for wheeled vehicle collision families.
+namespace WheeledCollisionFamily {
+// Note: we cannot use strongly typed enums, since these are passed as integers
+enum Enum {
+    CHASSIS = 0,  ///< chassis collision family
+    TIRES = 1     ///< collision family for tire systems
+};
+}
+
 /// Enum for track shoe types.
 enum class TrackShoeType {
     SINGLE_PIN,  ///< single-pin track shoe and sprocket
@@ -343,31 +364,34 @@ enum class GuidePinType {
 };
 
 /// Enumerations for track collision flags.
-namespace TrackCollide {
+namespace TrackedCollisionFlag {
 // Note: we cannot use strongly typed enums since these are used as integers
 enum Enum {
     NONE = 0,
-    SPROCKET_LEFT = 1 << 0,
-    SPROCKET_RIGHT = 1 << 1,
-    IDLER_LEFT = 1 << 2,
-    IDLER_RIGHT = 1 << 3,
-    WHEELS_LEFT = 1 << 4,
-    WHEELS_RIGHT = 1 << 5,
-    SHOES_LEFT = 1 << 6,
-    SHOES_RIGHT = 1 << 7,
+    CHASSIS = 1 << 0,
+    SPROCKET_LEFT = 1 << 1,
+    SPROCKET_RIGHT = 1 << 2,
+    IDLER_LEFT = 1 << 3,
+    IDLER_RIGHT = 1 << 4,
+    WHEELS_LEFT = 1 << 5,
+    WHEELS_RIGHT = 1 << 6,
+    SHOES_LEFT = 1 << 7,
+    SHOES_RIGHT = 1 << 8,
+    ROLLERS_LEFT = 1 << 9,
+    ROLLERS_RIGHT = 1 << 10,
     ALL = 0xFFFF
 };
 }
 
-/// Enumerations for track collision families.
-namespace TrackCollisionFamily {
+/// Enumerations for tracked vehicle collision families.
+namespace TrackedCollisionFamily {
 // Note: we cannot use strongly typed enums, since these are passed as integers
 enum Enum {
     CHASSIS = 0,  ///< chassis collision family
     IDLERS = 1,   ///< collision family for idler subsystems
     WHEELS = 2,   ///< collision family for road-wheel assemblies
-    SHOES = 3,    ///< collision family for track shoe subsystems
-    ROLLERS = 4   ///< collision family for roller subsystems
+    ROLLERS = 3,  ///< collision family for roller subsystems
+    SHOES = 4     ///< collision family for track shoe subsystems
 };
 }
 
