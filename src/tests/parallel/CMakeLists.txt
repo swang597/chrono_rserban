@@ -25,6 +25,7 @@ SET(DEMOS
     box_granular
     jcol_example
     collide_flag
+    rotate_gravity
 )
 
 # ------------------------------------------------------------------------------
