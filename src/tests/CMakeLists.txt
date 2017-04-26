@@ -30,6 +30,9 @@ endif()
 
 if(ENABLE_MODULE_PARALLEL AND ENABLE_MODULE_OPENGL)
   add_subdirectory(parallel)
+  if(ENABLE_MODULE_VEHICLE)
+    add_subdirectory(go_nogo)
+  endif()
 endif()
 
 if(ENABLE_MODULE_VEHICLE AND ENABLE_MODULE_IRRLICHT)
