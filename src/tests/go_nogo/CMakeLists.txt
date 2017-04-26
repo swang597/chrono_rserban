@@ -22,6 +22,7 @@ ENDIF()
 
 SET(GO_NOGO_FILES
     hmmwv_granular.cpp
+    driver_model.h
     monitoring.h
     event_queue.h
 )

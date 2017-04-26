@@ -35,7 +35,6 @@
 
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/terrain/FlatTerrain.h"
-#include "chrono_vehicle/driver/ChPathFollowerDriver.h"
 
 #include "chrono_models/vehicle/hmmwv/HMMWV.h"
 
@@ -48,6 +47,7 @@
 #include "chrono_opengl/ChOpenGLWindow.h"
 #endif
 
+#include "driver_model.h"
 #include "monitoring.h"
 #include "event_queue.h"
 
@@ -63,11 +63,14 @@ using std::endl;
 // Specification of the terrain
 // -----------------------------------------------------------------------------
 
+// Slope (radians)
+double terrain_slope = 0.0 * (CH_C_PI / 180);
+
 // Container
 double hdimX = 4;
 double hdimY = 1.75;
 double hdimZ = 0.5;
-double hthick = 0.25;
+double hthick = 0.05;
 
 // Granular material
 int Id_g = 1;
@@ -91,9 +94,10 @@ unsigned int num_particles = 10000;
 enum WheelType { CYLINDRICAL, LUGGED };
 WheelType wheel_type = CYLINDRICAL;
 
-// Initial vehicle position and orientation
+// Initial vehicle position, orientation, and forward velocity
 ChVector<> initLoc(-hdimX + 2.5, 0, 0.6);
 ChQuaternion<> initRot(1, 0, 0, 0);
+double initSpeed = 0;
 
 // Contact material properties for tires
 float mu_t = 0.8f;
@@ -108,19 +112,35 @@ int coll_fam_c = 5;
 int coll_fam_g = 2;
 
 // -----------------------------------------------------------------------------
+// Timed events
+// -----------------------------------------------------------------------------
+
+// Total simulation duration.
+double time_end = 7;
+
+// Delay before creating the vehicle (allows for granular material settling)
+double delay_create_vehicle = 0.25;
+
+// Duration before starting to apply throttle (allows for vehicle settling)
+double delay_start_engine = 0.25;
+
+// Delay before throttle reaches maximum (linear ramp)
+double delay_max_throttle = 0.5;
+
+// Time when terrain is pitched (rotate gravity)
+double time_pitch = 1.0;
+
+double time_create_vehicle = delay_create_vehicle;
+double time_start_engine = time_create_vehicle + delay_start_engine;
+double time_max_throttle = time_start_engine + delay_max_throttle;
+
+// -----------------------------------------------------------------------------
 // Simulation parameters
 // -----------------------------------------------------------------------------
 
 // Desired number of OpenMP threads (will be clamped to maximum available)
 int threads = 20;
 bool thread_tuning = false;
-
-// Total simulation duration.
-double time_end = 7;
-
-// Duration of the "hold time" (vehicle chassis fixed and no driver inputs).
-// This can be used to allow the granular material to settle.
-double time_hold = 0.05;
 
 // Integration step size
 double time_step = 1e-3;
@@ -132,7 +152,7 @@ int max_iteration_sliding = 50;
 int max_iteration_spinning = 0;
 
 double tolerance = 1e-3;
-float contact_recovery_speed = 40;
+float contact_recovery_speed = 1000;
 
 // Periodically monitor maximum bilateral constraint violation
 bool monitor_bilaterals = false;
@@ -160,7 +180,7 @@ class MyCylindricalTire : public ChTireContactCallback {
 
         wheelBody->GetMaterialSurfaceDEM()->SetFriction(mu_t);
         wheelBody->GetMaterialSurfaceDEM()->SetRestitution(cr_t);
- 
+
         auto cyl = std::make_shared<ChCylinderShape>();
         cyl->GetCylinderGeometry().p1 = ChVector<>(0, 0.127, 0);
         cyl->GetCylinderGeometry().p2 = ChVector<>(0, -0.127, 0);
@@ -222,7 +242,7 @@ void CreateContainer(ChSystem* system) {
 
     auto material = std::make_shared<ChMaterialSurface>();
     material->SetFriction(mu_g);
-    material->SetCompliance(1e-9);
+    material->SetCompliance(1e-9f);
     material->SetCohesion(cohesion_g);
 
     auto ground = std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>());
@@ -310,7 +330,7 @@ HMMWV_Full* CreateVehicle(ChSystem* system, double vertical_offset) {
     hmmwv->SetContactMethod(ChMaterialSurfaceBase::DVI);
     hmmwv->SetChassisFixed(false);
     hmmwv->SetInitPosition(ChCoordsys<>(initLoc + ChVector<>(0, 0, vertical_offset), initRot));
-    ////hmmwv->SetInitFwdVel(10);
+    hmmwv->SetInitFwdVel(initSpeed);
     hmmwv->SetPowertrainType(PowertrainModelType::SHAFTS);
     hmmwv->SetDriveType(DrivelineType::AWD);
     hmmwv->SetTireType(TireModelType::RIGID);
@@ -326,99 +346,38 @@ HMMWV_Full* CreateVehicle(ChSystem* system, double vertical_offset) {
     return hmmwv;
 }
 
-ChBezierCurve* CreatePath() {
+HMMWV_Driver* CreateDriver(HMMWV_Full* hmmwv) {
+    // Create the straigh-line path
+    double height = initLoc.z();
+
     std::vector<ChVector<>> points;
     std::vector<ChVector<>> inCV;
     std::vector<ChVector<>> outCV;
 
-    points.push_back(ChVector<>(-10 * hdimX, 0, 1));
-    inCV.push_back(ChVector<>(-10 * hdimX, 0, 1));
-    outCV.push_back(ChVector<>(-9 * hdimX, 0, 1));
+    points.push_back(ChVector<>(-10 * hdimX, 0, height));
+    inCV.push_back(ChVector<>(-10 * hdimX, 0, height));
+    outCV.push_back(ChVector<>(-9 * hdimX, 0, height));
 
-    points.push_back(ChVector<>(10 * hdimX, 0, 1));
-    inCV.push_back(ChVector<>(9 * hdimX, 0, 1));
-    outCV.push_back(ChVector<>(10 * hdimX, 0, 1));
+    points.push_back(ChVector<>(10 * hdimX, 0, height));
+    inCV.push_back(ChVector<>(9 * hdimX, 0, height));
+    outCV.push_back(ChVector<>(10 * hdimX, 0, height));
 
-    auto path = new ChBezierCurve(points, inCV, outCV);
+    auto path = std::make_shared<ChBezierCurve>(points, inCV, outCV);
 
-    return path;
-}
-
-ChPathFollowerDriver* CreateDriver(HMMWV_Full* hmmwv, ChBezierCurve* path) {
     double look_ahead_dist = 5;
     double Kp_steering = 0.5;
     double Ki_steering = 0;
     double Kd_steering = 0;
-    auto driver = new ChPathFollowerDriver(hmmwv->GetVehicle(), path, "straight_line", 0);
-    driver->GetSteeringController().SetLookAheadDistance(look_ahead_dist);
-    driver->GetSteeringController().SetGains(Kp_steering, Ki_steering, Kd_steering);
+    auto driver = new HMMWV_Driver(hmmwv->GetVehicle(), path, time_start_engine, time_max_throttle);
+    driver->SetLookAheadDistance(look_ahead_dist);
+    driver->SetGains(Kp_steering, Ki_steering, Kd_steering);
 
     driver->Initialize();
 
     return driver;
 }
 
-/*
-void CreateVehicle(ChSystem* system, double vertical_offset, HMMWV_Full** hmmwv, ChBezierCurve** path, ChPathFollowerDriver** driver) {
-    // Create and initialize HMMWV vehicle
-    *hmmwv = new HMMWV_Full(system);
-
-    (*hmmwv)->SetContactMethod(ChMaterialSurfaceBase::DVI);
-    (*hmmwv)->SetChassisFixed(false);
-    (*hmmwv)->SetInitPosition(ChCoordsys<>(initLoc + ChVector<>(0, 0, vertical_offset), initRot));
-    (*hmmwv)->SetPowertrainType(PowertrainModelType::SHAFTS);
-    (*hmmwv)->SetDriveType(DrivelineType::AWD);
-    (*hmmwv)->SetTireType(TireModelType::RIGID);
-
-    (*hmmwv)->Initialize();
-
-    (*hmmwv)->SetChassisVisualizationType(VisualizationType::NONE);
-    (*hmmwv)->SetSuspensionVisualizationType(VisualizationType::PRIMITIVES);
-    (*hmmwv)->SetSteeringVisualizationType(VisualizationType::PRIMITIVES);
-    (*hmmwv)->SetWheelVisualizationType(VisualizationType::PRIMITIVES);
-    (*hmmwv)->SetTireVisualizationType(VisualizationType::PRIMITIVES);
-
-    // Straight-line Bezier path
-    std::vector<ChVector<>> points;
-    std::vector<ChVector<>> inCV;
-    std::vector<ChVector<>> outCV;
-
-    points.push_back(ChVector<>(-10 * hdimX, 0, 1));
-    inCV.push_back(ChVector<>(-10 * hdimX, 0, 1));
-    outCV.push_back(ChVector<>(-9 * hdimX, 0, 1));
-
-    points.push_back(ChVector<>(10 * hdimX, 0, 1));
-    inCV.push_back(ChVector<>(9 * hdimX, 0, 1));
-    outCV.push_back(ChVector<>(10 * hdimX, 0, 1));
-
-    *path = new ChBezierCurve(points, inCV, outCV);
-
-    // Create and initialize path-following driver
-    double look_ahead_dist = 5;
-    double Kp_steering = 0.5;
-    double Ki_steering = 0;
-    double Kd_steering = 0;
-    *driver = new ChPathFollowerDriver((*hmmwv)->GetVehicle(), *path, "straight_line", 0);
-    (*driver)->GetSteeringController().SetLookAheadDistance(look_ahead_dist);
-    (*driver)->GetSteeringController().SetGains(Kp_steering, Ki_steering, Kd_steering);
-    (*driver)->Initialize();
-}
-*/
-
 // =============================================================================
-
-void fun1(int i, double d) {
-    cout << i << "  " << d << endl;
-}
-
-void fun2(const std::string& s) {
-    cout << s << endl;
-}
-
-class Foo {
-public:
-    void operator()() { cout << "Functor " << endl; }
-};
 
 int main(int argc, char* argv[]) {
     /*
@@ -439,10 +398,11 @@ int main(int argc, char* argv[]) {
     // -------------------------
     // Create system and vehicle
     // -------------------------
+    ChVector<> gravity(0, 0, -9.81);
+    ChVector<> gravityR = ChMatrix33<>(terrain_slope, ChVector<>(0, 1, 0)) * gravity;
 
     ChSystemParallelDVI* system = new ChSystemParallelDVI();
-
-    system->Set_G_acc(ChVector<>(0, 0, -9.81));
+    system->Set_G_acc(gravity);
 
     // ----------------------
     // Set number of threads.
@@ -479,11 +439,11 @@ int main(int argc, char* argv[]) {
 
     system->GetSettings()->collision.collision_envelope = 0.1 * r_g;
     system->GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
-    system->GetSettings()->collision.bins_per_axis = vec3(20, 20, 10);
+    system->GetSettings()->collision.bins_per_axis = vec3(100, 30, 2);
     system->GetSettings()->collision.fixed_bins = true;
 
     // Specify active box.
-    system->GetSettings()->collision.use_aabb_active = true;
+    system->GetSettings()->collision.use_aabb_active = false;
     system->GetSettings()->collision.aabb_min = real3(-1.1 * hdimX, -1.1 * hdimY, 0);
     system->GetSettings()->collision.aabb_max = real3(+1.1 * hdimX, +1.1 * hdimY, 10 * hdimZ);
 
@@ -494,7 +454,6 @@ int main(int argc, char* argv[]) {
     CreateContainer(system);
     int actual_num_particles = CreateParticles(system);
     cout << "Created " << actual_num_particles << " particles." << endl;
-
 
 #ifdef CHRONO_OPENGL
     // Initialize OpenGL
@@ -508,8 +467,7 @@ int main(int argc, char* argv[]) {
     // Simulation loop
     // -------------------
     HMMWV_Full* hmmwv = nullptr;
-    ChBezierCurve* path = nullptr;
-    ChPathFollowerDriver* driver = nullptr;
+    HMMWV_Driver* driver = nullptr;
     FlatTerrain terrain(0);
 
     double time = 0;
@@ -518,31 +476,39 @@ int main(int argc, char* argv[]) {
     double exec_time = 0;
     int num_contacts = 0;
 
+    bool is_pitched = false;
+
     while (time < time_end) {
-        // At the end of the hold time, create the vehicle.
-        if (!hmmwv && time > time_hold) {
-            cout << endl << "Create vehicle at t = " << time << endl;
+        // Create the vehicle
+        if (!hmmwv && time > time_create_vehicle) {
+            cout << time << "    Create vehicle" << endl;
             double max_height = FindHighestParticle(system);
             hmmwv = CreateVehicle(system, max_height);
-            path = CreatePath();
-            driver = CreateDriver(hmmwv, path);
+            driver = CreateDriver(hmmwv);
+        }
+
+        // Rotate gravity vector
+        if (!is_pitched && time > time_pitch) {
+            cout << time << "    Pitch: " << gravityR.x() << " " << gravityR.y() << " " << gravityR.z() << endl;
+            system->Set_G_acc(gravityR);
+            is_pitched = true;
         }
 
         if (hmmwv) {
             double steering_input = driver->GetSteering();
-            double braking_input = 0;
-            double throttle_input = 1;
+            double braking_input = driver->GetBraking();
+            double throttle_input = driver->GetThrottle();
 
             driver->Synchronize(time);
             hmmwv->Synchronize(time, steering_input, braking_input, throttle_input, terrain);
 
-            ChVector<> pos = hmmwv->GetChassis()->GetCOMPos();
-            cout << pos.z() << endl;
+            ////ChVector<> pos = hmmwv->GetChassis()->GetCOMPos();
+            ////cout << pos.z() << endl;
+            ////cout << time << "  " << throttle_input << endl;
 
             driver->Advance(time_step);
             hmmwv->Advance(time_step);
-        }
-        else {
+        } else {
             system->DoStepDynamics(time_step);
         }
 
@@ -575,7 +541,6 @@ int main(int argc, char* argv[]) {
     cout << "Number of threads: " << threads << endl;
 
     delete hmmwv;
-    delete path;
     delete driver;
 
     return 0;
