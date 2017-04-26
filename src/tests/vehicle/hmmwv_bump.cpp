@@ -82,7 +82,7 @@ const std::string out_dir = "../HMMWV_BUMP";
 
 // =============================================================================
 
-void CreateBezierPath(const ChVector<>& start, const ChVector<>& dir, double length, ChBezierCurve& path) {
+std::shared_ptr<ChBezierCurve> CreateBezierPath(const ChVector<>& start, const ChVector<>& dir, double length) {
     std::vector<ChVector<>> points;
     std::vector<ChVector<>> inCV;
     std::vector<ChVector<>> outCV;
@@ -100,7 +100,7 @@ void CreateBezierPath(const ChVector<>& start, const ChVector<>& dir, double len
     outCV.push_back(P2);
 
     // Generate Bezier path
-    path.setPoints(points, inCV, outCV);
+    return std::make_shared<ChBezierCurve>(points, inCV, outCV);
 }
 
 // =============================================================================
@@ -185,10 +185,9 @@ int main(int argc, char* argv[]) {
     // Create the driver system
     // ------------------------
 
-    ChBezierCurve path;
-    CreateBezierPath(initLoc, fwd_dir, 2 * dist_to_bump, path);
+    auto path = CreateBezierPath(initLoc, fwd_dir, 2 * dist_to_bump);
 
-    ChPathFollowerDriver driver_follower(my_hmmwv.GetVehicle(), &path, "my_path", target_speed);
+    ChPathFollowerDriver driver_follower(my_hmmwv.GetVehicle(), path, "my_path", target_speed);
     driver_follower.GetSteeringController().SetLookAheadDistance(5);
     driver_follower.GetSteeringController().SetGains(0.5, 0, 0);
     driver_follower.GetSpeedController().SetGains(0.4, 0, 0);
