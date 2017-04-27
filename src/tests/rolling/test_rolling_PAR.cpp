@@ -30,7 +30,6 @@
 #endif
 
 using namespace chrono;
-using namespace chrono::collision;
 
 // --------------------------------------------------------------------------
 
@@ -39,9 +38,20 @@ int main(int argc, char** argv) {
     // Parameters
     // ----------------
     double radius = 0.5;
+    double density = 1000;
+    double mass = density * (4.0 / 3.0) * CH_C_PI * pow(radius, 3);
+    double inertia = (2.0 / 5.0) * mass * pow(radius, 2);
+    double initial_angspeed = 10;
+    double initial_linspeed = initial_angspeed * radius;
+
+    float sliding_friction = 0.1f;
+    float rolling_friction = 0.1f;
 
     double time_step = 1e-3;
-    int num_threads = 1;
+
+    double tolerance = 0;
+    double contact_recovery_speed = 1e8;
+    double collision_envelope = .05 * radius;
 
     uint max_iteration_normal = 0;
     uint max_iteration_sliding = 0;
@@ -56,14 +66,8 @@ int main(int argc, char** argv) {
     system.Set_G_acc(ChVector<>(0, -10, 0));
 
     // Set number of threads
-    system.SetParallelThreadNumber(num_threads);
-    CHOMPfunctions::SetNumThreads(num_threads);
-////#pragma omp parallel
-////#pragma omp master
-////    {
-////        // Sanity check: print number of threads in a parallel region
-////        std::cout << "Actual number of OpenMP threads: " << omp_get_num_threads() << std::endl;
-////    }
+    system.SetParallelThreadNumber(1);
+    CHOMPfunctions::SetNumThreads(1);
 
     // Set solver settings
     system.ChangeSolverType(SolverType::APGD);
@@ -76,14 +80,17 @@ int main(int argc, char** argv) {
     system.GetSettings()->solver.max_iteration_spinning = max_iteration_spinning;
     system.GetSettings()->solver.max_iteration_bilateral = max_iteration_bilateral;
     system.GetSettings()->solver.alpha = 0;
-    system.GetSettings()->solver.contact_recovery_speed = 1e8;
+    system.GetSettings()->solver.contact_recovery_speed = contact_recovery_speed;
     system.GetSettings()->solver.use_full_inertia_tensor = false;
-    system.GetSettings()->solver.tolerance = 0;
+    system.GetSettings()->solver.tolerance = tolerance;
 
-    system.GetSettings()->collision.collision_envelope = .05 * radius;
+    system.GetSettings()->collision.collision_envelope = collision_envelope;
     system.GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_R;
     system.GetSettings()->collision.bins_per_axis = vec3(10, 10, 10);
 
+    // ----------
+    // Add bodies
+    // ----------
 
 	auto container = std::shared_ptr<ChBody>(system.NewBody());
 	system.Add(container);
@@ -91,21 +98,17 @@ int main(int argc, char** argv) {
 	container->SetBodyFixed(true);
 	container->SetIdentifier(-1);
 
-	container->GetMaterialSurface()->SetFriction(.1f);
-	container->GetMaterialSurface()->SetRollingFriction(.1f);
+	container->GetMaterialSurface()->SetFriction(sliding_friction);
+	container->GetMaterialSurface()->SetRollingFriction(rolling_friction);
 
 	container->SetCollide(true);
 	container->GetCollisionModel()->ClearModel();
 	utils::AddBoxGeometry(container.get(), ChVector<>(20, .5, 20), ChVector<>(0, -.5, 0));
 	container->GetCollisionModel()->BuildModel();
 
-	double density = 1000;
-	double mass = density * (4.0 / 3.0) * CH_C_PI * pow(radius, 3);
-	double inertia = (2.0 / 5.0) * mass * pow(radius, 2);
-	double initial_angspeed = 10;
-	double initial_linspeed = initial_angspeed * radius;
+    container->AddAsset(std::make_shared<ChColorAsset>(ChColor(0.4f, 0.4f, 0.2f)));
 
-	auto ball = std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>());
+    auto ball = std::shared_ptr<ChBody>(system.NewBody());
 	ChVector<> pos = ChVector<>(0, radius, 0);
 	ChVector<> vel = ChVector<>(initial_linspeed, 0, 0);
 	ChVector<> wvel = ChVector<>(0, 0, -initial_angspeed);
@@ -114,14 +117,16 @@ int main(int argc, char** argv) {
 	ball->SetPos_dt(vel);
 	ball->SetWvel_par(wvel);
 	ball->SetInertiaXX(ChVector<>(inertia));
-	ball->SetCollide(true);
-	ball->GetMaterialSurface()->SetFriction(.1f);
-	ball->GetMaterialSurface()->SetRollingFriction(.1f);
 
-	ball->GetCollisionModel()->ClearModel();
+    ball->GetMaterialSurface()->SetFriction(sliding_friction);
+    ball->GetMaterialSurface()->SetRollingFriction(rolling_friction);
+
+    ball->SetCollide(true);
+    ball->GetCollisionModel()->ClearModel();
 	utils::AddSphereGeometry(ball.get(), radius);
 	ball->GetCollisionModel()->BuildModel();
 
+    ball->AddAsset(std::make_shared<ChColorAsset>(ChColor(0.2f, 0.3f, 0.4f)));
 
 	system.AddBody(ball);
 
@@ -131,7 +136,7 @@ int main(int argc, char** argv) {
     // -------------------------------
 
     opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-    gl_window.Initialize(1280, 720, "Settling test", &system);
+    gl_window.Initialize(1280, 720, "Rolling test", &system);
     gl_window.SetCamera(ChVector<>(10, 10, 20), ChVector<>(0, 0, 0), ChVector<>(0, 1, 0), 0.05f);
     gl_window.SetRenderMode(opengl::WIREFRAME);
 #endif
@@ -147,6 +152,9 @@ int main(int argc, char** argv) {
     while (system.GetChTime() < time_end) {
         system.DoStepDynamics(time_step);
 
+        auto pos = ball->GetPos();
+        printf("T: %f  Pos: %f %f %f\n", system.GetChTime(), pos.x(), pos.y(), pos.z());
+
         //if (!output && system.GetChTime() >= time_out) {
         //    for (int i = 1; i <= 10; i++) {
         //        auto pos = system.Get_bodylist()->at(i)->GetPos();
@@ -159,7 +167,6 @@ int main(int argc, char** argv) {
         opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
         if (gl_window.Active()) {
             gl_window.Render();
-			printf("Pos: %f %f %f\n", ball->GetPos().x(), ball->GetPos().y(), ball->GetPos().z());
         } else {
             return 1;
         }
