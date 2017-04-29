@@ -24,6 +24,10 @@ endif("${isSystemDir}" STREQUAL "-1")
 
 message(STATUS "==== Test programs ====")
 
+if(ENABLE_MODULE_IRRLICHT)
+	add_subdirectory(collision)
+endif()
+
 if(ENABLE_MODULE_POSTPROCESS)
   add_subdirectory(postprocess)
 endif()
@@ -42,4 +46,5 @@ endif()
 
 if(ENABLE_MODULE_PARALLEL)
   add_subdirectory(rolling)
+  add_subdirectory(box_collision)
 endif()
