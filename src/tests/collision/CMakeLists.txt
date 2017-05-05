@@ -1,15 +1,4 @@
 # ------------------------------------------------------------------------------
-# Additional include paths and libraries
-# ------------------------------------------------------------------------------
-
-INCLUDE_DIRECTORIES(${CH_IRRLICHTINC})
-
-SET(LIBRARIES
-    ChronoEngine
-    ChronoEngine_irrlicht
-)
-
-# ------------------------------------------------------------------------------
 # List of all executables
 # ------------------------------------------------------------------------------
 
@@ -19,6 +8,20 @@ SET(DEMOS
     test_contact_mesh
     test_contact_penalty
 )
+
+# ------------------------------------------------------------------------------
+
+SET(CXX_FLAGS "${CH_CXX_FLAGS} ${CH_IRRLICHT_CXX_FLAGS}")
+SET(LIBRARIES ChronoEngine ChronoEngine_irrlicht)
+
+INCLUDE_DIRECTORIES(${CH_IRRLICHTINC})
+
+if(ENABLE_MODULE_MKL)
+  SET(CXX_FLAGS "${CXX_FLAGS} ${CH_MKL_CXX_FLAGS}")
+  SET(LIBRARIES ${LIBRARIES} ChronoEngine_mkl)
+
+  INCLUDE_DIRECTORIES(${CH_MKL_INCLUDES})
+endif()
 
 # ------------------------------------------------------------------------------
 # Add all executables
