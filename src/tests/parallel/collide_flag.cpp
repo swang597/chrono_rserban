@@ -23,7 +23,7 @@ int main(int argc, char* argv[]) {
     unsigned int max_iteration = 100;
 
     // Create DEM system
-    ChSystemParallelDEM my_sys(1000);
+    ChSystemParallelSMC my_sys;
 
     int num_threads = 1;
     my_sys.SetParallelThreadNumber(num_threads);
@@ -38,14 +38,14 @@ int main(int argc, char* argv[]) {
     my_sys.GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_R;
     my_sys.GetSettings()->collision.bins_per_axis = vec3(10, 10, 10);
 
-    my_sys.GetSettings()->solver.contact_force_model = ChSystemDEM::ContactForceModel::Hertz;
-    my_sys.GetSettings()->solver.adhesion_force_model = ChSystemDEM::AdhesionForceModel::Constant;
+    my_sys.GetSettings()->solver.contact_force_model = ChSystemSMC::ContactForceModel::Hertz;
+    my_sys.GetSettings()->solver.adhesion_force_model = ChSystemSMC::AdhesionForceModel::Constant;
 
     // Common material
     float Y = 2e6f;
     float mu = 0.4f;
     float cr = 0.4f;
-    auto ballMat = std::make_shared<ChMaterialSurfaceDEM>();
+    auto ballMat = std::make_shared<ChMaterialSurfaceSMC>();
     ballMat->SetYoungModulus(Y);
     ballMat->SetFriction(mu);
     ballMat->SetRestitution(cr);
@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
 
     // Lower ball
     auto ball_lower =
-        std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>(), ChMaterialSurfaceBase::DEM);
+        std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
     ball_lower->SetMaterialSurface(ballMat);
 
     ball_lower->SetIdentifier(1);
@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
 
     // Upper ball
     auto ball_upper =
-        std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>(), ChMaterialSurfaceBase::DEM);
+        std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
     ball_upper->SetMaterialSurface(ballMat);
 
     ball_upper->SetIdentifier(2);
@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
     my_sys.AddBody(ball_upper);
 
     // Plate
-    auto plate = std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>(), ChMaterialSurfaceBase::DEM);
+    auto plate = std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
     plate->SetMaterialSurface(ballMat);
 
     plate->SetIdentifier(0);

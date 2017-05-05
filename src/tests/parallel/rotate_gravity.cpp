@@ -49,12 +49,12 @@ int count_Y = 2;
 // -----------------------------------------------------------------------------
 // Create a bin consisting of five boxes attached to the ground.
 // -----------------------------------------------------------------------------
-void AddContainer(ChSystemParallelDVI* sys) {
+void AddContainer(ChSystemParallelNSC* sys) {
   // IDs for the two bodies
   int binId = -200;
 
   // Create a common material
-  auto mat = std::make_shared<ChMaterialSurface>();
+  auto mat = std::make_shared<ChMaterialSurfaceNSC>();
   mat->SetFriction(0.4f);
 
   // Create the containing bin (4 x 4 x 1)
@@ -86,7 +86,7 @@ void AddContainer(ChSystemParallelDVI* sys) {
 // -----------------------------------------------------------------------------
 void AddFallingBalls(ChSystemParallel* sys) {
   // Common material
-  auto ballMat = std::make_shared<ChMaterialSurface>();
+  auto ballMat = std::make_shared<ChMaterialSurfaceNSC>();
   ballMat->SetFriction(0.4f);
 
   // Create the falling balls
@@ -136,7 +136,7 @@ int main(int argc, char* argv[]) {
   // Create system
   // -------------
 
-  ChSystemParallelDVI msystem;
+  ChSystemParallelNSC msystem;
 
   // Set number of threads.
   int max_threads = CHOMPfunctions::GetNumProcs();

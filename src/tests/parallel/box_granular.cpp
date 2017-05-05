@@ -79,7 +79,7 @@ void TimingOutput(chrono::ChSystem* mSys) {
 
 int main(int argc, char** argv) {
     int num_threads = 4;
-    ChMaterialSurfaceBase::ContactMethod method = ChMaterialSurfaceBase::DEM;
+    ChMaterialSurface::ContactMethod method = ChMaterialSurface::SMC;
     bool render = true;
     double time_end = 1;
     std::string out_dir = "../TRACK_TEST";
@@ -164,20 +164,20 @@ int main(int argc, char** argv) {
     double time_step;
 
     switch (method) {
-        case ChMaterialSurfaceBase::DEM: {
-            ChSystemParallelDEM* sys = new ChSystemParallelDEM;
-            auto contact_force_model = ChSystemDEM::PlainCoulomb;
+        case ChMaterialSurface::SMC: {
+            ChSystemParallelSMC* sys = new ChSystemParallelSMC;
+            auto contact_force_model = ChSystemSMC::PlainCoulomb;
             bool use_mat_properties = true;
             sys->GetSettings()->solver.contact_force_model = contact_force_model;
-            sys->GetSettings()->solver.tangential_displ_mode = ChSystemDEM::TangentialDisplacementModel::OneStep;
+            sys->GetSettings()->solver.tangential_displ_mode = ChSystemSMC::TangentialDisplacementModel::OneStep;
             sys->GetSettings()->solver.use_material_properties = use_mat_properties;
             system = sys;
             time_step = 1e-5;
             out_dir += "_DEM_" + std::to_string(contact_force_model) + "_" + std::to_string(use_mat_properties);
             break;
         }
-        case ChMaterialSurfaceBase::DVI: {
-            ChSystemParallelDVI* sys = new ChSystemParallelDVI;
+        case ChMaterialSurface::NSC: {
+            ChSystemParallelNSC* sys = new ChSystemParallelNSC;
             sys->GetSettings()->solver.solver_mode = SolverMode::SLIDING;
             sys->GetSettings()->solver.max_iteration_normal = 0;
             sys->GetSettings()->solver.max_iteration_sliding = 200;
@@ -215,11 +215,11 @@ int main(int argc, char** argv) {
     // ---------------------
 
     // Create contact material for container
-    std::shared_ptr<ChMaterialSurfaceBase> material_c;
+    std::shared_ptr<ChMaterialSurface> material_c;
 
     switch (method) {
-        case ChMaterialSurfaceBase::DEM: {
-            auto mat_c = std::make_shared<ChMaterialSurfaceDEM>();
+        case ChMaterialSurface::SMC: {
+            auto mat_c = std::make_shared<ChMaterialSurfaceSMC>();
             mat_c->SetFriction(mu_g);
             mat_c->SetRestitution(cr_g);
             mat_c->SetYoungModulus(Y_g);
@@ -234,8 +234,8 @@ int main(int argc, char** argv) {
 
             break;
         }
-        case ChMaterialSurfaceBase::DVI: {
-            auto mat_c = std::make_shared<ChMaterialSurface>();
+        case ChMaterialSurface::NSC: {
+            auto mat_c = std::make_shared<ChMaterialSurfaceNSC>();
             mat_c->SetFriction(mu_g);
             mat_c->SetRestitution(cr_g);
             mat_c->SetCohesion(coh_g);
@@ -278,11 +278,11 @@ int main(int argc, char** argv) {
     // ----------------
 
     // Create contact material for granular material
-    std::shared_ptr<ChMaterialSurfaceBase> material_g;
+    std::shared_ptr<ChMaterialSurface> material_g;
 
     switch (method) {
-        case ChMaterialSurfaceBase::DEM: {
-            auto mat_g = std::make_shared<ChMaterialSurfaceDEM>();
+        case ChMaterialSurface::SMC: {
+            auto mat_g = std::make_shared<ChMaterialSurfaceSMC>();
             mat_g->SetFriction(mu_g);
             mat_g->SetRestitution(cr_g);
             mat_g->SetYoungModulus(Y_g);
@@ -297,8 +297,8 @@ int main(int argc, char** argv) {
 
             break;
         }
-        case ChMaterialSurfaceBase::DVI: {
-            auto mat_g = std::make_shared<ChMaterialSurface>();
+        case ChMaterialSurface::NSC: {
+            auto mat_g = std::make_shared<ChMaterialSurfaceNSC>();
             mat_g->SetFriction(mu_g);
             mat_g->SetRestitution(cr_g);
             mat_g->SetCohesion(coh_g);
@@ -355,11 +355,11 @@ int main(int argc, char** argv) {
     // -------------------------------
 
     // Create contact material for track body
-    std::shared_ptr<ChMaterialSurfaceBase> material_t;
+    std::shared_ptr<ChMaterialSurface> material_t;
 
     switch (method) {
-        case ChMaterialSurfaceBase::DEM: {
-            auto mat_t = std::make_shared<ChMaterialSurfaceDEM>();
+        case ChMaterialSurface::SMC: {
+            auto mat_t = std::make_shared<ChMaterialSurfaceSMC>();
             mat_t->SetFriction(mu_t);
             mat_t->SetRestitution(cr_t);
             mat_t->SetYoungModulus(Y_t);
@@ -374,8 +374,8 @@ int main(int argc, char** argv) {
 
             break;
         }
-        case ChMaterialSurfaceBase::DVI: {
-            auto mat_t = std::make_shared<ChMaterialSurface>();
+        case ChMaterialSurface::NSC: {
+            auto mat_t = std::make_shared<ChMaterialSurfaceNSC>();
             mat_t->SetFriction(mu_t);
             mat_t->SetRestitution(cr_t);
             mat_t->SetCohesion(coh_t);

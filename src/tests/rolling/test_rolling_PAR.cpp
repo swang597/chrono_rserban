@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
     // Create the parallel system
     // --------------------------
 
-    ChSystemParallelDVI system;
+    ChSystemParallelNSC system;
     system.Set_G_acc(ChVector<>(0, -10, 0));
 
     // Set number of threads
@@ -98,8 +98,8 @@ int main(int argc, char** argv) {
 	container->SetBodyFixed(true);
 	container->SetIdentifier(-1);
 
-	container->GetMaterialSurface()->SetFriction(sliding_friction);
-	container->GetMaterialSurface()->SetRollingFriction(rolling_friction);
+	container->GetMaterialSurfaceNSC()->SetFriction(sliding_friction);
+	container->GetMaterialSurfaceNSC()->SetRollingFriction(rolling_friction);
 
 	container->SetCollide(true);
 	container->GetCollisionModel()->ClearModel();
@@ -118,8 +118,8 @@ int main(int argc, char** argv) {
 	ball->SetWvel_par(wvel);
 	ball->SetInertiaXX(ChVector<>(inertia));
 
-    ball->GetMaterialSurface()->SetFriction(sliding_friction);
-    ball->GetMaterialSurface()->SetRollingFriction(rolling_friction);
+    ball->GetMaterialSurfaceNSC()->SetFriction(sliding_friction);
+    ball->GetMaterialSurfaceNSC()->SetRollingFriction(rolling_friction);
 
     ball->SetCollide(true);
     ball->GetCollisionModel()->ClearModel();

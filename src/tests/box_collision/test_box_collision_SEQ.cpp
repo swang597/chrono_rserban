@@ -24,7 +24,7 @@
 #include "chrono/ChConfig.h"
 #include "chrono/utils/ChUtilsCreators.h"
 
-#include "chrono/physics/ChSystem.h"
+#include "chrono/physics/ChSystemNSC.h"
 
 #ifdef CHRONO_IRRLICHT
 #include "chrono_irrlicht/ChIrrApp.h"
@@ -35,18 +35,19 @@ using namespace chrono;
 // -----------------------------------------------------------------------------
 // Callback functor for contact reporting
 // -----------------------------------------------------------------------------
-class ContactManager : public chrono::ChReportContactCallback {
-public:
+class ContactManager : public ChContactContainer::ReportContactCallback {
+  public:
     ContactManager(std::shared_ptr<ChBody> box) : m_box(box) {}
-private:
-    virtual bool ReportContactCallback(const ChVector<>& pA,
-                                       const ChVector<>& pB,
-                                       const ChMatrix33<>& plane_coord,
-                                       const double& distance,
-                                       const ChVector<>& cforce,
-                                       const ChVector<>& ctorque,
-                                       ChContactable* modA,
-                                       ChContactable* modB) override {
+
+  private:
+    virtual bool OnReportContact(const ChVector<>& pA,
+                                 const ChVector<>& pB,
+                                 const ChMatrix33<>& plane_coord,
+                                 const double& distance,
+                                 const ChVector<>& cforce,
+                                 const ChVector<>& ctorque,
+                                 ChContactable* modA,
+                                 ChContactable* modB) override {
         if (modA == m_box.get()) {
             printf("  %6.3f  %6.3f  %6.3f\n", pA.x(), pA.y(), pA.z());
         } else if (modB == m_box.get()) {
@@ -76,7 +77,7 @@ int main(int argc, char* argv[]) {
     // Create the system
     // -----------------
 
-    ChSystem system;
+    ChSystemNSC system;
     system.Set_G_acc(ChVector<>(0, -10, 0));
 
     // Set solver settings
@@ -96,7 +97,7 @@ int main(int argc, char* argv[]) {
     container->SetBodyFixed(true);
     container->SetIdentifier(-1);
 
-    container->GetMaterialSurface()->SetFriction(0.4f);
+    container->GetMaterialSurfaceNSC()->SetFriction(0.4f);
 
     container->SetCollide(true);
     container->GetCollisionModel()->SetEnvelope(collision_envelope);
@@ -111,7 +112,7 @@ int main(int argc, char* argv[]) {
     box->SetPos(ChVector<>(1, 2, 1));
     box->SetInertiaXX(ChVector<>(1, 1, 1));
 
-    box->GetMaterialSurface()->SetFriction(0.4f);
+    box->GetMaterialSurfaceNSC()->SetFriction(0.4f);
 
     box->SetCollide(true);
     box->GetCollisionModel()->SetEnvelope(collision_envelope);
@@ -166,4 +167,3 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
-

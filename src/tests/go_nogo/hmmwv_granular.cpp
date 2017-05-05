@@ -240,7 +240,7 @@ class MyLuggedTire : public ChTireContactCallback {
 void CreateContainer(ChSystem* system) {
     bool visible_walls = false;
 
-    auto material = std::make_shared<ChMaterialSurface>();
+    auto material = std::make_shared<ChMaterialSurfaceNSC>();
     material->SetFriction(mu_g);
     material->SetCompliance(1e-9f);
     material->SetCohesion(cohesion_g);
@@ -284,7 +284,7 @@ void CreateContainer(ChSystem* system) {
 
 int CreateParticles(ChSystem* system) {
     // Create a material
-    auto mat_g = std::make_shared<ChMaterialSurface>();
+    auto mat_g = std::make_shared<ChMaterialSurfaceNSC>();
     mat_g->SetFriction(mu_g);
     mat_g->SetRestitution(cr_g);
     mat_g->SetCohesion(cohesion_g);
@@ -327,7 +327,7 @@ double FindHighestParticle(ChSystem* system) {
 HMMWV_Full* CreateVehicle(ChSystem* system, double vertical_offset) {
     auto hmmwv = new HMMWV_Full(system);
 
-    hmmwv->SetContactMethod(ChMaterialSurfaceBase::DVI);
+    hmmwv->SetContactMethod(ChMaterialSurface::NSC);
     hmmwv->SetChassisFixed(false);
     hmmwv->SetInitPosition(ChCoordsys<>(initLoc + ChVector<>(0, 0, vertical_offset), initRot));
     hmmwv->SetInitFwdVel(initSpeed);
@@ -401,7 +401,7 @@ int main(int argc, char* argv[]) {
     ChVector<> gravity(0, 0, -9.81);
     ChVector<> gravityR = ChMatrix33<>(terrain_slope, ChVector<>(0, 1, 0)) * gravity;
 
-    ChSystemParallelDVI* system = new ChSystemParallelDVI();
+    ChSystemParallelNSC* system = new ChSystemParallelNSC();
     system->Set_G_acc(gravity);
 
     // ----------------------

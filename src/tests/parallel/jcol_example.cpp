@@ -41,7 +41,7 @@ using std::endl;
 
 std::shared_ptr<ChBody> CreateBracketA(ChSystemParallel* system) {
 
-    auto BracketA = std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>(), ChMaterialSurfaceBase::DVI);
+    auto BracketA = std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::NSC);
 
     BracketA->SetMass(0.256);
     BracketA->SetPos(ChVector<>(0, 0, 0));
@@ -126,7 +126,7 @@ int main(int argc, char* argv[]) {
 
 
     // Create system
-    ChSystemParallelDVI* msystem = new ChSystemParallelDVI();
+    ChSystemParallelNSC* msystem = new ChSystemParallelNSC();
 
     // Set number of threads.
     int threads = omp_get_num_procs();

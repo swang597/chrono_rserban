@@ -21,7 +21,7 @@
 #include "chrono/ChConfig.h"
 #include "chrono/utils/ChUtilsCreators.h"
 
-#include "chrono/physics/ChSystem.h"
+#include "chrono/physics/ChSystemNSC.h"
 
 #ifdef CHRONO_IRRLICHT
 #include "chrono_irrlicht/ChIrrApp.h"
@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
     // Create the system
     // -----------------
 
-    ChSystem system;
+    ChSystemNSC system;
     system.Set_G_acc(ChVector<>(0, -10, 0));
 
     // Set solver settings
@@ -75,8 +75,8 @@ int main(int argc, char* argv[]) {
     container->SetBodyFixed(true);
     container->SetIdentifier(-1);
 
-    container->GetMaterialSurface()->SetFriction(sliding_friction);
-    container->GetMaterialSurface()->SetRollingFriction(rolling_friction);
+    container->GetMaterialSurfaceNSC()->SetFriction(sliding_friction);
+    container->GetMaterialSurfaceNSC()->SetRollingFriction(rolling_friction);
 
     container->SetCollide(true);
     container->GetCollisionModel()->SetEnvelope(collision_envelope);
@@ -96,8 +96,8 @@ int main(int argc, char* argv[]) {
     ball->SetWvel_par(wvel);
     ball->SetInertiaXX(ChVector<>(inertia));
 
-    ball->GetMaterialSurface()->SetFriction(sliding_friction);
-    ball->GetMaterialSurface()->SetRollingFriction(rolling_friction);
+    ball->GetMaterialSurfaceNSC()->SetFriction(sliding_friction);
+    ball->GetMaterialSurfaceNSC()->SetRollingFriction(rolling_friction);
 
     ball->SetCollide(true);
     ball->GetCollisionModel()->SetEnvelope(collision_envelope);

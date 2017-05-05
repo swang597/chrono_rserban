@@ -34,22 +34,22 @@ using namespace chrono;
 // -----------------------------------------------------------------------------
 // Callback functor for contact reporting
 // -----------------------------------------------------------------------------
-class ContactManager : public chrono::ChReportContactCallback {
-public:
+class ContactManager : public ChContactContainer::ReportContactCallback {
+  public:
     ContactManager(std::shared_ptr<ChBody> box) : m_box(box) {}
-private:
-    virtual bool ReportContactCallback(const ChVector<>& pA,
-        const ChVector<>& pB,
-        const ChMatrix33<>& plane_coord,
-        const double& distance,
-        const ChVector<>& cforce,
-        const ChVector<>& ctorque,
-        ChContactable* modA,
-        ChContactable* modB) override {
+
+  private:
+    virtual bool OnReportContact(const ChVector<>& pA,
+                                 const ChVector<>& pB,
+                                 const ChMatrix33<>& plane_coord,
+                                 const double& distance,
+                                 const ChVector<>& cforce,
+                                 const ChVector<>& ctorque,
+                                 ChContactable* modA,
+                                 ChContactable* modB) override {
         if (modA == m_box.get()) {
             printf("  %6.3f  %6.3f  %6.3f\n", pA.x(), pA.y(), pA.z());
-        }
-        else if (modB == m_box.get()) {
+        } else if (modB == m_box.get()) {
             printf("  %6.3f  %6.3f  %6.3f\n", pB.x(), pB.y(), pB.z());
         }
         return true;
@@ -94,12 +94,12 @@ int main(int argc, char** argv) {
     uint max_iteration_sliding = 0;
     uint max_iteration_spinning = 100;
     uint max_iteration_bilateral = 0;
-    
+
     // ------------------------
     // Create the parallel system
     // --------------------------
 
-    ChSystemParallelDVI system;
+    ChSystemParallelNSC system;
     system.Set_G_acc(ChVector<>(0, -10, 0));
 
     // Set number of threads
@@ -135,7 +135,7 @@ int main(int argc, char** argv) {
     container->SetBodyFixed(true);
     container->SetIdentifier(-1);
 
-    container->GetMaterialSurface()->SetFriction(0.4f);
+    container->GetMaterialSurfaceNSC()->SetFriction(0.4f);
 
     container->SetCollide(true);
     container->GetCollisionModel()->SetEnvelope(collision_envelope);
@@ -150,7 +150,7 @@ int main(int argc, char** argv) {
     box->SetPos(ChVector<>(1, 2, 1));
     box->SetInertiaXX(ChVector<>(1, 1, 1));
 
-    box->GetMaterialSurface()->SetFriction(0.4f);
+    box->GetMaterialSurfaceNSC()->SetFriction(0.4f);
 
     box->SetCollide(true);
     box->GetCollisionModel()->SetEnvelope(collision_envelope);
@@ -186,7 +186,7 @@ int main(int argc, char** argv) {
 
         // Advance dynamics
         system.DoStepDynamics(time_step);
-		
+
 #ifdef CHRONO_OPENGL
         opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
         if (gl_window.Active()) {

@@ -11,9 +11,9 @@
 
 #include "chrono/ChConfig.h"
 #include "chrono/solver/ChSolverMINRES.h"
-#include "chrono/solver/ChSolverDEM.h"
-#include "chrono/physics/ChContactContainerDEM.h"
-#include "chrono/physics/ChSystemDEM.h"
+#include "chrono/solver/ChSolverSMC.h"
+#include "chrono/physics/ChContactContainerSMC.h"
+#include "chrono/physics/ChSystemSMC.h"
 
 #include "chrono_irrlicht/ChIrrApp.h"
 
@@ -28,7 +28,7 @@ using namespace chrono::irrlicht;
 using namespace irr;
 
 // Custom contact container -- get access to the contact lists in the base class.
-class MyContactContainer : public ChContactContainerDEM {
+class MyContactContainer : public ChContactContainerSMC {
 public:
     MyContactContainer() {}
 
@@ -97,8 +97,8 @@ int main(int argc, char* argv[]) {
     // ---------------------------
 
     bool use_mat_properties = false;
-    ChSystemDEM::ContactForceModel force_model = ChSystemDEM::Hooke;
-    ChSystemDEM::TangentialDisplacementModel tdispl_model = ChSystemDEM::None;
+    ChSystemSMC::ContactForceModel force_model = ChSystemSMC::Hooke;
+    ChSystemSMC::TangentialDisplacementModel tdispl_model = ChSystemSMC::None;
 
     float young_modulus = 2e9f;
     float friction = 0.4f;
@@ -135,7 +135,7 @@ int main(int argc, char* argv[]) {
     // Create the system
     // -----------------
 
-    ChSystemDEM system(use_mat_properties);
+    ChSystemSMC system(use_mat_properties);
 
     // Set the DEM contact force model 
     system.SetContactForceModel(force_model);
@@ -157,12 +157,12 @@ int main(int argc, char* argv[]) {
     application.AddTypicalLights();
     application.AddTypicalCamera(core::vector3df(0, 3, -6));
 
-    // This means that contactforces will be shown in Irrlicht application
+    // This means that contact forces will be shown in Irrlicht application
     application.SetSymbolscale(1e-4);
     application.SetContactsDrawMode(ChIrrTools::eCh_ContactsDrawMode::CONTACT_FORCES);
 
     // Create a material (will be used by both objects)
-    auto material = std::make_shared<ChMaterialSurfaceDEM>();
+    auto material = std::make_shared<ChMaterialSurfaceSMC>();
     material->SetYoungModulus(young_modulus);
     material->SetRestitution(restitution);
     material->SetFriction(friction);
@@ -173,7 +173,7 @@ int main(int argc, char* argv[]) {
     material->SetGt(gt);
 
     // Create the falling ball
-    auto ball = std::make_shared<ChBody>(ChMaterialSurfaceBase::DEM);
+    auto ball = std::make_shared<ChBody>(ChMaterialSurface::SMC);
 
     ball->SetIdentifier(ballId);
     ball->SetMass(mass);
@@ -201,7 +201,7 @@ int main(int argc, char* argv[]) {
     system.AddBody(ball);
 
     // Create ground
-    auto ground = std::make_shared<ChBody>(ChMaterialSurfaceBase::DEM);
+    auto ground = std::make_shared<ChBody>(ChMaterialSurface::SMC);
 
     ground->SetIdentifier(binId);
     ground->SetMass(1);
