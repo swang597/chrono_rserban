@@ -60,31 +60,36 @@ using std::cout;
 using std::endl;
 
 // -----------------------------------------------------------------------------
+// Input parameters
+// -----------------------------------------------------------------------------
+
+// Terrain slope (in degrees)
+std::vector<double> slope_values = { 0, 10, 20, 30 };
+
+// Particle radius (in m)
+std::vector<double> radius_values = {0.005, 0.010, 0.020, 0.030};
+
+// Particle density (in Kg/m3)
+std::vector<double> density_values = {1000, 2000, 3000};
+
+// Inter-particle coefficient of friction
+std::vector<float> friction_values = {0.2f, 0.4f, 0.6f, 0.8f, 1.0f};
+
+// Cohesion force
+std::vector<float> cohesion_values = { 50, 100, 150, 200 };
+
+// -----------------------------------------------------------------------------
 // Specification of the terrain
 // -----------------------------------------------------------------------------
 
-// Slope (radians)
-double terrain_slope = 0.0 * (CH_C_PI / 180);
-
 // Container
-double hdimX = 4;
+double hdimX = 6;
 double hdimY = 1.75;
 double hdimZ = 0.5;
 double hthick = 0.05;
 
-// Granular material
-int Id_g = 1;
-double r_g = 0.02;
-double rho_g = 2500;
-double vol_g = (4.0 / 3) * CH_C_PI * r_g * r_g * r_g;
-double mass_g = rho_g * vol_g;
-ChVector<> inertia_g = 0.4 * mass_g * r_g * r_g * ChVector<>(1, 1, 1);
-
-float mu_g = 1;
-float cohesion_g = 200;
-float cr_g = 0;
-
-unsigned int num_particles = 10000;
+// Number of layers of granular material
+int num_layers = 4;
 
 // -----------------------------------------------------------------------------
 // Specification of the vehicle model
@@ -94,14 +99,17 @@ unsigned int num_particles = 10000;
 enum WheelType { CYLINDRICAL, LUGGED };
 WheelType wheel_type = CYLINDRICAL;
 
+// Vehicle horizontal offset
+double horizontal_offset = 2.5;
+double horizontal_pos = hdimX - horizontal_offset;
+
 // Initial vehicle position, orientation, and forward velocity
-ChVector<> initLoc(-hdimX + 2.5, 0, 0.6);
+ChVector<> initLoc(-horizontal_pos, 0, 0.6);
 ChQuaternion<> initRot(1, 0, 0, 0);
 double initSpeed = 0;
 
 // Contact material properties for tires
 float mu_t = 0.8f;
-float cohesion_t = 0;
 float cr_t = 0;
 
 // -----------------------------------------------------------------------------
@@ -118,21 +126,19 @@ int coll_fam_g = 2;
 // Total simulation duration.
 double time_end = 7;
 
-// Delay before creating the vehicle (allows for granular material settling)
-double delay_create_vehicle = 0.25;
+// Time when the vehicle is created (allows for granular material settling)
+double time_create_vehicle = 0.25;
 
 // Duration before starting to apply throttle (allows for vehicle settling)
 double delay_start_engine = 0.25;
+double time_start_engine = time_create_vehicle + delay_start_engine;
 
 // Delay before throttle reaches maximum (linear ramp)
 double delay_max_throttle = 0.5;
+double time_max_throttle = time_start_engine + delay_max_throttle;
 
 // Time when terrain is pitched (rotate gravity)
-double time_pitch = 1.0;
-
-double time_create_vehicle = delay_create_vehicle;
-double time_start_engine = time_create_vehicle + delay_start_engine;
-double time_max_throttle = time_start_engine + delay_max_throttle;
+double time_pitch = time_start_engine;
 
 // -----------------------------------------------------------------------------
 // Simulation parameters
@@ -154,12 +160,10 @@ int max_iteration_spinning = 0;
 double tolerance = 1e-3;
 float contact_recovery_speed = 1000;
 
-// Periodically monitor maximum bilateral constraint violation
-bool monitor_bilaterals = false;
-int bilateral_frame_interval = 100;
-
 // Output
-const std::string out_dir = "../HMMWV_GO_NOGO";
+bool output = true;
+double output_frequency = 100.0;
+std::string out_dir = "../HMMWV_GO_NOGO";
 
 // =============================================================================
 
@@ -237,13 +241,13 @@ class MyLuggedTire : public ChTireContactCallback {
 
 // =============================================================================
 
-void CreateContainer(ChSystem* system) {
+void CreateContainer(ChSystem* system, float mu_g, float coh_g) {
     bool visible_walls = false;
 
     auto material = std::make_shared<ChMaterialSurfaceNSC>();
     material->SetFriction(mu_g);
     material->SetCompliance(1e-9f);
-    material->SetCohesion(cohesion_g);
+    material->SetCohesion(coh_g);
 
     auto ground = std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>());
     ground->SetIdentifier(-1);
@@ -282,12 +286,12 @@ void CreateContainer(ChSystem* system) {
 
 // =============================================================================
 
-int CreateParticles(ChSystem* system) {
+int CreateParticles(ChSystem* system, double r_g, double rho_g, float mu_g, float coh_g) {
     // Create a material
     auto mat_g = std::make_shared<ChMaterialSurfaceNSC>();
     mat_g->SetFriction(mu_g);
-    mat_g->SetRestitution(cr_g);
-    mat_g->SetCohesion(cohesion_g);
+    mat_g->SetRestitution(0);
+    mat_g->SetCohesion(coh_g);
 
     // Create a particle generator and a mixture entirely made out of spheres
     utils::Generator gen(system);
@@ -297,14 +301,14 @@ int CreateParticles(ChSystem* system) {
     m1->setDefaultSize(r_g);
 
     // Set starting value for body identifiers
-    gen.setBodyIdentifier(Id_g);
+    gen.setBodyIdentifier(1);
 
     // Create particles in layers until reaching the desired number of particles
     double r = 1.01 * r_g;
     ChVector<> hdims(hdimX - r, hdimY - r, 0);
     ChVector<> center(0, 0, 2 * r);
 
-    while (gen.getTotalNumBodies() < num_particles) {
+    for (int il = 0; il < num_layers; il++) {
         gen.createObjectsBox(utils::POISSON_DISK, 2 * r, center, hdims);
         center.z() += 2 * r;
     }
@@ -380,11 +384,28 @@ HMMWV_Driver* CreateDriver(HMMWV_Full* hmmwv) {
 // =============================================================================
 
 int main(int argc, char* argv[]) {
-    /*
-    // Set path to Chrono and Chrono::Vehicle data directories
-    SetChronoDataPath(CHRONO_DATA_DIR);
-    vehicle::SetDataPath(CHRONO_VEHICLE_DATA_DIR);
-    */
+    // --------------------------
+    // Set up simulation scenario
+    // --------------------------
+
+    int slope_index = 0;
+    int radius_index = 2;
+    int density_index = 1;
+    int friction_index = 4;
+    int cohesion_index = 3;
+
+    double slope = slope_values[slope_index] * (CH_C_PI / 180);
+    double r_g = radius_values[radius_index];
+    double rho_g = density_values[density_index];
+    float coh_g = cohesion_values[cohesion_index];
+    float mu_g = friction_values[friction_index];
+
+    cout << "Set up" << endl;
+    cout << "  Slope:    " << slope_index << "  " << slope << endl;
+    cout << "  Radius:   " << radius_index << "  " << r_g << endl;
+    cout << "  Density:  " << density_index << "  " << rho_g << endl;
+    cout << "  Friction: " << friction_index << "  " << mu_g << endl;
+    cout << "  Cohesion: " << cohesion_index << "  " << coh_g << endl;
 
     // --------------------------
     // Create output directories
@@ -395,11 +416,29 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    out_dir += "/" + std::to_string(slope_index) + "_" + std::to_string(radius_index) + "_" +
+               std::to_string(density_index) + "_" + std::to_string(friction_index) + "_" +
+               std::to_string(cohesion_index);
+
+    if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
+        cout << "Error creating directory " << out_dir << endl;
+        return 1;
+    }
+
+    // Open the output file stream
+    std::ofstream outf;
+    outf.open(out_dir + "/results.dat", std::ios::out);
+    outf.precision(7);
+    outf << std::scientific;
+
+    // Delimiter in output file
+    std::string del("  ");
+
     // -------------------------
     // Create system and vehicle
     // -------------------------
     ChVector<> gravity(0, 0, -9.81);
-    ChVector<> gravityR = ChMatrix33<>(terrain_slope, ChVector<>(0, 1, 0)) * gravity;
+    ChVector<> gravityR = ChMatrix33<>(slope, ChVector<>(0, 1, 0)) * gravity;
 
     ChSystemParallelNSC* system = new ChSystemParallelNSC();
     system->Set_G_acc(gravity);
@@ -451,8 +490,8 @@ int main(int argc, char* argv[]) {
     // Create the terrain.
     // -------------------
 
-    CreateContainer(system);
-    int actual_num_particles = CreateParticles(system);
+    CreateContainer(system, mu_g, coh_g);
+    int actual_num_particles = CreateParticles(system, r_g, rho_g, mu_g, coh_g);
     cout << "Created " << actual_num_particles << " particles." << endl;
 
 #ifdef CHRONO_OPENGL
@@ -470,21 +509,28 @@ int main(int argc, char* argv[]) {
     HMMWV_Driver* driver = nullptr;
     FlatTerrain terrain(0);
 
+    // Number of simulation steps between two output frames
+    int output_steps = (int)std::ceil((1 / output_frequency) / time_step);
+
     double time = 0;
     int sim_frame = 0;
+    int out_frame = 0;
     int next_out_frame = 0;
     double exec_time = 0;
-    int num_contacts = 0;
 
     bool is_pitched = false;
+    double x_pos = -horizontal_pos;
 
-    while (time < time_end) {
+    while (time < time_end && x_pos < horizontal_pos) {
         // Create the vehicle
         if (!hmmwv && time > time_create_vehicle) {
             cout << time << "    Create vehicle" << endl;
+
             double max_height = FindHighestParticle(system);
             hmmwv = CreateVehicle(system, max_height);
             driver = CreateDriver(hmmwv);
+
+            next_out_frame = sim_frame;
         }
 
         // Rotate gravity vector
@@ -495,20 +541,52 @@ int main(int argc, char* argv[]) {
         }
 
         if (hmmwv) {
+            // Extract current driver inputs
             double steering_input = driver->GetSteering();
             double braking_input = driver->GetBraking();
             double throttle_input = driver->GetThrottle();
 
+            // Synchronize vehicle systems
             driver->Synchronize(time);
             hmmwv->Synchronize(time, steering_input, braking_input, throttle_input, terrain);
 
-            ////ChVector<> pos = hmmwv->GetChassis()->GetCOMPos();
-            ////cout << pos.z() << endl;
-            ////cout << time << "  " << throttle_input << endl;
+            // Update vehicle x position
+            x_pos = hmmwv->GetChassis()->GetPos().x();
 
+            // Save output
+            if (output && sim_frame == next_out_frame) {
+                ChVector<> pv = hmmwv->GetChassisBody()->GetFrame_REF_to_abs().GetPos();
+                ChVector<> vv = hmmwv->GetChassisBody()->GetFrame_REF_to_abs().GetPos_dt();
+                ChVector<> av = hmmwv->GetChassisBody()->GetFrame_REF_to_abs().GetPos_dtdt();
+
+                ChVector<> v0 = hmmwv->GetVehicle().GetWheelLinVel(0);
+                ChVector<> v1 = hmmwv->GetVehicle().GetWheelLinVel(1);
+                ChVector<> v2 = hmmwv->GetVehicle().GetWheelLinVel(2);
+                ChVector<> v3 = hmmwv->GetVehicle().GetWheelLinVel(3);
+
+                outf << system->GetChTime() << del;
+                outf << throttle_input << del << steering_input << del;
+
+                outf << pv.x() << del << pv.y() << del << pv.z() << del;
+                outf << vv.x() << del << vv.y() << del << vv.z() << del;
+                outf << av.x() << del << av.y() << del << av.z() << del;
+
+                outf << v0.x() << del << v0.y() << del << v0.z() << del;
+                outf << v1.x() << del << v1.y() << del << v1.z() << del;
+                outf << v2.x() << del << v2.y() << del << v2.z() << del;
+                outf << v3.x() << del << v3.y() << del << v3.z() << del;
+
+                outf << endl;
+
+                out_frame++;
+                next_out_frame += output_steps;
+            }
+
+            // Advance vehicle systems
             driver->Advance(time_step);
             hmmwv->Advance(time_step);
         } else {
+            // Advance system state (no vehicle created yet)
             system->DoStepDynamics(time_step);
         }
 
@@ -519,20 +597,13 @@ int main(int argc, char* argv[]) {
             break;
 #endif
 
-        ////progressbar(out_steps + sim_frame - next_out_frame + 1, out_steps);
+        // Display performance metrics
         TimingOutput(system);
-
-        // Periodically display maximum constraint violation
-        if (monitor_bilaterals && sim_frame % bilateral_frame_interval == 0) {
-            std::vector<double> cvec;
-            cout << "  Max. violation = " << system->CalculateConstraintViolation(cvec) << endl;
-        }
 
         // Update counters.
         time += time_step;
         sim_frame++;
         exec_time += system->GetTimerStep();
-        num_contacts += system->GetNcontacts();
     }
 
     // Final stats
