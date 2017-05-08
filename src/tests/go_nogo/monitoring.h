@@ -1,5 +1,5 @@
-#ifndef DEMOS_UTILS_H
-#define DEMOS_UTILS_H
+#ifndef GONOGO_MONITORING_H
+#define GONOGO_MONITORING_H
 
 #include <iostream>
 

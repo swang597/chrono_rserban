@@ -25,6 +25,7 @@ SET(GO_NOGO_FILES
     driver_model.h
     monitoring.h
     event_queue.h
+    options.h
 )
 
 SOURCE_GROUP("" FILES ${GO_NOGO_FILES})

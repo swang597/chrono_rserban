@@ -21,7 +21,7 @@
 // All units SI.
 // =============================================================================
 
-#include <cstdio>
+#include <iostream>
 #include <vector>
 #include <cmath>
 
@@ -42,14 +42,13 @@
 #include "chrono_parallel/solver/ChSystemDescriptorParallel.h"
 #include "chrono_parallel/collision/ChNarrowphaseRUtils.h"
 
-//#undef CHRONO_OPENGL
 #ifdef CHRONO_OPENGL
 #include "chrono_opengl/ChOpenGLWindow.h"
 #endif
 
 #include "driver_model.h"
 #include "monitoring.h"
-#include "event_queue.h"
+#include "options.h"
 
 using namespace chrono;
 using namespace chrono::collision;
@@ -64,7 +63,7 @@ using std::endl;
 // -----------------------------------------------------------------------------
 
 // Terrain slope (in degrees)
-std::vector<double> slope_values = { 0, 10, 20, 30 };
+std::vector<double> slope_values = {0, 10, 20, 30};
 
 // Particle radius (in m)
 std::vector<double> radius_values = {0.005, 0.010, 0.020, 0.030};
@@ -76,7 +75,7 @@ std::vector<double> density_values = {1000, 2000, 3000};
 std::vector<float> friction_values = {0.2f, 0.4f, 0.6f, 0.8f, 1.0f};
 
 // Cohesion force
-std::vector<float> cohesion_values = { 50, 100, 150, 200 };
+std::vector<float> cohesion_values = {50, 100, 150, 200};
 
 // -----------------------------------------------------------------------------
 // Specification of the terrain
@@ -111,13 +110,6 @@ double initSpeed = 0;
 // Contact material properties for tires
 float mu_t = 0.8f;
 float cr_t = 0;
-
-// -----------------------------------------------------------------------------
-// Collision families
-// -----------------------------------------------------------------------------
-
-int coll_fam_c = 5;
-int coll_fam_g = 2;
 
 // -----------------------------------------------------------------------------
 // Timed events
@@ -259,7 +251,8 @@ void CreateContainer(ChSystem* system, float mu_g, float coh_g) {
 
     ground->GetCollisionModel()->ClearModel();
 
-    ground->GetCollisionModel()->SetFamily(coll_fam_c);
+    // Attention: collision family for ground should be >= 5 (first values used in Chrono::Vehicle)
+    ground->GetCollisionModel()->SetFamily(5);
     ground->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(WheeledCollisionFamily::TIRES);
 
     // Bottom box
@@ -384,28 +377,55 @@ HMMWV_Driver* CreateDriver(HMMWV_Full* hmmwv) {
 // =============================================================================
 
 int main(int argc, char* argv[]) {
-    // --------------------------
-    // Set up simulation scenario
-    // --------------------------
+    // ----------------------------
+    // Parse command line arguments
+    // ----------------------------
 
-    int slope_index = 0;
-    int radius_index = 2;
-    int density_index = 1;
-    int friction_index = 4;
-    int cohesion_index = 3;
+    int slope_idx = 0;
+    int radius_idx = 2;
+    int density_idx = 1;
+    int friction_idx = 4;
+    int cohesion_idx = 3;
+    bool render = true;
 
-    double slope = slope_values[slope_index] * (CH_C_PI / 180);
-    double r_g = radius_values[radius_index];
-    double rho_g = density_values[density_index];
-    float coh_g = cohesion_values[cohesion_index];
-    float mu_g = friction_values[friction_index];
+    if (!GetProblemSpecs(argc, argv, slope_idx, radius_idx, density_idx, friction_idx, cohesion_idx, render)) {
+        cout << "HUH?" << endl;
+        return 1;
+    }
+
+    if (slope_idx < 0 || slope_idx >= slope_values.size()) {
+        cout << "Slope index out of permissible range [0, " << slope_values.size() - 1 << "]" << endl;
+        return 1;
+    }
+    if (radius_idx < 0 || radius_idx >= radius_values.size()) {
+        cout << "Radius index out of permissible range [0, " << radius_values.size() - 1 << "]" << endl;
+        return 1;
+    }
+    if (density_idx < 0 || density_idx >= density_values.size()) {
+        cout << "Density index out of permissible range [0, " << density_values.size() - 1 << "]" << endl;
+        return 1;
+    }
+    if (friction_idx < 0 || friction_idx >= friction_values.size()) {
+        cout << "Friction index out of permissible range [0, " << friction_values.size() - 1 << "]" << endl;
+        return 1;
+    }
+    if (cohesion_idx < 0 || cohesion_idx >= cohesion_values.size()) {
+        cout << "Cohesion index out of permissible range [0, " << cohesion_values.size() - 1 << "]" << endl;
+        return 1;
+    }
+
+    double slope = slope_values[slope_idx] * (CH_C_PI / 180);
+    double r_g = radius_values[radius_idx];
+    double rho_g = density_values[density_idx];
+    float coh_g = cohesion_values[cohesion_idx];
+    float mu_g = friction_values[friction_idx];
 
     cout << "Set up" << endl;
-    cout << "  Slope:    " << slope_index << "  " << slope << endl;
-    cout << "  Radius:   " << radius_index << "  " << r_g << endl;
-    cout << "  Density:  " << density_index << "  " << rho_g << endl;
-    cout << "  Friction: " << friction_index << "  " << mu_g << endl;
-    cout << "  Cohesion: " << cohesion_index << "  " << coh_g << endl;
+    cout << "  Slope:    " << slope_idx << "  " << slope << endl;
+    cout << "  Radius:   " << radius_idx << "  " << r_g << endl;
+    cout << "  Density:  " << density_idx << "  " << rho_g << endl;
+    cout << "  Friction: " << friction_idx << "  " << mu_g << endl;
+    cout << "  Cohesion: " << cohesion_idx << "  " << coh_g << endl;
 
     // --------------------------
     // Create output directories
@@ -416,9 +436,8 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    out_dir += "/" + std::to_string(slope_index) + "_" + std::to_string(radius_index) + "_" +
-               std::to_string(density_index) + "_" + std::to_string(friction_index) + "_" +
-               std::to_string(cohesion_index);
+    out_dir += "/" + std::to_string(slope_idx) + "_" + std::to_string(radius_idx) + "_" + std::to_string(density_idx) +
+               "_" + std::to_string(friction_idx) + "_" + std::to_string(cohesion_idx);
 
     if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
         cout << "Error creating directory " << out_dir << endl;
@@ -496,10 +515,12 @@ int main(int argc, char* argv[]) {
 
 #ifdef CHRONO_OPENGL
     // Initialize OpenGL
-    opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-    gl_window.Initialize(1280, 720, "HMMWV go/no-go", system);
-    gl_window.SetCamera(ChVector<>(0, -10, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1));
-    gl_window.SetRenderMode(opengl::WIREFRAME);
+    if (render) {
+        opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
+        gl_window.Initialize(1280, 720, "HMMWV go/no-go", system);
+        gl_window.SetCamera(ChVector<>(0, -10, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1));
+        gl_window.SetRenderMode(opengl::WIREFRAME);
+    }
 #endif
 
     // -------------------
@@ -591,10 +612,13 @@ int main(int argc, char* argv[]) {
         }
 
 #ifdef CHRONO_OPENGL
-        if (gl_window.Active()) {
-            gl_window.Render();
-        } else
-            break;
+        if (render) {
+            opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
+            if (gl_window.Active())
+                gl_window.Render();
+            else
+                break;
+        }
 #endif
 
         // Display performance metrics
