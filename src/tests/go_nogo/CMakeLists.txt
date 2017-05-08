@@ -27,12 +27,12 @@ SET(GO_NOGO_FILES
     event_queue.h
 )
 
-SOURCE_GROUP("" FILES "${GO_NOGO_FILES}")
+SOURCE_GROUP("" FILES ${GO_NOGO_FILES})
 # ------------------------------------------------------------------------------
 
 MESSAGE(STATUS "GO/NO-GO program...")
 
-ADD_EXECUTABLE(go_nogo  "${GO_NOGO_FILES}")
+ADD_EXECUTABLE(go_nogo  ${GO_NOGO_FILES})
 
 SET_TARGET_PROPERTIES(go_nogo PROPERTIES
         FOLDER tests
