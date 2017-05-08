@@ -92,7 +92,7 @@ class EventQueue {
         Event(double time, std::function<void()> const& function) : m_time(time), m_function(function) {}
 
         double GetTime() const { return m_time; }
-        void OnTrigger() {
+        void OnTrigger() const {
 #ifdef DEBUG_EVENT_QUEUE
             std::cout << "   Triggered " << m_time << "    ";
 #endif
