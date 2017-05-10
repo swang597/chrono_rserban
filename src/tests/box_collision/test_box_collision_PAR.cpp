@@ -47,21 +47,31 @@ class ContactManager : public ChContactContainer::ReportContactCallback {
                                  const ChVector<>& ctorque,
                                  ChContactable* modA,
                                  ChContactable* modB) override {
+        printf("  ------------\n");
         if (modA == m_box.get()) {
-            printf("  %6.3f  %6.3f  %6.3f\n", pA.x(), pA.y(), pA.z());
+            printf("  box:    %6.3f  %6.3f  %6.3f\n", pA.x(), pA.y(), pA.z());
+            printf("  other:  %6.3f  %6.3f  %6.3f\n", pB.x(), pB.y(), pB.z());
         } else if (modB == m_box.get()) {
-            printf("  %6.3f  %6.3f  %6.3f\n", pB.x(), pB.y(), pB.z());
+            printf("  other:  %6.3f  %6.3f  %6.3f\n", pA.x(), pA.y(), pA.z());
+            printf("  box:    %6.3f  %6.3f  %6.3f\n", pB.x(), pB.y(), pB.z());
         }
+        ChVector<> nrm = plane_coord.Get_A_Xaxis();
+        printf("  dist:   %6.4f\n", distance);
+        printf("  normal: %6.3f  %6.3f  %6.3f\n", nrm.x(), nrm.y(), nrm.z());
+
         return true;
     }
 
     std::shared_ptr<ChBody> m_box;
 };
 
+// -------------------------------------------------------
+// Access contact information directly in the data manager
+// -------------------------------------------------------
 void ReportContacts(ChSystemParallel* system, unsigned int id) {
-    auto bb = system->data_manager->host_data.bids_rigid_rigid;
-    auto p1 = system->data_manager->host_data.cpta_rigid_rigid;
-    auto p2 = system->data_manager->host_data.cptb_rigid_rigid;
+    auto& bb = system->data_manager->host_data.bids_rigid_rigid;
+    auto& p1 = system->data_manager->host_data.cpta_rigid_rigid;
+    auto& p2 = system->data_manager->host_data.cptb_rigid_rigid;
 
     for (uint i = 0; i < system->data_manager->num_rigid_contacts; i++) {
         // IDs of bodies in contact
@@ -71,7 +81,7 @@ void ReportContacts(ChSystemParallel* system, unsigned int id) {
         if (id == b1) {
             printf("  %6.3f  %6.3f  %6.3f\n", p1[i].x, p1[i].y, p1[i].z);
         } else if (id == b2) {
-            printf("  %6.3f  %6.3f  %6.3f\n", p2[i].x, p2[i].y, p2[i].z);
+            printf("   %6.3f  %6.3f  %6.3f\n", p2[i].x, p2[i].y, p2[i].z);
         }
     }
 }
@@ -183,6 +193,7 @@ int main(int argc, char** argv) {
         // Process contacts
         std::cout << system.GetChTime() << "  " << system.GetNcontacts() << std::endl;
         ReportContacts(&system, box->GetId());
+        system.GetContactContainer()->ReportAllContacts(&cmanager);
 
         // Advance dynamics
         system.DoStepDynamics(time_step);
