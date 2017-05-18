@@ -37,7 +37,10 @@ namespace wvp {
 
 class CH_MODELS_API WVP {
   public:
-    virtual ~WVP();
+    WVP();
+    WVP(ChSystem* system);
+
+    ~WVP();
 
     void SetContactMethod(ChMaterialSurface::ContactMethod val) { m_contactMethod = val; }
 
@@ -81,10 +84,6 @@ class CH_MODELS_API WVP {
     void DebugLog(int what) { m_vehicle->DebugLog(what); }
 
   protected:
-    // Protected constructors -- this class cannot be instantiated by itself.
-    WVP();
-    WVP(ChSystem* system);
-
     ChMaterialSurface::ContactMethod m_contactMethod;
     ChassisCollisionType m_chassisCollisionType;
     bool m_fixed;
