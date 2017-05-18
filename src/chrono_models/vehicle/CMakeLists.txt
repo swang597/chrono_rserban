@@ -106,6 +106,32 @@ set(CVM_GENERIC_FILES
 )
 source_group("generic" FILES ${CVM_GENERIC_FILES})
 
+set(CVM_WVP_FILES
+    wvp/WVP.cpp
+    wvp/WVP.h
+    wvp/WVP_BrakeSimple.cpp
+    wvp/WVP_BrakeSimple.h
+    wvp/WVP_Chassis.cpp
+    wvp/WVP_Chassis.h
+    wvp/WVP_DoubleWishbone.cpp
+    wvp/WVP_DoubleWishbone.h
+    wvp/WVP_Driveline4WD.cpp
+    wvp/WVP_Driveline4WD.h
+    wvp/WVP_FialaTire.cpp
+    wvp/WVP_FialaTire.h
+    wvp/WVP_PitmanArm.cpp
+    wvp/WVP_PitmanArm.h
+    wvp/WVP_Powertrain.cpp
+    wvp/WVP_Powertrain.h
+    wvp/WVP_RigidTire.cpp
+    wvp/WVP_RigidTire.h
+    wvp/WVP_Vehicle.cpp
+    wvp/WVP_Vehicle.h
+    wvp/WVP_Wheel.cpp
+    wvp/WVP_Wheel.h
+)
+source_group("wvp" FILES ${CVM_WVP_FILES})
+
 set(CVM_M113_FILES
     m113/M113_BrakeSimple.h
     m113/M113_Chassis.h
@@ -192,6 +218,7 @@ add_library(ChronoModels_vehicle SHARED
     ${CVM_HMMWV_FILES}
     ${CVM_HMMWV_FEA_FILES}
     ${CVM_GENERIC_FILES}
+    ${CVM_WVP_FILES}
     ${CVM_M113_FILES}
     ${CVM_M113_A_FILES}
  )
