@@ -28,6 +28,9 @@
 
 #include "chrono_models/vehicle/wvp/WVP.h"
 
+#include <chrono>
+#include <thread>
+
 using namespace chrono;
 using namespace chrono::vehicle;
 using namespace chrono::vehicle::wvp;
@@ -52,14 +55,14 @@ TireModelType tire_model = TireModelType::RIGID;
 ChVector<> trackPoint(0.0, 0.0, 1.75);
 
 // Simulation step sizes
-double step_size = 0.001;
+double step_size = 0.0001;
 double tire_step_size = step_size;
 
 // Simulation end time
 double tend = 15;
 
 // Time interval between two render frames
-double render_step_size = 1.0 / 50;  // FPS = 50
+double render_step_size = 1.0 / 10000;  // FPS = 50
 
 // =============================================================================
 
@@ -92,7 +95,7 @@ int main(int argc, char* argv[]) {
     terrain.SetContactMaterialProperties(2e7f, 0.3f);
     terrain.SetColor(ChColor(0.8f, 0.8f, 0.5f));
     terrain.SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 20, 20);
-    terrain.Initialize(0, 15, 20);
+    terrain.Initialize(0, 40, 40);
 
     // -------------------------------------
     // Create the vehicle Irrlicht interface
@@ -153,6 +156,7 @@ int main(int argc, char* argv[]) {
         terrain.Advance(step_size);
         wvp.Advance(step_size);
         app.Advance(step_size);
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
         // Increment frame number
         step_number++;

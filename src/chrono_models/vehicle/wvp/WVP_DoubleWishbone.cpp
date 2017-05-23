@@ -38,57 +38,57 @@ static const double lb2kg = 0.453592;
 static const double lbf2N = 4.44822162;
 static const double lbfpin2Npm = 175.12677;
 
-const double WVP_DoubleWishboneFront::m_UCAMass = 5.813;
-const double WVP_DoubleWishboneFront::m_LCAMass = 23.965;
-const double WVP_DoubleWishboneFront::m_uprightMass = 19.450;
-const double WVP_DoubleWishboneFront::m_spindleMass = 14.705;
+const double WVP_DoubleWishboneFront::m_UCAMass = 14;
+const double WVP_DoubleWishboneFront::m_LCAMass = 42;
+const double WVP_DoubleWishboneFront::m_uprightMass = 150;
+const double WVP_DoubleWishboneFront::m_spindleMass = 52;
 
-const double WVP_DoubleWishboneFront::m_spindleRadius = 0.10;
-const double WVP_DoubleWishboneFront::m_spindleWidth = 0.06;
-const double WVP_DoubleWishboneFront::m_LCARadius = 0.03;
-const double WVP_DoubleWishboneFront::m_UCARadius = 0.02;
-const double WVP_DoubleWishboneFront::m_uprightRadius = 0.04;
+const double WVP_DoubleWishboneFront::m_spindleRadius = 0.10; //TODO: not given
+const double WVP_DoubleWishboneFront::m_spindleWidth = 0.06; //TODO: not given
+const double WVP_DoubleWishboneFront::m_LCARadius = 0.03; //TODO: not given
+const double WVP_DoubleWishboneFront::m_UCARadius = 0.02; //TODO: not given
+const double WVP_DoubleWishboneFront::m_uprightRadius = 0.04; //TODO: not given
 
 const ChVector<> WVP_DoubleWishboneFront::m_spindleInertia(0.04117,
                                                              0.07352,
-                                                             0.04117);          // TODO: This is not the correct value
-const ChVector<> WVP_DoubleWishboneFront::m_UCAInertia(0.03, 0.03, 0.06276);  // TODO: This is not the correct value
-const ChVector<> WVP_DoubleWishboneFront::m_LCAInertia(0.4, 0.4, 0.8938);     // TODO: This is not the correct value
+                                                             0.04117); //TODO: not correct frame
+const ChVector<> WVP_DoubleWishboneFront::m_UCAInertia(0.03, 0.03, 0.06276); //TODO: not correct frame
+const ChVector<> WVP_DoubleWishboneFront::m_LCAInertia(0.4, 0.4, 0.8938);//TODO: not correct frame
 const ChVector<> WVP_DoubleWishboneFront::m_uprightInertia(0.1656,
                                                              0.1934,
-                                                             0.04367);  // TODO: This is not the correct value
+                                                             0.04367);//TODO: not correct frame
 
-const double WVP_DoubleWishboneFront::m_axleInertia = 0.4;
+const double WVP_DoubleWishboneFront::m_axleInertia = 0.4;//TODO: not correct frame
 
-const double WVP_DoubleWishboneFront::m_springCoefficient = 167062.000;
-const double WVP_DoubleWishboneFront::m_springRestLength = 0.339;
+const double WVP_DoubleWishboneFront::m_springCoefficient = 167062.000;//TODO: change to lookup table
+const double WVP_DoubleWishboneFront::m_springRestLength = 0.339;//TODO: change to lookup table
 
 // -----------------------------------------------------------------------------
 
-const double WVP_DoubleWishboneRear::m_UCAMass = 5.813;
-const double WVP_DoubleWishboneRear::m_LCAMass = 23.965;
-const double WVP_DoubleWishboneRear::m_uprightMass = 19.450;
-const double WVP_DoubleWishboneRear::m_spindleMass = 14.705;
+const double WVP_DoubleWishboneRear::m_UCAMass = 14;
+const double WVP_DoubleWishboneRear::m_LCAMass = 42;
+const double WVP_DoubleWishboneRear::m_uprightMass = 150;
+const double WVP_DoubleWishboneRear::m_spindleMass = 52;
 
-const double WVP_DoubleWishboneRear::m_spindleRadius = 0.10;
-const double WVP_DoubleWishboneRear::m_spindleWidth = 0.06;
-const double WVP_DoubleWishboneRear::m_LCARadius = 0.03;
-const double WVP_DoubleWishboneRear::m_UCARadius = 0.02;
-const double WVP_DoubleWishboneRear::m_uprightRadius = 0.04;
+const double WVP_DoubleWishboneRear::m_spindleRadius = 0.10; //TODO: not given
+const double WVP_DoubleWishboneRear::m_spindleWidth = 0.06;//TODO: not given
+const double WVP_DoubleWishboneRear::m_LCARadius = 0.03;//TODO: not given
+const double WVP_DoubleWishboneRear::m_UCARadius = 0.02;//TODO: not given
+const double WVP_DoubleWishboneRear::m_uprightRadius = 0.04;//TODO: not given
 
 const ChVector<> WVP_DoubleWishboneRear::m_spindleInertia(0.04117,
                                                             0.07352,
-                                                            0.04117);          // TODO: This is not the correct value
-const ChVector<> WVP_DoubleWishboneRear::m_UCAInertia(0.03, 0.03, 0.06276);  // TODO: This is not the correct value
-const ChVector<> WVP_DoubleWishboneRear::m_LCAInertia(0.4, 0.4, 0.8938);     // TODO: This is not the correct value
+                                                            0.04117);//TODO: not correct frame
+const ChVector<> WVP_DoubleWishboneRear::m_UCAInertia(0.03, 0.03, 0.06276); //TODO: not correct frame
+const ChVector<> WVP_DoubleWishboneRear::m_LCAInertia(0.4, 0.4, 0.8938); //TODO: not correct frame
 const ChVector<> WVP_DoubleWishboneRear::m_uprightInertia(0.1656,
                                                             0.1934,
-                                                            0.04367);  // TODO: This is not the correct value
+                                                            0.04367);//TODO: not correct frame
 
-const double WVP_DoubleWishboneRear::m_axleInertia = 0.4;
+const double WVP_DoubleWishboneRear::m_axleInertia = 0.4;//TODO: not correct frame
 
-const double WVP_DoubleWishboneRear::m_springCoefficient = 369149.000;
-const double WVP_DoubleWishboneRear::m_springRestLength = 0.382;
+const double WVP_DoubleWishboneRear::m_springCoefficient = 1.000;//TODO: change to lookup table
+const double WVP_DoubleWishboneRear::m_springRestLength = .822;//TODO: change to lookup table
 
 // -----------------------------------------------------------------------------
 // WVP shock functor class - implements a nonlinear damper
@@ -227,77 +227,77 @@ WVP_DoubleWishboneRear::~WVP_DoubleWishboneRear() {
 
 const ChVector<> WVP_DoubleWishboneFront::getLocation(PointId which) {
     switch (which) {
-        case SPINDLE:
-            return in2m * ChVector<>(-1.59, 35.815, -1.035);
-        case UPRIGHT:
-            return in2m * ChVector<>(-1.59, 29.5675, -1.0350);
-        case UCA_F:
-            return in2m * ChVector<>(-1.8864, 17.5575, 9.6308);
-        case UCA_B:
-            return in2m * ChVector<>(-10.5596, 18.8085, 7.6992);
-        case UCA_U:
-            return in2m * ChVector<>(-2.088, 28.17, 8.484);
-        case UCA_CM:
-            return in2m * ChVector<>(-4.155, 23.176, 8.575);
-        case LCA_F:
-            return in2m * ChVector<>(8.7900, 12.09, 0);
-        case LCA_B:
-            return in2m * ChVector<>(-8.7900, 12.09, 0);
-        case LCA_U:
-            return in2m * ChVector<>(-1.40, 30.965, -4.65);
-        case LCA_CM:
-            return in2m * ChVector<>(0, 21.528, -2.325);
-        case SHOCK_C:
-            return in2m * ChVector<>(4.095, 19.598, 12.722);
-        case SHOCK_A:
-            return in2m * ChVector<>(3.827, 21.385, -1.835);
-        case SPRING_C:
-            return in2m * ChVector<>(4.095, 20.07, 7.775);
-        case SPRING_A:
-            return in2m * ChVector<>(3.827, 21.385, -1.835);
-        case TIEROD_C:
-            return in2m * ChVector<>(-9.855, 17.655, 2.135);
-        case TIEROD_U:
-            return in2m * ChVector<>(-6.922, 32.327, -0.643);
-        default:
-            return ChVector<>(0, 0, 0);
+      case SPINDLE:
+          return ChVector<>(0,1.033,0);
+      case UPRIGHT:
+          return ChVector<>(0, 1.033, 0);
+      case UCA_F:
+          return ChVector<>(.309,.192,.365);
+      case UCA_B:
+          return ChVector<>(-.149,.192,.365);
+      case UCA_U:
+          return ChVector<>(-.008,.772,.234);
+      case UCA_CM:
+          return ChVector<>(.041,.428,.331);
+      case LCA_F:
+          return ChVector<>(.360,.192,.012);
+      case LCA_B:
+          return ChVector<>(-.250,.192,.012);
+      case LCA_U:
+          return ChVector<>(.007,.832,-.152);
+      case LCA_CM:
+          return ChVector<>(.039,.406,-.043);
+      case SHOCK_C:
+          return ChVector<>(-.107,.547,-.111);
+      case SHOCK_A:
+          return ChVector<>(-.107,.540,.724);
+      case SPRING_C:
+          return ChVector<>(-.107,.547,-.111);
+      case SPRING_A:
+          return ChVector<>(-.107,.540,.724);
+      case TIEROD_C:
+          return ChVector<>(-.383,.125,.029);
+      case TIEROD_U:
+          return ChVector<>(-.398,.750,-.128);
+      default:
+          return ChVector<>(0, 0, 0);
     }
 }
 
 const ChVector<> WVP_DoubleWishboneRear::getLocation(PointId which) {
     switch (which) {
         case SPINDLE:
-            return in2m * ChVector<>(1.40, 35.815, -1.035);
+            return ChVector<>(-4.039,1.033,0);
         case UPRIGHT:
-            return in2m * ChVector<>(1.40, 29.5675, -1.035);
+            return ChVector<>(-4.039, 1.033,0);//TODO: not given
         case UCA_F:
-            return in2m * ChVector<>(13.7445, 18.1991, 8.9604);
+            return ChVector<>(-3.729,.192,.365);
         case UCA_B:
-            return in2m * ChVector<>(3.0355, 18.1909, 8.8096);
+            return ChVector<>(-4.187,.192,.365);
         case UCA_U:
-            return in2m * ChVector<>(1.40, 28.17, 8.5);
+            return ChVector<>(-4.047,.772,.234);
         case UCA_CM:
-            return in2m * ChVector<>(4.895, 23.183, 8.692);
+            return ChVector<>(-3.998,.428,.331);
         case LCA_F:
-            return in2m * ChVector<>(8.7900, 12.09, 0);
+            return ChVector<>(-3.679,.192,.012);
         case LCA_B:
-            return in2m * ChVector<>(-8.7900, 12.09, 0);
+            return ChVector<>(-4.288,.192,.012);
         case LCA_U:
-            return in2m * ChVector<>(1.40, 30.965, -4.650);
+            return ChVector<>(-4.032,.832,-.152);
         case LCA_CM:
-            return in2m * ChVector<>(0, 21.527, -2.325);
+            return ChVector<>(-4.000,.406,-.043);
         case SHOCK_C:
-            return in2m * ChVector<>(-4.095, 19.598, 12.722);
+            return ChVector<>(-4.146,.547,-.111);
         case SHOCK_A:
-            return in2m * ChVector<>(-3.827, 21.415, -1.511);
+            return ChVector<>(-4.146,.540,.724);
         case SPRING_C:
-            return in2m * ChVector<>(-4.095, 19.747, 10.098);
+            return ChVector<>(-4.146,.547,-.111);
         case SPRING_A:
-            return in2m * ChVector<>(-3.827, 21.385, -1.835);
+            return ChVector<>(-4.146,.540,.724);
         case TIEROD_C:
-            return in2m * ChVector<>(8.790, 16.38, 2.310);
+            return ChVector<>(-4.422,.125,.029);
         case TIEROD_U:
-            return in2m * ChVector<>(6.704, 32.327, -0.365);
+            return ChVector<>(-4.437,.750,-.128);
         default:
             return ChVector<>(0, 0, 0);
     }

@@ -30,11 +30,11 @@ namespace wvp {
 // -----------------------------------------------------------------------------
 // Static variables
 // -----------------------------------------------------------------------------
-const double WVP_Chassis::m_mass = 2086.52;
-const ChVector<> WVP_Chassis::m_inertiaXX(1078.52, 2955.66, 3570.20);
+const double WVP_Chassis::m_mass = 8935.762; //this is entire vehicle with payload
+const ChVector<> WVP_Chassis::m_inertiaXX(6700, 25000, 28000);
 const ChVector<> WVP_Chassis::m_inertiaXY(0, 0, 0);
-const ChVector<> WVP_Chassis::m_COM_loc(0.056, 0, 0.523);
-const ChCoordsys<> WVP_Chassis::m_driverCsys(ChVector<>(0.87, -0.27, 1.05), ChQuaternion<>(1, 0, 0, 0));
+const ChVector<> WVP_Chassis::m_COM_loc(-2.07,.01,.495);
+const ChCoordsys<> WVP_Chassis::m_driverCsys(ChVector<>(-1.8,.7,.495), ChQuaternion<>(1, 0, 0, 0));
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
