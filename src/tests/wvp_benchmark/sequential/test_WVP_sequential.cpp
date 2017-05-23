@@ -85,6 +85,8 @@ int main(int argc, char* argv[]) {
     wvp.SetWheelVisualizationType(wheel_vis_type);
     wvp.SetTireVisualizationType(tire_vis_type);
 
+    std::cout << "Total vehicle mass: " << wvp.GetVehicle().GetVehicleMass() << std::endl;
+
     // ------------------
     // Create the terrain
     // ------------------

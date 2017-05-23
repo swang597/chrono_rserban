@@ -34,12 +34,15 @@ const double WVP_PitmanArm::m_pitmanArmRadius = 0.02;
 
 const double WVP_PitmanArm::m_maxAngle = 50.0 * (CH_C_PI / 180);
 
-const ChVector<> WVP_PitmanArm::m_steeringLinkInertia(0.252, 0.00233, 0.254);
-const ChVector<> WVP_PitmanArm::m_pitmanArmInertia(0.00638, 0.00756, 0.00150);
+const ChVector<> WVP_PitmanArm::m_steeringLinkInertiaMoments(0.252, 0.00233, 0.254);
+const ChVector<> WVP_PitmanArm::m_steeringLinkInertiaProducts(0.0, 0.0, 0.0);
+
+const ChVector<> WVP_PitmanArm::m_pitmanArmInertiaMoments(0.00638, 0.00756, 0.00150);
+const ChVector<> WVP_PitmanArm::m_pitmanArmInertiaProducts(0.0, 0.0, 0.0);
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-WVP_PitmanArm::WVP_PitmanArm(const std::string& name) : ChPitmanArm(name) {}
+WVP_PitmanArm::WVP_PitmanArm(const std::string& name) : ChPitmanArm(name, true) {}
 
 // -----------------------------------------------------------------------------
 // Implementations of the getLocation() and getDirection() virtual methods.
