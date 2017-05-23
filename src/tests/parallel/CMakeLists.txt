@@ -26,6 +26,7 @@ SET(DEMOS
     jcol_example
     collide_flag
     rotate_gravity
+    incline_particles
 )
 
 # ------------------------------------------------------------------------------
