@@ -38,15 +38,15 @@ using namespace chrono::vehicle::wvp;
 // =============================================================================
 
 // Initial vehicle location and orientation
-ChVector<> initLoc(0, 0, 2.5);
+ChVector<> initLoc(0, 0, 0.5);
 ChQuaternion<> initRot(1, 0, 0, 0);
 
 // Visualization type for vehicle parts (PRIMITIVES, MESH, or NONE)
-VisualizationType chassis_vis_type = VisualizationType::PRIMITIVES;
+VisualizationType chassis_vis_type = VisualizationType::NONE;
 VisualizationType suspension_vis_type = VisualizationType::PRIMITIVES;
 VisualizationType steering_vis_type = VisualizationType::PRIMITIVES;
 VisualizationType wheel_vis_type = VisualizationType::NONE;
-VisualizationType tire_vis_type = VisualizationType::MESH;
+VisualizationType tire_vis_type = VisualizationType::PRIMITIVES;
 
 // Type of tire model (RIGID, FIALA)
 TireModelType tire_model = TireModelType::RIGID;
@@ -55,14 +55,14 @@ TireModelType tire_model = TireModelType::RIGID;
 ChVector<> trackPoint(0.0, 0.0, 1.75);
 
 // Simulation step sizes
-double step_size = 0.0001;
+double step_size = 0.001;
 double tire_step_size = step_size;
 
 // Simulation end time
 double tend = 15;
 
 // Time interval between two render frames
-double render_step_size = 1.0 / 10000;  // FPS = 50
+double render_step_size = 1.0 / 50;  // FPS = 50
 
 // =============================================================================
 
@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
 
     // Create the vehicle, set parameters, and initialize
     WVP wvp;
-    wvp.SetChassisFixed(false);
+    wvp.SetChassisFixed(true);
     wvp.SetInitPosition(ChCoordsys<>(initLoc, initRot));
     wvp.SetTireType(tire_model);
     wvp.SetTireStepSize(tire_step_size);
@@ -158,7 +158,7 @@ int main(int argc, char* argv[]) {
         terrain.Advance(step_size);
         wvp.Advance(step_size);
         app.Advance(step_size);
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
 
         // Increment frame number
         step_number++;
