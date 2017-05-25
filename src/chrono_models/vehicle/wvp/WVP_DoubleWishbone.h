@@ -64,6 +64,14 @@ class CH_MODELS_API WVP_DoubleWishboneFront : public ChDoubleWishbone {
     virtual ChLinkSpringCB::ForceFunctor* getSpringForceFunctor() const override { return m_springForceCB; }
     virtual ChLinkSpringCB::ForceFunctor* getShockForceFunctor() const override { return m_shockForceCB; }
 
+    virtual void Initialize(std::shared_ptr<ChBodyAuxRef> chassis,  ///< [in] handle to the chassis body
+                            const ChVector<>& location,             ///< [in] location relative to the chassis frame
+                            std::shared_ptr<ChBody> tierod_body,    ///< [in] body to which tireods are connected
+                            int steering_index,                     ///< [in] index of the associated steering mechanism
+                            double left_ang_vel = 0,                ///< [in] initial angular velocity of left wheel
+                            double right_ang_vel = 0                ///< [in] initial angular velocity of right wheel
+                            ) override;
+
   private:
     virtual const ChVector<> getLocation(PointId which) override;
 
@@ -91,7 +99,6 @@ class CH_MODELS_API WVP_DoubleWishboneFront : public ChDoubleWishbone {
 
     static const double m_axleInertia;
 
-    static const double m_springCoefficient;
     static const double m_springRestLength;
 };
 
@@ -127,6 +134,14 @@ class CH_MODELS_API WVP_DoubleWishboneRear : public ChDoubleWishbone {
     virtual ChLinkSpringCB::ForceFunctor* getSpringForceFunctor() const override { return m_springForceCB; }
     virtual ChLinkSpringCB::ForceFunctor* getShockForceFunctor() const override { return m_shockForceCB; }
 
+    virtual void Initialize(std::shared_ptr<ChBodyAuxRef> chassis,  ///< [in] handle to the chassis body
+                            const ChVector<>& location,             ///< [in] location relative to the chassis frame
+                            std::shared_ptr<ChBody> tierod_body,    ///< [in] body to which tireods are connected
+                            int steering_index,                     ///< [in] index of the associated steering mechanism
+                            double left_ang_vel = 0,                ///< [in] initial angular velocity of left wheel
+                            double right_ang_vel = 0                ///< [in] initial angular velocity of right wheel
+                            ) override;
+
   private:
     virtual const ChVector<> getLocation(PointId which) override;
 
@@ -154,7 +169,6 @@ class CH_MODELS_API WVP_DoubleWishboneRear : public ChDoubleWishbone {
 
     static const double m_axleInertia;
 
-    static const double m_springCoefficient;
     static const double m_springRestLength;
 };
 
