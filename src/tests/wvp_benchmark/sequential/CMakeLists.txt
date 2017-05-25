@@ -17,6 +17,7 @@ SET(LIBRARIES
 
 SET(DEMOS
     test_WVP_sequential
+    test_WVP_suspensionTestRig
 )
 
 # ------------------------------------------------------------------------------
