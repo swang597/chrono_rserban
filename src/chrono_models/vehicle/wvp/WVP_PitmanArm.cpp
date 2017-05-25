@@ -26,18 +26,18 @@ namespace wvp {
 // Static variables
 // -----------------------------------------------------------------------------
 
-const double WVP_PitmanArm::m_steeringLinkMass = 3.6814844109;
-const double WVP_PitmanArm::m_pitmanArmMass = 1.605;
+const double WVP_PitmanArm::m_steeringLinkMass = 3.0;
+const double WVP_PitmanArm::m_pitmanArmMass = 2.0;
 
 const double WVP_PitmanArm::m_steeringLinkRadius = 0.03;
 const double WVP_PitmanArm::m_pitmanArmRadius = 0.02;
 
-const double WVP_PitmanArm::m_maxAngle = 50.0 * (CH_C_PI / 180);
+const double WVP_PitmanArm::m_maxAngle = 35.0 * (CH_C_PI / 180); //TODO: find this
 
-const ChVector<> WVP_PitmanArm::m_steeringLinkInertiaMoments(0.252, 0.00233, 0.254);
+const ChVector<> WVP_PitmanArm::m_steeringLinkInertiaMoments(6.34e-2, 4.47e-4, 6.37e-2);
 const ChVector<> WVP_PitmanArm::m_steeringLinkInertiaProducts(0.0, 0.0, 0.0);
 
-const ChVector<> WVP_PitmanArm::m_pitmanArmInertiaMoments(0.00638, 0.00756, 0.00150);
+const ChVector<> WVP_PitmanArm::m_pitmanArmInertiaMoments(1.0e-3,1.0e-3,1.0e-3);
 const ChVector<> WVP_PitmanArm::m_pitmanArmInertiaProducts(0.0, 0.0, 0.0);
 
 // -----------------------------------------------------------------------------
@@ -50,21 +50,21 @@ WVP_PitmanArm::WVP_PitmanArm(const std::string& name) : ChPitmanArm(name, true) 
 const ChVector<> WVP_PitmanArm::getLocation(PointId which) {
     switch (which) {
         case STEERINGLINK:
-            return ChVector<>(0.129, 0, 0);
+            return ChVector<>(-383e-3,50e-3,.024);
         case PITMANARM:
-            return ChVector<>(0.064, 0.249, 0);
+            return ChVector<>(-329e-3,474e-3,.04);
         case REV:
-            return ChVector<>(0, 0.249, 0);
+            return ChVector<>(-773e-3,475e-3,.057);
         case UNIV:
-            return ChVector<>(0.129, 0.249, 0);
+            return ChVector<>(-483e-3,475e-3,.024);
         case REVSPH_R:
-            return ChVector<>(0, -0.325, 0);
+            return ChVector<>(-773e-3,-375e-3,.057);
         case REVSPH_S:
-            return ChVector<>(0.129, -0.325, 0);
+            return ChVector<>(-483e-3,-375e-3,.024);
         case TIEROD_PA:
-            return ChVector<>(0.195, 0.448, 0.035);
+            return ChVector<>(-383e-3,125e-3,.029);
         case TIEROD_IA:
-            return ChVector<>(0.195, -0.448, 0.035);
+            return ChVector<>(-383e-3,-125e-3,.029);
         default:
             return ChVector<>(0, 0, 0);
     }
@@ -85,6 +85,6 @@ const ChVector<> WVP_PitmanArm::getDirection(DirectionId which) {
     }
 }
 
-}  // end namespace chrono
+}  // end namespace wvp
 }  // end namespace vehicle
 }  // end namespace chrono
