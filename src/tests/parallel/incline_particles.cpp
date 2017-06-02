@@ -32,8 +32,8 @@
 #include "chrono/utils/ChUtilsInputOutput.h"
 
 #include "chrono_parallel/physics/ChSystemParallel.h"
-#include "chrono_parallel/solver/ChSystemDescriptorParallel.h"
-#include "chrono_parallel/collision/ChNarrowphaseRUtils.h"
+#include "chrono_parallel/solver/ChIterativeSolverParallel.h"
+#include "chrono_parallel/physics/Ch3DOFContainer.h"
 
 #include "chrono_opengl/ChOpenGLWindow.h"
 
@@ -47,6 +47,9 @@ using std::endl;
 // Specification of the terrain
 // -----------------------------------------------------------------------------
 
+// Use 3DOF particles?
+#define USE_PARTICLES
+
 // Container
 double hdimX = 0.5;
 double hdimY = 0.25;
@@ -57,19 +60,21 @@ double hthick = 0.05;
 int num_layers = 4;
 
 // Granular material properties
-double r_g = 0.01;
-double rho_g = 2000;
-float coh_g = 0;
-float mu_g = 0.5;
+int radius_mm = 10;        // particle radius (mm)
+double density = 2000;     // density (Kg/m3)
+double friction = 0.5;     // coefficient of friction
+double compliance = 1e-9;  // compliance
+int coh_pressure_kpa = 1;  // cohesion pressure (kPa)
 
-double slope = 30 * (CH_C_PI / 180);
+int slope_deg = 30;                          // terrain slope (degrees)
+double slope = (CH_C_PI / 180) * slope_deg;  // terrain slope (radians)
 
 // -----------------------------------------------------------------------------
 // Timed events
 // -----------------------------------------------------------------------------
 
 // Total simulation duration.
-double time_end = 4;
+double time_end = 1;
 
 // Time when terrain is pitched (rotate gravity)
 double time_pitch = 0.15;
@@ -92,12 +97,21 @@ int max_iteration_sliding = 50;
 int max_iteration_spinning = 0;
 
 double tolerance = 1e-3;
-float contact_recovery_speed = 1000;
+double alpha = 0;
+double contact_recovery_speed = 1000;
 
 // Output
-bool output = true;
-double output_frequency = 100.0;
+bool output = false;
 std::string out_dir = "../PARTICLES";
+
+std::shared_ptr<ChParticleContainer> particle_container;
+
+// =============================================================================
+// Custom material composition laws
+class CustomCompositionStrategy : public ChMaterialCompositionStrategy<real> {
+  public:
+    virtual real CombineFriction(real a1, real a2) const override { return std::max<real>(a1, a2); }
+};
 
 // =============================================================================
 // Utility function to print to console a few important step statistics
@@ -133,13 +147,13 @@ static inline void TimingOutput(chrono::ChSystem* mSys, chrono::ChStreamOutAscii
 
 // =============================================================================
 
-void CreateContainer(ChSystem* system, float mu_g, float coh_g) {
+void CreateContainer(ChSystem* system, double mu, double coh) {
     bool visible_walls = false;
 
     auto material = std::make_shared<ChMaterialSurfaceNSC>();
-    material->SetFriction(mu_g);
-    material->SetCompliance(1e-9f);
-    material->SetCohesion(coh_g);
+    material->SetFriction((float)mu);
+    material->SetCohesion((float)coh);
+    material->SetCompliance((float)compliance);
 
     auto ground = std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>());
     ground->SetIdentifier(-1);
@@ -175,25 +189,67 @@ void CreateContainer(ChSystem* system, float mu_g, float coh_g) {
 
 // =============================================================================
 
-int CreateParticles(ChSystem* system, double r_g, double rho_g, float mu_g, float coh_g) {
+int CreateParticles(ChSystemParallelNSC* system, double radius, double rho, double mu, double coh) {
+#ifdef USE_PARTICLES
+    particle_container = std::make_shared<ChParticleContainer>();
+    system->Add3DOFContainer(particle_container);
+
+    particle_container->kernel_radius = 2 * radius;
+    particle_container->mass = rho * (4 * CH_C_PI / 3) * std::pow(radius, 3);
+
+    particle_container->contact_mu = mu;
+    particle_container->contact_cohesion = coh;
+    particle_container->contact_compliance = compliance;
+
+    particle_container->mu = mu;
+    particle_container->cohesion = coh;
+    particle_container->compliance = compliance;
+
+    particle_container->alpha = alpha;
+
+    particle_container->contact_recovery_speed = contact_recovery_speed;
+    particle_container->collision_envelope = 0.1 * radius;
+
+    std::vector<real3> pos;
+    std::vector<real3> vel;
+
+    double r = 1.01 * radius;
+    ChVector<> hdims(hdimX - r, hdimY - r, 0);
+    ChVector<> center(0, 0, 2 * r);
+
+    utils::PDSampler<> sampler(2 * r);
+    for (int il = 0; il < num_layers; il++) {
+        utils::Generator::PointVector points = sampler.SampleBox(center, hdims);
+        center.z() += 2 * r;
+        for (int i = 0; i < points.size(); i++) {
+            pos.push_back(real3(points[i].x(), points[i].y(), points[i].z()));
+            vel.push_back(real3(0, 0, 0));
+        }
+    }
+
+    particle_container->UpdatePosition(0);
+    particle_container->AddBodies(pos, vel);
+
+    return (int)pos.size();
+#else
     // Create a material
     auto mat_g = std::make_shared<ChMaterialSurfaceNSC>();
-    mat_g->SetFriction(mu_g);
-    mat_g->SetRestitution(0);
-    mat_g->SetCohesion(coh_g);
+    mat_g->SetFriction((float)mu);
+    mat_g->SetCohesion((float)coh);
+    mat_g->SetCompliance(1e-9f);
 
     // Create a particle generator and a mixture entirely made out of spheres
     utils::Generator gen(system);
     std::shared_ptr<utils::MixtureIngredient> m1 = gen.AddMixtureIngredient(utils::SPHERE, 1.0);
     m1->setDefaultMaterial(mat_g);
-    m1->setDefaultDensity(rho_g);
-    m1->setDefaultSize(r_g);
+    m1->setDefaultDensity(rho);
+    m1->setDefaultSize(radius);
 
     // Set starting value for body identifiers
     gen.setBodyIdentifier(1);
 
     // Create particles in layers until reaching the desired number of particles
-    double r = 1.01 * r_g;
+    double r = 1.01 * radius;
     ChVector<> hdims(hdimX - r, hdimY - r, 0);
     ChVector<> center(0, 0, 2 * r);
 
@@ -203,26 +259,64 @@ int CreateParticles(ChSystem* system, double r_g, double rho_g, float mu_g, floa
     }
 
     return gen.getTotalNumBodies();
+#endif
+}
+
+// =============================================================================
+
+ChVector<> CalculateCOM(ChSystem* system) {
+    ChVector<> com(0, 0, 0);
+    uint count = 0;
+#ifdef USE_PARTICLES
+    count = particle_container->GetNumParticles();
+    for (uint i = 0; i < count; i++) {
+        real3 pos = particle_container->GetPos(i);
+        com += ChVector<>(pos.x, pos.y, pos.z);
+    }
+#else
+    for (size_t i = 0; i < system->Get_bodylist()->size(); ++i) {
+        auto body = (*system->Get_bodylist())[i];
+        if (body->GetIdentifier()) {
+            com += body->GetPos();
+            count++;
+        }
+    }
+#endif
+    return com / count;
 }
 
 // =============================================================================
 
 int main(int argc, char* argv[]) {
+    double radius = radius_mm / 1.0e3;                   // particle radius (m)
+    double area = CH_C_PI * radius * radius;             // cross-section area (m2)
+    double coh_force = area * (coh_pressure_kpa * 1e3);  // cohesion force (N)
+    double cohesion = coh_force * time_step;             // cohesion impulse (Ns)
 
     // --------------------------
     // Create output directories
     // --------------------------
 
-    if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
-        cout << "Error creating directory " << out_dir << endl;
-        return 1;
-    }
-
-    // Open the output file stream
     std::ofstream outf;
-    outf.open(out_dir + "/results.dat", std::ios::out);
-    outf.precision(7);
-    outf << std::scientific;
+
+    if (output) {
+        if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
+            cout << "Error creating directory " << out_dir << endl;
+            return 1;
+        }
+
+// Open the output file stream
+#ifdef USE_PARTICLES
+        std::string fname = out_dir + "/resultsP_";
+#else
+        std::string fname = out_dir + "/resultsB_";
+#endif
+        fname += std::to_string(slope_deg) + "_" + std::to_string(radius_mm) + "_" + std::to_string(friction) + "_" +
+                 std::to_string(coh_pressure_kpa) + ".dat";
+        outf.open(fname, std::ios::out);
+        outf.precision(7);
+        outf << std::scientific;
+    }
 
     // Delimiter in output file
     std::string del("  ");
@@ -235,6 +329,10 @@ int main(int argc, char* argv[]) {
 
     ChSystemParallelNSC* system = new ChSystemParallelNSC();
     system->Set_G_acc(gravity);
+
+    // Test using a custom material property composition strategy
+    ////std::unique_ptr<CustomCompositionStrategy> strategy(new CustomCompositionStrategy);
+    ////system->SetMaterialCompositionStrategy(std::move(strategy));
 
     // ----------------------
     // Set number of threads.
@@ -259,7 +357,7 @@ int main(int argc, char* argv[]) {
     system->GetSettings()->solver.max_iteration_spinning = max_iteration_spinning;
     system->GetSettings()->solver.max_iteration_bilateral = max_iteration_bilateral;
     system->GetSettings()->solver.compute_N = false;
-    system->GetSettings()->solver.alpha = 0;
+    system->GetSettings()->solver.alpha = alpha;
     system->GetSettings()->solver.cache_step_length = true;
     system->GetSettings()->solver.use_full_inertia_tensor = false;
     system->GetSettings()->solver.contact_recovery_speed = contact_recovery_speed;
@@ -269,7 +367,7 @@ int main(int argc, char* argv[]) {
     ////system->SetLoggingLevel(LoggingLevel::LOG_INFO);
     ////system->SetLoggingLevel(LoggingLevel::LOG_TRACE);
 
-    system->GetSettings()->collision.collision_envelope = 0.1 * r_g;
+    system->GetSettings()->collision.collision_envelope = 0.1 * radius;
     system->GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
     system->GetSettings()->collision.bins_per_axis = vec3(100, 30, 2);
     system->GetSettings()->collision.fixed_bins = true;
@@ -282,28 +380,25 @@ int main(int argc, char* argv[]) {
     // -------------------
     // Create the terrain.
     // -------------------
+    cout << "Cohesion: " << coh_pressure_kpa << " " << coh_force << " " << cohesion << endl;
 
-    CreateContainer(system, mu_g, coh_g);
-    int actual_num_particles = CreateParticles(system, r_g, rho_g, mu_g, coh_g);
+    CreateContainer(system, friction, cohesion);
+    int actual_num_particles = CreateParticles(system, radius, density, friction, cohesion);
+
     cout << "Created " << actual_num_particles << " particles." << endl;
 
     // Initialize OpenGL
     opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-    gl_window.Initialize(1280, 720, "HMMWV go/no-go", system);
-    gl_window.SetCamera(ChVector<>(0, -hdimY-1, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1));
+    gl_window.Initialize(1280, 720, "Particles on incline", system);
+    gl_window.SetCamera(ChVector<>(0, -hdimY - 1, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1), float(hdimY / 10));
     gl_window.SetRenderMode(opengl::WIREFRAME);
 
     // ---------------
     // Simulation loop
     // ---------------
 
-    // Number of simulation steps between two output frames
-    int output_steps = (int)std::ceil((1 / output_frequency) / time_step);
-
     double time = 0;
     int sim_frame = 0;
-    int out_frame = 0;
-    int next_out_frame = 0;
     double exec_time = 0;
 
     bool is_pitched = false;
@@ -318,6 +413,11 @@ int main(int argc, char* argv[]) {
 
         // Advance system state (no vehicle created yet)
         system->DoStepDynamics(time_step);
+
+        if (output) {
+            ChVector<> com = CalculateCOM(system);
+            outf << time << " " << com.x() << " " << com.y() << " " << com.z() << "\n";
+        }
 
         opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
         if (gl_window.Active())
