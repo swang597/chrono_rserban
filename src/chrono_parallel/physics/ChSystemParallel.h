@@ -21,7 +21,7 @@
 
 #include <cstdlib>
 #include <cfloat>
-#include <memory.h>
+#include <memory>
 #include <algorithm>
 
 #include "chrono/physics/ChSystem.h"
@@ -31,6 +31,7 @@
 #include "chrono/physics/ChGlobal.h"
 
 #include "chrono_parallel/collision/ChCollisionModelParallel.h"
+#include "chrono_parallel/physics/Ch3DOFContainer.h"
 #include "chrono_parallel/ChDataManager.h"
 #include "chrono_parallel/ChParallelDefines.h"
 #include "chrono_parallel/math/real3.h"
@@ -73,6 +74,10 @@ class CH_PARALLEL_API ChSystemParallel : public ChSystem {
     virtual void UpdateMaterialSurfaceData(int index, ChBody* body) = 0;
     virtual void Setup() override;
     virtual void ChangeCollisionSystem(CollisionSystemType type);
+
+    /// Change the default composition laws for contact surface materials
+    /// (coefficient of friction, cohesion, compliance, etc.)
+    void SetMaterialCompositionStrategy(std::unique_ptr<ChMaterialCompositionStrategy<real>>&& strategy);
 
     virtual void PrintStepStats();
     unsigned int GetNumBodies();
@@ -159,6 +164,8 @@ class CH_PARALLEL_API ChSystemParallelNSC : public ChSystemParallel {
     virtual ChBodyAuxRef* NewBodyAuxRef() override;
     virtual void AddMaterialSurfaceData(std::shared_ptr<ChBody> newbody) override;
     virtual void UpdateMaterialSurfaceData(int index, ChBody* body) override;
+
+    void Add3DOFContainer(std::shared_ptr<Ch3DOFContainer> container);
 
     void CalculateContactForces() override;
     real CalculateKineticEnergy();

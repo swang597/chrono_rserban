@@ -20,6 +20,8 @@
 
 #pragma once
 
+#include <memory>
+
 // Chrono::Parallel headers
 #include "chrono_parallel/ChTimerParallel.h"
 #include "chrono_parallel/ChParallelDefines.h"
@@ -61,14 +63,14 @@ class ChMPMContainer;
 class ChFLIPContainer;
 class ChConstraintRigidRigid;
 class ChConstraintBilateral;
+template <typename T>
+class ChMaterialCompositionStrategy;
 
 namespace collision {
 class ChCBroadphase;           // forward declaration
 class ChCNarrowphaseDispatch;  // forward declaration
 class ChCAABBGenerator;        // forward declaration
 }
-template <typename TT>
-class ChSharedPtr;
 
 #if BLAZE_MAJOR_VERSION == 2
 typedef blaze::SparseSubmatrix<CompressedMatrix<real> > SubMatrixType;
@@ -342,22 +344,17 @@ struct host_container {
     custom_vector<real4> compliance_data;
 
     // Material properties (SMC)
-    custom_vector<real2> elastic_moduli;  // Young's modulus and Poisson ratio
-    custom_vector<real> mu;               // Coefficient of friction
-    custom_vector<real> cr;               // Coefficient of restitution
-    custom_vector<real4> dem_coeffs;      // Stiffness and damping coefficients
-    custom_vector<real>
-        adhesionMultDMT_data;  // adhesion multipliers used in Derjaguin, Muller and Toporov (DMT) model.
-    // adhesion = adhesionMult * Sqrt(R_eff). Given the surface energy, w, adhesionMult = 2 * CH_C_PI * w * Sqrt(R_eff).
-    // Given the equilibrium penetration distance, y_eq, adhesionMult = 4.0 / 3.0 * E_eff * powf(y_eq, 1.5)
+    custom_vector<real2> elastic_moduli;       // Young's modulus and Poisson ratio
+    custom_vector<real> mu;                    // Coefficient of friction
+    custom_vector<real> cr;                    // Coefficient of restitution
+    custom_vector<real4> smc_coeffs;           // Stiffness and damping coefficients
+    custom_vector<real> adhesionMultDMT_data;  // adhesion multipliers used in DMT model
+    // Derjaguin-Muller-Toporov (DMT) model:
+    // adhesion = adhesionMult * Sqrt(R_eff). Given the surface energy, w,
+    //    adhesionMult = 2 * CH_C_PI * w * Sqrt(R_eff).
+    // Given the equilibrium penetration distance, y_eq,
+    //    adhesionMult = 4.0 / 3.0 * E_eff * powf(y_eq, 1.5)
 
-    // For the variables below the convention is:
-    //_n is normal
-    //_t is tangential
-    //_s is rolling and spinning
-    //_b is bilateral
-    //_T is transpose
-    //_inv is inverse
     // This matrix, if used will hold D^TxM^-1xD in sparse form
     CompressedMatrix<real> Nshur;
     // The D Matrix hold the Jacobian for the entire system
@@ -405,8 +402,7 @@ class CH_PARALLEL_API ChParallelDataManager {
   public:
     ChParallelDataManager();
     ~ChParallelDataManager();
-    void Add3DOFContainer(Ch3DOFContainer* container);
-    void AddFEAContainer(ChFEAContainer* container);
+
     // Structure that contains the data on the host, the naming convention is
     // from when the code supported the GPU (host vs device)
     host_container host_data;
@@ -414,8 +410,8 @@ class CH_PARALLEL_API ChParallelDataManager {
     // This pointer is used by the bilarerals for computing the jacobian and other terms
     std::shared_ptr<ChSystemDescriptor> system_descriptor;
 
-    Ch3DOFContainer* node_container;
-    Ch3DOFContainer* fea_container;
+    std::shared_ptr<Ch3DOFContainer> node_container;
+    std::shared_ptr<Ch3DOFContainer> fea_container;
 
     ChConstraintRigidRigid* rigid_rigid;
     ChConstraintBilateral* bilateral;
@@ -457,6 +453,9 @@ class CH_PARALLEL_API ChParallelDataManager {
     // and the solver
     settings_container settings;
     measures_container measures;
+
+    /// Material composition strategy.
+    std::unique_ptr<ChMaterialCompositionStrategy<real>> composition_strategy;
 
     // Output a vector (one dimensional matrix) from blaze to a file
     int OutputBlazeVector(DynamicVector<real> src, std::string filename);
