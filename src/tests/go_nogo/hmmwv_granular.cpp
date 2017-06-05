@@ -90,6 +90,8 @@ double hdimY = 1.75;
 double hdimZ = 0.5;
 double hthick = 0.05;
 
+bool rough = true;
+
 // Number of layers of granular material
 int num_layers = 4;
 
@@ -237,7 +239,11 @@ class MyLuggedTire : public ChTireContactCallback {
 
 // =============================================================================
 
-void CreateContainer(ChSystem* system, double mu, double coh) {
+double CreateContainer(ChSystem* system,  // containing system
+                       double mu,         // coefficient of friction
+                       double coh,        // cohesion (constant impulse)
+                       double radius      // radius of roughness spheres (if positive)
+                       ) {
     bool visible_walls = false;
 
     auto material = std::make_shared<ChMaterialSurfaceNSC>();
@@ -276,14 +282,34 @@ void CreateContainer(ChSystem* system, double mu, double coh) {
     utils::AddBoxGeometry(ground.get(), ChVector<>(hthick, hdimY, hdimZ + hthick),
                           ChVector<>(-hdimX - hthick, 0, hdimZ - hthick), ChQuaternion<>(1, 0, 0, 0), visible_walls);
 
+    // If a positive radius was provided, create a "rough" surface
+    if (radius > 0) {
+        double d = 4 * radius;
+        int nx = (int)std::floor(hdimX / d);
+        int ny = (int)std::floor(hdimY / d);
+        for (int ix = -nx; ix <= nx; ix++) {
+            for (int iy = -ny; iy <= ny; iy++) {
+                utils::AddSphereGeometry(ground.get(), radius, ChVector<>(ix * d, iy * d, radius));
+            }
+        }
+    }
+
     ground->GetCollisionModel()->BuildModel();
 
     system->AddBody(ground);
+
+    return (radius > 0) ? 2 * radius : 0;
 }
 
 // =============================================================================
 
-int CreateParticles(ChSystemParallelNSC* system, double radius, double rho, double mu, double coh) {
+int CreateParticles(ChSystemParallelNSC* system,  // containing system
+                    double radius,                // particle radius
+                    double rho,                   // particle density
+                    double mu,                    // coefficient of friction
+                    double coh,                   // cohesion (constant impulse)
+                    double top_height             // top height of rigid container
+                    ) {
 #ifdef USE_PARTICLES
     auto particle_container = std::make_shared<ChParticleContainer>();
     system->Add3DOFContainer(particle_container);
@@ -309,7 +335,7 @@ int CreateParticles(ChSystemParallelNSC* system, double radius, double rho, doub
 
     double r = 1.01 * radius;
     ChVector<> hdims(hdimX - r, hdimY - r, 0);
-    ChVector<> center(0, 0, 2 * r);
+    ChVector<> center(0, 0, top_height + 2 * r);
 
     utils::PDSampler<> sampler(2 * r);
     for (int il = 0; il < num_layers; il++) {
@@ -345,7 +371,7 @@ int CreateParticles(ChSystemParallelNSC* system, double radius, double rho, doub
     // Create particles in layers until reaching the desired number of particles
     double r = 1.01 * radius;
     ChVector<> hdims(hdimX - r, hdimY - r, 0);
-    ChVector<> center(0, 0, 2 * r);
+    ChVector<> center(0, 0, top_height + 2 * r);
 
     for (int il = 0; il < num_layers; il++) {
         gen.createObjectsBox(utils::POISSON_DISK, 2 * r, center, hdims);
@@ -563,8 +589,8 @@ int main(int argc, char* argv[]) {
     // Create the terrain.
     // -------------------
 
-    CreateContainer(system, mu_g, coh_g);
-    int actual_num_particles = CreateParticles(system, r_g, rho_g, mu_g, coh_g);
+    double top_height = CreateContainer(system, mu_g, coh_g, (rough ? r_g : -1));
+    int actual_num_particles = CreateParticles(system, r_g, rho_g, mu_g, coh_g, top_height);
     cout << "Created " << actual_num_particles << " particles." << endl;
 
     // Save current settings
