@@ -29,14 +29,16 @@ if(ENABLE_MODULE_IRRLICHT)
 endif()
 
 if(ENABLE_MODULE_POSTPROCESS)
-  add_subdirectory(postprocess)
+    add_subdirectory(postprocess)
 endif()
 
-if(ENABLE_MODULE_PARALLEL AND ENABLE_MODULE_OPENGL)
-  add_subdirectory(parallel)
+if(ENABLE_MODULE_PARALLEL)
+    add_subdirectory(parallel)
+    add_subdirectory(box_collision)
+    add_subdirectory(rolling)
 endif()
 
-if(ENABLE_MODULE_VEHICLE AND ENABLE_MODULE_PARALLEL AND ENABLE_MODULE_OPENGL)
+if(ENABLE_MODULE_VEHICLE AND ENABLE_MODULE_PARALLEL)
     add_subdirectory(go_nogo)
 endif()
 
@@ -44,7 +46,3 @@ if(ENABLE_MODULE_VEHICLE AND ENABLE_MODULE_IRRLICHT)
 	add_subdirectory(vehicle)
 endif()
 
-if(ENABLE_MODULE_PARALLEL)
-  add_subdirectory(rolling)
-  add_subdirectory(box_collision)
-endif()

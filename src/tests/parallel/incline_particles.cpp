@@ -35,7 +35,9 @@
 #include "chrono_parallel/solver/ChIterativeSolverParallel.h"
 #include "chrono_parallel/physics/Ch3DOFContainer.h"
 
+#ifdef CHRONO_OPENGL
 #include "chrono_opengl/ChOpenGLWindow.h"
+#endif
 
 using namespace chrono;
 using namespace chrono::collision;
@@ -48,7 +50,7 @@ using std::endl;
 // -----------------------------------------------------------------------------
 
 // Use 3DOF particles?
-#define USE_PARTICLES
+bool use_particles = true;
 
 // Container
 double hdimX = 0.5;
@@ -103,6 +105,7 @@ double alpha = 0;
 double contact_recovery_speed = 1000;
 
 // Output
+bool render = true;
 bool output = false;
 std::string out_dir = "../PARTICLES";
 
@@ -209,105 +212,111 @@ double CreateContainer(ChSystem* system,  // containing system
 
 // =============================================================================
 
-int CreateParticles(ChSystemParallelNSC* system,  // containing system
-                    double radius,                // particle radius
-                    double rho,                   // particle density
-                    double mu,                    // coefficient of friction
-                    double coh,                   // cohesion (constant impulse)
-                    double top_height             // top height of rigid container
-                    ) {
-#ifdef USE_PARTICLES
-    particle_container = std::make_shared<ChParticleContainer>();
-    system->Add3DOFContainer(particle_container);
+unsigned int CreateParticles(ChSystemParallelNSC* system,  // containing system
+                             double radius,                // particle radius
+                             double rho,                   // particle density
+                             double mu,                    // coefficient of friction
+                             double coh,                   // cohesion (constant impulse)
+                             double top_height             // top height of rigid container
+                             ) {
+    unsigned int num_particles = 0;
 
-    particle_container->kernel_radius = 2 * radius;
-    particle_container->mass = rho * (4 * CH_C_PI / 3) * std::pow(radius, 3);
+    if (use_particles) {
+        particle_container = std::make_shared<ChParticleContainer>();
+        system->Add3DOFContainer(particle_container);
 
-    particle_container->contact_mu = mu;
-    particle_container->contact_cohesion = coh;
-    particle_container->contact_compliance = compliance;
+        particle_container->kernel_radius = 2 * radius;
+        particle_container->mass = rho * (4 * CH_C_PI / 3) * std::pow(radius, 3);
 
-    particle_container->mu = mu;
-    particle_container->cohesion = coh;
-    particle_container->compliance = compliance;
+        particle_container->contact_mu = mu;
+        particle_container->contact_cohesion = coh;
+        particle_container->contact_compliance = compliance;
 
-    particle_container->alpha = alpha;
+        particle_container->mu = mu;
+        particle_container->cohesion = coh;
+        particle_container->compliance = compliance;
 
-    particle_container->contact_recovery_speed = contact_recovery_speed;
-    particle_container->collision_envelope = 0.1 * radius;
+        particle_container->alpha = alpha;
 
-    std::vector<real3> pos;
-    std::vector<real3> vel;
+        particle_container->contact_recovery_speed = contact_recovery_speed;
+        particle_container->collision_envelope = 0.1 * radius;
 
-    double r = 1.01 * radius;
-    ChVector<> hdims(hdimX - r, hdimY - r, 0);
-    ChVector<> center(0, 0, top_height + 2 * r);
+        std::vector<real3> pos;
+        std::vector<real3> vel;
 
-    utils::PDSampler<> sampler(2 * r);
-    for (int il = 0; il < num_layers; il++) {
-        utils::Generator::PointVector points = sampler.SampleBox(center, hdims);
-        center.z() += 2 * r;
-        for (int i = 0; i < points.size(); i++) {
-            pos.push_back(real3(points[i].x(), points[i].y(), points[i].z()));
-            vel.push_back(real3(0, 0, 0));
+        double r = 1.01 * radius;
+        ChVector<> hdims(hdimX - r, hdimY - r, 0);
+        ChVector<> center(0, 0, top_height + 2 * r);
+
+        utils::PDSampler<> sampler(2 * r);
+        for (int il = 0; il < num_layers; il++) {
+            utils::Generator::PointVector points = sampler.SampleBox(center, hdims);
+            center.z() += 2 * r;
+            for (int i = 0; i < points.size(); i++) {
+                pos.push_back(real3(points[i].x(), points[i].y(), points[i].z()));
+                vel.push_back(real3(0, 0, 0));
+            }
         }
+
+        particle_container->UpdatePosition(0);
+        particle_container->AddBodies(pos, vel);
+
+        num_particles = (unsigned int)pos.size();
+    } else {
+        // Create a material
+        auto mat_g = std::make_shared<ChMaterialSurfaceNSC>();
+        mat_g->SetFriction((float)mu);
+        mat_g->SetCohesion((float)coh);
+        mat_g->SetCompliance(1e-9f);
+
+        // Create a particle generator and a mixture entirely made out of spheres
+        utils::Generator gen(system);
+        std::shared_ptr<utils::MixtureIngredient> m1 = gen.AddMixtureIngredient(utils::SPHERE, 1.0);
+        m1->setDefaultMaterial(mat_g);
+        m1->setDefaultDensity(rho);
+        m1->setDefaultSize(radius);
+
+        // Set starting value for body identifiers
+        gen.setBodyIdentifier(1);
+
+        // Create particles in layers until reaching the desired number of particles
+        double r = 1.01 * radius;
+        ChVector<> hdims(hdimX - r, hdimY - r, 0);
+        ChVector<> center(0, 0, top_height + 2 * r);
+
+        for (int il = 0; il < num_layers; il++) {
+            gen.createObjectsBox(utils::POISSON_DISK, 2 * r, center, hdims);
+            center.z() += 2 * r;
+        }
+
+        num_particles = gen.getTotalNumBodies();
     }
 
-    particle_container->UpdatePosition(0);
-    particle_container->AddBodies(pos, vel);
-
-    return (int)pos.size();
-#else
-    // Create a material
-    auto mat_g = std::make_shared<ChMaterialSurfaceNSC>();
-    mat_g->SetFriction((float)mu);
-    mat_g->SetCohesion((float)coh);
-    mat_g->SetCompliance(1e-9f);
-
-    // Create a particle generator and a mixture entirely made out of spheres
-    utils::Generator gen(system);
-    std::shared_ptr<utils::MixtureIngredient> m1 = gen.AddMixtureIngredient(utils::SPHERE, 1.0);
-    m1->setDefaultMaterial(mat_g);
-    m1->setDefaultDensity(rho);
-    m1->setDefaultSize(radius);
-
-    // Set starting value for body identifiers
-    gen.setBodyIdentifier(1);
-
-    // Create particles in layers until reaching the desired number of particles
-    double r = 1.01 * radius;
-    ChVector<> hdims(hdimX - r, hdimY - r, 0);
-    ChVector<> center(0, 0, top_height + 2 * r);
-
-    for (int il = 0; il < num_layers; il++) {
-        gen.createObjectsBox(utils::POISSON_DISK, 2 * r, center, hdims);
-        center.z() += 2 * r;
-    }
-
-    return gen.getTotalNumBodies();
-#endif
+    return num_particles;
 }
 
 // =============================================================================
 
 ChVector<> CalculateCOM(ChSystem* system) {
     ChVector<> com(0, 0, 0);
-    uint count = 0;
-#ifdef USE_PARTICLES
-    count = particle_container->GetNumParticles();
-    for (uint i = 0; i < count; i++) {
-        real3 pos = particle_container->GetPos(i);
-        com += ChVector<>(pos.x, pos.y, pos.z);
-    }
-#else
-    for (size_t i = 0; i < system->Get_bodylist()->size(); ++i) {
-        auto body = (*system->Get_bodylist())[i];
-        if (body->GetIdentifier()) {
-            com += body->GetPos();
-            count++;
+    unsigned int count = 0;
+
+    if (use_particles) {
+        count = particle_container->GetNumParticles();
+        for (uint i = 0; i < count; i++) {
+            real3 pos = particle_container->GetPos(i);
+            com += ChVector<>(pos.x, pos.y, pos.z);
+        }
+    } else {
+        for (size_t i = 0; i < system->Get_bodylist()->size(); ++i) {
+            auto body = (*system->Get_bodylist())[i];
+            if (body->GetIdentifier()) {
+                com += body->GetPos();
+                count++;
+            }
         }
     }
-#endif
+
     return com / count;
 }
 
@@ -331,12 +340,8 @@ int main(int argc, char* argv[]) {
             return 1;
         }
 
-// Open the output file stream
-#ifdef USE_PARTICLES
-        std::string fname = out_dir + "/resultsP_";
-#else
-        std::string fname = out_dir + "/resultsB_";
-#endif
+        // Open the output file stream
+        std::string fname = out_dir + (use_particles ? "/resultsP_" : "/resultsB_");
         fname += std::to_string(slope_deg) + "_" + std::to_string(radius_mm) + "_" + std::to_string(friction) + "_" +
                  std::to_string(coh_pressure_kpa) + ".dat";
         outf.open(fname, std::ios::out);
@@ -409,15 +414,19 @@ int main(int argc, char* argv[]) {
     cout << "Cohesion: " << coh_pressure_kpa << " " << coh_force << " " << cohesion << endl;
 
     double top_height = CreateContainer(system, friction, cohesion, (rough ? radius : -1));
-    int actual_num_particles = CreateParticles(system, radius, density, friction, cohesion, top_height);
+    unsigned int actual_num_particles = CreateParticles(system, radius, density, friction, cohesion, top_height);
 
     cout << "Created " << actual_num_particles << " particles." << endl;
 
+#ifdef CHRONO_OPENGL
     // Initialize OpenGL
-    opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-    gl_window.Initialize(1280, 720, "Particles on incline", system);
-    gl_window.SetCamera(ChVector<>(0, -hdimY - 1, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1), float(hdimY / 10));
-    gl_window.SetRenderMode(opengl::WIREFRAME);
+    if (render) {
+        opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
+        gl_window.Initialize(1280, 720, "Particles on incline", system);
+        gl_window.SetCamera(ChVector<>(0, -hdimY - 1, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1), float(hdimY / 10));
+        gl_window.SetRenderMode(opengl::WIREFRAME);
+    }
+#endif
 
     // ---------------
     // Simulation loop
@@ -437,7 +446,7 @@ int main(int argc, char* argv[]) {
             is_pitched = true;
         }
 
-        // Advance system state (no vehicle created yet)
+        // Advance system state
         system->DoStepDynamics(time_step);
 
         if (output) {
@@ -445,11 +454,15 @@ int main(int argc, char* argv[]) {
             outf << time << " " << com.x() << " " << com.y() << " " << com.z() << "\n";
         }
 
-        opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-        if (gl_window.Active())
-            gl_window.Render();
-        else
-            break;
+#ifdef CHRONO_OPENGL
+        if (render) {
+            opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
+            if (gl_window.Active())
+                gl_window.Render();
+            else
+                break;
+        }
+#endif
 
         // Display performance metrics
         TimingOutput(system);
