@@ -32,7 +32,7 @@ const double WVP_PitmanArm::m_pitmanArmMass = 2.0;
 const double WVP_PitmanArm::m_steeringLinkRadius = 0.03;
 const double WVP_PitmanArm::m_pitmanArmRadius = 0.02;
 
-const double WVP_PitmanArm::m_maxAngle = 35.0 * (CH_C_PI / 180); //TODO: find this
+const double WVP_PitmanArm::m_maxAngle = 35.0 * (CH_C_PI / 180);
 
 const ChVector<> WVP_PitmanArm::m_steeringLinkInertiaMoments(6.34e-2, 4.47e-4, 6.37e-2);
 const ChVector<> WVP_PitmanArm::m_steeringLinkInertiaProducts(0.0, 0.0, 0.0);
@@ -50,21 +50,21 @@ WVP_PitmanArm::WVP_PitmanArm(const std::string& name) : ChPitmanArm(name, true) 
 const ChVector<> WVP_PitmanArm::getLocation(PointId which) {
     switch (which) {
         case STEERINGLINK:
-            return ChVector<>(-383e-3,50e-3,.024);
+            return ChVector<>(0,50e-3,.024);
         case PITMANARM:
-            return ChVector<>(-329e-3,474e-3,.04);
+            return ChVector<>(54e-3,474e-3,.016);
         case REV:
-            return ChVector<>(-773e-3,475e-3,.057);
+            return ChVector<>(-390e-3,475e-3,.033);
         case UNIV:
-            return ChVector<>(-483e-3,475e-3,.024);
+            return ChVector<>(-100e-3,475e-3,0);
         case REVSPH_R:
-            return ChVector<>(-773e-3,-375e-3,.057);
+            return ChVector<>(-390e-3,-375e-3,.033);
         case REVSPH_S:
-            return ChVector<>(-483e-3,-375e-3,.024);
+            return ChVector<>(-100e-3,-375e-3,0);
         case TIEROD_PA:
-            return ChVector<>(-383e-3,125e-3,.029);
+            return ChVector<>(0,125e-3,.005);
         case TIEROD_IA:
-            return ChVector<>(-383e-3,-125e-3,.029);
+            return ChVector<>(0,-125e-3,.005);
         default:
             return ChVector<>(0, 0, 0);
     }

@@ -62,7 +62,7 @@ const ChVector<> WVP_DoubleWishboneFront::m_uprightInertiaProducts(0.0, 0.0, 0.0
 
 const double WVP_DoubleWishboneFront::m_axleInertia = 9.6e-3;
 
-const double WVP_DoubleWishboneFront::m_springRestLength = .834;//TODO: change to lookup table
+const double WVP_DoubleWishboneFront::m_springRestLength = .779;
 
 // -----------------------------------------------------------------------------
 
@@ -90,7 +90,7 @@ const ChVector<> WVP_DoubleWishboneRear::m_uprightInertiaProducts(0.0, 0.0, 0.0)
 
 const double WVP_DoubleWishboneRear::m_axleInertia = 9.6e-3;
 
-const double WVP_DoubleWishboneRear::m_springRestLength = .834;//TODO: change to lookup table
+const double WVP_DoubleWishboneRear::m_springRestLength = .831;
 
 // -----------------------------------------------------------------------------
 // WVP suspension spring functor class
@@ -111,47 +111,51 @@ class WVP_SpringForce : public ChLinkSpringCB::ForceFunctor {
 };
 
 WVP_SpringForce::WVP_SpringForce(double ride_height_length) : m_ride_height_length(ride_height_length) {
-    m_map.AddPoint(-127.8e-3, -20.72e3);
-    m_map.AddPoint(-120e-3, -21.16e3);
-    m_map.AddPoint(-110e-3, -21.73e3);
-    m_map.AddPoint(-100e-3, -22.3e3);
-    m_map.AddPoint(-90e-3, -22.87e3);
-    m_map.AddPoint(-80e-3, -23.44e3);
-    m_map.AddPoint(-70e-3, -24.01e3);
-    m_map.AddPoint(-60e-3, -24.58e3);
-    m_map.AddPoint(-50e-3, -25.15e3);
-    m_map.AddPoint(-40e-3, -25.72e3);
-    m_map.AddPoint(-30e-3, -26.29e3);
-    m_map.AddPoint(-20e-3, -26.86e3);
-    m_map.AddPoint(-10e-3, -27.43e3);
+    m_map.AddPoint(-127.8e-3, 20.72e3);
+    m_map.AddPoint(-120e-3, 21.16e3);
+    m_map.AddPoint(-110e-3, 21.73e3);
+    m_map.AddPoint(-100e-3, 22.3e3);
+    m_map.AddPoint(-90e-3, 22.87e3);
+    m_map.AddPoint(-80e-3, 23.44e3);
+    m_map.AddPoint(-70e-3, 24.01e3);
+    m_map.AddPoint(-60e-3, 24.58e3);
+    m_map.AddPoint(-50e-3, 25.15e3);
+    m_map.AddPoint(-40e-3, 25.72e3);
+    m_map.AddPoint(-30e-3, 26.29e3);
+    m_map.AddPoint(-20e-3, 26.86e3);
+    m_map.AddPoint(-10e-3, 27.43e3);
     m_map.AddPoint(0, 28e3);
-    m_map.AddPoint(10e-3, -28.57e3);
-    m_map.AddPoint(20e-3, -29.14e3);
-    m_map.AddPoint(30e-3, -29.71e3);
-    m_map.AddPoint(40e-3, -30.28e3);
-    m_map.AddPoint(50e-3, -30.85e3);
-    m_map.AddPoint(60e-3, -31.42e3);
-    m_map.AddPoint(70e-3, -31.99e3);
-    m_map.AddPoint(80e-3, -32.56e3);
-    m_map.AddPoint(90e-3, -33.13e3);
-    m_map.AddPoint(100e-3, -33.70e3);
-    m_map.AddPoint(110e-3, -34.27e3);
-    m_map.AddPoint(120e-3, -34.84e3);
-    m_map.AddPoint(130e-3, -35.41e3);
-    m_map.AddPoint(140e-3, -35.98e3);
-    m_map.AddPoint(150e-3, -36.55e3);
-    m_map.AddPoint(160e-3, -37.12e3);
-    m_map.AddPoint(170e-3, -37.69e3);
-    m_map.AddPoint(180e-3, -38.26e3);
-    m_map.AddPoint(190e-3, -38.83e3);
-    m_map.AddPoint(200e-3, -39.40e3);
-    m_map.AddPoint(210e-3, -39.97e3);
-    m_map.AddPoint(220e-3, -40.54e3);
-    m_map.AddPoint(227.2e-3, -40.95e3);
+    m_map.AddPoint(10e-3, 28.57e3);
+    m_map.AddPoint(20e-3, 29.14e3);
+    m_map.AddPoint(30e-3, 29.71e3);
+    m_map.AddPoint(40e-3, 30.28e3);
+    m_map.AddPoint(50e-3, 30.85e3);
+    m_map.AddPoint(60e-3, 31.42e3);
+    m_map.AddPoint(70e-3, 31.99e3);
+    m_map.AddPoint(80e-3, 32.56e3);
+    m_map.AddPoint(90e-3, 33.13e3);
+    m_map.AddPoint(100e-3, 33.70e3);
+    m_map.AddPoint(110e-3, 34.27e3);
+    m_map.AddPoint(120e-3, 34.84e3);
+    m_map.AddPoint(130e-3, 35.41e3);
+    m_map.AddPoint(140e-3, 35.98e3);
+    m_map.AddPoint(150e-3, 36.55e3);
+    m_map.AddPoint(160e-3, 37.12e3);
+    m_map.AddPoint(170e-3, 37.69e3);
+    m_map.AddPoint(180e-3, 38.26e3);
+    m_map.AddPoint(190e-3, 38.83e3);
+    m_map.AddPoint(200e-3, 39.40e3);
+    m_map.AddPoint(210e-3, 39.97e3);
+    m_map.AddPoint(220e-3, 40.54e3);
+    m_map.AddPoint(227.2e-3, 40.95e3);
+
+    //TODO add points for bumpstops
+    //
+
 }
 
 double WVP_SpringForce::operator()(double time, double rest_length, double length, double vel, ChLinkSpringCB* link) {
-    return -m_map.Get_y(length - rest_length);
+    return m_map.Get_y(length - rest_length);
 }
 
 // -----------------------------------------------------------------------------
@@ -203,6 +207,11 @@ double WVP_ShockForce::operator()(double time, double rest_length, double length
     //std::cout << m_axle_name << " " << side << " | " << displ_mine << "  " << displ_other << std::endl;
 
     ////  TODO
+    if(parallel_travel){ //lookup table for parallel travel
+
+    }else{ //lookup table for single wheel travel
+
+    }
 
     return force;
 }
@@ -311,40 +320,40 @@ const ChVector<> WVP_DoubleWishboneFront::getLocation(PointId which) {
 
 const ChVector<> WVP_DoubleWishboneRear::getLocation(PointId which) {
     switch (which) {
-        case SPINDLE:
-            return ChVector<>(-4.039,1.033,0);
-        case UPRIGHT:
-            return ChVector<>(-4.039, 1.033,0);//TODO: not given
-        case UCA_F:
-            return ChVector<>(-3.729,.192,.365);
-        case UCA_B:
-            return ChVector<>(-4.187,.192,.365);
-        case UCA_U:
-            return ChVector<>(-4.047,.772,.234);
-        case UCA_CM:
-            return ChVector<>(-3.998,.428,.331);
-        case LCA_F:
-            return ChVector<>(-3.679,.192,.012);
-        case LCA_B:
-            return ChVector<>(-4.288,.192,.012);
-        case LCA_U:
-            return ChVector<>(-4.032,.832,-.152);
-        case LCA_CM:
-            return ChVector<>(-4.000,.406,-.043);
-        case SHOCK_C:
-            return ChVector<>(-4.146,.540,.724);
-        case SHOCK_A:
-            return ChVector<>(-4.146,.547,-.111);
-        case SPRING_C:
-            return ChVector<>(-4.146,.540,.724);
-        case SPRING_A:
-            return ChVector<>(-4.146,.547,-.111);
-        case TIEROD_C:
-            return ChVector<>(-4.422,.125,.029);
-        case TIEROD_U:
-            return ChVector<>(-4.437,.750,-.128);
-        default:
-            return ChVector<>(0, 0, 0);
+      case SPINDLE:
+          return ChVector<>(0,1.033,0);
+      case UPRIGHT:
+          return ChVector<>(0, 1.033, 0);
+      case UCA_F:
+          return ChVector<>(.309,.192,.365);
+      case UCA_B:
+          return ChVector<>(-.149,.192,.365);
+      case UCA_U:
+          return ChVector<>(-.008,.772,.234);
+      case UCA_CM:
+          return ChVector<>(.041,.428,.331);
+      case LCA_F:
+          return ChVector<>(.360,.192,.012);
+      case LCA_B:
+          return ChVector<>(-.250,.192,.012);
+      case LCA_U:
+          return ChVector<>(.007,.832,-.152);
+      case LCA_CM:
+          return ChVector<>(.039,.406,-.043);
+      case SHOCK_C:
+          return ChVector<>(-.107,.540,.724);
+      case SHOCK_A:
+          return ChVector<>(-.107,.547,-.111);
+      case SPRING_C:
+          return ChVector<>(-.107,.540,.724);
+      case SPRING_A:
+          return ChVector<>(-.107,.547,-.111);
+      case TIEROD_C:
+          return ChVector<>(-.383,.125,.029);
+      case TIEROD_U:
+          return ChVector<>(-.398,.750,-.128);
+      default:
+          return ChVector<>(0, 0, 0);
     }
 }
 

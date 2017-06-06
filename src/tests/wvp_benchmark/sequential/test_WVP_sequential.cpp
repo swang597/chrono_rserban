@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
 
     // Create the vehicle, set parameters, and initialize
     WVP wvp;
-    wvp.SetChassisFixed(true);
+    wvp.SetChassisFixed(false);
     wvp.SetInitPosition(ChCoordsys<>(initLoc, initRot));
     wvp.SetTireType(tire_model);
     wvp.SetTireStepSize(tire_step_size);

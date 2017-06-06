@@ -97,15 +97,15 @@ void WVP_Vehicle::Initialize(const ChCoordsys<>& chassisPos, double chassisFwdVe
 
     // Initialize the steering subsystem (specify the steering subsystem's frame
     // relative to the chassis reference frame).
-    ChVector<> offset = ChVector<>(0,0,0);
+    ChVector<> offset = ChVector<>(-383e-3,0,.024);
     ChQuaternion<> rotation = Q_from_AngAxis(0, ChVector<>(0, 1, 0));
     m_steerings[0]->Initialize(m_chassis->GetBody(), offset, rotation);
 
     // Initialize the suspension subsystems (specify the suspension subsystems'
     // frames relative to the chassis reference frame).
-    m_suspensions[0]->Initialize(m_chassis->GetBody(), ChVector<>(0, 0, .012), m_steerings[0]->GetSteeringLink(), 0,
+    m_suspensions[0]->Initialize(m_chassis->GetBody(), ChVector<>(0, 0, 0), m_steerings[0]->GetSteeringLink(), 0,
                                  m_omega[0], m_omega[1]);
-    m_suspensions[1]->Initialize(m_chassis->GetBody(), ChVector<>(-4.039, 0, .012), m_chassis->GetBody(), -1,
+    m_suspensions[1]->Initialize(m_chassis->GetBody(), ChVector<>(-4.039, 0, 0), m_chassis->GetBody(), -1,
                                  m_omega[2], m_omega[3]);
 
     // Initialize wheels
