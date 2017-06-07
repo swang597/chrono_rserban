@@ -28,6 +28,8 @@
 
 #include "chrono_vehicle/wheeled_vehicle/suspension/ChDoubleWishbone.h"
 
+#include <map>
+
 #include "chrono_models/ChApiModels.h"
 
 namespace chrono {
