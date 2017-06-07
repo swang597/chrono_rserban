@@ -155,7 +155,7 @@ WVP_SpringForce::WVP_SpringForce(double ride_height_length) : m_ride_height_leng
 }
 
 double WVP_SpringForce::operator()(double time, double rest_length, double length, double vel, ChLinkSpringCB* link) {
-    return m_map.Get_y(length - rest_length);
+    return -m_map.Get_y(length - rest_length);
 }
 
 // -----------------------------------------------------------------------------
@@ -167,68 +167,68 @@ class WVP_ShockForce : public ChLinkSpringCB::ForceFunctor {
       //add single damping table
 
       ChFunction_Recorder m_single_damp_map1;
-      m_single_damp_map1.AddPoint(-127.8e-3, -1.27e2);
-      m_single_damp_map1.AddPoint(-90e-3, -1.27e2);
-      m_single_damp_map1.AddPoint(-80e-3, -1.26e2);
-      m_single_damp_map1.AddPoint(-50e-3, -1.26e2);
-      m_single_damp_map1.AddPoint(-40e-3, -1.24e2);
-      m_single_damp_map1.AddPoint(-30e-3, -1.13e2);
-      m_single_damp_map1.AddPoint(-20e-3, -8.99e1);
-      m_single_damp_map1.AddPoint(120e-3, -8.99e1);
-      m_single_damp_map1.AddPoint(130e-3, -8.99e1);
-      m_single_damp_map1.AddPoint(140e-3, -8.99e1);
-      m_single_damp_map1.AddPoint(150e-3, -8.99e1);
-      m_single_damp_map1.AddPoint(160e-3, -8.99e1);
-      m_single_damp_map1.AddPoint(170e-3, -8.99e1);
-      m_single_damp_map1.AddPoint(227.2e-3, -8.99e1);
+      m_single_damp_map1.AddPoint(-127.8e-3, -1.27e5);
+      m_single_damp_map1.AddPoint(-90e-3, -1.27e5);
+      m_single_damp_map1.AddPoint(-80e-3, -1.26e5);
+      m_single_damp_map1.AddPoint(-50e-3, -1.26e5);
+      m_single_damp_map1.AddPoint(-40e-3, -1.24e5);
+      m_single_damp_map1.AddPoint(-30e-3, -1.13e5);
+      m_single_damp_map1.AddPoint(-20e-3, -8.99e4);
+      m_single_damp_map1.AddPoint(120e-3, -8.99e4);
+      m_single_damp_map1.AddPoint(130e-3, -8.99e4);
+      m_single_damp_map1.AddPoint(140e-3, -8.99e4);
+      m_single_damp_map1.AddPoint(150e-3, -8.99e4);
+      m_single_damp_map1.AddPoint(160e-3, -8.99e4);
+      m_single_damp_map1.AddPoint(170e-3, -8.99e4);
+      m_single_damp_map1.AddPoint(227.2e-3, -8.99e4);
 
       ChFunction_Recorder m_single_damp_map75;
-      m_single_damp_map75.AddPoint(-127.8e-3, -8.71e1);
-      m_single_damp_map75.AddPoint(-90e-3, -8.71e1);
-      m_single_damp_map75.AddPoint(-80e-3, -8.60e1);
-      m_single_damp_map75.AddPoint(-50e-3, -8.60e1);
-      m_single_damp_map75.AddPoint(-40e-3, -8.30e1);
-      m_single_damp_map75.AddPoint(-30e-3, -7.2e1);
-      m_single_damp_map75.AddPoint(-20e-3, -4.91e1);
-      m_single_damp_map75.AddPoint(120e-3, -4.91e1);
-      m_single_damp_map75.AddPoint(130e-3, -4.91e1);
-      m_single_damp_map75.AddPoint(140e-3, -4.91e1);
-      m_single_damp_map75.AddPoint(150e-3, -4.91e1);
-      m_single_damp_map75.AddPoint(160e-3, -4.91e1);
-      m_single_damp_map75.AddPoint(170e-3, -4.91e1);
-      m_single_damp_map75.AddPoint(227.2e-3, -4.91e1);
+      m_single_damp_map75.AddPoint(-127.8e-3, -8.71e4);
+      m_single_damp_map75.AddPoint(-90e-3, -8.71e4);
+      m_single_damp_map75.AddPoint(-80e-3, -8.60e4);
+      m_single_damp_map75.AddPoint(-50e-3, -8.60e4);
+      m_single_damp_map75.AddPoint(-40e-3, -8.30e4);
+      m_single_damp_map75.AddPoint(-30e-3, -7.2e4);
+      m_single_damp_map75.AddPoint(-20e-3, -4.91e4);
+      m_single_damp_map75.AddPoint(120e-3, -4.91e4);
+      m_single_damp_map75.AddPoint(130e-3, -4.91e4);
+      m_single_damp_map75.AddPoint(140e-3, -4.91e4);
+      m_single_damp_map75.AddPoint(150e-3, -4.91e4);
+      m_single_damp_map75.AddPoint(160e-3, -4.91e4);
+      m_single_damp_map75.AddPoint(170e-3, -4.91e4);
+      m_single_damp_map75.AddPoint(227.2e-3, -4.91e4);
 
       ChFunction_Recorder m_single_damp_map5;
-      m_single_damp_map5.AddPoint(-127.8e-3, -6.00e1);
-      m_single_damp_map5.AddPoint(-90e-3, -6.00e1);
-      m_single_damp_map5.AddPoint(-80e-3, -5.89e1);
-      m_single_damp_map5.AddPoint(-50e-3, -5.89e1);
-      m_single_damp_map5.AddPoint(-40e-3, -5.62e1);
-      m_single_damp_map5.AddPoint(-30e-3, -4.47e1);
-      m_single_damp_map5.AddPoint(-20e-3, -2.18e1);
-      m_single_damp_map5.AddPoint(120e-3, -2.18e1);
-      m_single_damp_map5.AddPoint(130e-3, -2.18e1);
-      m_single_damp_map5.AddPoint(140e-3, -2.18e1);
-      m_single_damp_map5.AddPoint(150e-3, -2.18e1);
-      m_single_damp_map5.AddPoint(160e-3, -2.18e1);
-      m_single_damp_map5.AddPoint(170e-3, -2.18e1);
-      m_single_damp_map5.AddPoint(227.2e-3, -2.18e1);
+      m_single_damp_map5.AddPoint(-127.8e-3, -6.00e4);
+      m_single_damp_map5.AddPoint(-90e-3, -6.00e4);
+      m_single_damp_map5.AddPoint(-80e-3, -5.89e4);
+      m_single_damp_map5.AddPoint(-50e-3, -5.89e4);
+      m_single_damp_map5.AddPoint(-40e-3, -5.62e4);
+      m_single_damp_map5.AddPoint(-30e-3, -4.47e4);
+      m_single_damp_map5.AddPoint(-20e-3, -2.18e4);
+      m_single_damp_map5.AddPoint(120e-3, -2.18e4);
+      m_single_damp_map5.AddPoint(130e-3, -2.18e4);
+      m_single_damp_map5.AddPoint(140e-3, -2.18e4);
+      m_single_damp_map5.AddPoint(150e-3, -2.18e4);
+      m_single_damp_map5.AddPoint(160e-3, -2.18e4);
+      m_single_damp_map5.AddPoint(170e-3, -2.18e4);
+      m_single_damp_map5.AddPoint(227.2e-3, -2.18e4);
 
       ChFunction_Recorder m_single_damp_map25;
-      m_single_damp_map25.AddPoint(-127.8e-3, -4.41e1);
-      m_single_damp_map25.AddPoint(-90e-3, -4.41e1);
-      m_single_damp_map25.AddPoint(-80e-3, -4.10e1);
-      m_single_damp_map25.AddPoint(-50e-3, -4.10e1);
-      m_single_damp_map25.AddPoint(-40e-3, -3.83e1);
-      m_single_damp_map25.AddPoint(-30e-3, -2.71e1);
-      m_single_damp_map25.AddPoint(-20e-3, -3.90e1);
-      m_single_damp_map25.AddPoint(120e-3, -3.90e0);
-      m_single_damp_map25.AddPoint(130e-3, -3.90e0);
-      m_single_damp_map25.AddPoint(140e-3, -3.90e0);
-      m_single_damp_map25.AddPoint(150e-3, -3.90e0);
-      m_single_damp_map25.AddPoint(160e-3, -3.90e0);
-      m_single_damp_map25.AddPoint(170e-3, -3.90e0);
-      m_single_damp_map25.AddPoint(227.2e-3, -3.90e0);
+      m_single_damp_map25.AddPoint(-127.8e-3, -4.41e4);
+      m_single_damp_map25.AddPoint(-90e-3, -4.41e4);
+      m_single_damp_map25.AddPoint(-80e-3, -4.10e4);
+      m_single_damp_map25.AddPoint(-50e-3, -4.10e4);
+      m_single_damp_map25.AddPoint(-40e-3, -3.83e4);
+      m_single_damp_map25.AddPoint(-30e-3, -2.71e4);
+      m_single_damp_map25.AddPoint(-20e-3, -3.90e4);
+      m_single_damp_map25.AddPoint(120e-3, -3.90e3);
+      m_single_damp_map25.AddPoint(130e-3, -3.90e3);
+      m_single_damp_map25.AddPoint(140e-3, -3.90e3);
+      m_single_damp_map25.AddPoint(150e-3, -3.90e3);
+      m_single_damp_map25.AddPoint(160e-3, -3.90e3);
+      m_single_damp_map25.AddPoint(170e-3, -3.90e3);
+      m_single_damp_map25.AddPoint(227.2e-3, -3.90e3);
 
       ChFunction_Recorder m_single_damp_map_0;
       m_single_damp_map_0.AddPoint(-127.8e-3, 0);
@@ -247,68 +247,68 @@ class WVP_ShockForce : public ChLinkSpringCB::ForceFunctor {
       m_single_damp_map_0.AddPoint(227.2e-3, 0);
 
       ChFunction_Recorder m_single_damp_map_5;
-      m_single_damp_map_5.AddPoint(-127.8e-3, 1.79e1);
-      m_single_damp_map_5.AddPoint(-90e-3, 1.79e1);
-      m_single_damp_map_5.AddPoint(-80e-3, 1.79e1);
-      m_single_damp_map_5.AddPoint(-50e-3, 1.79e1);
-      m_single_damp_map_5.AddPoint(-40e-3, 1.79e1);
-      m_single_damp_map_5.AddPoint(-30e-3, 1.79e1);
-      m_single_damp_map_5.AddPoint(-20e-3, 1.79e1);
-      m_single_damp_map_5.AddPoint(120e-3, 1.79e1);
-      m_single_damp_map_5.AddPoint(130e-3, 3.57e1);
-      m_single_damp_map_5.AddPoint(140e-3, 5.62e1);
-      m_single_damp_map_5.AddPoint(150e-3, 6.51e1);
-      m_single_damp_map_5.AddPoint(160e-3, 6.71e1);
-      m_single_damp_map_5.AddPoint(170e-3, 7.16e1);
-      m_single_damp_map_5.AddPoint(227.2e-3, 7.16e1);
+      m_single_damp_map_5.AddPoint(-127.8e-3, 1.79e4);
+      m_single_damp_map_5.AddPoint(-90e-3, 1.79e4);
+      m_single_damp_map_5.AddPoint(-80e-3, 1.79e4);
+      m_single_damp_map_5.AddPoint(-50e-3, 1.79e4);
+      m_single_damp_map_5.AddPoint(-40e-3, 1.79e4);
+      m_single_damp_map_5.AddPoint(-30e-3, 1.79e4);
+      m_single_damp_map_5.AddPoint(-20e-3, 1.79e4);
+      m_single_damp_map_5.AddPoint(120e-3, 1.79e4);
+      m_single_damp_map_5.AddPoint(130e-3, 3.57e4);
+      m_single_damp_map_5.AddPoint(140e-3, 5.62e4);
+      m_single_damp_map_5.AddPoint(150e-3, 6.51e4);
+      m_single_damp_map_5.AddPoint(160e-3, 6.71e4);
+      m_single_damp_map_5.AddPoint(170e-3, 7.16e4);
+      m_single_damp_map_5.AddPoint(227.2e-3, 7.16e4);
 
       ChFunction_Recorder m_single_damp_map_1;
-      m_single_damp_map_1.AddPoint(-127.8e-3, 7.62e1);
-      m_single_damp_map_1.AddPoint(-90e-3, 7.62e1);
-      m_single_damp_map_1.AddPoint(-80e-3, 7.62e1);
-      m_single_damp_map_1.AddPoint(-50e-3, 7.62e1);
-      m_single_damp_map_1.AddPoint(-40e-3, 7.62e1);
-      m_single_damp_map_1.AddPoint(-30e-3, 7.62e1);
-      m_single_damp_map_1.AddPoint(-20e-3, 7.62e1);
-      m_single_damp_map_1.AddPoint(120e-3, 7.62e1);
-      m_single_damp_map_1.AddPoint(130e-3, 1.30e1);
-      m_single_damp_map_1.AddPoint(140e-3, 2.26e1);
-      m_single_damp_map_1.AddPoint(150e-3, 2.66e1);
-      m_single_damp_map_1.AddPoint(160e-3, 2.83e1);
-      m_single_damp_map_1.AddPoint(170e-3, 2.92e1);
-      m_single_damp_map_1.AddPoint(227.2e-3, 2.92e1);
+      m_single_damp_map_1.AddPoint(-127.8e-3, 7.62e4);
+      m_single_damp_map_1.AddPoint(-90e-3, 7.62e4);
+      m_single_damp_map_1.AddPoint(-80e-3, 7.62e4);
+      m_single_damp_map_1.AddPoint(-50e-3, 7.62e4);
+      m_single_damp_map_1.AddPoint(-40e-3, 7.62e4);
+      m_single_damp_map_1.AddPoint(-30e-3, 7.62e4);
+      m_single_damp_map_1.AddPoint(-20e-3, 7.62e4);
+      m_single_damp_map_1.AddPoint(120e-3, 7.62e4);
+      m_single_damp_map_1.AddPoint(130e-3, 1.30e4);
+      m_single_damp_map_1.AddPoint(140e-3, 2.26e4);
+      m_single_damp_map_1.AddPoint(150e-3, 2.66e4);
+      m_single_damp_map_1.AddPoint(160e-3, 2.83e4);
+      m_single_damp_map_1.AddPoint(170e-3, 2.92e4);
+      m_single_damp_map_1.AddPoint(227.2e-3, 2.92e4);
 
       ChFunction_Recorder m_single_damp_map_15;
-      m_single_damp_map_15.AddPoint(-127.8e-3, 1.65e1);
-      m_single_damp_map_15.AddPoint(-90e-3, 1.65e1);
-      m_single_damp_map_15.AddPoint(-80e-3, 1.65e1);
-      m_single_damp_map_15.AddPoint(-50e-3, 1.65e1);
-      m_single_damp_map_15.AddPoint(-40e-3, 1.65e1);
-      m_single_damp_map_15.AddPoint(-30e-3, 1.65e1);
-      m_single_damp_map_15.AddPoint(-20e-3, 1.65e1);
-      m_single_damp_map_15.AddPoint(120e-3, 1.65e1);
-      m_single_damp_map_15.AddPoint(130e-3, 2.79e1);
-      m_single_damp_map_15.AddPoint(140e-3, 4.93e1);
-      m_single_damp_map_15.AddPoint(150e-3, 5.87e1);
-      m_single_damp_map_15.AddPoint(160e-3, 6.25e1);
-      m_single_damp_map_15.AddPoint(170e-3, 6.44e1);
-      m_single_damp_map_15.AddPoint(227.2e-3, 6.44e1);
+      m_single_damp_map_15.AddPoint(-127.8e-3, 1.65e4);
+      m_single_damp_map_15.AddPoint(-90e-3, 1.65e4);
+      m_single_damp_map_15.AddPoint(-80e-3, 1.65e4);
+      m_single_damp_map_15.AddPoint(-50e-3, 1.65e4);
+      m_single_damp_map_15.AddPoint(-40e-3, 1.65e4);
+      m_single_damp_map_15.AddPoint(-30e-3, 1.65e4);
+      m_single_damp_map_15.AddPoint(-20e-3, 1.65e4);
+      m_single_damp_map_15.AddPoint(120e-3, 1.65e4);
+      m_single_damp_map_15.AddPoint(130e-3, 2.79e4);
+      m_single_damp_map_15.AddPoint(140e-3, 4.93e4);
+      m_single_damp_map_15.AddPoint(150e-3, 5.87e4);
+      m_single_damp_map_15.AddPoint(160e-3, 6.25e4);
+      m_single_damp_map_15.AddPoint(170e-3, 6.44e4);
+      m_single_damp_map_15.AddPoint(227.2e-3, 6.44e4);
 
       ChFunction_Recorder m_single_damp_map_2;
-      m_single_damp_map_2.AddPoint(-127.8e-3, 2.86e1);
-      m_single_damp_map_2.AddPoint(-90e-3, 2.86e1);
-      m_single_damp_map_2.AddPoint(-80e-3, 2.86e1);
-      m_single_damp_map_2.AddPoint(-50e-3, 2.86e1);
-      m_single_damp_map_2.AddPoint(-40e-3, 2.86e1);
-      m_single_damp_map_2.AddPoint(-30e-3, 2.86e1);
-      m_single_damp_map_2.AddPoint(-20e-3, 2.86e1);
-      m_single_damp_map_2.AddPoint(120e-3, 2.86e1);
-      m_single_damp_map_2.AddPoint(130e-3, 4.66e1);
-      m_single_damp_map_2.AddPoint(140e-3, 8.76e1);
-      m_single_damp_map_2.AddPoint(150e-3, 1.02e1);
-      m_single_damp_map_2.AddPoint(160e-3, 1.10e1);
-      m_single_damp_map_2.AddPoint(170e-3, 1.15e1);
-      m_single_damp_map_2.AddPoint(227.2e-3, 1.15e1);
+      m_single_damp_map_2.AddPoint(-127.8e-3, 2.86e4);
+      m_single_damp_map_2.AddPoint(-90e-3, 2.86e4);
+      m_single_damp_map_2.AddPoint(-80e-3, 2.86e4);
+      m_single_damp_map_2.AddPoint(-50e-3, 2.86e4);
+      m_single_damp_map_2.AddPoint(-40e-3, 2.86e4);
+      m_single_damp_map_2.AddPoint(-30e-3, 2.86e4);
+      m_single_damp_map_2.AddPoint(-20e-3, 2.86e4);
+      m_single_damp_map_2.AddPoint(120e-3, 2.86e4);
+      m_single_damp_map_2.AddPoint(130e-3, 4.66e4);
+      m_single_damp_map_2.AddPoint(140e-3, 8.76e4);
+      m_single_damp_map_2.AddPoint(150e-3, 1.02e4);
+      m_single_damp_map_2.AddPoint(160e-3, 1.10e4);
+      m_single_damp_map_2.AddPoint(170e-3, 1.15e4);
+      m_single_damp_map_2.AddPoint(227.2e-3, 1.15e4);
 
       //add these ChFunction_Recorders to map
       m_single_damp_map.insert({-2.0,m_single_damp_map_2});
@@ -328,48 +328,48 @@ class WVP_ShockForce : public ChLinkSpringCB::ForceFunctor {
 
       //add parallel daping table
       ChFunction_Recorder m_para_damp_map1;
-      m_para_damp_map1.AddPoint(-127.8e-3, -8.99e1);
-      m_para_damp_map1.AddPoint(110e-3, -8.99e1);
-      m_para_damp_map1.AddPoint(120e-3, -8.99e1);
-      m_para_damp_map1.AddPoint(130e-3, -8.99e1);
-      m_para_damp_map1.AddPoint(140e-3, -8.99e1);
-      m_para_damp_map1.AddPoint(150e-3, -8.99e1);
-      m_para_damp_map1.AddPoint(160e-3, -8.99e1);
-      m_para_damp_map1.AddPoint(170e-3, -8.99e1);
-      m_para_damp_map1.AddPoint(227.2e-3, -8.99e1);
+      m_para_damp_map1.AddPoint(-127.8e-3, -8.99e4);
+      m_para_damp_map1.AddPoint(110e-3, -8.99e4);
+      m_para_damp_map1.AddPoint(120e-3, -8.99e4);
+      m_para_damp_map1.AddPoint(130e-3, -8.99e4);
+      m_para_damp_map1.AddPoint(140e-3, -8.99e4);
+      m_para_damp_map1.AddPoint(150e-3, -8.99e4);
+      m_para_damp_map1.AddPoint(160e-3, -8.99e4);
+      m_para_damp_map1.AddPoint(170e-3, -8.99e4);
+      m_para_damp_map1.AddPoint(227.2e-3, -8.99e4);
 
       ChFunction_Recorder m_para_damp_map75;
-      m_para_damp_map75.AddPoint(-127.8e-3, -4.91e1);
-      m_para_damp_map75.AddPoint(110e-3, -4.91e1);
-      m_para_damp_map75.AddPoint(120e-3, -4.91e1);
-      m_para_damp_map75.AddPoint(130e-3, -4.91e1);
-      m_para_damp_map75.AddPoint(140e-3, -4.91e1);
-      m_para_damp_map75.AddPoint(150e-3, -4.91e1);
-      m_para_damp_map75.AddPoint(160e-3, -4.91e1);
-      m_para_damp_map75.AddPoint(170e-3, -4.91e1);
-      m_para_damp_map75.AddPoint(227.2e-3, -4.91e1);
+      m_para_damp_map75.AddPoint(-127.8e-3, -4.91e4);
+      m_para_damp_map75.AddPoint(110e-3, -4.91e4);
+      m_para_damp_map75.AddPoint(120e-3, -4.91e4);
+      m_para_damp_map75.AddPoint(130e-3, -4.91e4);
+      m_para_damp_map75.AddPoint(140e-3, -4.91e4);
+      m_para_damp_map75.AddPoint(150e-3, -4.91e4);
+      m_para_damp_map75.AddPoint(160e-3, -4.91e4);
+      m_para_damp_map75.AddPoint(170e-3, -4.91e4);
+      m_para_damp_map75.AddPoint(227.2e-3, -4.91e4);
 
       ChFunction_Recorder m_para_damp_map5;
-      m_para_damp_map5.AddPoint(-127.8e-3, -2.18e1);
-      m_para_damp_map5.AddPoint(110e-3, -2.18e1);
-      m_para_damp_map5.AddPoint(120e-3, -2.18e1);
-      m_para_damp_map5.AddPoint(130e-3, -2.18e1);
-      m_para_damp_map5.AddPoint(140e-3, -2.18e1);
-      m_para_damp_map5.AddPoint(150e-3, -2.18e1);
-      m_para_damp_map5.AddPoint(160e-3, -2.18e1);
-      m_para_damp_map5.AddPoint(170e-3, -2.18e1);
-      m_para_damp_map5.AddPoint(227.2e-3, -2.18e1);
+      m_para_damp_map5.AddPoint(-127.8e-3, -2.18e4);
+      m_para_damp_map5.AddPoint(110e-3, -2.18e4);
+      m_para_damp_map5.AddPoint(120e-3, -2.18e4);
+      m_para_damp_map5.AddPoint(130e-3, -2.18e4);
+      m_para_damp_map5.AddPoint(140e-3, -2.18e4);
+      m_para_damp_map5.AddPoint(150e-3, -2.18e4);
+      m_para_damp_map5.AddPoint(160e-3, -2.18e4);
+      m_para_damp_map5.AddPoint(170e-3, -2.18e4);
+      m_para_damp_map5.AddPoint(227.2e-3, -2.18e4);
 
       ChFunction_Recorder m_para_damp_map25;
-      m_para_damp_map25.AddPoint(-127.8e-3, -3.90e0);
-      m_para_damp_map25.AddPoint(110e-3, -3.90e0);
-      m_para_damp_map25.AddPoint(120e-3, -3.90e0);
-      m_para_damp_map25.AddPoint(130e-3, -3.90e0);
-      m_para_damp_map25.AddPoint(140e-3, -3.90e0);
-      m_para_damp_map25.AddPoint(150e-3, -3.90e0);
-      m_para_damp_map25.AddPoint(160e-3, -3.90e0);
-      m_para_damp_map25.AddPoint(170e-3, -3.90e0);
-      m_para_damp_map25.AddPoint(227.2e-3, -3.90e0);
+      m_para_damp_map25.AddPoint(-127.8e-3, -3.90e3);
+      m_para_damp_map25.AddPoint(110e-3, -3.90e3);
+      m_para_damp_map25.AddPoint(120e-3, -3.90e3);
+      m_para_damp_map25.AddPoint(130e-3, -3.90e3);
+      m_para_damp_map25.AddPoint(140e-3, -3.90e3);
+      m_para_damp_map25.AddPoint(150e-3, -3.90e3);
+      m_para_damp_map25.AddPoint(160e-3, -3.90e3);
+      m_para_damp_map25.AddPoint(170e-3, -3.90e3);
+      m_para_damp_map25.AddPoint(227.2e-3, -3.90e3);
 
       ChFunction_Recorder m_para_damp_map_0;
       m_para_damp_map_0.AddPoint(-127.8e-3, 0);
@@ -383,48 +383,48 @@ class WVP_ShockForce : public ChLinkSpringCB::ForceFunctor {
       m_para_damp_map_0.AddPoint(227.2e-3, 0);
 
       ChFunction_Recorder m_para_damp_map_5;
-      m_para_damp_map_5.AddPoint(-127.8e-3, 1.79e1);
-      m_para_damp_map_5.AddPoint(110e-3, 1.79e1);
-      m_para_damp_map_5.AddPoint(120e-3, 1.79e1);
-      m_para_damp_map_5.AddPoint(130e-3, 3.57e1);
-      m_para_damp_map_5.AddPoint(140e-3, 5.62e1);
-      m_para_damp_map_5.AddPoint(150e-3, 6.51e1);
-      m_para_damp_map_5.AddPoint(160e-3, 6.71e1);
-      m_para_damp_map_5.AddPoint(170e-3, 7.16e1);
-      m_para_damp_map_5.AddPoint(227.2e-3, 7.16e1);
+      m_para_damp_map_5.AddPoint(-127.8e-3, 1.79e4);
+      m_para_damp_map_5.AddPoint(110e-3, 1.79e4);
+      m_para_damp_map_5.AddPoint(120e-3, 1.79e4);
+      m_para_damp_map_5.AddPoint(130e-3, 3.57e4);
+      m_para_damp_map_5.AddPoint(140e-3, 5.62e4);
+      m_para_damp_map_5.AddPoint(150e-3, 6.51e4);
+      m_para_damp_map_5.AddPoint(160e-3, 6.71e4);
+      m_para_damp_map_5.AddPoint(170e-3, 7.16e4);
+      m_para_damp_map_5.AddPoint(227.2e-3, 7.16e4);
 
       ChFunction_Recorder m_para_damp_map_1;
-      m_para_damp_map_1.AddPoint(-127.8e-3, 7.26e1);
-      m_para_damp_map_1.AddPoint(110e-3, 7.26e1);
-      m_para_damp_map_1.AddPoint(120e-3, 7.26e1);
-      m_para_damp_map_1.AddPoint(130e-3, 1.30e1);
-      m_para_damp_map_1.AddPoint(140e-3, 2.26e2);
-      m_para_damp_map_1.AddPoint(150e-3, 2.66e2);
-      m_para_damp_map_1.AddPoint(160e-3, 2.83e2);
-      m_para_damp_map_1.AddPoint(170e-3, 2.92e2);
-      m_para_damp_map_1.AddPoint(227.2e-3, 2.92e2);
+      m_para_damp_map_1.AddPoint(-127.8e-3, 7.26e4);
+      m_para_damp_map_1.AddPoint(110e-3, 7.26e4);
+      m_para_damp_map_1.AddPoint(120e-3, 7.26e4);
+      m_para_damp_map_1.AddPoint(130e-3, 1.30e4);
+      m_para_damp_map_1.AddPoint(140e-3, 2.26e5);
+      m_para_damp_map_1.AddPoint(150e-3, 2.66e5);
+      m_para_damp_map_1.AddPoint(160e-3, 2.83e5);
+      m_para_damp_map_1.AddPoint(170e-3, 2.92e5);
+      m_para_damp_map_1.AddPoint(227.2e-3, 2.92e5);
 
       ChFunction_Recorder m_para_damp_map_15;
-      m_para_damp_map_15.AddPoint(-127.8e-3, 1.65e2);
-      m_para_damp_map_15.AddPoint(110e-3, 1.65e2);
-      m_para_damp_map_15.AddPoint(120e-3, 1.65e2);
-      m_para_damp_map_15.AddPoint(130e-3, 2.79e2);
-      m_para_damp_map_15.AddPoint(140e-3, 4.93e2);
-      m_para_damp_map_15.AddPoint(150e-3, 5.87e2);
-      m_para_damp_map_15.AddPoint(160e-3, 6.25e2);
-      m_para_damp_map_15.AddPoint(170e-3, 6.44e2);
-      m_para_damp_map_15.AddPoint(227.2e-3, 6.44e2);
+      m_para_damp_map_15.AddPoint(-127.8e-3, 1.65e5);
+      m_para_damp_map_15.AddPoint(110e-3, 1.65e5);
+      m_para_damp_map_15.AddPoint(120e-3, 1.65e5);
+      m_para_damp_map_15.AddPoint(130e-3, 2.79e5);
+      m_para_damp_map_15.AddPoint(140e-3, 4.93e5);
+      m_para_damp_map_15.AddPoint(150e-3, 5.87e5);
+      m_para_damp_map_15.AddPoint(160e-3, 6.25e5);
+      m_para_damp_map_15.AddPoint(170e-3, 6.44e5);
+      m_para_damp_map_15.AddPoint(227.2e-3, 6.44e5);
 
       ChFunction_Recorder m_para_damp_map_2;
-      m_para_damp_map_2.AddPoint(-127.8e-3, 2.86e2);
-      m_para_damp_map_2.AddPoint(110e-3, 2.86e2);
-      m_para_damp_map_2.AddPoint(120e-3, 2.86e2);
-      m_para_damp_map_2.AddPoint(130e-3, 4.66e2);
-      m_para_damp_map_2.AddPoint(140e-3, 8.76e2);
-      m_para_damp_map_2.AddPoint(150e-3, 1.02e3);
-      m_para_damp_map_2.AddPoint(160e-3, 1.10e3);
-      m_para_damp_map_2.AddPoint(170e-3, 1.15e3);
-      m_para_damp_map_2.AddPoint(227.2e-3, 1.15e3);
+      m_para_damp_map_2.AddPoint(-127.8e-3, 2.86e5);
+      m_para_damp_map_2.AddPoint(110e-3, 2.86e5);
+      m_para_damp_map_2.AddPoint(120e-3, 2.86e5);
+      m_para_damp_map_2.AddPoint(130e-3, 4.66e5);
+      m_para_damp_map_2.AddPoint(140e-3, 8.76e5);
+      m_para_damp_map_2.AddPoint(150e-3, 1.02e6);
+      m_para_damp_map_2.AddPoint(160e-3, 1.10e6);
+      m_para_damp_map_2.AddPoint(170e-3, 1.15e6);
+      m_para_damp_map_2.AddPoint(227.2e-3, 1.15e6);
 
       //add these ChFunction_Recorders to map
       m_para_damp_map.insert({-2.0,m_para_damp_map_2});
@@ -572,12 +572,12 @@ double WVP_ShockForce::operator()(double time, double rest_length, double length
 
     if(parallel_travel){ //lookup table for parallel travel
 
-      force -= interpolate2D(displ_mine,vel_mine,m_para_damp_map);
+      force = interpolate2D(displ_mine,vel_mine,m_para_damp_map);
 
     }else{ //lookup table for single wheel travel
 
       /*force -= m_roll_map.Get_y(displ_mine);*/
-      force -= interpolate2D(displ_mine,vel_mine,m_single_damp_map);
+      force = interpolate2D(displ_mine,vel_mine,m_single_damp_map);
 
     }
     std::cout<<force<<std::endl;
