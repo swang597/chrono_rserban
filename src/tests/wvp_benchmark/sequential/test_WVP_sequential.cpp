@@ -38,7 +38,7 @@ using namespace chrono::vehicle::wvp;
 // =============================================================================
 
 // Initial vehicle location and orientation
-ChVector<> initLoc(0, 0, 1.0);
+ChVector<> initLoc(0, 0, 2.5);
 ChQuaternion<> initRot(1, 0, 0, 0);
 
 // Visualization type for vehicle parts (PRIMITIVES, MESH, or NONE)
@@ -97,7 +97,7 @@ int main(int argc, char* argv[]) {
     terrain.SetContactMaterialProperties(2e7f, 0.3f);
     terrain.SetColor(ChColor(0.8f, 0.8f, 0.5f));
     terrain.SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 20, 20);
-    terrain.Initialize(0, 40, 40);
+    terrain.Initialize(0, 200, 200);
 
     // -------------------------------------
     // Create the vehicle Irrlicht interface

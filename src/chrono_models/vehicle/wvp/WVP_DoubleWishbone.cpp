@@ -63,6 +63,7 @@ const ChVector<> WVP_DoubleWishboneFront::m_uprightInertiaProducts(0.0, 0.0, 0.0
 const double WVP_DoubleWishboneFront::m_axleInertia = 9.6e-3;
 
 const double WVP_DoubleWishboneFront::m_springRestLength = .779;
+/*const double WVP_DoubleWishboneFront::m_springCoefficient = 769149.000;*/
 
 // -----------------------------------------------------------------------------
 
@@ -91,6 +92,7 @@ const ChVector<> WVP_DoubleWishboneRear::m_uprightInertiaProducts(0.0, 0.0, 0.0)
 const double WVP_DoubleWishboneRear::m_axleInertia = 9.6e-3;
 
 const double WVP_DoubleWishboneRear::m_springRestLength = .831;
+/*const double WVP_DoubleWishboneRear::m_springCoefficient = 769149.000;*/
 
 // -----------------------------------------------------------------------------
 // WVP suspension spring functor class
@@ -150,12 +152,24 @@ WVP_SpringForce::WVP_SpringForce(double ride_height_length) : m_ride_height_leng
     m_map.AddPoint(227.2e-3, 40.95e3);
 
     //TODO add points for bumpstops
-    //
+
+    //makeshift rebound stop
+    m_map.AddPoint(-128.8e-3, -2.00e3);
+    m_map.AddPoint(-129.8e-3, -4.00e3);
+    m_map.AddPoint(-130.8e-3, -6.00e3);
+    m_map.AddPoint(-132.8e-3, -10.00e3);
+
+    //makeshift bump stop
+    m_map.AddPoint(228.8e-3, 40.00e3);
+    m_map.AddPoint(229.8e-3, 44.00e3);
+    m_map.AddPoint(230.8e-3, 46.00e3);
+    m_map.AddPoint(232.8e-3, 50.00e3);
 
 }
 
 double WVP_SpringForce::operator()(double time, double rest_length, double length, double vel, ChLinkSpringCB* link) {
-    return m_map.Get_y(length - rest_length);
+    /*std::cout<<length<<", "<<rest_length<<", "<<(length-rest_length)<<std::endl;*/
+    return m_map.Get_y(rest_length - length);
 }
 
 // -----------------------------------------------------------------------------
@@ -163,6 +177,7 @@ double WVP_SpringForce::operator()(double time, double rest_length, double lengt
 // -----------------------------------------------------------------------------
 class WVP_ShockForce : public ChLinkSpringCB::ForceFunctor {
   public:
+
     WVP_ShockForce(const std::string axle_name) : m_axle_name(axle_name) {
       //add single damping table
 
@@ -566,18 +581,17 @@ double WVP_ShockForce::operator()(double time, double rest_length, double length
 
     bool parallel_travel = (displ_mine * displ_other >= 0);
 
-    /*std::cout << m_axle_name << " " << side << " | " << displ_mine << "  " << displ_other <<" | "<<vel_mine*/
-    /*<<"  "<<vel_other<<" | ";*/
+    std::cout << m_axle_name << " " << side << " | " << displ_mine << " | "<<vel_mine <<std::endl;
 
 
     if(parallel_travel){ //lookup table for parallel travel
 
-      force = interpolate2D(displ_mine,vel_mine,m_para_damp_map);
+      force = interpolate2D(-displ_mine,vel_mine,m_para_damp_map); //damping
 
     }else{ //lookup table for single wheel travel
 
-      /*force -= m_roll_map.Get_y(displ_mine);*/
-      force = interpolate2D(displ_mine,vel_mine,m_single_damp_map);
+      force = interpolate2D(-displ_mine,vel_mine,m_single_damp_map); //damping
+      force += m_roll_map.Get_y(-displ_mine); //roll stabilization
 
     }
     /*std::cout<<force<<std::endl;*/
@@ -591,11 +605,15 @@ double WVP_ShockForce::operator()(double time, double rest_length, double length
 // -----------------------------------------------------------------------------
 WVP_DoubleWishboneFront::WVP_DoubleWishboneFront(const std::string& name) : ChDoubleWishbone(name, true) {
     m_springForceCB = new WVP_SpringForce(779e-3);
+    /*m_springForceCB = new LinearSpringForce(m_springCoefficient);  // coefficient for linear spring*/
+
     m_shockForceCB = new WVP_ShockForce("front axle");
 }
 
 WVP_DoubleWishboneRear::WVP_DoubleWishboneRear(const std::string& name) : ChDoubleWishbone(name, true) {
     m_springForceCB = new WVP_SpringForce(831e-3);
+    /*m_springForceCB = new LinearSpringForce(m_springCoefficient);  // coefficient for linear spring*/
+
     m_shockForceCB = new WVP_ShockForce("rear axle");
 }
 
@@ -695,9 +713,9 @@ const ChVector<> WVP_DoubleWishboneRear::getLocation(PointId which) {
       case UPRIGHT:
           return ChVector<>(0, 1.033, 0);
       case UCA_F:
-          return ChVector<>(.309,.192,.365);
+          return ChVector<>(.310,.192,.365);
       case UCA_B:
-          return ChVector<>(-.149,.192,.365);
+          return ChVector<>(-.148,.192,.365);
       case UCA_U:
           return ChVector<>(-.008,.772,.234);
       case UCA_CM:
@@ -705,11 +723,11 @@ const ChVector<> WVP_DoubleWishboneRear::getLocation(PointId which) {
       case LCA_F:
           return ChVector<>(.360,.192,.012);
       case LCA_B:
-          return ChVector<>(-.250,.192,.012);
+          return ChVector<>(-.249,.192,.012);
       case LCA_U:
           return ChVector<>(.007,.832,-.152);
       case LCA_CM:
-          return ChVector<>(.039,.406,-.043);
+          return ChVector<>(.040,.406,-.043);
       case SHOCK_C:
           return ChVector<>(-.107,.540,.724);
       case SHOCK_A:

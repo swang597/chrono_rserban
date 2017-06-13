@@ -102,6 +102,7 @@ class CH_MODELS_API WVP_DoubleWishboneFront : public ChDoubleWishbone {
     static const double m_axleInertia;
 
     static const double m_springRestLength;
+    static const double m_springCoefficient;
 };
 
 // -----------------------------------------------------------------------------
@@ -172,6 +173,7 @@ class CH_MODELS_API WVP_DoubleWishboneRear : public ChDoubleWishbone {
     static const double m_axleInertia;
 
     static const double m_springRestLength;
+    static const double m_springCoefficient;
 };
 
 }  // end namespace wvp
