@@ -57,7 +57,7 @@ const double Generic_RigidSuspension::m_axleInertia = 0.4;
 const ChVector<> Generic_RigidSuspension::getLocation(PointId which) {
     switch (which) {
         case SPINDLE:
-            return ChVector<>(-0.040, 1.100, -0.026);  // location of spindle center of mass
+            return ChVector<>(0, 1.100, 0);  // location of spindle center of mass
         default:
             return ChVector<>(0, 0, 0);
     }

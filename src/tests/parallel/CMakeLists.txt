@@ -3,18 +3,20 @@
 # ------------------------------------------------------------------------------
 
 INCLUDE_DIRECTORIES(${CH_PARALLEL_INCLUDES})
-INCLUDE_DIRECTORIES(${CH_OPENGL_INCLUDES})
 
 SET(LIBRARIES
     ChronoEngine
     ChronoEngine_parallel
-    ChronoEngine_opengl
 )
 
-IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    SET (CH_LINKERFLAG_EXE  "${CH_LINKERFLAG_EXE} -framework IOKit -framework Cocoa -framework OpenGL")
-ENDIF()
+IF(ENABLE_MODULE_OPENGL)
+    INCLUDE_DIRECTORIES(${CH_OPENGL_INCLUDES})
+    SET(LIBRARIES ${LIBRARIES} ChronoEngine_opengl)
 
+    IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+       SET (CH_LINKERFLAG_EXE  "${CH_LINKERFLAG_EXE} -framework IOKit -framework Cocoa -framework OpenGL")
+    ENDIF()
+ENDIF()
 
 # ------------------------------------------------------------------------------
 # List of all executables
@@ -22,12 +24,20 @@ ENDIF()
 
 # Programs that can work with or without OpenGL
 SET(DEMOS
-    box_granular
-    jcol_example
-    collide_flag
     rotate_gravity
     incline_particles
 )
+
+# Programs that require OpenGL
+SET(DEMOS_GL
+    box_granular
+    collide_flag
+    jcol_example
+)
+
+IF(ENABLE_MODULE_OPENGL)
+    SET(DEMOS ${DEMOS} ${DEMOS_GL})
+ENDIF()
 
 # ------------------------------------------------------------------------------
 # Add all executables
@@ -48,9 +58,6 @@ FOREACH(PROGRAM ${DEMOS})
     )
 
     TARGET_LINK_LIBRARIES(${PROGRAM} ${LIBRARIES})
-    ADD_DEPENDENCIES(${PROGRAM} ${LIBRARIES})
-
-    INSTALL(TARGETS ${PROGRAM} DESTINATION ${CH_INSTALL_DEMO})
 
 ENDFOREACH(PROGRAM)
 
