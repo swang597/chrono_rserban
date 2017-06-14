@@ -9,7 +9,7 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Radu Serban, Justin Madsen, Daniel Melanz
+// Authors: Radu Serban, Asher Elmquist
 // =============================================================================
 //
 // WVP full vehicle model...
@@ -33,14 +33,12 @@ namespace wvp {
 WVP_Vehicle::WVP_Vehicle(const bool fixed,
                          ChMaterialSurface::ContactMethod contact_method,
                          ChassisCollisionType chassis_collision_type)
-    : ChWheeledVehicle(contact_method), m_omega({0, 0, 0, 0}) {
+    : ChWheeledVehicle("WVP", contact_method), m_omega({0, 0, 0, 0}) {
     Create(fixed, chassis_collision_type);
 }
 
-WVP_Vehicle::WVP_Vehicle(ChSystem* system,
-                         const bool fixed,
-                         ChassisCollisionType chassis_collision_type)
-    : ChWheeledVehicle(system), m_omega({0, 0, 0, 0}) {
+WVP_Vehicle::WVP_Vehicle(ChSystem* system, const bool fixed, ChassisCollisionType chassis_collision_type)
+    : ChWheeledVehicle("WVP", system), m_omega({0, 0, 0, 0}) {
     Create(fixed, chassis_collision_type);
 }
 
