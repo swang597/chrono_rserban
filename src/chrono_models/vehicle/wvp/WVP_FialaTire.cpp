@@ -9,7 +9,7 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Radu Serban, Michael Taylor
+// Authors: Radu Serban
 // =============================================================================
 //
 // WVP Fiala subsystem
