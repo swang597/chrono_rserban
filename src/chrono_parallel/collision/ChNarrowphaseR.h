@@ -2,7 +2,7 @@
 // PROJECT CHRONO - http://projectchrono.org
 //
 // Copyright (c) 2016 projectchrono.org
-// All right reserved.
+// All rights reserved.
 //
 // Use of this source code is governed by a BSD-style license that can be found
 // in the LICENSE file at the top level of the distribution and at
@@ -192,8 +192,8 @@ bool RCollision(const ConvexBase* shapeA,  ///< first candidate shape
                 real3* ct_pt2,             ///< [output] point on shape2 (per contact pair)
                 real* ct_depth,            ///< [output] penetration depth (per contact pair)
                 real* ct_eff_rad,          ///< [output] effective contact radius (per contact pair)
-                int& nC);                  ///< [output] number of contacts found
-
+                int& nC                    ///< [output] number of contacts found
+                );
 
 /// @} parallel_colision
 

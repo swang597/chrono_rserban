@@ -2,7 +2,7 @@
 // PROJECT CHRONO - http://projectchrono.org
 //
 // Copyright (c) 2014 projectchrono.org
-// All right reserved.
+// All rights reserved.
 //
 // Use of this source code is governed by a BSD-style license that can be found
 // in the LICENSE file at the top level of the distribution and at
@@ -160,7 +160,7 @@ class ChApi ChFunction {
     virtual void ArchiveIN(ChArchiveIn& marchive);
 
     /// Plot function in graph space of the ChFile_ps postscript file
-    /// where zoom factor, centering, colour, thickness etc. are already defined.
+    /// where zoom factor, centering, color, thickness etc. are already defined.
     /// If plotDY=true, plots also the derivative, etc.
     virtual int FilePostscriptPlot(ChFile_ps* m_file, int plotY, int plotDY, int plotDDY);
 

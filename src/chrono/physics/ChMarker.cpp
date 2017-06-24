@@ -2,7 +2,7 @@
 // PROJECT CHRONO - http://projectchrono.org
 //
 // Copyright (c) 2014 projectchrono.org
-// All right reserved.
+// All rights reserved.
 //
 // Use of this source code is governed by a BSD-style license that can be found
 // in the LICENSE file at the top level of the distribution and at
@@ -173,13 +173,13 @@ void ChMarker::UpdateTime(double mytime) {
 
     ChTime = mytime;
 
-    // if a imposed motion (keyframed movement) affects the marker postion (example,from R3D animation system),
+    // if a imposed motion (keyframed movement) affects the marker position (example,from R3D animation system),
     // compute the speed and acceleration values by BDF (example,see the UpdatedExternalTime() function, later)
     // so the updating via motion laws can be skipped!
     if (motion_type == M_MOTION_KEYFRAMED)
         return;
 
-    // skip realtive-position-functions evaluation also if
+    // skip relative-position-functions evaluation also if
     // someone is already handling this from outside..
     if (motion_type == M_MOTION_EXTERNAL)
         return;
