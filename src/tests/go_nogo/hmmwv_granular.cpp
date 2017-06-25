@@ -21,11 +21,14 @@
 // All units SI.
 // =============================================================================
 
+#include <string>
 #include <iostream>
 #include <vector>
 #include <cmath>
+#include <algorithm>
 
 #include "chrono/ChConfig.h"
+#include "chrono/core/ChMathematics.h"
 #include "chrono/core/ChFileutils.h"
 #include "chrono/core/ChStream.h"
 #include "chrono/utils/ChUtilsGeometry.h"
@@ -46,9 +49,12 @@
 #include "chrono_opengl/ChOpenGLWindow.h"
 #endif
 
+#include "chrono_thirdparty/SimpleOpt/SimpleOpt.h"
+
+#include "chrono_thirdparty/filesystem/path.h"
+#include "chrono_thirdparty/filesystem/resolver.h"
+
 #include "driver_model.h"
-#include "monitoring.h"
-#include "options.h"
 
 using namespace chrono;
 using namespace chrono::collision;
@@ -59,23 +65,23 @@ using std::cout;
 using std::endl;
 
 // -----------------------------------------------------------------------------
-// Input parameters
+// Input parameter ranges
 // -----------------------------------------------------------------------------
 
 // Terrain slope (in degrees)
-std::vector<double> slope_values = {0, 10, 20, 30};
+std::pair<double, double> slope_range(0, 30);
 
-// Particle radius (in m)
-std::vector<double> radius_values = {0.005, 0.010, 0.020, 0.030};
+// Particle radius (in mm)
+std::pair<double, double> radius_range(4, 10);
 
 // Particle density (in Kg/m3)
-std::vector<double> density_values = {1000, 2000, 3000};
+std::pair<double, double> density_range(1500, 3000);
 
 // Inter-particle coefficient of friction
-std::vector<double> friction_values = {0.2, 0.4, 0.6, 0.8, 1.0};
+std::pair<double, double> friction_range(0.2, 1.0);
 
 // Cohesion pressure (in kPa)
-std::vector<double> cohesion_values = {1, 5, 10, 20};
+std::pair<double, double> cohesion_range(100, 1000);
 
 // -----------------------------------------------------------------------------
 // Specification of the terrain
@@ -90,10 +96,13 @@ double hdimY = 1.75;
 double hdimZ = 0.5;
 double hthick = 0.05;
 
+// Fixed base layer?
 bool rough = true;
 
-// Number of layers of granular material
-int num_layers = 4;
+// Depth of granular material (mm)
+double depth = 100;
+int num_layers_min = 4;
+int num_layers_max = 8;
 
 // -----------------------------------------------------------------------------
 // Specification of the vehicle model
@@ -168,30 +177,6 @@ std::string out_dir = "../HMMWV_GO_NOGO";
 /*
 
 // Callback class for specifying rigid tire contact model.
-// This version uses cylindrical contact shapes.
-class MyCylindricalTire : public ChTireContactCallback {
-  public:
-    virtual void onCallback(std::shared_ptr<ChBody> wheelBody) {
-        wheelBody->SetCollisionModel(std::make_shared<collision::ChCollisionModelParallel>());
-
-        wheelBody->GetCollisionModel()->ClearModel();
-        wheelBody->GetCollisionModel()->AddCylinder(0.46, 0.46, 0.127);
-        wheelBody->GetCollisionModel()->BuildModel();
-
-        wheelBody->GetCollisionModel()->SetFamily(coll_fam_t);
-
-        wheelBody->GetMaterialSurfaceDEM()->SetFriction(mu_t);
-        wheelBody->GetMaterialSurfaceDEM()->SetRestitution(cr_t);
-
-        auto cyl = std::make_shared<ChCylinderShape>();
-        cyl->GetCylinderGeometry().p1 = ChVector<>(0, 0.127, 0);
-        cyl->GetCylinderGeometry().p2 = ChVector<>(0, -0.127, 0);
-        cyl->GetCylinderGeometry().rad = 0.46;
-        wheelBody->AddAsset(cyl);
-    }
-};
-
-// Callback class for specifying rigid tire contact model.
 // This version uses a collection of convex contact shapes (meshes).
 class MyLuggedTire : public ChTireContactCallback {
   public:
@@ -236,6 +221,424 @@ class MyLuggedTire : public ChTireContactCallback {
 };
 
 */
+
+// =============================================================================
+
+void ShowUsage(const std::string& name);
+bool GetProblemSpecs(int argc, char** argv, std::string& file, int& line, bool& render, bool& copy);
+
+double CreateContainer(ChSystem* system, double mu, double coh, double radius);
+int CreateParticles(ChSystemParallelNSC* system,
+                    int num_layers,
+                    double radius,
+                    double rho,
+                    double mu,
+                    double coh,
+                    double top_height);
+double FindHighestParticle(ChSystem* system);
+HMMWV_Full* CreateVehicle(ChSystem* system, double vertical_offset);
+HMMWV_Driver* CreateDriver(HMMWV_Full* hmmwv);
+
+void progressbar(unsigned int x, unsigned int n, unsigned int w = 50);
+void TimingOutput(chrono::ChSystem* mSys, chrono::ChStreamOutAsciiFile* ofile = NULL);
+
+// =============================================================================
+
+int main(int argc, char* argv[]) {
+    // ----------------------------
+    // Parse command line arguments
+    // ----------------------------
+
+    std::string input_file = "";  // Name of input file
+    int line_number = 0;          // Line of inputs
+    bool render = true;           // Render?
+    bool copy = true;             // Copy input file?
+
+    // Extract arguments
+    if (!GetProblemSpecs(argc, argv, input_file, line_number, render, copy)) {
+        return 1;
+    }
+
+    // ----------------
+    // Parse input file
+    // ----------------
+
+    // Check that input file exists
+    filesystem::path inpath(input_file);
+    if (!inpath.exists()) {
+        cout << "Input file " << input_file << " does not exist" << endl;
+        return 1;
+    } else if (!inpath.is_file()) {
+        cout << "Input file " << input_file << " is not a regular file" << endl;
+        return 1;
+    }
+
+    // Extract the filename, the basename, and extension of the input file
+    std::string filename = inpath.filename();
+    std::string stem = inpath.stem();
+    std::string extension = inpath.extension();
+
+    // Open input file
+    std::ifstream ifile;
+    ifile.open(input_file.c_str());
+
+    if (line_number <= 0) {
+        cout << "Incorrect line number." << endl;
+        return 1;
+    }
+
+    std::string line;
+    for (int i = 0; i < line_number; i++) {
+        if (!std::getline(ifile, line) || line.length() == 0) {
+            cout << "Incorrect line number." << endl;
+            return 1;
+        }
+    }
+    ifile.clear();
+    ifile.seekg(0);
+
+    // Extract input data
+    std::istringstream iss(line);
+    double slope_val, r_val, rho_val, mu_val, coh_val;
+    iss >> slope_val >> r_val >> rho_val >> mu_val >> coh_val;
+
+    double slope = slope_val * (CH_C_PI / 180);
+    double r_g = r_val / 1000;
+    double rho_g = rho_val;
+    double mu_g = mu_val;
+    double area = CH_C_PI * r_g * r_g;
+    double coh_force = area * (coh_val * 1e3);
+    double coh_g = coh_force * time_step;
+
+    int num_layers = static_cast<int>(depth / (2 * r_val));
+    ChClampValue(num_layers, num_layers_min, num_layers_max);
+
+    cout << "Set up" << endl;
+    cout << "  File:     " << input_file << "  Line: " << line_number << endl;
+    cout << "  Slope:    " << slope_val << "  " << slope << endl;
+    cout << "  Radius:   " << r_val << "  " << r_g << endl;
+    cout << "  Density:  " << rho_val << "  " << rho_g << endl;
+    cout << "  Friction: " << mu_val << "  " << mu_g << endl;
+    cout << "  Cohesion: " << coh_val << "  " << coh_g << endl;
+
+    // --------------------------------
+    // Create output directory and file
+    // --------------------------------
+
+    std::ofstream ofile;
+    std::string del("  ");
+
+    if (output) {
+        if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
+            cout << "Error creating directory " << out_dir << endl;
+            return 1;
+        }
+
+        out_dir += "/" + stem;
+
+        if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
+            cout << "Error creating directory " << out_dir << endl;
+            return 1;
+        }
+
+        // Copy input file to output directory
+        if (copy) {
+            std::ofstream dst(out_dir + "/" + filename, std::ios::binary);
+            dst << ifile.rdbuf();
+        }
+
+        // Open the output file stream
+        ofile.open(out_dir + "/results_" + std::to_string(line_number) + ".out", std::ios::out);
+    }
+
+    // -------------
+    // Create system
+    // -------------
+
+    // Prepare rotated acceleration vector
+    ChVector<> gravity(0, 0, -9.81);
+    ChVector<> gravityR = ChMatrix33<>(slope, ChVector<>(0, 1, 0)) * gravity;
+
+    ChSystemParallelNSC* system = new ChSystemParallelNSC();
+    system->Set_G_acc(gravity);
+
+    // Set number of threads
+    int max_threads = omp_get_num_procs();
+    if (threads > max_threads)
+        threads = max_threads;
+    system->SetParallelThreadNumber(threads);
+    omp_set_num_threads(threads);
+    cout << "Using " << threads << " threads" << endl;
+
+    system->GetSettings()->perform_thread_tuning = thread_tuning;
+
+    // --------------------
+    // Edit system settings
+    // --------------------
+
+    system->GetSettings()->solver.tolerance = tolerance;
+    system->GetSettings()->solver.solver_mode = SolverMode::SLIDING;
+    system->GetSettings()->solver.max_iteration_normal = max_iteration_normal;
+    system->GetSettings()->solver.max_iteration_sliding = max_iteration_sliding;
+    system->GetSettings()->solver.max_iteration_spinning = max_iteration_spinning;
+    system->GetSettings()->solver.max_iteration_bilateral = max_iteration_bilateral;
+    system->GetSettings()->solver.compute_N = false;
+    system->GetSettings()->solver.alpha = alpha;
+    system->GetSettings()->solver.cache_step_length = true;
+    system->GetSettings()->solver.use_full_inertia_tensor = false;
+    system->GetSettings()->solver.contact_recovery_speed = contact_recovery_speed;
+    system->GetSettings()->solver.bilateral_clamp_speed = 1e8;
+    system->GetSettings()->min_threads = threads;
+    system->ChangeSolverType(SolverType::BB);
+    ////system->SetLoggingLevel(LoggingLevel::LOG_INFO);
+    ////system->SetLoggingLevel(LoggingLevel::LOG_TRACE);
+
+    system->GetSettings()->collision.collision_envelope = 0.1 * r_g;
+    system->GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
+    system->GetSettings()->collision.bins_per_axis = vec3(100, 30, 2);
+    system->GetSettings()->collision.fixed_bins = true;
+
+    // Specify active box.
+    system->GetSettings()->collision.use_aabb_active = false;
+    system->GetSettings()->collision.aabb_min = real3(-1.1 * hdimX, -1.1 * hdimY, 0);
+    system->GetSettings()->collision.aabb_max = real3(+1.1 * hdimX, +1.1 * hdimY, 10 * hdimZ);
+
+    // ------------------
+    // Create the terrain
+    // ------------------
+
+    double top_height = CreateContainer(system, mu_g, coh_g, (rough ? r_g : -1));
+    int actual_num_particles = CreateParticles(system, num_layers, r_g, rho_g, mu_g, coh_g, top_height);
+    cout << "Created " << actual_num_particles << " particles." << endl;
+
+    // Save parameters and problem setup to output file
+    if (output) {
+        ofile << "# File: " << filename << endl;
+        ofile << "# Line: " << line_number << endl;
+        ofile << "# " << endl;
+        ofile << "# " << line << endl;
+        ofile << "# " << endl;
+        ofile << "# Slope (deg):     " << slope_val << endl;
+        ofile << "# Radius (mm):     " << r_val << endl;
+        ofile << "# Density (kg/m3): " << rho_val << endl;
+        ofile << "# Friction:        " << mu_val << endl;
+        ofile << "# Cohesion (kPa):  " << coh_val << endl;
+        ofile << "# " << endl;
+        ofile << "# Num threads:     " << threads << endl;
+        ofile << "# Num layers:      " << num_layers << endl;
+        ofile << "# Num particles:   " << actual_num_particles << endl;
+        ofile << "# " << endl;
+
+        ofile.precision(7);
+        ofile << std::scientific;
+    }
+
+#ifdef CHRONO_OPENGL
+    // Initialize OpenGL
+    if (render) {
+        opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
+        gl_window.Initialize(1280, 720, "HMMWV go/no-go", system);
+        gl_window.SetCamera(ChVector<>(0, -10, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1));
+        gl_window.SetRenderMode(opengl::WIREFRAME);
+    }
+#endif
+
+    // ---------------
+    // Simulation loop
+    // ---------------
+
+    HMMWV_Full* hmmwv = nullptr;
+    HMMWV_Driver* driver = nullptr;
+    FlatTerrain terrain(0);
+
+    // Number of simulation steps between two output frames
+    int output_steps = (int)std::ceil((1 / output_frequency) / time_step);
+
+    double time = 0;
+    int sim_frame = 0;
+    int out_frame = 0;
+    int next_out_frame = 0;
+    double exec_time = 0;
+
+    bool is_pitched = false;
+    double x_pos = -horizontal_pos;
+
+    while (time < time_end && x_pos < horizontal_pos) {
+        // Create the vehicle
+        if (!hmmwv && time > time_create_vehicle) {
+            cout << time << "    Create vehicle" << endl;
+
+            double max_height = FindHighestParticle(system);
+            hmmwv = CreateVehicle(system, max_height);
+            driver = CreateDriver(hmmwv);
+
+            next_out_frame = sim_frame;
+        }
+
+        // Rotate gravity vector
+        if (!is_pitched && time > time_pitch) {
+            cout << time << "    Pitch: " << gravityR.x() << " " << gravityR.y() << " " << gravityR.z() << endl;
+            system->Set_G_acc(gravityR);
+            is_pitched = true;
+        }
+
+        if (hmmwv) {
+            // Extract current driver inputs
+            double steering_input = driver->GetSteering();
+            double braking_input = driver->GetBraking();
+            double throttle_input = driver->GetThrottle();
+
+            // Synchronize vehicle systems
+            driver->Synchronize(time);
+            hmmwv->Synchronize(time, steering_input, braking_input, throttle_input, terrain);
+
+            // Update vehicle x position
+            x_pos = hmmwv->GetChassis()->GetPos().x();
+
+            // Save output
+            if (output && sim_frame == next_out_frame) {
+                ChVector<> pv = hmmwv->GetChassisBody()->GetFrame_REF_to_abs().GetPos();
+                ChVector<> vv = hmmwv->GetChassisBody()->GetFrame_REF_to_abs().GetPos_dt();
+                ChVector<> av = hmmwv->GetChassisBody()->GetFrame_REF_to_abs().GetPos_dtdt();
+
+                ChVector<> v0 = hmmwv->GetVehicle().GetWheelLinVel(0);
+                ChVector<> v1 = hmmwv->GetVehicle().GetWheelLinVel(1);
+                ChVector<> v2 = hmmwv->GetVehicle().GetWheelLinVel(2);
+                ChVector<> v3 = hmmwv->GetVehicle().GetWheelLinVel(3);
+
+                ofile << system->GetChTime() << del;
+                ofile << throttle_input << del << steering_input << del;
+
+                ofile << pv.x() << del << pv.y() << del << pv.z() << del;
+                ofile << vv.x() << del << vv.y() << del << vv.z() << del;
+                ////ofile << av.x() << del << av.y() << del << av.z() << del;
+
+                ////ofile << v0.x() << del << v0.y() << del << v0.z() << del;
+                ////ofile << v1.x() << del << v1.y() << del << v1.z() << del;
+                ////ofile << v2.x() << del << v2.y() << del << v2.z() << del;
+                ////ofile << v3.x() << del << v3.y() << del << v3.z() << del;
+
+                ofile << endl;
+
+                out_frame++;
+                next_out_frame += output_steps;
+            }
+
+            // Advance vehicle systems
+            driver->Advance(time_step);
+            hmmwv->Advance(time_step);
+        } else {
+            // Advance system state (no vehicle created yet)
+            system->DoStepDynamics(time_step);
+        }
+
+#ifdef CHRONO_OPENGL
+        if (render) {
+            opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
+            if (gl_window.Active())
+                gl_window.Render();
+            else
+                break;
+        }
+#endif
+
+        // Display performance metrics
+        TimingOutput(system);
+
+        // Update counters.
+        time += time_step;
+        sim_frame++;
+        exec_time += system->GetTimerStep();
+    }
+
+    // Final stats
+    cout << "==================================" << endl;
+    cout << "Simulation time:   " << exec_time << endl;
+
+    if (output) {
+        ofile << "# " << endl;
+        ofile << "# Simulation time (s): " << exec_time << endl;
+        ofile.close();
+    }
+
+    delete hmmwv;
+    delete driver;
+
+    return 0;
+}
+
+// =============================================================================
+
+// ID values to identify command line arguments
+enum { OPT_HELP, OPT_FILE, OPT_LINE, OPT_NO_RENDERING, OPT_NO_COPY };
+
+// Table of CSimpleOpt::Soption structures. Each entry specifies:
+// - the ID for the option (returned from OptionId() during processing)
+// - the option as it should appear on the command line
+// - type of the option
+// The last entry must be SO_END_OF_OPTIONS
+CSimpleOptA::SOption g_options[] = {{OPT_FILE, "-f", SO_REQ_CMB},
+                                    {OPT_LINE, "-l", SO_REQ_CMB},
+                                    {OPT_NO_RENDERING, "--no-rendering", SO_NONE},
+                                    {OPT_NO_COPY, "--no-copy", SO_NONE},
+                                    {OPT_HELP, "-?", SO_NONE},
+                                    {OPT_HELP, "-h", SO_NONE},
+                                    {OPT_HELP, "--help", SO_NONE},
+                                    SO_END_OF_OPTIONS};
+
+void ShowUsage(const std::string& name) {
+    std::cout << "Usage: " << name << " [OPTIONS]" << std::endl;
+    std::cout << " -f=FILE_NAME" << std::endl;
+    std::cout << "        Name of input file" << std::endl;
+    std::cout << "        Each line contains a point in parameter space:" << std::endl;
+    std::cout << "        slope (deg), radius (mm), density (kg/m3), coef. friction, cohesion" << std::endl;
+    std::cout << " -l=LINE" << std::endl;
+    std::cout << "        Line in input file" << std::endl;
+    std::cout << " --no-rendering" << std::endl;
+    std::cout << "        Disable OpenGL rendering" << std::endl;
+    std::cout << " -? -h --help" << std::endl;
+    std::cout << "        Print this message and exit." << std::endl;
+    std::cout << std::endl;
+}
+
+bool GetProblemSpecs(int argc, char** argv, std::string& file, int& line, bool& render, bool& copy) {
+    // Create the option parser and pass it the program arguments and the array of valid options.
+    CSimpleOptA args(argc, argv, g_options);
+
+    render = true;
+    copy = true;
+
+    // Then loop for as long as there are arguments to be processed.
+    while (args.Next()) {
+        // Exit immediately if we encounter an invalid argument.
+        if (args.LastError() != SO_SUCCESS) {
+            std::cout << "Invalid argument: " << args.OptionText() << std::endl;
+            ShowUsage(argv[0]);
+            return false;
+        }
+
+        // Process the current argument.
+        switch (args.OptionId()) {
+            case OPT_HELP:
+                ShowUsage(argv[0]);
+                return false;
+            case OPT_FILE:
+                file = args.OptionArg();
+                break;
+            case OPT_LINE:
+                line = std::stoi(args.OptionArg());
+                break;
+            case OPT_NO_RENDERING:
+                render = false;
+                break;
+            case OPT_NO_COPY:
+                copy = false;
+                break;
+        }
+    }
+
+    return true;
+}
 
 // =============================================================================
 
@@ -304,6 +707,7 @@ double CreateContainer(ChSystem* system,  // containing system
 // =============================================================================
 
 int CreateParticles(ChSystemParallelNSC* system,  // containing system
+                    int num_layers,               // number of layers
                     double radius,                // particle radius
                     double rho,                   // particle density
                     double mu,                    // coefficient of friction
@@ -449,295 +853,50 @@ HMMWV_Driver* CreateDriver(HMMWV_Full* hmmwv) {
 
 // =============================================================================
 
-int main(int argc, char* argv[]) {
-    // ----------------------------
-    // Parse command line arguments
-    // ----------------------------
+// Utility function for displaying an ASCII progress bar for the quantity x
+// which must be a value between 0 and n. The width 'w' represents the number
+// of '=' characters corresponding to 100%.
+void progressbar(unsigned int x, unsigned int n, unsigned int w) {
+    if ((x != n) && (x % (n / 100 + 1) != 0))
+        return;
 
-    int slope_idx = 0;
-    int radius_idx = 2;
-    int density_idx = 1;
-    int friction_idx = 4;
-    int cohesion_idx = 3;
-    bool render = true;
+    float ratio = x / (float)n;
+    unsigned int c = (unsigned int)(ratio * w);
 
-    if (!GetProblemSpecs(argc, argv, slope_idx, radius_idx, density_idx, friction_idx, cohesion_idx, render)) {
-        cout << "HUH?" << endl;
-        return 1;
+    std::cout << std::setw(3) << (int)(ratio * 100) << "% [";
+    for (unsigned int x = 0; x < c; x++)
+        std::cout << "=";
+    for (unsigned int x = c; x < w; x++)
+        std::cout << " ";
+    std::cout << "]\r" << std::flush;
+}
+
+// Utility function to print to console a few important step statistics
+void TimingOutput(chrono::ChSystem* mSys, chrono::ChStreamOutAsciiFile* ofile) {
+    double TIME = mSys->GetChTime();
+    double STEP = mSys->GetTimerStep();
+    double BROD = mSys->GetTimerCollisionBroad();
+    double NARR = mSys->GetTimerCollisionNarrow();
+    double SOLVER = mSys->GetTimerSolver();
+    double UPDT = mSys->GetTimerUpdate();
+    double RESID = 0;
+    int REQ_ITS = 0;
+    int BODS = mSys->GetNbodies();
+    int CNTC = mSys->GetNcontacts();
+    if (chrono::ChSystemParallel* parallel_sys = dynamic_cast<chrono::ChSystemParallel*>(mSys)) {
+        RESID = std::static_pointer_cast<chrono::ChIterativeSolverParallel>(mSys->GetSolver())->GetResidual();
+        REQ_ITS = std::static_pointer_cast<chrono::ChIterativeSolverParallel>(mSys->GetSolver())->GetTotalIterations();
+        BODS = parallel_sys->GetNbodies();
+        CNTC = parallel_sys->GetNcontacts();
     }
 
-    if (slope_idx < 0 || slope_idx >= slope_values.size()) {
-        cout << "Slope index out of permissible range [0, " << slope_values.size() - 1 << "]" << endl;
-        return 1;
-    }
-    if (radius_idx < 0 || radius_idx >= radius_values.size()) {
-        cout << "Radius index out of permissible range [0, " << radius_values.size() - 1 << "]" << endl;
-        return 1;
-    }
-    if (density_idx < 0 || density_idx >= density_values.size()) {
-        cout << "Density index out of permissible range [0, " << density_values.size() - 1 << "]" << endl;
-        return 1;
-    }
-    if (friction_idx < 0 || friction_idx >= friction_values.size()) {
-        cout << "Friction index out of permissible range [0, " << friction_values.size() - 1 << "]" << endl;
-        return 1;
-    }
-    if (cohesion_idx < 0 || cohesion_idx >= cohesion_values.size()) {
-        cout << "Cohesion index out of permissible range [0, " << cohesion_values.size() - 1 << "]" << endl;
-        return 1;
+    if (ofile) {
+        char buf[200];
+        sprintf(buf, "%8.5f  %7.4f  %7.4f  %7.4f  %7.4f  %7.4f  %7d  %7d  %7d  %7.4f\n", TIME, STEP, BROD, NARR, SOLVER,
+                UPDT, BODS, CNTC, REQ_ITS, RESID);
+        *ofile << buf;
     }
 
-    double slope = slope_values[slope_idx] * (CH_C_PI / 180);
-    double r_g = radius_values[radius_idx];
-    double rho_g = density_values[density_idx];
-    double mu_g = friction_values[friction_idx];
-    
-    double coh_pressure = cohesion_values[cohesion_idx];
-    double area = CH_C_PI * r_g * r_g;
-    double coh_force = area * (coh_pressure * 1e3);
-    double coh_g = coh_force * time_step;
-
-    cout << "Set up" << endl;
-    cout << "  Slope:    " << slope_idx << "  " << slope << endl;
-    cout << "  Radius:   " << radius_idx << "  " << r_g << endl;
-    cout << "  Density:  " << density_idx << "  " << rho_g << endl;
-    cout << "  Friction: " << friction_idx << "  " << mu_g << endl;
-    cout << "  Cohesion: " << cohesion_idx << "  " << coh_g << endl;
-
-    // --------------------------
-    // Create output directories
-    // --------------------------
-    std::ofstream outf;
-    std::ofstream statsf;
-
-    if (output) {
-        if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
-            cout << "Error creating directory " << out_dir << endl;
-            return 1;
-        }
-
-        out_dir += "/" + std::to_string(slope_idx) + "_" + std::to_string(radius_idx) + "_" + std::to_string(density_idx) +
-            "_" + std::to_string(friction_idx) + "_" + std::to_string(cohesion_idx);
-
-        if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
-            cout << "Error creating directory " << out_dir << endl;
-            return 1;
-        }
-
-        // Open the output file stream
-        outf.open(out_dir + "/results.dat", std::ios::out);
-        outf.precision(7);
-        outf << std::scientific;
-    }
-
-    // Delimiter in output file
-    std::string del("  ");
-
-    // -------------------------
-    // Create system and vehicle
-    // -------------------------
-    ChVector<> gravity(0, 0, -9.81);
-    ChVector<> gravityR = ChMatrix33<>(slope, ChVector<>(0, 1, 0)) * gravity;
-
-    ChSystemParallelNSC* system = new ChSystemParallelNSC();
-    system->Set_G_acc(gravity);
-
-    // ----------------------
-    // Set number of threads.
-    // ----------------------
-    int max_threads = omp_get_num_procs();
-    if (threads > max_threads)
-        threads = max_threads;
-    system->SetParallelThreadNumber(threads);
-    omp_set_num_threads(threads);
-    cout << "Using " << threads << " threads" << endl;
-
-    system->GetSettings()->perform_thread_tuning = thread_tuning;
-
-    // ---------------------
-    // Edit system settings
-    // ---------------------
-
-    system->GetSettings()->solver.tolerance = tolerance;
-    system->GetSettings()->solver.solver_mode = SolverMode::SLIDING;
-    system->GetSettings()->solver.max_iteration_normal = max_iteration_normal;
-    system->GetSettings()->solver.max_iteration_sliding = max_iteration_sliding;
-    system->GetSettings()->solver.max_iteration_spinning = max_iteration_spinning;
-    system->GetSettings()->solver.max_iteration_bilateral = max_iteration_bilateral;
-    system->GetSettings()->solver.compute_N = false;
-    system->GetSettings()->solver.alpha = alpha;
-    system->GetSettings()->solver.cache_step_length = true;
-    system->GetSettings()->solver.use_full_inertia_tensor = false;
-    system->GetSettings()->solver.contact_recovery_speed = contact_recovery_speed;
-    system->GetSettings()->solver.bilateral_clamp_speed = 1e8;
-    system->GetSettings()->min_threads = threads;
-    system->ChangeSolverType(SolverType::BB);
-    ////system->SetLoggingLevel(LoggingLevel::LOG_INFO);
-    ////system->SetLoggingLevel(LoggingLevel::LOG_TRACE);
-
-    system->GetSettings()->collision.collision_envelope = 0.1 * r_g;
-    system->GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
-    system->GetSettings()->collision.bins_per_axis = vec3(100, 30, 2);
-    system->GetSettings()->collision.fixed_bins = true;
-
-    // Specify active box.
-    system->GetSettings()->collision.use_aabb_active = false;
-    system->GetSettings()->collision.aabb_min = real3(-1.1 * hdimX, -1.1 * hdimY, 0);
-    system->GetSettings()->collision.aabb_max = real3(+1.1 * hdimX, +1.1 * hdimY, 10 * hdimZ);
-
-    // -------------------
-    // Create the terrain.
-    // -------------------
-
-    double top_height = CreateContainer(system, mu_g, coh_g, (rough ? r_g : -1));
-    int actual_num_particles = CreateParticles(system, r_g, rho_g, mu_g, coh_g, top_height);
-    cout << "Created " << actual_num_particles << " particles." << endl;
-
-    // Save current settings
-    if (output) {
-        statsf.open(out_dir + "/settings.dat", std::ios::out);
-        statsf << "  Slope:    " << slope_idx << "  " << slope << " degrees" << endl;
-        statsf << "  Radius:   " << radius_idx << "  " << r_g << " m" << endl;
-        statsf << "  Density:  " << density_idx << "  " << rho_g << " kg/m3" << endl;
-        statsf << "  Friction: " << friction_idx << "  " << mu_g << endl;
-        statsf << "  Cohesion: " << cohesion_idx << "  " << coh_pressure << " kPa  " << coh_g << " N.s" << endl;
-        statsf << endl;
-        statsf << "  Num threads:   " << threads << endl;
-        statsf << "  Num layers:    " << num_layers << endl;
-        statsf << "  Num particles: " << actual_num_particles << endl;
-        statsf << endl;
-    }
-
-#ifdef CHRONO_OPENGL
-    // Initialize OpenGL
-    if (render) {
-        opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-        gl_window.Initialize(1280, 720, "HMMWV go/no-go", system);
-        gl_window.SetCamera(ChVector<>(0, -10, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1));
-        gl_window.SetRenderMode(opengl::WIREFRAME);
-    }
-#endif
-
-    // -------------------
-    // Simulation loop
-    // -------------------
-    HMMWV_Full* hmmwv = nullptr;
-    HMMWV_Driver* driver = nullptr;
-    FlatTerrain terrain(0);
-
-    // Number of simulation steps between two output frames
-    int output_steps = (int)std::ceil((1 / output_frequency) / time_step);
-
-    double time = 0;
-    int sim_frame = 0;
-    int out_frame = 0;
-    int next_out_frame = 0;
-    double exec_time = 0;
-
-    bool is_pitched = false;
-    double x_pos = -horizontal_pos;
-
-    while (time < time_end && x_pos < horizontal_pos) {
-        // Create the vehicle
-        if (!hmmwv && time > time_create_vehicle) {
-            cout << time << "    Create vehicle" << endl;
-
-            double max_height = FindHighestParticle(system);
-            hmmwv = CreateVehicle(system, max_height);
-            driver = CreateDriver(hmmwv);
-
-            next_out_frame = sim_frame;
-        }
-
-        // Rotate gravity vector
-        if (!is_pitched && time > time_pitch) {
-            cout << time << "    Pitch: " << gravityR.x() << " " << gravityR.y() << " " << gravityR.z() << endl;
-            system->Set_G_acc(gravityR);
-            is_pitched = true;
-        }
-
-        if (hmmwv) {
-            // Extract current driver inputs
-            double steering_input = driver->GetSteering();
-            double braking_input = driver->GetBraking();
-            double throttle_input = driver->GetThrottle();
-
-            // Synchronize vehicle systems
-            driver->Synchronize(time);
-            hmmwv->Synchronize(time, steering_input, braking_input, throttle_input, terrain);
-
-            // Update vehicle x position
-            x_pos = hmmwv->GetChassis()->GetPos().x();
-
-            // Save output
-            if (output && sim_frame == next_out_frame) {
-                ChVector<> pv = hmmwv->GetChassisBody()->GetFrame_REF_to_abs().GetPos();
-                ChVector<> vv = hmmwv->GetChassisBody()->GetFrame_REF_to_abs().GetPos_dt();
-                ChVector<> av = hmmwv->GetChassisBody()->GetFrame_REF_to_abs().GetPos_dtdt();
-
-                ChVector<> v0 = hmmwv->GetVehicle().GetWheelLinVel(0);
-                ChVector<> v1 = hmmwv->GetVehicle().GetWheelLinVel(1);
-                ChVector<> v2 = hmmwv->GetVehicle().GetWheelLinVel(2);
-                ChVector<> v3 = hmmwv->GetVehicle().GetWheelLinVel(3);
-
-                outf << system->GetChTime() << del;
-                outf << throttle_input << del << steering_input << del;
-
-                outf << pv.x() << del << pv.y() << del << pv.z() << del;
-                outf << vv.x() << del << vv.y() << del << vv.z() << del;
-                outf << av.x() << del << av.y() << del << av.z() << del;
-
-                outf << v0.x() << del << v0.y() << del << v0.z() << del;
-                outf << v1.x() << del << v1.y() << del << v1.z() << del;
-                outf << v2.x() << del << v2.y() << del << v2.z() << del;
-                outf << v3.x() << del << v3.y() << del << v3.z() << del;
-
-                outf << endl;
-
-                out_frame++;
-                next_out_frame += output_steps;
-            }
-
-            // Advance vehicle systems
-            driver->Advance(time_step);
-            hmmwv->Advance(time_step);
-        } else {
-            // Advance system state (no vehicle created yet)
-            system->DoStepDynamics(time_step);
-        }
-
-#ifdef CHRONO_OPENGL
-        if (render) {
-            opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-            if (gl_window.Active())
-                gl_window.Render();
-            else
-                break;
-        }
-#endif
-
-        // Display performance metrics
-        TimingOutput(system);
-
-        // Update counters.
-        time += time_step;
-        sim_frame++;
-        exec_time += system->GetTimerStep();
-    }
-
-    // Final stats
-    cout << "==================================" << endl;
-    cout << "Simulation time:   " << exec_time << endl;
-
-    if (output) {
-        statsf << " Simulation time: " << exec_time << endl;
-
-        statsf.close();
-        outf.close();
-    }
-
-    delete hmmwv;
-    delete driver;
-
-    return 0;
+    printf("   %8.5f | %7.4f | %7.4f | %7.4f | %7.4f | %7.4f | %7d | %7d | %7d | %7.4f\n", TIME, STEP, BROD, NARR,
+           SOLVER, UPDT, BODS, CNTC, REQ_ITS, RESID);
 }
