@@ -3,20 +3,22 @@
 # ------------------------------------------------------------------------------
 
 INCLUDE_DIRECTORIES(${CH_PARALLEL_INCLUDES})
-INCLUDE_DIRECTORIES(${CH_OPENGL_INCLUDES})
 
 SET(LIBRARIES
     ChronoEngine
     ChronoEngine_parallel
-    ChronoEngine_opengl
     ChronoEngine_vehicle
     ChronoModels_vehicle
 )
 
-IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    SET (CH_LINKERFLAG_EXE  "${CH_LINKERFLAG_EXE} -framework IOKit -framework Cocoa -framework OpenGL")
-ENDIF()
+IF(ENABLE_MODULE_OPENGL)
+    INCLUDE_DIRECTORIES(${CH_OPENGL_INCLUDES})
+    SET(LIBRARIES ${LIBRARIES} ChronoEngine_opengl)
 
+    IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+       SET (CH_LINKERFLAG_EXE  "${CH_LINKERFLAG_EXE} -framework IOKit -framework Cocoa -framework OpenGL")
+    ENDIF()
+ENDIF()
 
 # ------------------------------------------------------------------------------
 
@@ -29,9 +31,11 @@ SET(GO_NOGO_FILES
 )
 
 SOURCE_GROUP("" FILES ${GO_NOGO_FILES})
+
 # ------------------------------------------------------------------------------
 
-MESSAGE(STATUS "GO/NO-GO program...")
+MESSAGE(STATUS "HMMWV GO/NO-GO program...")
+MESSAGE(STATUS "...add go_nogo")
 
 ADD_EXECUTABLE(go_nogo  ${GO_NOGO_FILES})
 

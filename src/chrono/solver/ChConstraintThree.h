@@ -2,7 +2,7 @@
 // PROJECT CHRONO - http://projectchrono.org
 //
 // Copyright (c) 2014 projectchrono.org
-// All right reserved.
+// All rights reserved.
 //
 // Use of this source code is governed by a BSD-style license that can be found
 // in the LICENSE file at the top level of the distribution and at
@@ -22,7 +22,7 @@ namespace chrono {
 
 /// This class is inherited by the base ChConstraint(),
 /// which does almost nothing. So here this class implements
-/// the functionality for a constrint between a THREE
+/// the functionality for a constraint between a THREE
 /// objects of type ChVariables(), and defines three constraint
 /// matrices, whose column number automatically matches the number
 /// of elements in variables vectors.

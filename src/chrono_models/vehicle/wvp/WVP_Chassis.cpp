@@ -9,7 +9,7 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Radu Serban
+// Authors: Radu Serban, Asher Elmquist
 // =============================================================================
 //
 // WVP chassis subsystem.

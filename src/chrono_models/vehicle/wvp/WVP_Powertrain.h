@@ -9,7 +9,7 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Alessandro Tasora, Radu Serban
+// Authors: Radu Serban
 // =============================================================================
 //
 // WVP powertrain model based on ChShaft objects.

@@ -2,7 +2,7 @@
 // PROJECT CHRONO - http://projectchrono.org
 //
 // Copyright (c) 2014 projectchrono.org
-// All right reserved.
+// All rights reserved.
 //
 // Use of this source code is governed by a BSD-style license that can be found
 // in the LICENSE file at the top level of the distribution and at
@@ -27,13 +27,6 @@
 #include "chrono_vehicle/ChApiVehicle.h"
 #include "chrono_vehicle/ChPart.h"
 
-/**
-    @addtogroup vehicle_wheeled
-    @{
-        @defgroup vehicle_wheeled_steering Steering subsystem
-    @}
-*/
-
 namespace chrono {
 namespace vehicle {
 
@@ -53,7 +46,7 @@ class CH_VEHICLE_API ChSteering : public ChPart {
     const ChCoordsys<>& GetPosition() const { return m_position; }
 
     /// Get a handle to the main link of the steering subsystems.
-    /// Return a handle to the body to which the tierods of a steerbale
+    /// Return a handle to the body to which the tierods of a steerable
     /// suspension subsystem are attached.
     std::shared_ptr<ChBody> GetSteeringLink() const { return m_link; }
 

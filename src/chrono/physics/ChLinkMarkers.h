@@ -2,7 +2,7 @@
 // PROJECT CHRONO - http://projectchrono.org
 //
 // Copyright (c) 2014 projectchrono.org
-// All right reserved.
+// All rights reserved.
 //
 // Use of this source code is governed by a BSD-style license that can be found
 // in the LICENSE file at the top level of the distribution and at
@@ -129,7 +129,7 @@ class ChApi ChLinkMarkers : public ChLink {
     //
 
     /// Updates auxiliary vars relM, relM_dt, relM_dtdt,
-    /// dist, dist_dt et similia.
+    /// dist, dist_dt et simila.
     virtual void UpdateRelMarkerCoords();
 
     ///  Updates auxiliary forces caused by springs/dampers/etc. which may
@@ -153,7 +153,7 @@ class ChApi ChLinkMarkers : public ChLink {
     //
 
     /// Adds force to residual R, as R*= F*c
-    /// NOTE: here the off ofset in R is NOT used because add F at the TWO offsets of the two connected bodies,
+    /// NOTE: here the off offset in R is NOT used because add F at the TWO offsets of the two connected bodies,
     /// so it is assumed that offsets for Body1 and Body2 variables have been already set properly!
     virtual void IntLoadResidual_F(const unsigned int off, ChVectorDynamic<>& R, const double c) override;
 

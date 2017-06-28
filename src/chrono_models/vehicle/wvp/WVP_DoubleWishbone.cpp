@@ -9,7 +9,7 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Radu Serban, Justin Madsen, Daniel Melanz
+// Authors: Radu Serban, Asher Elmquist
 // =============================================================================
 //
 // Front and Rear WVP suspension subsystems (double A-arm).

@@ -205,20 +205,22 @@ SET(ChronoEngine_Parallel_BASE
     ChDataManager.h
     ChTimerParallel.h
     ChDataManager.cpp
+    ChCudaDefines.h
     )
 
 SOURCE_GROUP("" FILES ${ChronoEngine_Parallel_BASE})
 
 SET(ChronoEngine_Parallel_PHYSICS
     physics/ChSystemParallel.h
-    physics/Ch3DOFContainer.h
     physics/ChSystemParallel.cpp
     physics/ChSystemParallelNSC.cpp
     physics/ChSystemParallelSMC.cpp
+    physics/Ch3DOFContainer.h
     physics/Ch3DOFContainer.cpp
+    physics/ChFluidKernels.h
     physics/ChFluidContainer.cpp
     physics/ChFEAContainer.cpp
-    physics/Ch3DOFRigidContainer.cpp
+    physics/ChParticleContainer.cpp
     physics/ChMPMSettings.h
     )
 
