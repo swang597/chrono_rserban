@@ -40,10 +40,10 @@ WVP_Powertrain::WVP_Powertrain() : ChShaftsPowertrain(ChVector<>(1, 0, 0)) {}
 // Initialize vector of gear ratios
 // -----------------------------------------------------------------------------
 void WVP_Powertrain::SetGearRatios(std::vector<double>& gear_ratios) {
-    gear_ratios.push_back(-0.1);  // 0: reverse gear;
-    gear_ratios.push_back(0.2);   // 1: 1st gear;
-    gear_ratios.push_back(0.4);   // 2: 2nd gear;
-    gear_ratios.push_back(0.8);   // 3: 3rd gear;
+    gear_ratios.push_back(-0.2);  // 0: reverse gear;
+    gear_ratios.push_back(0.4);   // 1: 1st gear;
+    gear_ratios.push_back(0.8);   // 2: 2nd gear;
+    gear_ratios.push_back(1.6);   // 3: 3rd gear;
 }
 
 // -----------------------------------------------------------------------------
@@ -59,27 +59,19 @@ void WVP_Powertrain::SetGearRatios(std::vector<double>& gear_ratios) {
 // -----------------------------------------------------------------------------
 void WVP_Powertrain::SetEngineTorqueMap(std::shared_ptr<ChFunction_Recorder>& map) {
     double rpm_to_radsec = CH_C_2PI / 60.;
+    double ftlb_to_Nm = 1.355818;
 
-    map->AddPoint(-100 * rpm_to_radsec, 300);  // to start engine
-    map->AddPoint(800 * rpm_to_radsec, 382);
-    map->AddPoint(900 * rpm_to_radsec, 490);
-    map->AddPoint(1000 * rpm_to_radsec, 579);
-    map->AddPoint(1100 * rpm_to_radsec, 650);
-    map->AddPoint(1200 * rpm_to_radsec, 706);
-    map->AddPoint(1300 * rpm_to_radsec, 746);
-    map->AddPoint(1400 * rpm_to_radsec, 774);
-    map->AddPoint(1500 * rpm_to_radsec, 789);
-    map->AddPoint(1600 * rpm_to_radsec, 793);
-    map->AddPoint(1700 * rpm_to_radsec, 788);
-    map->AddPoint(1800 * rpm_to_radsec, 774);
-    map->AddPoint(1900 * rpm_to_radsec, 754);
-    map->AddPoint(2000 * rpm_to_radsec, 728);
-    map->AddPoint(2100 * rpm_to_radsec, 697);
-    map->AddPoint(2200 * rpm_to_radsec, 664);
-    map->AddPoint(2300 * rpm_to_radsec, 628);
-    map->AddPoint(2400 * rpm_to_radsec, 593);
-    map->AddPoint(2500 * rpm_to_radsec, 558);
-    map->AddPoint(2700 * rpm_to_radsec, -400);  // fading out of engine torque
+    map->AddPoint(-100 * rpm_to_radsec, 300*ftlb_to_Nm);  // to start engine
+    map->AddPoint(800 * rpm_to_radsec, 382*ftlb_to_Nm); //
+    map->AddPoint(1000 * rpm_to_radsec, 683*ftlb_to_Nm);
+    map->AddPoint(1200 * rpm_to_radsec, 897*ftlb_to_Nm);
+    map->AddPoint(1400 * rpm_to_radsec, 959*ftlb_to_Nm);
+    map->AddPoint(1600 * rpm_to_radsec, 959*ftlb_to_Nm);
+    map->AddPoint(1800 * rpm_to_radsec, 905*ftlb_to_Nm);
+    map->AddPoint(2000 * rpm_to_radsec, 838*ftlb_to_Nm);
+    map->AddPoint(2200 * rpm_to_radsec, 768*ftlb_to_Nm);
+    map->AddPoint(2400 * rpm_to_radsec, 593*ftlb_to_Nm); //
+    map->AddPoint(2700 * rpm_to_radsec, -200*ftlb_to_Nm);  // fading out of engine torque
 }
 
 void WVP_Powertrain::SetEngineLossesMap(std::shared_ptr<ChFunction_Recorder>& map) {

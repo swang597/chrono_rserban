@@ -158,18 +158,21 @@ WVP_SpringForce::WVP_SpringForce(double ride_height_length) : m_ride_height_leng
     m_map.AddPoint(-129.8e-3, -4.00e3);
     m_map.AddPoint(-130.8e-3, -6.00e3);
     m_map.AddPoint(-132.8e-3, -10.00e3);
+    m_map.AddPoint(-137.8e-3, -20.00e3);
 
     //makeshift bump stop
     m_map.AddPoint(228.8e-3, 40.00e3);
     m_map.AddPoint(229.8e-3, 44.00e3);
-    m_map.AddPoint(230.8e-3, 46.00e3);
-    m_map.AddPoint(232.8e-3, 50.00e3);
+    m_map.AddPoint(230.8e-3, 56.00e3);
+    m_map.AddPoint(232.8e-3, 70.00e3);
 
 }
 
 double WVP_SpringForce::operator()(double time, double rest_length, double length, double vel, ChLinkSpringCB* link) {
-    /*std::cout<<length<<", "<<rest_length<<", "<<(length-rest_length)<<std::endl;*/
-    return m_map.Get_y(rest_length - length);
+    /*std::cout<<length<<std::endl;*/
+
+    /*std::cout<<"displ: "<<(rest_length-length)<<", force: "<<f<<std::endl;*/
+    return m_map.Get_y(rest_length - length);;
 }
 
 // -----------------------------------------------------------------------------
@@ -518,9 +521,11 @@ class WVP_ShockForce : public ChLinkSpringCB::ForceFunctor {
       //check if value is out of bounds
       if(y <= map2D.begin()->first) {
         return map2D.begin()->second.Get_y(x);
-      }else if(y>=(--map2D.end())->first) {
-        (--map2D.end())->second.Get_y(x);
       }
+      else if(y>=(--map2D.end())->first) {
+        return (--map2D.end())->second.Get_y(x);
+      }
+
       //std::cout<<"checked outside of range"<<std::endl;
 
       //find the maps that correspond to either side of the value
@@ -581,8 +586,8 @@ double WVP_ShockForce::operator()(double time, double rest_length, double length
 
     bool parallel_travel = (displ_mine * displ_other >= 0);
 
-    std::cout << m_axle_name << " " << side << " | " << displ_mine << " | "<<vel_mine <<std::endl;
-
+    /*std::cout << m_axle_name << " " << side << " | " << displ_mine << " | "<<vel_mine <<std::endl;*/
+    std::cout << m_axle_name << " " << side << "|" << length <<"|";
 
     if(parallel_travel){ //lookup table for parallel travel
 
@@ -591,7 +596,7 @@ double WVP_ShockForce::operator()(double time, double rest_length, double length
     }else{ //lookup table for single wheel travel
 
       force = interpolate2D(-displ_mine,vel_mine,m_single_damp_map); //damping
-      force += m_roll_map.Get_y(-displ_mine); //roll stabilization
+      /*force += m_roll_map.Get_y(-displ_mine); //roll stabilization*/
 
     }
     /*std::cout<<force<<std::endl;*/

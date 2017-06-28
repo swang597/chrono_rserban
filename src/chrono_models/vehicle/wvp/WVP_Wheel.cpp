@@ -30,11 +30,11 @@ namespace wvp {
 // Static variables
 // -----------------------------------------------------------------------------
 
-const double WVP_Wheel::m_mass = 45.4;
+const double WVP_Wheel::m_mass = 206;
 const ChVector<> WVP_Wheel::m_inertia(0.113, 0.113, 0.113);
 
-const double WVP_Wheel::m_radius = 0.268;
-const double WVP_Wheel::m_width = 0.22;
+const double WVP_Wheel::m_radius = 1.096/2.0;
+const double WVP_Wheel::m_width = 0.372;
 
 const std::string WVP_WheelLeft::m_meshName = "wheel_L_POV_geom";
 const std::string WVP_WheelLeft::m_meshFile = "hmmwv/wheel_L.obj";
