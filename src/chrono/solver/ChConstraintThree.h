@@ -32,9 +32,6 @@ namespace chrono {
 
 class ChApi ChConstraintThree : public ChConstraint {
 
-    // Tag needed for class factory in archive (de)serialization:
-    CH_FACTORY_TAG(ChConstraintThree)
-
   protected:
     ChVariables* variables_a;  ///< The first  constrained object
     ChVariables* variables_b;  ///< The second constrained object
@@ -77,13 +74,11 @@ class ChApi ChConstraintThree : public ChConstraint {
     /// automatically creating/resizing jacobians if needed.
     virtual void SetVariables(ChVariables* mvariables_a, ChVariables* mvariables_b, ChVariables* mvariables_c) = 0;
 
-    /// Method to allow deserializing a persistent binary archive (ex: a file)
-    /// into transient data.
-    virtual void StreamIN(ChStreamInBinary& mstream);
+    /// Method to allow serialization of transient data to archives.
+    virtual void ArchiveOUT(ChArchiveOut& marchive);
 
-    /// Method to allow serializing transient data into a persistent
-    /// binary archive (ex: a file).
-    virtual void StreamOUT(ChStreamOutBinary& mstream);
+    /// Method to allow de serialization of transient data from archives.
+    virtual void ArchiveIN(ChArchiveIn& marchive);
 };
 
 }  // end namespace chrono

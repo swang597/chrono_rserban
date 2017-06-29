@@ -36,9 +36,6 @@ namespace chrono {
 
 class ChApi ChIterativeSolver : public ChSolver {
 
-    // Tag needed for class factory in archive (de)serialization:
-    CH_FACTORY_TAG(ChIterativeSolver)
-
   protected:
     int max_iterations;  ///< maximum allowed iterations
     int tot_iterations;  ///< total number of iterations performed by the solver
@@ -96,7 +93,7 @@ class ChApi ChIterativeSolver : public ChSolver {
 
     /// Set the sharpness factor.
     /// This factor may be used by SOR-like methods with projection (see Mangasarian LCP method).
-    /// Usualy in the range [0,1]. Default: 1. 
+    /// Usually in the range [0,1]. Default: 1. 
     virtual void SetSharpnessLambda(double mval) {
         if (mval > 0.)
             shlambda = mval;

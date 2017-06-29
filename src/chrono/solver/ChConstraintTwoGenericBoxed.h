@@ -32,9 +32,6 @@ namespace chrono {
 
 class ChApi ChConstraintTwoGenericBoxed : public ChConstraintTwoGeneric {
 
-    // Tag needed for class factory in archive (de)serialization:
-    CH_FACTORY_TAG(ChConstraintTwoGenericBoxed)
-
   protected:
     double l_min;
     double l_max;
@@ -76,13 +73,11 @@ class ChApi ChConstraintTwoGenericBoxed : public ChConstraintTwoGeneric {
     /// violation of the constraint, considering inequalities, etc.
     virtual double Violation(double mc_i) override;
 
-    /// Method to allow deserializing a persistent binary archive (ex: a file)
-    /// into transient data.
-    virtual void StreamIN(ChStreamInBinary& mstream) override;
+    /// Method to allow serialization of transient data to archives.
+    virtual void ArchiveOUT(ChArchiveOut& marchive);
 
-    /// Method to allow serializing transient data into a persistent
-    /// binary archive (ex: a file).
-    virtual void StreamOUT(ChStreamOutBinary& mstream) override;
+    /// Method to allow de serialization of transient data from archives.
+    virtual void ArchiveIN(ChArchiveIn& marchive);
 };
 
 }  // end namespace chrono
