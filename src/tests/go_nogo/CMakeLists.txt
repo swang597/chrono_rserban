@@ -25,9 +25,7 @@ ENDIF()
 SET(GO_NOGO_FILES
     hmmwv_granular.cpp
     driver_model.h
-    monitoring.h
     event_queue.h
-    options.h
 )
 
 SOURCE_GROUP("" FILES ${GO_NOGO_FILES})

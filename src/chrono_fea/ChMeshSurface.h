@@ -2,7 +2,7 @@
 // PROJECT CHRONO - http://projectchrono.org
 //
 // Copyright (c) 2014 projectchrono.org
-// All right reserved.
+// All rights reserved.
 //
 // Use of this source code is governed by a BSD-style license that can be found
 // in the LICENSE file at the top level of the distribution and at
@@ -28,8 +28,6 @@ class ChMesh;
 /// The contact surface is a collection of pointers to  ChLoadableUV objects, those can
 /// be shells in the mesh, or proxies to faces of solid elements such as ChFaceTetra_4.
 class ChApiFea ChMeshSurface {
-    // Tag needed for class factory in archive (de)serialization:
-    CH_FACTORY_TAG(ChMeshSurface)
 
   public:
     ChMeshSurface(ChMesh* parentmesh = 0) { mmesh = parentmesh; }

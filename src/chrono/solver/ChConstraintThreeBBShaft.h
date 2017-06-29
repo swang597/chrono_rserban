@@ -25,9 +25,6 @@ namespace chrono {
 
 class ChApi ChConstraintThreeBBShaft : public ChConstraintThree {
 
-    // Tag needed for class factory in archive (de)serialization:
-    CH_FACTORY_TAG(ChConstraintThreeBBShaft)
-
   protected:
     ChMatrixNM<double, 1, 6> Cq_a;  ///< The [Cq_a] jacobian of the constraint
     ChMatrixNM<double, 1, 6> Cq_b;  ///< The [Cq_b] jacobian of the constraint
@@ -117,13 +114,11 @@ class ChApi ChConstraintThreeBBShaft : public ChConstraintThree {
     virtual void Build_Cq(ChSparseMatrix& storage, int insrow) override;
     virtual void Build_CqT(ChSparseMatrix& storage, int inscol) override;
 
-    /// Method to allow deserializing a persistent binary archive (ex: a file)
-    /// into transient data.
-    virtual void StreamIN(ChStreamInBinary& mstream) override;
+    /// Method to allow serialization of transient data to archives.
+    virtual void ArchiveOUT(ChArchiveOut& marchive);
 
-    /// Method to allow serializing transient data into a persistent
-    /// binary archive (ex: a file).
-    virtual void StreamOUT(ChStreamOutBinary& mstream) override;
+    /// Method to allow de serialization of transient data from archives.
+    virtual void ArchiveIN(ChArchiveIn& marchive);
 };
 
 }  // end namespace chrono
