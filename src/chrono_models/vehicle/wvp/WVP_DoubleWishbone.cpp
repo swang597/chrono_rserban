@@ -39,7 +39,7 @@ static const double lbf2N = 4.44822162;
 static const double lbfpin2Npm = 175.12677;
 
 const double WVP_DoubleWishboneFront::m_UCAMass = 14;
-const double WVP_DoubleWishboneFront::m_LCAMass = 42;
+const double WVP_DoubleWishboneFront::m_LCAMass = 42+80;
 const double WVP_DoubleWishboneFront::m_uprightMass = 150;
 const double WVP_DoubleWishboneFront::m_spindleMass = 52;
 
@@ -587,7 +587,7 @@ double WVP_ShockForce::operator()(double time, double rest_length, double length
     bool parallel_travel = (displ_mine * displ_other >= 0);
 
     /*std::cout << m_axle_name << " " << side << " | " << displ_mine << " | "<<vel_mine <<std::endl;*/
-    std::cout << m_axle_name << " " << side << "|" << length <<"|";
+    /*std::cout << m_axle_name << " " << side << "|" << length <<"|";*/
 
     if(parallel_travel){ //lookup table for parallel travel
 

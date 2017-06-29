@@ -38,7 +38,7 @@ using namespace chrono::vehicle::wvp;
 // =============================================================================
 
 // Initial vehicle location and orientation
-ChVector<> initLoc(0, 0, 1.0);
+ChVector<> initLoc(0, 0, 0.0);
 ChQuaternion<> initRot(1, 0, 0, 0);
 
 // Visualization type for vehicle parts (PRIMITIVES, MESH, or NONE)
@@ -159,10 +159,15 @@ int main(int argc, char* argv[]) {
         wvp.Advance(step_size);
         app.Advance(step_size);
 
-        for(int i=0;i<4;i++){
-          std::cout<<"wheel:"<<i<< "|Z Force:|" << wvp.GetTire(i)->GetTireForce(true).force.z()<<"|";
-        }
-        std::cout<<std::endl;
+        /*for(int i=0;i<4;i++){*/
+          /*std::cout<<"wheel:"<<i<< "|Z Force:|" << wvp.GetTire(i)->GetTireForce(true).force.z()<<"|";*/
+        /*}*/
+        /*std::cout<<std::endl;*/
+
+        /*std::cout<<"Vehicle COM|"<<wvp.GetVehicle().GetVehicleCOMPos().x()<<"|"
+          <<wvp.GetVehicle().GetVehicleCOMPos().y()<<"|"
+          <<(wvp.GetVehicle().GetVehicleCOMPos().z()-0.548)
+          <<std::endl;*/
 
         /*std::cout<<"COM: "<< wvp.GetChassis()->GetCOMPos().x() <<", "<<wvp.GetChassis()->GetCOMPos().y()<<", "<<wvp.GetChassis()->GetCOMPos().z()<< std::endl;*/
 

@@ -33,10 +33,10 @@ const double WVP_Driveline4WD::m_frontshaft_inertia = 0.5;
 const double WVP_Driveline4WD::m_rearshaft_inertia = 0.5;
 
 const double WVP_Driveline4WD::m_central_differential_ratio = -1;
-const double WVP_Driveline4WD::m_front_differential_ratio = -1;
-const double WVP_Driveline4WD::m_rear_differential_ratio = -1;
-const double WVP_Driveline4WD::m_front_conicalgear_ratio = -0.2;
-const double WVP_Driveline4WD::m_rear_conicalgear_ratio = -0.2;
+const double WVP_Driveline4WD::m_front_differential_ratio = -.1859;
+const double WVP_Driveline4WD::m_rear_differential_ratio = -.1859;
+const double WVP_Driveline4WD::m_front_conicalgear_ratio = -1;
+const double WVP_Driveline4WD::m_rear_conicalgear_ratio = -1;
 
 // -----------------------------------------------------------------------------
 // Constructor of the WVP_Driveline4WD.
