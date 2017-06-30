@@ -28,6 +28,7 @@
 #include "chrono_models/ChApiModels.h"
 #include "chrono_models/vehicle/wvp/WVP_Vehicle.h"
 #include "chrono_models/vehicle/wvp/WVP_Powertrain.h"
+#include "chrono_models/vehicle/wvp/WVP_SimpleMapPowertrain.h"
 #include "chrono_models/vehicle/wvp/WVP_FialaTire.h"
 #include "chrono_models/vehicle/wvp/WVP_RigidTire.h"
 

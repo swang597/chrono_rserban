@@ -77,13 +77,14 @@ void WVP::Initialize() {
     m_vehicle->Initialize(m_initPos, m_initFwdVel);
 
     // Create and initialize the powertrain system
-    m_powertrain = new WVP_Powertrain;
+    m_powertrain = new WVP_SimpleMapPowertrain;
     m_powertrain->Initialize(GetChassisBody(), m_vehicle->GetDriveshaft());
 
     // Create the tires and set parameters depending on type.
     switch (m_tireType) {
         case TireModelType::RIGID:
         case TireModelType::RIGID_MESH: {
+            std::cout<<"Init RIGID"<<std::endl;
             bool use_mesh = (m_tireType == TireModelType::RIGID_MESH);
             WVP_RigidTire* tire_FL = new WVP_RigidTire("FL", use_mesh);
             WVP_RigidTire* tire_FR = new WVP_RigidTire("FR", use_mesh);
@@ -98,6 +99,7 @@ void WVP::Initialize() {
             break;
         }
         case TireModelType::FIALA: {
+          std::cout<<"Init FIALA"<<std::endl;
             WVP_FialaTire* tire_FL = new WVP_FialaTire("FL");
             WVP_FialaTire* tire_FR = new WVP_FialaTire("FR");
             WVP_FialaTire* tire_RL = new WVP_FialaTire("RL");

@@ -172,7 +172,7 @@ double WVP_SpringForce::operator()(double time, double rest_length, double lengt
     /*std::cout<<length<<std::endl;*/
 
     /*std::cout<<"displ: "<<(rest_length-length)<<", force: "<<f<<std::endl;*/
-    return m_map.Get_y(rest_length - length);;
+    return m_map.Get_y(rest_length - length);
 }
 
 // -----------------------------------------------------------------------------
@@ -586,17 +586,17 @@ double WVP_ShockForce::operator()(double time, double rest_length, double length
 
     bool parallel_travel = (displ_mine * displ_other >= 0);
 
-    /*std::cout << m_axle_name << " " << side << " | " << displ_mine << " | "<<vel_mine <<std::endl;*/
+    /*std::cout << m_axle_name << " " << side << "|" << displ_mine << "|"<<vel_mine <<std::endl;*/
     /*std::cout << m_axle_name << " " << side << "|" << length <<"|";*/
 
     if(parallel_travel){ //lookup table for parallel travel
 
-      force = interpolate2D(-displ_mine,vel_mine,m_para_damp_map); //damping
+      force = -interpolate2D(-displ_mine,-vel_mine,m_para_damp_map); //damping
 
     }else{ //lookup table for single wheel travel
 
-      force = interpolate2D(-displ_mine,vel_mine,m_single_damp_map); //damping
-      /*force += m_roll_map.Get_y(-displ_mine); //roll stabilization*/
+      force = -interpolate2D(-displ_mine,-vel_mine,m_single_damp_map); //damping
+      force += m_roll_map.Get_y(-displ_mine); //roll stabilization
 
     }
     /*std::cout<<force<<std::endl;*/

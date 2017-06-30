@@ -38,7 +38,7 @@ using namespace chrono::vehicle::wvp;
 // =============================================================================
 
 // Initial vehicle location and orientation
-ChVector<> initLoc(0, 0, 0.0);
+ChVector<> initLoc(0, 0, 1.0);
 ChQuaternion<> initRot(1, 0, 0, 0);
 
 // Visualization type for vehicle parts (PRIMITIVES, MESH, or NONE)
@@ -55,7 +55,7 @@ TireModelType tire_model = TireModelType::RIGID;
 ChVector<> trackPoint(0.0, 0.0, 1.75);
 
 // Simulation step sizes
-double step_size = 0.001;
+double step_size = 1e-3;
 double tire_step_size = step_size;
 
 // Simulation end time
@@ -96,8 +96,8 @@ int main(int argc, char* argv[]) {
     terrain.SetContactRestitutionCoefficient(0.01f);
     terrain.SetContactMaterialProperties(2e7f, 0.3f);
     terrain.SetColor(ChColor(0.8f, 0.8f, 0.5f));
-    terrain.SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 20, 20);
-    terrain.Initialize(0, 200, 200);
+    terrain.SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 200);
+    terrain.Initialize(0, 1000, 1000);
 
     // -------------------------------------
     // Create the vehicle Irrlicht interface
@@ -166,8 +166,8 @@ int main(int argc, char* argv[]) {
 
         /*std::cout<<"Vehicle COM|"<<wvp.GetVehicle().GetVehicleCOMPos().x()<<"|"
           <<wvp.GetVehicle().GetVehicleCOMPos().y()<<"|"
-          <<(wvp.GetVehicle().GetVehicleCOMPos().z()-0.548)
-          <<std::endl;*/
+          <<(wvp.GetVehicle().GetVehicleCOMPos().z()-0.548)*/
+          /*std::cout<<std::endl;*/
 
         /*std::cout<<"COM: "<< wvp.GetChassis()->GetCOMPos().x() <<", "<<wvp.GetChassis()->GetCOMPos().y()<<", "<<wvp.GetChassis()->GetCOMPos().z()<< std::endl;*/
 

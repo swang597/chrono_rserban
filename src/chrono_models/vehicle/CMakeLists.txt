@@ -133,6 +133,11 @@ set(CVM_WVP_FILES
     wvp/WVP_Vehicle.h
     wvp/WVP_Wheel.cpp
     wvp/WVP_Wheel.h
+    wvp/WVP_SimpleMapPowertrain.cpp
+    wvp/WVP_SimpleMapPowertrain.h
+
+
+
 )
 source_group("wvp" FILES ${CVM_WVP_FILES})
 
