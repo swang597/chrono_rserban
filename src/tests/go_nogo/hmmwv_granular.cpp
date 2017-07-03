@@ -21,6 +21,7 @@
 // All units SI.
 // =============================================================================
 
+#include <cstdlib>
 #include <string>
 #include <iostream>
 #include <vector>
@@ -150,8 +151,7 @@ double time_pitch = time_start_engine;
 // Simulation parameters
 // -----------------------------------------------------------------------------
 
-// Desired number of OpenMP threads (will be clamped to maximum available)
-int threads = 20;
+// Enable thread tuning?
 bool thread_tuning = false;
 
 // Integration step size
@@ -224,8 +224,17 @@ class MyLuggedTire : public ChTireContactCallback {
 
 // =============================================================================
 
+// Custom material composition law.
+// Use the maximum coefficient of friction.
+class CustomCompositionStrategy : public ChMaterialCompositionStrategy<real> {
+public:
+    virtual real CombineFriction(real a1, real a2) const override { return std::max<real>(a1, a2); }
+};
+
+// =============================================================================
+
 void ShowUsage(const std::string& name);
-bool GetProblemSpecs(int argc, char** argv, std::string& file, int& line, bool& render, bool& copy);
+bool GetProblemSpecs(int argc, char** argv, std::string& file, int& line, int& threads, bool& render, bool& copy);
 
 double CreateContainer(ChSystem* system, double mu, double coh, double radius);
 int CreateParticles(ChSystemParallelNSC* system,
@@ -251,11 +260,12 @@ int main(int argc, char* argv[]) {
 
     std::string input_file = "";  // Name of input file
     int line_number = 0;          // Line of inputs
+    int threads = 8;              // Number of threads
     bool render = true;           // Render?
     bool copy = true;             // Copy input file?
 
     // Extract arguments
-    if (!GetProblemSpecs(argc, argv, input_file, line_number, render, copy)) {
+    if (!GetProblemSpecs(argc, argv, input_file, line_number, threads, render, copy)) {
         return 1;
     }
 
@@ -362,13 +372,23 @@ int main(int argc, char* argv[]) {
     ChSystemParallelNSC* system = new ChSystemParallelNSC();
     system->Set_G_acc(gravity);
 
+    // Use a custom material property composition strategy.
+    // This ensures that tire-terrain interaction always uses the same coefficient of friction.
+    std::unique_ptr<CustomCompositionStrategy> strategy(new CustomCompositionStrategy);
+    system->SetMaterialCompositionStrategy(std::move(strategy));
+
     // Set number of threads
+    cout << "Environment variables:" << endl;
+    cout << "  OMP_NUM_THREADS = " << std::getenv("OMP_NUM_THREADS") << endl;
+
     int max_threads = omp_get_num_procs();
     if (threads > max_threads)
         threads = max_threads;
     system->SetParallelThreadNumber(threads);
     omp_set_num_threads(threads);
-    cout << "Using " << threads << " threads" << endl;
+#pragma omp parallel
+#pragma omp master
+    cout << "Using " << omp_get_num_threads() << " threads" << endl;
 
     system->GetSettings()->perform_thread_tuning = thread_tuning;
 
@@ -463,7 +483,32 @@ int main(int argc, char* argv[]) {
     bool is_pitched = false;
     double x_pos = -horizontal_pos;
 
-    while (time < time_end && x_pos < horizontal_pos) {
+    while (true) {
+        // Check exit conditions
+        if (x_pos >= horizontal_pos) {
+            if (output) {
+                ofile << "# " << endl;
+                ofile << "# Reached maximum x position" << endl;
+            }
+            break;
+        }
+
+        if (x_pos <= -hdimX) {
+            if (output) {
+                ofile << "# " << endl;
+                ofile << "# Vehicle sliding backward" << endl;
+            }
+            break;
+        }
+
+        if (time >= time_end) {
+            if (output) {
+                ofile << "# " << endl;
+                ofile << "# Reached maximum time" << endl;
+            }
+            break;
+        }
+
         // Create the vehicle
         if (!hmmwv && time > time_create_vehicle) {
             cout << time << "    Create vehicle" << endl;
@@ -570,7 +615,7 @@ int main(int argc, char* argv[]) {
 // =============================================================================
 
 // ID values to identify command line arguments
-enum { OPT_HELP, OPT_FILE, OPT_LINE, OPT_NO_RENDERING, OPT_NO_COPY };
+enum { OPT_HELP, OPT_FILE, OPT_LINE, OPT_THREADS, OPT_NO_RENDERING, OPT_NO_COPY };
 
 // Table of CSimpleOpt::Soption structures. Each entry specifies:
 // - the ID for the option (returned from OptionId() during processing)
@@ -579,6 +624,7 @@ enum { OPT_HELP, OPT_FILE, OPT_LINE, OPT_NO_RENDERING, OPT_NO_COPY };
 // The last entry must be SO_END_OF_OPTIONS
 CSimpleOptA::SOption g_options[] = {{OPT_FILE, "-f", SO_REQ_CMB},
                                     {OPT_LINE, "-l", SO_REQ_CMB},
+                                    {OPT_THREADS, "-t", SO_REQ_CMB},
                                     {OPT_NO_RENDERING, "--no-rendering", SO_NONE},
                                     {OPT_NO_COPY, "--no-copy", SO_NONE},
                                     {OPT_HELP, "-?", SO_NONE},
@@ -594,6 +640,8 @@ void ShowUsage(const std::string& name) {
     std::cout << "        slope (deg), radius (mm), density (kg/m3), coef. friction, cohesion" << std::endl;
     std::cout << " -l=LINE" << std::endl;
     std::cout << "        Line in input file" << std::endl;
+    std::cout << " -t=THREADS" << std::endl;
+    std::cout << "        Number of OpenMP threads" << std::endl;
     std::cout << " --no-rendering" << std::endl;
     std::cout << "        Disable OpenGL rendering" << std::endl;
     std::cout << " -? -h --help" << std::endl;
@@ -601,7 +649,7 @@ void ShowUsage(const std::string& name) {
     std::cout << std::endl;
 }
 
-bool GetProblemSpecs(int argc, char** argv, std::string& file, int& line, bool& render, bool& copy) {
+bool GetProblemSpecs(int argc, char** argv, std::string& file, int& line, int& threads, bool& render, bool& copy) {
     // Create the option parser and pass it the program arguments and the array of valid options.
     CSimpleOptA args(argc, argv, g_options);
 
@@ -627,6 +675,9 @@ bool GetProblemSpecs(int argc, char** argv, std::string& file, int& line, bool& 
                 break;
             case OPT_LINE:
                 line = std::stoi(args.OptionArg());
+                break;
+            case OPT_THREADS:
+                threads = std::stoi(args.OptionArg());
                 break;
             case OPT_NO_RENDERING:
                 render = false;
@@ -808,6 +859,12 @@ HMMWV_Full* CreateVehicle(ChSystem* system, double vertical_offset) {
     hmmwv->SetPowertrainType(PowertrainModelType::SHAFTS);
     hmmwv->SetDriveType(DrivelineType::AWD);
     hmmwv->SetTireType(TireModelType::RIGID);
+
+    // Set coefficient of friction for rigid tires.
+    // Must be set before initialization.
+    for (int i = 0; i < 4; i++) {
+        static_cast<HMMWV_RigidTire*>(hmmwv->GetTire(i))->SetContactFrictionCoefficient(1.0);
+    }
 
     hmmwv->Initialize();
 

@@ -25,8 +25,6 @@ A parallel model of the simulation, currently won't run as the function utils::A
 #include "chrono_opengl/shapes/ChOpenGLOBJ.h"
 #include "chrono_opengl/core/ChOpenGLMaterial.h"
 
-#include "chrono_vehicle/terrain/DeformableTerrain.h"
-
 ////#include "chrono_postprocess/ChPovRay.h"
 ////#include "chrono_postprocess/ChPovRayAssetCustom.h"
 
