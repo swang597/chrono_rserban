@@ -9,22 +9,21 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Radu Serban, Mike Taylor
+// Authors: Radu Serban, Mike Taylor, Asher Elmquist
 // =============================================================================
 //
-// Simple powertrain model for the M113 vehicle.
+// Simple powertrain model for the WVP vehicle.
+// - based on torque-speed engine maps
 // - both power and torque limited
 // - no torque converter
-// - no transmission box
+// - simple gear-shifting model (in automatic mode)
 //
 // =============================================================================
 
-#ifndef WVP_SIMPLEMAPPOWERTRAIN_H
-#define WVP_SIMPLEMAPPOWERTRAIN_H
+#ifndef WVP_SIMPLEMAP_POWERTRAIN_H
+#define WVP_SIMPLEMAP_POWERTRAIN_H
 
-#include "chrono_vehicle/ChVehicle.h"
-#include "chrono_vehicle/ChPowertrain.h"
-#include "chrono/core/ChCubicSpline.h"
+#include "chrono_vehicle/powertrain/ChSimpleMapPowertrain.h"
 
 #include "chrono_models/ChApiModels.h"
 
@@ -32,96 +31,42 @@ namespace chrono {
 namespace vehicle {
 namespace wvp {
 
-/// @addtogroup vehicle_models_generic
+/// @addtogroup vehicle_models_wvp
 /// @{
 
-/// Custom powertrain model for a generic vehicle.
-/// Note that this does not use one of the Chrono::vehicle templates, but rather inherits directly
-/// from ChPowertrain.
-class CH_MODELS_API WVP_SimpleMapPowertrain : public ChPowertrain {
+/// Simple WVP powertrain subsystem (based on engine speed-torque maps).
+class CH_MODELS_API WVP_SimpleMapPowertrain : public ChSimpleMapPowertrain {
   public:
     WVP_SimpleMapPowertrain();
 
-    ~WVP_SimpleMapPowertrain() {}
+    /// Specify maximum engine speed.
+    virtual double GetMaxEngineSpeed() override;
 
-    /// Return the current engine speed.
-    virtual double GetMotorSpeed() const override { return m_motorSpeed; }
+    /// Set the engine speed-torque maps.
+    /// A concrete class must add the speed-torque points to the provided maps,
+    /// using the ChFunction_Recorder::AddPoint() function.
+    virtual void SetEngineTorqueMaps(ChFunction_Recorder& map0,  ///< [out] engine map at zero throttle
+                                     ChFunction_Recorder& mapF   ///< [out] engine map at full throttle
+                                     ) override;
 
-    /// Return the current engine torque.
-    virtual double GetMotorTorque() const override { return m_motorTorque; }
+    /// Set the gears, i.e. the transmission ratios of the various gears.
+    /// A concrete class must populate the vector of forward gear ratios, ordered as 1st, 2nd, etc.
+    /// and provide a value for the single reverse gear ratio.
+    virtual void SetGearRatios(std::vector<double>& fwd_gear_ratios,  ///< [out] list of forward gear ratios
+                               double& reverse_gear_ratio             ///< [out] single reverse gear ratio
+                               ) override;
 
-    /// Return the value of slippage in the torque converter.
-    /// This simplified model does not have a torque converter.
-    virtual double GetTorqueConverterSlippage() const override { return 0; }
-
-    /// Return the input torque to the torque converter.
-    /// This simplified model does not have a torque converter.
-    virtual double GetTorqueConverterInputTorque() const override { return 0; }
-
-    /// Return the output torque from the torque converter.
-    /// This simplified model does not have a torque converter.
-    virtual double GetTorqueConverterOutputTorque() const override { return 0; }
-
-    /// Return the current transmission gear
-    /// This simplified model does not have a transmission box.
-    virtual int GetCurrentTransmissionGear() const override { return 1; }
-
-    /// Return the output torque from the powertrain.
-    /// This is the torque that is passed to a vehicle system, thus providing the
-    /// interface between the powertrain and vehicle co-simulation modules.
-    /// Since a ShaftsPowertrain is directly connected to the vehicle's driveline,
-    /// this function returns 0.
-    virtual double GetOutputTorque() const override { return m_shaftTorque; }
-
-    /// Use this function to set the mode of automatic transmission.
-    /// This simplified model does not have a transmission box.
-    virtual void SetDriveMode(ChPowertrain::DriveMode mmode) override;
-
-    /// Use this function to shift from one gear to another.
-    /// A zero latency shift is assumed.
-    /// Note, index starts from 0.
-    void SetSelectedGear(int igear);
-
-    /// Initialize the powertrain system.
-    virtual void Initialize(std::shared_ptr<ChBody> chassis,     ///< [in] chassis o the associated vehicle
-                            std::shared_ptr<ChShaft> driveshaft  ///< [in] shaft connection to the vehicle driveline
-                            ) override;
-
-    /// Update the state of this powertrain system at the current time.
-    /// The powertrain system is provided the current driver throttle input, a
-    /// value in the range [0,1], and the current angular speed of the transmission
-    /// shaft (from the driveline).
-    virtual void Synchronize(double time,        ///< [in] current time
-                             double throttle,    ///< [in] current throttle input [0,1]
-                             double shaft_speed  ///< [in] current angular speed of the transmission shaft
-                             ) override;
-
-    /// Advance the state of this powertrain system by the specified time step.
-    /// This function does nothing for this simplified powertrain model.
-    virtual void Advance(double step) override {}
-
-  private:
-    double m_current_gear_ratio;
-    double m_motorSpeed;
-    double m_motorTorque;
-    double m_shaftTorque;
-
-    int m_current_gear;
-    std::vector<double> m_gear_ratios;
-
-    // ChCubicSpline m_zeroThrottleMap;
-    // ChCubicSpline m_fullThrottleMap;
-    ChFunction_Recorder m_zeroThrottleFunction;
-    ChFunction_Recorder m_fullThrottleFunction;
-
-    void CheckShift();
-
-
+    /// Set the ideal shift points for automatic gear shifting.
+    /// For each forward gear, specify a pair (min, max) with the minimum and
+    /// maximum engine speed for shifting (down and up, respectively).
+    virtual void SetShiftPoints(
+        std::vector<std::pair<double, double>>& shift_bands  ///< [out] down-shift/up-shift points
+        ) override;
 };
 
-/// @} vehicle_models_generic
+/// @} vehicle_models_wvp
 
-}  // end namespace generic
+}  // end namespace wvp
 }  // end namespace vehicle
 }  // end namespace chrono
 
