@@ -378,8 +378,8 @@ int main(int argc, char* argv[]) {
     system->SetMaterialCompositionStrategy(std::move(strategy));
 
     // Set number of threads
-    cout << "Environment variables:" << endl;
-    cout << "  OMP_NUM_THREADS = " << std::getenv("OMP_NUM_THREADS") << endl;
+    ////cout << "Environment variables:" << endl;
+    ////cout << "  OMP_NUM_THREADS = " << std::getenv("OMP_NUM_THREADS") << endl;
 
     int max_threads = omp_get_num_procs();
     if (threads > max_threads)
