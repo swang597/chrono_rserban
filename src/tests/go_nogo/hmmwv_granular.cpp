@@ -860,12 +860,6 @@ HMMWV_Full* CreateVehicle(ChSystem* system, double vertical_offset) {
     hmmwv->SetDriveType(DrivelineType::AWD);
     hmmwv->SetTireType(TireModelType::RIGID);
 
-    // Set coefficient of friction for rigid tires.
-    // Must be set before initialization.
-    for (int i = 0; i < 4; i++) {
-        static_cast<HMMWV_RigidTire*>(hmmwv->GetTire(i))->SetContactFrictionCoefficient(1.0);
-    }
-
     hmmwv->Initialize();
 
     hmmwv->SetChassisVisualizationType(VisualizationType::NONE);
