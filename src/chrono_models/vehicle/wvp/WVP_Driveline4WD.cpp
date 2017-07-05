@@ -9,7 +9,7 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Radu Serban
+// Authors: Radu Serban, Asher Elmquist
 // =============================================================================
 //
 // WVP 4WD driveline model based on ChShaft objects.
@@ -33,10 +33,10 @@ const double WVP_Driveline4WD::m_frontshaft_inertia = 0.5;
 const double WVP_Driveline4WD::m_rearshaft_inertia = 0.5;
 
 const double WVP_Driveline4WD::m_central_differential_ratio = -1.0;
-const double WVP_Driveline4WD::m_front_differential_ratio = -.1859;
-const double WVP_Driveline4WD::m_rear_differential_ratio = -.1859;
-const double WVP_Driveline4WD::m_front_conicalgear_ratio = -0.4; //TODO: these are 0.4 to make it work -> figure out where the ratios are wrong
-const double WVP_Driveline4WD::m_rear_conicalgear_ratio = -0.4; //TODO: these are 0.4 to make it work -> figure out where the ratios are wrong
+const double WVP_Driveline4WD::m_front_differential_ratio = -1.0;//-.1859;
+const double WVP_Driveline4WD::m_rear_differential_ratio = -1.0;// -.1859;
+const double WVP_Driveline4WD::m_front_conicalgear_ratio = -.1859; //TODO: these are 0.4 to make it work -> figure out where the ratios are wrong
+const double WVP_Driveline4WD::m_rear_conicalgear_ratio = -.1859; //TODO: these are 0.4 to make it work -> figure out where the ratios are wrong
 
 // -----------------------------------------------------------------------------
 // Constructor of the WVP_Driveline4WD.

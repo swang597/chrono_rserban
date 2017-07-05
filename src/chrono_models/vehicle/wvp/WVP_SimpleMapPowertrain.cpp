@@ -27,6 +27,7 @@ namespace vehicle {
 namespace wvp {
 
 const double rpm2rads = CH_C_PI / 30;
+const double drive_eff = 0.691; //based on auxillary power consumption and gearbox efficiencies
 
 WVP_SimpleMapPowertrain::WVP_SimpleMapPowertrain() : ChSimpleMapPowertrain() {}
 
@@ -47,15 +48,15 @@ void WVP_SimpleMapPowertrain::SetEngineTorqueMaps(ChFunction_Recorder& map0, ChF
     map0.AddPoint(2400 * rpm2rads, -100.0);
     map0.AddPoint(2700 * rpm2rads, -800.0);
 
-    mapF.AddPoint(-100 * rpm2rads, 406.7);
-    mapF.AddPoint(800 * rpm2rads, 517.9);
-    mapF.AddPoint(1000 * rpm2rads, 926.0);
-    mapF.AddPoint(1200 * rpm2rads, 1216.2);
-    mapF.AddPoint(1400 * rpm2rads, 1300.2);
-    mapF.AddPoint(1600 * rpm2rads, 1300.2);
-    mapF.AddPoint(1800 * rpm2rads, 1227.0);
-    mapF.AddPoint(2000 * rpm2rads, 1136.2);
-    mapF.AddPoint(2200 * rpm2rads, 1041.3);
+    mapF.AddPoint(-100 * rpm2rads, 406.7*drive_eff);
+    mapF.AddPoint(800 * rpm2rads, 517.9*drive_eff);
+    mapF.AddPoint(1000 * rpm2rads, 926.0*drive_eff);
+    mapF.AddPoint(1200 * rpm2rads, 1216.2*drive_eff);
+    mapF.AddPoint(1400 * rpm2rads, 1300.2*drive_eff);
+    mapF.AddPoint(1600 * rpm2rads, 1300.2*drive_eff);
+    mapF.AddPoint(1800 * rpm2rads, 1227.0*drive_eff);
+    mapF.AddPoint(2000 * rpm2rads, 1136.2*drive_eff);
+    mapF.AddPoint(2200 * rpm2rads, 1041.3*drive_eff);
     mapF.AddPoint(2400 * rpm2rads, -271.2);
     mapF.AddPoint(2700 * rpm2rads, -800.0);
 }

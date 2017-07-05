@@ -9,7 +9,7 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Radu Serban
+// Authors: Radu Serban, Asher Elmquist
 // =============================================================================
 //
 // WVP Fiala subsystem
@@ -30,7 +30,7 @@ namespace wvp {
 // Static variables
 // -----------------------------------------------------------------------------
 
-const double WVP_FialaTire::m_normalDamping = 17513;
+const double WVP_FialaTire::m_normalDamping = 4077;
 
 const std::string WVP_FialaTire::m_meshName = "hmmwv_tire_POV_geom";
 const std::string WVP_FialaTire::m_meshFile = "hmmwv/hmmwv_tire.obj";
@@ -45,15 +45,26 @@ void WVP_FialaTire::SetFialaParams() {
     // Parametes were fit at roughly 1700lbs and 24psi
     // Note, the width is not based on the width of the physical tire.
     // It was soley based on providing a good fit to the aligning torque curve.
-    m_unloaded_radius = 0.548;
-    m_width = 0.2;
+    /*m_unloaded_radius = 0.548;
+    m_width = 0.372;
     m_rolling_resistance = 0.001;  // Assume very small since no other data exists
     m_c_slip = 246517.6;
     m_c_alpha = 203760.0;
     m_u_min = 0.75;
     m_u_max = 0.8;
     m_relax_length_x = .12388;
-    m_relax_length_y = .12388;
+    m_relax_length_y = .012388;*/
+
+    m_unloaded_radius = 0.548;
+    m_width = 0.2;
+    m_rolling_resistance = 0.001;
+    m_c_slip = 246517.6;
+    m_c_alpha = 203760;
+    m_u_min = .75;
+    m_u_max = 0.8;
+    m_relax_length_x = 1.2388;
+    m_relax_length_y = 1.2388;
+
 }
 
 double WVP_FialaTire::GetNormalStiffnessForce(double depth) const {

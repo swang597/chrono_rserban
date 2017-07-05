@@ -9,7 +9,7 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Radu Serban
+// Authors: Radu Serban, Asher Elmquist
 // =============================================================================
 //
 // Sample test program for sequential WVP simulation.
@@ -38,7 +38,7 @@ using namespace chrono::vehicle::wvp;
 // =============================================================================
 
 // Initial vehicle location and orientation
-ChVector<> initLoc(0, 0, 1.0);
+ChVector<> initLoc(-90, 0, 1.0);
 ChQuaternion<> initRot(1, 0, 0, 0);
 
 // Visualization type for vehicle parts (PRIMITIVES, MESH, or NONE)
@@ -49,13 +49,13 @@ VisualizationType wheel_vis_type = VisualizationType::NONE;
 VisualizationType tire_vis_type = VisualizationType::PRIMITIVES;
 
 // Type of tire model (RIGID, FIALA)
-TireModelType tire_model = TireModelType::RIGID;
+TireModelType tire_model = TireModelType::FIALA;
 
 // Point on chassis tracked by the camera
 ChVector<> trackPoint(0.0, 0.0, 1.75);
 
 // Simulation step sizes
-double step_size = 1e-3;
+double step_size = 1e-4;
 double tire_step_size = step_size;
 
 // Simulation end time
@@ -97,7 +97,7 @@ int main(int argc, char* argv[]) {
     terrain.SetContactMaterialProperties(2e7f, 0.3f);
     terrain.SetColor(ChColor(0.8f, 0.8f, 0.5f));
     terrain.SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 200);
-    terrain.Initialize(0, 1000, 1000);
+    terrain.Initialize(0, 200, 200);
 
     // -------------------------------------
     // Create the vehicle Irrlicht interface
@@ -158,6 +158,14 @@ int main(int argc, char* argv[]) {
         terrain.Advance(step_size);
         wvp.Advance(step_size);
         app.Advance(step_size);
+
+        //check engine vs wheel speed
+        /*std::cout<<"Engine Speed|"<<wvp.GetPowertrain().GetMotorSpeed()*(30.0/3.14159)
+          <<"|vehicle speed|"<<wvp.GetVehicle().GetVehicleSpeed()
+          <<"|vehicle gear|"<<wvp.GetPowertrain().GetCurrentTransmissionGear()
+          <<"|time|"<<wvp.GetSystem()->GetChTime()
+          <<"|throttle|"<<throttle_input
+          <<std::endl;*/
 
         /*for(int i=0;i<4;i++){*/
           /*std::cout<<"wheel:"<<i<< "|Z Force:|" << wvp.GetTire(i)->GetTireForce(true).force.z()<<"|";*/
