@@ -49,13 +49,13 @@ VisualizationType wheel_vis_type = VisualizationType::NONE;
 VisualizationType tire_vis_type = VisualizationType::PRIMITIVES;
 
 // Type of tire model (RIGID, FIALA)
-TireModelType tire_model = TireModelType::FIALA;
+TireModelType tire_model = TireModelType::RIGID;
 
 // Point on chassis tracked by the camera
 ChVector<> trackPoint(0.0, 0.0, 1.75);
 
 // Simulation step sizes
-double step_size = 1e-4;
+double step_size = 1e-3;
 double tire_step_size = step_size;
 
 // Simulation end time

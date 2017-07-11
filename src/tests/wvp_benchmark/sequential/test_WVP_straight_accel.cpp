@@ -25,6 +25,7 @@
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 #include "chrono_vehicle/driver/ChIrrGuiDriver.h"
 #include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
+#include "chrono_vehicle/driver/ChPathFollowerDriver.h"
 
 #include "chrono_models/vehicle/wvp/WVP.h"
 
@@ -49,13 +50,13 @@ VisualizationType wheel_vis_type = VisualizationType::NONE;
 VisualizationType tire_vis_type = VisualizationType::PRIMITIVES;
 
 // Type of tire model (RIGID, FIALA)
-TireModelType tire_model = TireModelType::FIALA;
+TireModelType tire_model = TireModelType::RIGID;
 
 // Point on chassis tracked by the camera
 ChVector<> trackPoint(0.0, 0.0, 1.75);
 
 // Simulation step sizes
-double step_size = 1e-4;
+double step_size = 1e-3;
 double tire_step_size = step_size;
 
 // Simulation end time
@@ -63,6 +64,14 @@ double tend = 15;
 
 // Time interval between two render frames
 double render_step_size = 1.0 / 50;  // FPS = 50
+
+//vehicle driver inputs
+// Desired vehicle speed (m/s)
+double target_speed = 1000;
+
+std::string path_file("paths/straightOrigin.txt");
+std::string steering_controller_file("wvp/SteeringController.json");
+std::string speed_controller_file("wvp/SpeedController.json");
 
 // =============================================================================
 
@@ -97,7 +106,13 @@ int main(int argc, char* argv[]) {
     terrain.SetContactMaterialProperties(2e7f, 0.3f);
     terrain.SetColor(ChColor(0.8f, 0.8f, 0.5f));
     terrain.SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 200);
-    terrain.Initialize(0, 200, 200);
+    terrain.Initialize(0, 2000, 2000);
+
+    //create the driver
+    auto path = ChBezierCurve::read(vehicle::GetDataFile(path_file));
+    ChPathFollowerDriver driver(wvp.GetVehicle(), vehicle::GetDataFile(steering_controller_file),
+                                vehicle::GetDataFile(speed_controller_file), path, "my_path", target_speed, false);
+    driver.Initialize();
 
     // -------------------------------------
     // Create the vehicle Irrlicht interface
@@ -108,12 +123,12 @@ int main(int argc, char* argv[]) {
     app.SetSkyBox();
     app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
     app.SetChaseCamera(trackPoint, 6.0, 0.5);
-    app.SetTimestep(step_size);
+    /*app.SetTimestep(step_size);*/
     app.AssetBindAll();
     app.AssetUpdateAll();
 
     // Create the interactive driver system
-    ChIrrGuiDriver driver(app);
+    /*ChIrrGuiDriver driver(app);
 
     // Set the time response for steering and throttle keyboard inputs.
     double steering_time = 1.0;  // time to go from 0 to +1 (or from 0 to -1)
@@ -123,14 +138,19 @@ int main(int argc, char* argv[]) {
     driver.SetThrottleDelta(render_step_size / throttle_time);
     driver.SetBrakingDelta(render_step_size / braking_time);
 
-    driver.Initialize();
+    driver.Initialize();*/
 
     // ---------------
     // Simulation loop
     // ---------------
 
+    std::cout<<"data at: "<<vehicle::GetDataFile(steering_controller_file)<<std::endl;
+    std::cout<<"data at: "<<vehicle::GetDataFile(speed_controller_file)<<std::endl;
+    std::cout<<"data at: "<<vehicle::GetDataFile(path_file)<<std::endl;
+
     int render_steps = (int)std::ceil(render_step_size / step_size);
     int step_number = 0;
+
 
     while (app.GetDevice()->run()) {
         double time = wvp.GetSystem()->GetChTime();
@@ -141,23 +161,28 @@ int main(int argc, char* argv[]) {
             app.DrawAll();
             app.EndScene();
         }
-
+        std::cout<<"drawing scene\n";
         // Collect output data from modules (for inter-module communication)
         double throttle_input = driver.GetThrottle();
         double steering_input = driver.GetSteering();
         double braking_input = driver.GetBraking();
 
+        std::cout<<"about to Synchronize\n";
         // Update modules (process inputs from other modules)
         driver.Synchronize(time);
         terrain.Synchronize(time);
         wvp.Synchronize(time, steering_input, braking_input, throttle_input, terrain);
-        app.Synchronize(driver.GetInputModeAsString(), steering_input, throttle_input, braking_input);
+        app.Synchronize("Follower driver", steering_input, throttle_input, braking_input);
 
+        std::cout<<"about to advance\n";
         // Advance simulation for one timestep for all modules
+
         driver.Advance(step_size);
         terrain.Advance(step_size);
         wvp.Advance(step_size);
         app.Advance(step_size);
+
+        std::cout<<"end loop\n";
 
         //check engine vs wheel speed
         /*std::cout<<"Engine Speed|"<<wvp.GetPowertrain().GetMotorSpeed()*(30.0/3.14159)
