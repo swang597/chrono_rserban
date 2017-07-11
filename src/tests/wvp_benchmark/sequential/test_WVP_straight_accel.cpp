@@ -39,7 +39,7 @@ using namespace chrono::vehicle::wvp;
 // =============================================================================
 
 // Initial vehicle location and orientation
-ChVector<> initLoc(-90, 0, 1.0);
+ChVector<> initLoc(0,0, 1.0);
 ChQuaternion<> initRot(1, 0, 0, 0);
 
 // Visualization type for vehicle parts (PRIMITIVES, MESH, or NONE)
@@ -105,8 +105,8 @@ int main(int argc, char* argv[]) {
     terrain.SetContactRestitutionCoefficient(0.01f);
     terrain.SetContactMaterialProperties(2e7f, 0.3f);
     terrain.SetColor(ChColor(0.8f, 0.8f, 0.5f));
-    terrain.SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 200);
-    terrain.Initialize(0, 2000, 2000);
+    terrain.SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 20, 20);
+    terrain.Initialize(0, 300, 300);
 
     //create the driver
     auto path = ChBezierCurve::read(vehicle::GetDataFile(path_file));
@@ -126,6 +126,12 @@ int main(int argc, char* argv[]) {
     /*app.SetTimestep(step_size);*/
     app.AssetBindAll();
     app.AssetUpdateAll();
+
+    // Visualization of controller points (sentinel & target)
+    irr::scene::IMeshSceneNode* ballS = app.GetSceneManager()->addSphereSceneNode(0.1f);
+    irr::scene::IMeshSceneNode* ballT = app.GetSceneManager()->addSphereSceneNode(0.1f);
+    ballS->getMaterial(0).EmissiveColor = irr::video::SColor(0, 255, 0, 0);
+    ballT->getMaterial(0).EmissiveColor = irr::video::SColor(0, 0, 255, 0);
 
     // Create the interactive driver system
     /*ChIrrGuiDriver driver(app);
@@ -155,26 +161,34 @@ int main(int argc, char* argv[]) {
     while (app.GetDevice()->run()) {
         double time = wvp.GetSystem()->GetChTime();
 
+        //path visualization
+        const ChVector<>& pS = driver.GetSteeringController().GetSentinelLocation();
+        const ChVector<>& pT = driver.GetSteeringController().GetTargetLocation();
+        ballS->setPosition(irr::core::vector3df((irr::f32)pS.x(), (irr::f32)pS.y(), (irr::f32)pS.z()));
+        ballT->setPosition(irr::core::vector3df((irr::f32)pT.x(), (irr::f32)pT.y(), (irr::f32)pT.z()));
+
+        std::cout<<"Target:\t"<<(irr::f32)pT.x()<<",\t "<<(irr::f32)pT.y()<<",\t "<<(irr::f32)pT.z()<<std::endl;
+        std::cout<<"Vehicle:\t"<<wvp.GetVehicle().GetChassisBody()->GetPos().x()
+          <<",\t "<<wvp.GetVehicle().GetChassisBody()->GetPos().y()<<",\t "
+          <<wvp.GetVehicle().GetChassisBody()->GetPos().z()<<std::endl;
+
         // Render scene
         if (step_number % render_steps == 0) {
             app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
             app.DrawAll();
             app.EndScene();
         }
-        std::cout<<"drawing scene\n";
         // Collect output data from modules (for inter-module communication)
         double throttle_input = driver.GetThrottle();
         double steering_input = driver.GetSteering();
         double braking_input = driver.GetBraking();
 
-        std::cout<<"about to Synchronize\n";
         // Update modules (process inputs from other modules)
         driver.Synchronize(time);
         terrain.Synchronize(time);
         wvp.Synchronize(time, steering_input, braking_input, throttle_input, terrain);
         app.Synchronize("Follower driver", steering_input, throttle_input, braking_input);
 
-        std::cout<<"about to advance\n";
         // Advance simulation for one timestep for all modules
 
         driver.Advance(step_size);
@@ -182,7 +196,6 @@ int main(int argc, char* argv[]) {
         wvp.Advance(step_size);
         app.Advance(step_size);
 
-        std::cout<<"end loop\n";
 
         //check engine vs wheel speed
         /*std::cout<<"Engine Speed|"<<wvp.GetPowertrain().GetMotorSpeed()*(30.0/3.14159)
