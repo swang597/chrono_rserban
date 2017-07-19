@@ -137,7 +137,8 @@ set(CVM_WVP_FILES
     wvp/WVP_Wheel.h
     wvp/WVP_SimpleMapPowertrain.cpp
     wvp/WVP_SimpleMapPowertrain.h
-
+    wvp/WVP_SimpleDriveline.cpp
+    wvp/WVP_SimpleDriveline.h
 
 
 )

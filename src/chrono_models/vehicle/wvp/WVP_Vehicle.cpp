@@ -73,7 +73,8 @@ void WVP_Vehicle::Create(bool fixed, ChassisCollisionType chassis_collision_type
     // --------------------
     // Create the driveline
     // --------------------
-    m_driveline = std::make_shared<WVP_Driveline4WD>("Driveline");
+    /*m_driveline = std::make_shared<WVP_Driveline4WD>("Driveline");*/
+    m_driveline = std::make_shared<WVP_SimpleDriveline>("Driveline");
 
     // -----------------
     // Create the brakes

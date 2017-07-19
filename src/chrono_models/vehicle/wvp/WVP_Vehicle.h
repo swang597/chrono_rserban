@@ -34,6 +34,7 @@
 #include "chrono_models/vehicle/wvp/WVP_BrakeSimple.h"
 #include "chrono_models/vehicle/wvp/WVP_DoubleWishbone.h"
 #include "chrono_models/vehicle/wvp/WVP_Driveline4WD.h"
+#include "chrono_models/vehicle/wvp/WVP_SimpleDriveline.h"
 #include "chrono_models/vehicle/wvp/WVP_PitmanArm.h"
 #include "chrono_models/vehicle/wvp/WVP_Wheel.h"
 
