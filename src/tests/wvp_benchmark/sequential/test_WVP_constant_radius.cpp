@@ -39,8 +39,8 @@ using namespace chrono::vehicle::wvp;
 // =============================================================================
 
 // Initial vehicle location and orientation
-ChVector<> initLoc(0.0,-60.96, 1.0);
-ChQuaternion<> initRot(1, 0, 0, 0);
+ChVector<> initLoc(60.96, 0, 1.0);
+ChQuaternion<> initRot = Q_from_AngAxis(-CH_C_PI/2.0,{0,0,1});//(1, 0, 0, 0);
 
 // Visualization type for vehicle parts (PRIMITIVES, MESH, or NONE)
 VisualizationType chassis_vis_type = VisualizationType::NONE;
@@ -111,7 +111,7 @@ int main(int argc, char* argv[]) {
     //create the driver
     auto path = ChBezierCurve::read(vehicle::GetDataFile(path_file));
     ChPathFollowerDriver driver(wvp.GetVehicle(), vehicle::GetDataFile(steering_controller_file),
-                                vehicle::GetDataFile(speed_controller_file), path, "my_path", target_speed, false);
+                                vehicle::GetDataFile(speed_controller_file), path, "my_path", target_speed, true);
     driver.Initialize();
 
     // -------------------------------------

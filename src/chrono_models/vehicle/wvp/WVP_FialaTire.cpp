@@ -62,8 +62,8 @@ void WVP_FialaTire::SetFialaParams() {
     m_c_alpha = 203760;
     m_u_min = .75;
     m_u_max = 0.8;
-    m_relax_length_x = 1.2388;
-    m_relax_length_y = 1.2388;
+    m_relax_length_x = .12388;
+    m_relax_length_y = .12388;
 
 }
 

@@ -166,11 +166,11 @@ void WVP_Vehicle::LogHardpointLocations() {
 
     GetLog() << "\n---- FRONT suspension hardpoint locations (LEFT side)\n";
     std::static_pointer_cast<ChDoubleWishbone>(m_suspensions[0])
-        ->LogHardpointLocations(ChVector<>(-37.78, 0, 30.77), true);
+        ->LogHardpointLocations(ChVector<>(0, 0, 0), false);
 
     GetLog() << "\n---- REAR suspension hardpoint locations (LEFT side)\n";
     std::static_pointer_cast<ChDoubleWishbone>(m_suspensions[1])
-        ->LogHardpointLocations(ChVector<>(-170.77, 0, 30.77), true);
+        ->LogHardpointLocations(ChVector<>(0, 0, 0), false);
 
     GetLog() << "\n\n";
 

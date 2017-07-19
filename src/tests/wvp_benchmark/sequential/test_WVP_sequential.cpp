@@ -38,7 +38,7 @@ using namespace chrono::vehicle::wvp;
 // =============================================================================
 
 // Initial vehicle location and orientation
-ChVector<> initLoc(-90, 0, 1.0);
+ChVector<> initLoc(0, 0, 1.0);
 ChQuaternion<> initRot(1, 0, 0, 0);
 
 // Visualization type for vehicle parts (PRIMITIVES, MESH, or NONE)
@@ -158,6 +158,29 @@ int main(int argc, char* argv[]) {
         terrain.Advance(step_size);
         wvp.Advance(step_size);
         app.Advance(step_size);
+
+
+        auto susp0 = std::static_pointer_cast<ChDoubleWishbone>(wvp.GetVehicle().GetSuspension(0));
+        auto susp1 = std::static_pointer_cast<ChDoubleWishbone>(wvp.GetVehicle().GetSuspension(1));
+
+        std::cout<<"SpringDef0|"<<susp0->GetSpringLength(LEFT)-.779;
+        std::cout<<"|force0|"<<susp0->GetSpringForce(LEFT);
+        std::cout<<"|SpringDef1|"<<susp0->GetSpringLength(RIGHT)-.779;
+        std::cout<<"|force1|"<<susp0->GetSpringForce(RIGHT);
+        std::cout<<"|SpringDef2|"<<susp1->GetSpringLength(LEFT)-.831;
+        std::cout<<"|force2|"<<susp1->GetSpringForce(LEFT);
+        std::cout<<"|SpringDef3|"<<susp1->GetSpringLength(RIGHT)-.831;
+        std::cout<<"|force3|"<<susp1->GetSpringForce(RIGHT)<<std::endl;
+
+        //log suspension locations
+        /*std::cout<<"|wheel pos|"<<wvp.GetVehicle().GetSuspension(0)->GetSpindle(LEFT)->GetPos().x()-wvp.GetVehicle().GetVehiclePos().x()
+          <<"|"<<wvp.GetVehicle().GetSuspension(0)->GetSpindle(LEFT)->GetPos().y()-wvp.GetVehicle().GetVehiclePos().y()
+          <<"|"<<wvp.GetVehicle().GetSuspension(0)->GetSpindle(LEFT)->GetPos().z()-wvp.GetVehicle().GetVehiclePos().z()
+          <<std::endl;*/
+
+
+
+        /*wvp.LogHardpointLocations();*/
 
         //check engine vs wheel speed
         /*std::cout<<"Engine Speed|"<<wvp.GetPowertrain().GetMotorSpeed()*(30.0/3.14159)

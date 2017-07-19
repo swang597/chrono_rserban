@@ -164,7 +164,7 @@ WVP_SpringForce::WVP_SpringForce(double ride_height_length) : m_ride_height_leng
     m_map.AddPoint(228.8e-3, 40.00e3);
     m_map.AddPoint(229.8e-3, 44.00e3);
     m_map.AddPoint(230.8e-3, 56.00e3);
-    m_map.AddPoint(232.8e-3, 70.00e3);
+    m_map.AddPoint(232.8e-3, 80.00e3);
 
 }
 
@@ -172,7 +172,8 @@ double WVP_SpringForce::operator()(double time, double rest_length, double lengt
     /*std::cout<<length<<std::endl;*/
 
     /*std::cout<<"displ: "<<(rest_length-length)<<", force: "<<f<<std::endl;*/
-    return m_map.Get_y(rest_length - length);
+    /*std::cout<<"displ|"<<rest_length-length<<"|force|"<<m_map.Get_y(rest_length - length)<<std::endl;*/
+    return m_map.Get_y(rest_length-length);
 }
 
 // -----------------------------------------------------------------------------
@@ -587,7 +588,7 @@ double WVP_ShockForce::operator()(double time, double rest_length, double length
     bool parallel_travel = (displ_mine * displ_other >= 0);
 
     /*std::cout << m_axle_name << " " << side << "|" << displ_mine << "|"<<vel_mine <<std::endl;*/
-    /*std::cout << m_axle_name << " " << side << "|" << length <<"|";*/
+    /*std::cout << m_axle_name << " " << side << "|" << length<<"|";*/
 
     if(parallel_travel){ //lookup table for parallel travel
 
@@ -596,10 +597,10 @@ double WVP_ShockForce::operator()(double time, double rest_length, double length
     }else{ //lookup table for single wheel travel
 
       force = -interpolate2D(-displ_mine,-vel_mine,m_single_damp_map); //damping
-      force += m_roll_map.Get_y(-displ_mine); //roll stabilization
+      /*force += m_roll_map.Get_y(-displ_mine); //roll stabilization*/
 
     }
-    /*std::cout<<force<<std::endl;*/
+    /*std::cout<<"|Damp Force|"<<force<<std::endl;*/
     //std::cout<<"finished adding damping/roll stabilization"<<std::endl;
     /*return 0;*/
     return force;
