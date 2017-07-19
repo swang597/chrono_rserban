@@ -139,6 +139,8 @@ set(CVM_WVP_FILES
     wvp/WVP_SimpleMapPowertrain.h
     wvp/WVP_SimpleDriveline.cpp
     wvp/WVP_SimpleDriveline.h
+    wvp/WVP_FollowerDataDriver.cpp
+    wvp/WVP_FollowerDataDriver.h
 
 
 )
