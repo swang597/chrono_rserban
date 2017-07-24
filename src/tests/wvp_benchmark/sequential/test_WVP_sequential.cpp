@@ -160,17 +160,18 @@ int main(int argc, char* argv[]) {
         app.Advance(step_size);
 
 
-        auto susp0 = std::static_pointer_cast<ChDoubleWishbone>(wvp.GetVehicle().GetSuspension(0));
-        auto susp1 = std::static_pointer_cast<ChDoubleWishbone>(wvp.GetVehicle().GetSuspension(1));
+        // auto susp0 = std::static_pointer_cast<ChDoubleWishbone>(wvp.GetVehicle().GetSuspension(0));
+        // auto susp1 = std::static_pointer_cast<ChDoubleWishbone>(wvp.GetVehicle().GetSuspension(1));
 
-        std::cout<<"SpringDef0|"<<susp0->GetSpringLength(LEFT)-.779;
-        std::cout<<"|force0|"<<susp0->GetSpringForce(LEFT);
-        std::cout<<"|SpringDef1|"<<susp0->GetSpringLength(RIGHT)-.779;
-        std::cout<<"|force1|"<<susp0->GetSpringForce(RIGHT);
-        std::cout<<"|SpringDef2|"<<susp1->GetSpringLength(LEFT)-.831;
-        std::cout<<"|force2|"<<susp1->GetSpringForce(LEFT);
-        std::cout<<"|SpringDef3|"<<susp1->GetSpringLength(RIGHT)-.831;
-        std::cout<<"|force3|"<<susp1->GetSpringForce(RIGHT)<<std::endl;
+        // std::cout<<"SpringDef0|"<<susp0->GetSpringLength(LEFT)
+        // // <<"|force0|"<<susp0->GetSpringForce(LEFT);
+        // <<"|SpringDef1|"<<susp0->GetSpringLength(RIGHT)
+        // // <<"|force1|"<<susp0->GetSpringForce(RIGHT);
+        // <<"|SpringDef2|"<<susp1->GetSpringLength(LEFT)
+        // // <<"|force2|"<<susp1->GetSpringForce(LEFT);
+        // <<"|SpringDef3|"<<susp1->GetSpringLength(RIGHT)
+        // // <<"|force3|"<<susp1->GetSpringForce(RIGHT)
+        // <<std::endl;
 
         //log suspension locations
         /*std::cout<<"|wheel pos|"<<wvp.GetVehicle().GetSuspension(0)->GetSpindle(LEFT)->GetPos().x()-wvp.GetVehicle().GetVehiclePos().x()

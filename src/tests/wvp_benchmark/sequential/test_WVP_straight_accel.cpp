@@ -96,6 +96,7 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Total vehicle mass: " << wvp.GetVehicle().GetVehicleMass() << std::endl;
 
+
     // ------------------
     // Create the terrain
     // ------------------
@@ -157,6 +158,15 @@ int main(int argc, char* argv[]) {
     int render_steps = (int)std::ceil(render_step_size / step_size);
     int step_number = 0;
 
+    std::cout << "Vehicle COM: " << wvp.GetVehicle().GetVehicleCOMPos().x() <<", "<<wvp.GetVehicle().GetVehicleCOMPos().y() <<", "<<wvp.GetVehicle().GetVehicleCOMPos().z() << std::endl;
+    std::cout<< "Front Susp COM x: "<<wvp.GetVehicle().GetSuspension(0)->GetCOMPos().x()<<std::endl;
+    std::cout<< "Rear Susp COM x: "<<wvp.GetVehicle().GetSuspension(1)->GetCOMPos().x()<<std::endl;
+    std::cout<< "Steering COM x: "<<wvp.GetVehicle().GetSteering(0)->GetCOMPos().x()<<std::endl;
+    std::cout<< "Wheel0 COM x: "<<wvp.GetVehicle().GetWheel(0)->GetCOMPos().x()<<std::endl;
+    std::cout<< "Wheel1 COM x: "<<wvp.GetVehicle().GetWheel(1)->GetCOMPos().x()<<std::endl;
+    std::cout<< "Wheel2 COM x: "<<wvp.GetVehicle().GetWheel(2)->GetCOMPos().x()<<std::endl;
+    std::cout<< "Wheel3 COM x: "<<wvp.GetVehicle().GetWheel(3)->GetCOMPos().x()<<std::endl;
+
 
     while (app.GetDevice()->run()) {
         double time = wvp.GetSystem()->GetChTime();
@@ -167,10 +177,10 @@ int main(int argc, char* argv[]) {
         ballS->setPosition(irr::core::vector3df((irr::f32)pS.x(), (irr::f32)pS.y(), (irr::f32)pS.z()));
         ballT->setPosition(irr::core::vector3df((irr::f32)pT.x(), (irr::f32)pT.y(), (irr::f32)pT.z()));
 
-        std::cout<<"Target:\t"<<(irr::f32)pT.x()<<",\t "<<(irr::f32)pT.y()<<",\t "<<(irr::f32)pT.z()<<std::endl;
-        std::cout<<"Vehicle:\t"<<wvp.GetVehicle().GetChassisBody()->GetPos().x()
-          <<",\t "<<wvp.GetVehicle().GetChassisBody()->GetPos().y()<<",\t "
-          <<wvp.GetVehicle().GetChassisBody()->GetPos().z()<<std::endl;
+        // std::cout<<"Target:\t"<<(irr::f32)pT.x()<<",\t "<<(irr::f32)pT.y()<<",\t "<<(irr::f32)pT.z()<<std::endl;
+        // std::cout<<"Vehicle:\t"<<wvp.GetVehicle().GetChassisBody()->GetPos().x()
+        //   <<",\t "<<wvp.GetVehicle().GetChassisBody()->GetPos().y()<<",\t "
+        //   <<wvp.GetVehicle().GetChassisBody()->GetPos().z()<<std::endl;
 
         // Render scene
         if (step_number % render_steps == 0) {

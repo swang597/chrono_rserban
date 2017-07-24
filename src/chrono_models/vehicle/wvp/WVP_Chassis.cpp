@@ -33,7 +33,7 @@ namespace wvp {
 const double WVP_Chassis::m_mass = 6751.0+160.7;//7071.71; //6074.77; //6074.77 to get close to given spring lengths //this is entire vehicle with payload
 const ChVector<> WVP_Chassis::m_inertiaXX(6700, 25000, 28000);
 const ChVector<> WVP_Chassis::m_inertiaXY(0, 0, 0);
-const ChVector<> WVP_Chassis::m_COM_loc(-2.138,.0129,1.355);
+const ChVector<> WVP_Chassis::m_COM_loc(-1.960,0.016,.560);//-2.138,.0129,1.355);
 const ChCoordsys<> WVP_Chassis::m_driverCsys(ChVector<>(-1.8,.7,.560), ChQuaternion<>(1, 0, 0, 0));
 
 // -----------------------------------------------------------------------------

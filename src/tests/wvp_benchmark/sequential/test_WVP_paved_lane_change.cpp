@@ -69,13 +69,13 @@ double render_step_size = 1.0 / 50;  // FPS = 50
 //vehicle driver inputs
 // Desired vehicle speed (m/s)
 double mph_to_ms = 0.44704;
-double target_speed = 48*mph_to_ms;
+double target_speed = 35*mph_to_ms;
 
 std::string path_file("paths/NATO_double_lane_change.txt");
 std::string steering_controller_file("wvp/SteeringController.json");
 std::string speed_controller_file("wvp/SpeedController.json");
 
-std::string steering_input_file("wvp/DLC_Paved_LtR_48mph.csv");
+std::string steering_input_file("wvp/DLC_Paved_RtL_35mph.csv");
 
 // =============================================================================
 
@@ -210,6 +210,9 @@ int main(int argc, char* argv[]) {
         terrain.Advance(step_size);
         wvp.Advance(step_size);
         app.Advance(step_size);
+
+        //output pose of vehicle
+        // std::cout<<wvp.GetVehicle().GetVehiclePos().x()<<"|"<<wvp.GetVehicle().GetVehiclePos().y()<<"|"<<wvp.GetVehicle().GetVehiclePos().z()<<std::endl;
 
 
         //check engine vs wheel speed

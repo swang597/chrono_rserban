@@ -62,10 +62,17 @@ const ChVector<> WVP_DoubleWishboneFront::m_uprightInertiaProducts(0.0, 0.0, 0.0
 
 const double WVP_DoubleWishboneFront::m_axleInertia = 9.6e-3;
 
-const double WVP_DoubleWishboneFront::m_springRestLength = .779;
+const double WVP_DoubleWishboneFront::m_springRestLength = .779;//+.088;
 /*const double WVP_DoubleWishboneFront::m_springCoefficient = 769149.000;*/
 
 // -----------------------------------------------------------------------------
+
+
+//*************************************************
+// const double frontOffset = .03;
+// const double rearOffset = .03;
+//*************************************************
+
 
 const double WVP_DoubleWishboneRear::m_UCAMass = 14;
 const double WVP_DoubleWishboneRear::m_LCAMass = 42;
@@ -91,7 +98,7 @@ const ChVector<> WVP_DoubleWishboneRear::m_uprightInertiaProducts(0.0, 0.0, 0.0)
 
 const double WVP_DoubleWishboneRear::m_axleInertia = 9.6e-3;
 
-const double WVP_DoubleWishboneRear::m_springRestLength = .831;
+const double WVP_DoubleWishboneRear::m_springRestLength = .831;//+.051;
 /*const double WVP_DoubleWishboneRear::m_springCoefficient = 769149.000;*/
 
 // -----------------------------------------------------------------------------
@@ -113,58 +120,87 @@ class WVP_SpringForce : public ChLinkSpringCB::ForceFunctor {
 };
 
 WVP_SpringForce::WVP_SpringForce(double ride_height_length) : m_ride_height_length(ride_height_length) {
-    m_map.AddPoint(-127.8e-3, 20.72e3);
-    m_map.AddPoint(-120e-3, 21.16e3);
-    m_map.AddPoint(-110e-3, 21.73e3);
-    m_map.AddPoint(-100e-3, 22.3e3);
-    m_map.AddPoint(-90e-3, 22.87e3);
-    m_map.AddPoint(-80e-3, 23.44e3);
-    m_map.AddPoint(-70e-3, 24.01e3);
-    m_map.AddPoint(-60e-3, 24.58e3);
-    m_map.AddPoint(-50e-3, 25.15e3);
-    m_map.AddPoint(-40e-3, 25.72e3);
-    m_map.AddPoint(-30e-3, 26.29e3);
-    m_map.AddPoint(-20e-3, 26.86e3);
-    m_map.AddPoint(-10e-3, 27.43e3);
-    m_map.AddPoint(0, 28e3);
-    m_map.AddPoint(10e-3, 28.57e3);
-    m_map.AddPoint(20e-3, 29.14e3);
-    m_map.AddPoint(30e-3, 29.71e3);
-    m_map.AddPoint(40e-3, 30.28e3);
-    m_map.AddPoint(50e-3, 30.85e3);
-    m_map.AddPoint(60e-3, 31.42e3);
-    m_map.AddPoint(70e-3, 31.99e3);
-    m_map.AddPoint(80e-3, 32.56e3);
-    m_map.AddPoint(90e-3, 33.13e3);
-    m_map.AddPoint(100e-3, 33.70e3);
-    m_map.AddPoint(110e-3, 34.27e3);
-    m_map.AddPoint(120e-3, 34.84e3);
-    m_map.AddPoint(130e-3, 35.41e3);
-    m_map.AddPoint(140e-3, 35.98e3);
-    m_map.AddPoint(150e-3, 36.55e3);
-    m_map.AddPoint(160e-3, 37.12e3);
-    m_map.AddPoint(170e-3, 37.69e3);
-    m_map.AddPoint(180e-3, 38.26e3);
-    m_map.AddPoint(190e-3, 38.83e3);
-    m_map.AddPoint(200e-3, 39.40e3);
-    m_map.AddPoint(210e-3, 39.97e3);
-    m_map.AddPoint(220e-3, 40.54e3);
-    m_map.AddPoint(227.2e-3, 40.95e3);
 
-    //TODO add points for bumpstops
+    //****straight from the data given****
+    // m_map.AddPoint(-127.8e-3, 20.72e3);
+    // m_map.AddPoint(-120e-3, 21.16e3);
+    // m_map.AddPoint(-110e-3, 21.73e3);
+    // m_map.AddPoint(-100e-3, 22.3e3);
+    // m_map.AddPoint(-90e-3, 22.87e3);
+    // m_map.AddPoint(-80e-3, 23.44e3);
+    // m_map.AddPoint(-70e-3, 24.01e3);
+    // m_map.AddPoint(-60e-3, 24.58e3);
+    // m_map.AddPoint(-50e-3, 25.15e3);
+    // m_map.AddPoint(-40e-3, 25.72e3);
+    // m_map.AddPoint(-30e-3, 26.29e3);
+    // m_map.AddPoint(-20e-3, 26.86e3);
+    // m_map.AddPoint(-10e-3, 27.43e3);
+    // m_map.AddPoint(0, 28e3);
+    // m_map.AddPoint(10e-3, 28.57e3);
+    // m_map.AddPoint(20e-3, 29.14e3);
+    // m_map.AddPoint(30e-3, 29.71e3);
+    // m_map.AddPoint(40e-3, 30.28e3);
+    // m_map.AddPoint(50e-3, 30.85e3);
+    // m_map.AddPoint(60e-3, 31.42e3);
+    // m_map.AddPoint(70e-3, 31.99e3);
+    // m_map.AddPoint(80e-3, 32.56e3);
+    // m_map.AddPoint(90e-3, 33.13e3);
+    // m_map.AddPoint(100e-3, 33.70e3);
+    // m_map.AddPoint(110e-3, 34.27e3);
+    // m_map.AddPoint(120e-3, 34.84e3);
+    // m_map.AddPoint(130e-3, 35.41e3);
+    // m_map.AddPoint(140e-3, 35.98e3);
+    // m_map.AddPoint(150e-3, 36.55e3);
+    // m_map.AddPoint(160e-3, 37.12e3);
+    // m_map.AddPoint(170e-3, 37.69e3);
+    // m_map.AddPoint(180e-3, 38.26e3);
+    // m_map.AddPoint(190e-3, 38.83e3);
+    // m_map.AddPoint(200e-3, 39.40e3);
+    // m_map.AddPoint(210e-3, 39.97e3);
+    // m_map.AddPoint(220e-3, 40.54e3);
+    // m_map.AddPoint(227.2e-3, 40.95e3);
 
-    //makeshift rebound stop
-    m_map.AddPoint(-128.8e-3, -2.00e3);
-    m_map.AddPoint(-129.8e-3, -4.00e3);
-    m_map.AddPoint(-130.8e-3, -6.00e3);
-    m_map.AddPoint(-132.8e-3, -10.00e3);
-    m_map.AddPoint(-137.8e-3, -20.00e3);
+    // //TODO add points for bumpstops
 
-    //makeshift bump stop
-    m_map.AddPoint(228.8e-3, 40.00e3);
-    m_map.AddPoint(229.8e-3, 44.00e3);
-    m_map.AddPoint(230.8e-3, 56.00e3);
-    m_map.AddPoint(232.8e-3, 80.00e3);
+    // //makeshift rebound stop
+    // m_map.AddPoint(-128.8e-3, -2.00e3);
+    // m_map.AddPoint(-129.8e-3, -4.00e3);
+    // m_map.AddPoint(-130.8e-3, -6.00e3);
+    // m_map.AddPoint(-132.8e-3, -10.00e3);
+    // m_map.AddPoint(-137.8e-3, -20.00e3);
+
+    // //makeshift bump stop
+    // m_map.AddPoint(228.8e-3, 40.00e3);
+    // m_map.AddPoint(229.8e-3, 44.00e3);
+    // m_map.AddPoint(230.8e-3, 56.00e3);
+    // m_map.AddPoint(232.8e-3, 80.00e3);
+
+  //****Curve from data with bump stops added. Data simplified for linear sections
+      //rebound stop region
+      m_map.AddPoint(-154.0e-3, -40.78e3);
+      m_map.AddPoint(-124.0e-3, 20.93e3);
+      //pure spring region
+      m_map.AddPoint(0, 28.0e3);
+      m_map.AddPoint(160.0e-3, 37.12e3);
+      //jounce stop region
+      m_map.AddPoint(169.0e-3, 37.63e3);
+      m_map.AddPoint(176.5e-3, 38.19e3);
+      m_map.AddPoint(181.5e-3, 38.66e3);
+      m_map.AddPoint(187.0e-3, 39.96e3);
+      m_map.AddPoint(189.5e-3, 40.60e3);
+      m_map.AddPoint(191.5e-3, 41.62e3);
+      m_map.AddPoint(191.8e-3, 41.91e3);
+      m_map.AddPoint(192.2e-3, 42.73e3);
+      m_map.AddPoint(193.0e-3, 47.28e3);
+      m_map.AddPoint(193.5e-3, 50.10e3);
+      m_map.AddPoint(194.0e-3, 53.01e3);
+      m_map.AddPoint(194.5e-3, 56.19e3);
+      m_map.AddPoint(195.0e-3, 60.26e3);
+      m_map.AddPoint(195.5e-3, 65.24e3);
+      m_map.AddPoint(196.0e-3, 70.22e3);
+      
+
+
 
 }
 
@@ -172,8 +208,18 @@ double WVP_SpringForce::operator()(double time, double rest_length, double lengt
     /*std::cout<<length<<std::endl;*/
 
     /*std::cout<<"displ: "<<(rest_length-length)<<", force: "<<f<<std::endl;*/
-    /*std::cout<<"displ|"<<rest_length-length<<"|force|"<<m_map.Get_y(rest_length - length)<<std::endl;*/
-    return m_map.Get_y(rest_length-length);
+    // std::cout<<"displ|"<<rest_length-length<<"|force|"<<m_map.Get_y(rest_length - length)<<std::endl;
+    double forcePreLoad = 5000.0;
+
+    if(rest_length >= .830){ //horrible to have this hardcoded, but cannot seem to get access to anything that would tell me which axle we have
+      forcePreLoad = 2500.0;
+    } 
+    else if(rest_length <= .780){ //horrible to have this hardcoded, but cannot seem to get access to anything that would tell me which axle we have
+      forcePreLoad = 5000.0;
+    }
+
+
+    return m_map.Get_y(rest_length-length)+forcePreLoad;  //add a spring offset to get vehicle closer to ride height
 }
 
 // -----------------------------------------------------------------------------
@@ -597,7 +643,7 @@ double WVP_ShockForce::operator()(double time, double rest_length, double length
     }else{ //lookup table for single wheel travel
 
       force = -interpolate2D(-displ_mine,-vel_mine,m_single_damp_map); //damping
-      /*force += m_roll_map.Get_y(-displ_mine); //roll stabilization*/
+      force += m_roll_map.Get_y(-displ_mine); //roll stabilization
 
     }
     /*std::cout<<"|Damp Force|"<<force<<std::endl;*/
