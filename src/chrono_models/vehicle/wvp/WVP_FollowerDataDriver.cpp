@@ -115,19 +115,19 @@ void WVP_FollowerDataDriver::ExportPathPovray(const std::string& out_dir) {
 }
 
 void WVP_FollowerDataDriver::ParseCSV(std::string dataFile, int timeCol, int steeringCol){
-  std::cout<<"parsing CSV"<<std::endl;
+  // std::cout<<"parsing CSV"<<std::endl;
   std::ifstream file(dataFile);
   std::string line;
 
-  std::cout<<"file at: "<<dataFile<<std::endl;
+  // std::cout<<"file at: "<<dataFile<<std::endl;
 
   //skip the first 8 lines
   for(int i=0;i<8;i++){
-    std::cout<<"skipped line"<<std::endl;
+    // std::cout<<"skipped line"<<std::endl;
     std::getline(file,line);
-    std::cout<<line<<std::endl;
+    // std::cout<<line<<std::endl;
   }
-
+  bool recStartTime = true;
   while(std::getline(file,line)){
     std::vector<std::string> parts;
     std::stringstream linestring(line);
@@ -144,6 +144,11 @@ void WVP_FollowerDataDriver::ParseCSV(std::string dataFile, int timeCol, int ste
 
     convertTime >> tempTime;
     convertSteer >> tempSteer;
+
+    if(recStartTime) {
+      m_dataStartTime = tempTime;
+      recStartTime = false;
+    }
 
     m_steering_map.AddPoint(tempTime, tempSteer);
     /*std::cout<<"added point: "<<tempTime<<", "<<tempSteer<<std::endl;*/

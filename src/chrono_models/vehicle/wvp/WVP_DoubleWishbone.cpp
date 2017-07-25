@@ -101,12 +101,16 @@ const double WVP_DoubleWishboneRear::m_axleInertia = 9.6e-3;
 const double WVP_DoubleWishboneRear::m_springRestLength = .831;//+.051;
 /*const double WVP_DoubleWishboneRear::m_springCoefficient = 769149.000;*/
 
+
+const double frontSpringPreLoad = 5000.0;
+const double rearSpringPreLoad = 2500.0;
+
 // -----------------------------------------------------------------------------
 // WVP suspension spring functor class
 // -----------------------------------------------------------------------------
 class WVP_SpringForce : public ChLinkSpringCB::ForceFunctor {
   public:
-    WVP_SpringForce(double ride_height_length);
+    WVP_SpringForce(double ride_height_length, int axle);
 
   private:
     virtual double operator()(double time,
@@ -116,66 +120,15 @@ class WVP_SpringForce : public ChLinkSpringCB::ForceFunctor {
                               ChLinkSpringCB* link) override;
 
     double m_ride_height_length;
+    int m_axleNumber;
     ChFunction_Recorder m_map;
 };
 
-WVP_SpringForce::WVP_SpringForce(double ride_height_length) : m_ride_height_length(ride_height_length) {
+WVP_SpringForce::WVP_SpringForce(double ride_height_length, int axle) : m_ride_height_length(ride_height_length) {
+    m_axleNumber = axle;
 
-    //****straight from the data given****
-    // m_map.AddPoint(-127.8e-3, 20.72e3);
-    // m_map.AddPoint(-120e-3, 21.16e3);
-    // m_map.AddPoint(-110e-3, 21.73e3);
-    // m_map.AddPoint(-100e-3, 22.3e3);
-    // m_map.AddPoint(-90e-3, 22.87e3);
-    // m_map.AddPoint(-80e-3, 23.44e3);
-    // m_map.AddPoint(-70e-3, 24.01e3);
-    // m_map.AddPoint(-60e-3, 24.58e3);
-    // m_map.AddPoint(-50e-3, 25.15e3);
-    // m_map.AddPoint(-40e-3, 25.72e3);
-    // m_map.AddPoint(-30e-3, 26.29e3);
-    // m_map.AddPoint(-20e-3, 26.86e3);
-    // m_map.AddPoint(-10e-3, 27.43e3);
-    // m_map.AddPoint(0, 28e3);
-    // m_map.AddPoint(10e-3, 28.57e3);
-    // m_map.AddPoint(20e-3, 29.14e3);
-    // m_map.AddPoint(30e-3, 29.71e3);
-    // m_map.AddPoint(40e-3, 30.28e3);
-    // m_map.AddPoint(50e-3, 30.85e3);
-    // m_map.AddPoint(60e-3, 31.42e3);
-    // m_map.AddPoint(70e-3, 31.99e3);
-    // m_map.AddPoint(80e-3, 32.56e3);
-    // m_map.AddPoint(90e-3, 33.13e3);
-    // m_map.AddPoint(100e-3, 33.70e3);
-    // m_map.AddPoint(110e-3, 34.27e3);
-    // m_map.AddPoint(120e-3, 34.84e3);
-    // m_map.AddPoint(130e-3, 35.41e3);
-    // m_map.AddPoint(140e-3, 35.98e3);
-    // m_map.AddPoint(150e-3, 36.55e3);
-    // m_map.AddPoint(160e-3, 37.12e3);
-    // m_map.AddPoint(170e-3, 37.69e3);
-    // m_map.AddPoint(180e-3, 38.26e3);
-    // m_map.AddPoint(190e-3, 38.83e3);
-    // m_map.AddPoint(200e-3, 39.40e3);
-    // m_map.AddPoint(210e-3, 39.97e3);
-    // m_map.AddPoint(220e-3, 40.54e3);
-    // m_map.AddPoint(227.2e-3, 40.95e3);
 
-    // //TODO add points for bumpstops
-
-    // //makeshift rebound stop
-    // m_map.AddPoint(-128.8e-3, -2.00e3);
-    // m_map.AddPoint(-129.8e-3, -4.00e3);
-    // m_map.AddPoint(-130.8e-3, -6.00e3);
-    // m_map.AddPoint(-132.8e-3, -10.00e3);
-    // m_map.AddPoint(-137.8e-3, -20.00e3);
-
-    // //makeshift bump stop
-    // m_map.AddPoint(228.8e-3, 40.00e3);
-    // m_map.AddPoint(229.8e-3, 44.00e3);
-    // m_map.AddPoint(230.8e-3, 56.00e3);
-    // m_map.AddPoint(232.8e-3, 80.00e3);
-
-  //****Curve from data with bump stops added. Data simplified for linear sections
+  //****Curve from data with bump stops added. Data simplified for linear sections given that this is a linear interpolation anyway
       //rebound stop region
       m_map.AddPoint(-154.0e-3, -40.78e3);
       m_map.AddPoint(-124.0e-3, 20.93e3);
@@ -200,25 +153,21 @@ WVP_SpringForce::WVP_SpringForce(double ride_height_length) : m_ride_height_leng
       m_map.AddPoint(196.0e-3, 70.22e3);
       
 
-
-
 }
 
 double WVP_SpringForce::operator()(double time, double rest_length, double length, double vel, ChLinkSpringCB* link) {
-    /*std::cout<<length<<std::endl;*/
 
-    /*std::cout<<"displ: "<<(rest_length-length)<<", force: "<<f<<std::endl;*/
-    // std::cout<<"displ|"<<rest_length-length<<"|force|"<<m_map.Get_y(rest_length - length)<<std::endl;
-    double forcePreLoad = 5000.0;
+    double forcePreLoad = 0;
 
-    if(rest_length >= .830){ //horrible to have this hardcoded, but cannot seem to get access to anything that would tell me which axle we have
-      forcePreLoad = 2500.0;
+    //check which suspension we have here
+    if(m_axleNumber == 1){ 
+      forcePreLoad = rearSpringPreLoad;
     } 
-    else if(rest_length <= .780){ //horrible to have this hardcoded, but cannot seem to get access to anything that would tell me which axle we have
-      forcePreLoad = 5000.0;
+    else if(m_axleNumber == 0){ 
+      forcePreLoad = frontSpringPreLoad;
     }
 
-
+    //grab the value from the spring map
     return m_map.Get_y(rest_length-length)+forcePreLoad;  //add a spring offset to get vehicle closer to ride height
 }
 
@@ -560,11 +509,10 @@ class WVP_ShockForce : public ChLinkSpringCB::ForceFunctor {
     std::map<double, ChFunction_Recorder> m_single_damp_map;
 
     double interpolate2D(double x, double y, std::map<double, ChFunction_Recorder> map2D){
+      
+      //do a 2D linear interpolation from the map data that is given to us
       if(map2D.empty()) return 0;
-      //std::cout<<"started interp"<<std::endl;
-      //std::cout<<map2D.begin()->first<<std::endl;
-      //std::cout<<map2D.end()->first<<std::endl;
-      //std::cout<<"map2D not null"<<std::endl;
+     
       //check if value is out of bounds
       if(y <= map2D.begin()->first) {
         return map2D.begin()->second.Get_y(x);
@@ -600,7 +548,7 @@ class WVP_ShockForce : public ChLinkSpringCB::ForceFunctor {
       double z1 = currX.Get_y(x);
       double y0 = prevY;
       double y1 = currY;
-      //std::cout<<"about to return"<<std::endl;
+      
       //interpolate between those two points
       return (z0*(y1-y) + z1*(y-y0)) / (y1-y0);
     }
@@ -633,8 +581,6 @@ double WVP_ShockForce::operator()(double time, double rest_length, double length
 
     bool parallel_travel = (displ_mine * displ_other >= 0);
 
-    /*std::cout << m_axle_name << " " << side << "|" << displ_mine << "|"<<vel_mine <<std::endl;*/
-    /*std::cout << m_axle_name << " " << side << "|" << length<<"|";*/
 
     if(parallel_travel){ //lookup table for parallel travel
 
@@ -646,9 +592,7 @@ double WVP_ShockForce::operator()(double time, double rest_length, double length
       force += m_roll_map.Get_y(-displ_mine); //roll stabilization
 
     }
-    /*std::cout<<"|Damp Force|"<<force<<std::endl;*/
-    //std::cout<<"finished adding damping/roll stabilization"<<std::endl;
-    /*return 0;*/
+
     return force;
 }
 
@@ -656,14 +600,14 @@ double WVP_ShockForce::operator()(double time, double rest_length, double length
 // Constructors
 // -----------------------------------------------------------------------------
 WVP_DoubleWishboneFront::WVP_DoubleWishboneFront(const std::string& name) : ChDoubleWishbone(name, true) {
-    m_springForceCB = new WVP_SpringForce(779e-3);
+    m_springForceCB = new WVP_SpringForce(779e-3,0); //pass in rest length and axle number
     /*m_springForceCB = new LinearSpringForce(m_springCoefficient);  // coefficient for linear spring*/
 
     m_shockForceCB = new WVP_ShockForce("front axle");
 }
 
 WVP_DoubleWishboneRear::WVP_DoubleWishboneRear(const std::string& name) : ChDoubleWishbone(name, true) {
-    m_springForceCB = new WVP_SpringForce(831e-3);
+    m_springForceCB = new WVP_SpringForce(831e-3,1); //pass in rest length and axle number
     /*m_springForceCB = new LinearSpringForce(m_springCoefficient);  // coefficient for linear spring*/
 
     m_shockForceCB = new WVP_ShockForce("rear axle");
