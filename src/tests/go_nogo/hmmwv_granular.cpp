@@ -378,8 +378,8 @@ int main(int argc, char* argv[]) {
     system->SetMaterialCompositionStrategy(std::move(strategy));
 
     // Set number of threads
-    cout << "Environment variables:" << endl;
-    cout << "  OMP_NUM_THREADS = " << std::getenv("OMP_NUM_THREADS") << endl;
+    ////cout << "Environment variables:" << endl;
+    ////cout << "  OMP_NUM_THREADS = " << std::getenv("OMP_NUM_THREADS") << endl;
 
     int max_threads = omp_get_num_procs();
     if (threads > max_threads)
@@ -856,15 +856,9 @@ HMMWV_Full* CreateVehicle(ChSystem* system, double vertical_offset) {
     hmmwv->SetChassisFixed(false);
     hmmwv->SetInitPosition(ChCoordsys<>(initLoc + ChVector<>(0, 0, vertical_offset), initRot));
     hmmwv->SetInitFwdVel(initSpeed);
-    hmmwv->SetPowertrainType(PowertrainModelType::SHAFTS);
+    hmmwv->SetPowertrainType(PowertrainModelType::SIMPLE_MAP);
     hmmwv->SetDriveType(DrivelineType::AWD);
     hmmwv->SetTireType(TireModelType::RIGID);
-
-    // Set coefficient of friction for rigid tires.
-    // Must be set before initialization.
-    for (int i = 0; i < 4; i++) {
-        static_cast<HMMWV_RigidTire*>(hmmwv->GetTire(i))->SetContactFrictionCoefficient(1.0);
-    }
 
     hmmwv->Initialize();
 

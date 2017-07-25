@@ -66,7 +66,7 @@ PowertrainModelType powertrain_model = PowertrainModelType::SHAFTS;
 // Drive type (FWD, RWD, or AWD)
 DrivelineType drive_type = DrivelineType::AWD;
 
-// Type of tire model (RIGID, RIGID_MESH, PACEJKA, LUGRE, FIALA)
+// Type of tire model (RIGID, RIGID_MESH, PACEJKA, LUGRE, FIALA, PAC89)
 TireModelType tire_model = TireModelType::RIGID;
 
 // Rigid terrain
@@ -94,7 +94,7 @@ double t_end = 1000;
 double render_step_size = 1.0 / 50;  // FPS = 50
 
 // Output directories
-const std::string out_dir = "../HMMWV";
+const std::string out_dir = GetChronoOutputPath() + "HMMWV";
 const std::string pov_dir = out_dir + "/POVRAY";
 
 // Debug logging
@@ -107,6 +107,8 @@ bool povray_output = false;
 // =============================================================================
 
 int main(int argc, char* argv[]) {
+    GetLog() << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
+
     // --------------
     // Create systems
     // --------------
