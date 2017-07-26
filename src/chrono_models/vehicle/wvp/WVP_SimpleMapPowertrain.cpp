@@ -27,7 +27,7 @@ namespace vehicle {
 namespace wvp {
 
 const double rpm2rads = CH_C_PI / 30;
-const double drive_eff = 0.691; //based on auxillary power consumption and gearbox efficiencies
+const double drive_eff = 0.5137; //based on auxillary power consumption and gearbox efficiencies
 
 WVP_SimpleMapPowertrain::WVP_SimpleMapPowertrain() : ChSimpleMapPowertrain() {}
 
@@ -57,8 +57,8 @@ void WVP_SimpleMapPowertrain::SetEngineTorqueMaps(ChFunction_Recorder& map0, ChF
     mapF.AddPoint(1800 * rpm2rads, 1227.0*drive_eff);
     mapF.AddPoint(2000 * rpm2rads, 1136.2*drive_eff);
     mapF.AddPoint(2200 * rpm2rads, 1041.3*drive_eff);
-    mapF.AddPoint(2400 * rpm2rads, -271.2);
-    mapF.AddPoint(2700 * rpm2rads, -800.0);
+    mapF.AddPoint(2400 * rpm2rads, 0);
+    mapF.AddPoint(2700 * rpm2rads, -200.0);
 }
 
 void WVP_SimpleMapPowertrain::SetGearRatios(std::vector<double>& fwd_gear_ratios, double& reverse_gear_ratio) {

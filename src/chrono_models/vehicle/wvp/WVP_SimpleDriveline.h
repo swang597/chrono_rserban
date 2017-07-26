@@ -76,12 +76,12 @@ namespace wvp{
 			double m_rearDifferentialMaxBias = 2.5;
 
 			double m_transferRatio = 1;
-			double m_gearHubReduction = .5;
-			double m_diffGearReduction = 1.0/2.69;
+			double m_gearHubReduction = 2.0;
+			double m_diffGearReduction = 2.69;
 
-			bool diffLockCenter = false;
-			bool diffLockFront = false;
-			bool diffLockRear = false;
+			bool m_diffLockCenter = false;
+			bool m_diffLockFront = false;
+			bool m_diffLockRear = false;
 
 	    std::shared_ptr<ChShaft> m_front_left;
 	    std::shared_ptr<ChShaft> m_front_right;

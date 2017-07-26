@@ -55,11 +55,18 @@ void WVP_SimpleDriveline::Initialize(std::shared_ptr<ChBody> chassis,
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 double WVP_SimpleDriveline::GetDriveshaftSpeed() const {
-    double speed_front = 0.5 * m_gearHubReduction * m_diffGearReduction * (m_front_left->GetPos_dt() + m_front_right->GetPos_dt());
-    double speed_rear = 0.5 * m_gearHubReduction * m_diffGearReduction * (m_rear_left->GetPos_dt() + m_rear_right->GetPos_dt());
-    double alpha = m_frontTorqueFraction;
 
-    return (-1*(alpha * speed_front + (1 - alpha) * speed_rear) * (30 / CH_C_PI));
+    if(!m_diffLockCenter){
+        double speed_front = 0.5 * m_gearHubReduction * m_diffGearReduction * (m_front_left->GetPos_dt() + m_front_right->GetPos_dt());
+        double speed_rear = 0.5 * m_gearHubReduction * m_diffGearReduction * (m_rear_left->GetPos_dt() + m_rear_right->GetPos_dt());
+        double alpha = m_frontTorqueFraction;
+
+        return -1*(alpha * speed_front + (1 - alpha) * speed_rear);
+    }
+    else{
+        return 0; //what should it return when locked?
+    }
+
 }
 
 // -----------------------------------------------------------------------------
@@ -109,8 +116,8 @@ void WVP_SimpleDriveline::Synchronize(double torque) {
     double torque_left;
     double torque_right;
 
-    torque_front = torque_front / (m_gearHubReduction * m_diffGearReduction);
-    torque_rear = torque_rear / (m_gearHubReduction * m_diffGearReduction);
+    torque_front = torque_front * (m_gearHubReduction * m_diffGearReduction);
+    torque_rear = torque_rear * (m_gearHubReduction * m_diffGearReduction);
 
     differentialSplit(torque_front, m_frontDifferentialMaxBias, m_front_left->GetPos_dt(),
                       m_front_right->GetPos_dt(), torque_left, torque_right);
