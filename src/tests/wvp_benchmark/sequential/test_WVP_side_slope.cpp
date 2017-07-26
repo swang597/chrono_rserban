@@ -27,6 +27,8 @@
 #include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"
 
+#include "chrono_models/vehicle/wvp/WVP_FollowerDataDriver.h"
+
 #include "chrono_models/vehicle/wvp/WVP.h"
 
 #include <chrono>
@@ -39,8 +41,10 @@ using namespace chrono::vehicle::wvp;
 // =============================================================================
 
 // Initial vehicle location and orientation
-ChVector<> initLoc(-90, 0, 1.0);
+ChVector<> initLoc(0, 0, 1.0);
 ChQuaternion<> initRot(1, 0, 0, 0);
+
+ChVector<>gravity(0,2.80604,-9.353468);
 
 // Visualization type for vehicle parts (PRIMITIVES, MESH, or NONE)
 VisualizationType chassis_vis_type = VisualizationType::NONE;
@@ -67,11 +71,14 @@ double render_step_size = 1.0 / 50;  // FPS = 50
 
 //vehicle driver inputs
 // Desired vehicle speed (m/s)
-double target_speed = 1000;
+double mph_to_ms = 0.44704;
+double target_speed = 20*mph_to_ms;
 
 std::string path_file("paths/straightOrigin.txt");
 std::string steering_controller_file("wvp/SteeringController.json");
 std::string speed_controller_file("wvp/SpeedController.json");
+
+std::string steering_input_file("wvp/30Per Side Slope - Left Side Down Serpentine.csv");
 
 // =============================================================================
 
@@ -106,12 +113,23 @@ int main(int argc, char* argv[]) {
     terrain.SetContactMaterialProperties(2e7f, 0.3f);
     terrain.SetColor(ChColor(0.8f, 0.8f, 0.5f));
     terrain.SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 200);
-    terrain.Initialize(0, 2000, 2000);
+    terrain.Initialize(0, 1000, 200);
+
+    //set gravity to 30 percent side slope
+    wvp.GetSystem()->Set_G_acc(gravity);
 
     //create the driver
+    // auto path = ChBezierCurve::read(vehicle::GetDataFile(path_file));
+    // ChPathFollowerDriver driver(wvp.GetVehicle(), vehicle::GetDataFile(steering_controller_file),
+    //                             vehicle::GetDataFile(speed_controller_file), path, "my_path", target_speed, false);
+    
     auto path = ChBezierCurve::read(vehicle::GetDataFile(path_file));
-    ChPathFollowerDriver driver(wvp.GetVehicle(), vehicle::GetDataFile(steering_controller_file),
-                                vehicle::GetDataFile(speed_controller_file), path, "my_path", target_speed, false);
+    WVP_FollowerDataDriver driver(wvp.GetVehicle(),
+            vehicle::GetDataFile(steering_controller_file),
+            vehicle::GetDataFile(speed_controller_file), path, "side_slope_slalom",
+            target_speed, vehicle::GetDataFile(steering_input_file), 1, 2, 5.0
+            );
+
     driver.Initialize();
 
     // -------------------------------------
@@ -161,20 +179,20 @@ int main(int argc, char* argv[]) {
             app.DrawAll();
             app.EndScene();
         }
-        std::cout<<"drawing scene\n";
+        // std::cout<<"drawing scene\n";
         // Collect output data from modules (for inter-module communication)
         double throttle_input = driver.GetThrottle();
         double steering_input = driver.GetSteering();
         double braking_input = driver.GetBraking();
 
-        std::cout<<"about to Synchronize\n";
+        // std::cout<<"about to Synchronize\n";
         // Update modules (process inputs from other modules)
         driver.Synchronize(time);
         terrain.Synchronize(time);
         wvp.Synchronize(time, steering_input, braking_input, throttle_input, terrain);
         app.Synchronize("Follower driver", steering_input, throttle_input, braking_input);
 
-        std::cout<<"about to advance\n";
+        // std::cout<<"about to advance\n";
         // Advance simulation for one timestep for all modules
 
         driver.Advance(step_size);
@@ -182,27 +200,7 @@ int main(int argc, char* argv[]) {
         wvp.Advance(step_size);
         app.Advance(step_size);
 
-        std::cout<<"end loop\n";
-
-        //check engine vs wheel speed
-        /*std::cout<<"Engine Speed|"<<wvp.GetPowertrain().GetMotorSpeed()*(30.0/3.14159)
-          <<"|vehicle speed|"<<wvp.GetVehicle().GetVehicleSpeed()
-          <<"|vehicle gear|"<<wvp.GetPowertrain().GetCurrentTransmissionGear()
-          <<"|time|"<<wvp.GetSystem()->GetChTime()
-          <<"|throttle|"<<throttle_input
-          <<std::endl;*/
-
-        /*for(int i=0;i<4;i++){*/
-          /*std::cout<<"wheel:"<<i<< "|Z Force:|" << wvp.GetTire(i)->GetTireForce(true).force.z()<<"|";*/
-        /*}*/
-        /*std::cout<<std::endl;*/
-
-        /*std::cout<<"Vehicle COM|"<<wvp.GetVehicle().GetVehicleCOMPos().x()<<"|"
-          <<wvp.GetVehicle().GetVehicleCOMPos().y()<<"|"
-          <<(wvp.GetVehicle().GetVehicleCOMPos().z()-0.548)*/
-          /*std::cout<<std::endl;*/
-
-        /*std::cout<<"COM: "<< wvp.GetChassis()->GetCOMPos().x() <<", "<<wvp.GetChassis()->GetCOMPos().y()<<", "<<wvp.GetChassis()->GetCOMPos().z()<< std::endl;*/
+        // std::cout<<"steerting input: "<<steering_input<<std::endl;
 
         // Increment frame number
         step_number++;

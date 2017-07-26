@@ -27,6 +27,8 @@
 #include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"
 
+#include "chrono_models/vehicle/wvp/WVP_FollowerDataDriver.h"
+
 #include "chrono_models/vehicle/wvp/WVP.h"
 
 #include <chrono>
@@ -67,11 +69,14 @@ double render_step_size = 1.0 / 50;  // FPS = 50
 
 //vehicle driver inputs
 // Desired vehicle speed (m/s)
-double target_speed = 15;
+double mph_to_ms = 0.44704;
+double target_speed = 35*mph_to_ms;
 
 std::string path_file("paths/NATO_double_lane_change.txt");
 std::string steering_controller_file("wvp/SteeringController.json");
 std::string speed_controller_file("wvp/SpeedController.json");
+
+std::string steering_input_file("wvp/DLC_Gravel_RtL_31mph.csv");
 
 // =============================================================================
 
@@ -109,9 +114,17 @@ int main(int argc, char* argv[]) {
     terrain.Initialize(0, 300, 300);
 
     //create the driver
+    // auto path = ChBezierCurve::read(vehicle::GetDataFile(path_file));
+    // ChPathFollowerDriver driver(wvp.GetVehicle(), vehicle::GetDataFile(steering_controller_file),
+    //                             vehicle::GetDataFile(speed_controller_file), path, "my_path", target_speed, false);
+    
     auto path = ChBezierCurve::read(vehicle::GetDataFile(path_file));
-    ChPathFollowerDriver driver(wvp.GetVehicle(), vehicle::GetDataFile(steering_controller_file),
-                                vehicle::GetDataFile(speed_controller_file), path, "my_path", target_speed, false);
+    WVP_FollowerDataDriver driver(wvp.GetVehicle(),
+            vehicle::GetDataFile(steering_controller_file),
+            vehicle::GetDataFile(speed_controller_file), path, "double_lane_change",
+            target_speed, vehicle::GetDataFile(steering_input_file), 1, 3, 8.0
+            );
+
     driver.Initialize();
 
     // -------------------------------------

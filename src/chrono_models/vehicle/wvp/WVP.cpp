@@ -39,7 +39,7 @@ WVP::WVP()
       m_tireType(TireModelType::RIGID),
       m_tire_step_size(-1),
       m_pacejkaParamFile(""),
-      m_initFwdVel(0),
+      m_initFwdVel(5),
       m_initPos(ChCoordsys<>(ChVector<>(0, 0, 1), QUNIT)),
       m_initOmega({0, 0, 0, 0}) {}
 
@@ -134,6 +134,26 @@ void WVP::Initialize() {
             tire_FR->SetDrivenWheel(false);
             tire_RL->SetDrivenWheel(true);
             tire_RR->SetDrivenWheel(true);
+
+            if (m_tire_step_size > 0) {
+                tire_FL->SetStepsize(m_tire_step_size);
+                tire_FR->SetStepsize(m_tire_step_size);
+                tire_RL->SetStepsize(m_tire_step_size);
+                tire_RR->SetStepsize(m_tire_step_size);
+            }
+
+            m_tires[0] = tire_FL;
+            m_tires[1] = tire_FR;
+            m_tires[2] = tire_RL;
+            m_tires[3] = tire_RR;
+
+            break;
+        }
+        case TireModelType::PAC89: {
+            WVP_Pac89Tire* tire_FL = new WVP_Pac89Tire("FL");
+            WVP_Pac89Tire* tire_FR = new WVP_Pac89Tire("FR");
+            WVP_Pac89Tire* tire_RL = new WVP_Pac89Tire("RL");
+            WVP_Pac89Tire* tire_RR = new WVP_Pac89Tire("RR");
 
             if (m_tire_step_size > 0) {
                 tire_FL->SetStepsize(m_tire_step_size);

@@ -24,6 +24,8 @@ SET(DEMOS
     test_WVP_side_slope
     test_WVP_straight_accel
     test_WVP_wall2wall
+    #test_WVP_slope_grade
+    #test_WVP_tractive_effort
 )
 
 # ------------------------------------------------------------------------------

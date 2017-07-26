@@ -50,8 +50,8 @@ VisualizationType steering_vis_type = VisualizationType::PRIMITIVES;
 VisualizationType wheel_vis_type = VisualizationType::NONE;
 VisualizationType tire_vis_type = VisualizationType::PRIMITIVES;
 
-// Type of tire model (RIGID, FIALA)
-TireModelType tire_model = TireModelType::RIGID;
+// Type of tire model (RIGID, FIALA, PAC89)
+TireModelType tire_model = TireModelType::PAC89;
 
 // Point on chassis tracked by the camera
 ChVector<> trackPoint(0.0, 0.0, 1.75);
