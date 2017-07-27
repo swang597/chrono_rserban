@@ -45,7 +45,7 @@ void WVP_Pac89Tire::SetPac89Params() {
 
     m_unloaded_radius = 1.0960/2; //Diameter to Radius
     m_width = 0.372;
-    m_rolling_resistance = 0.0;
+    m_rolling_resistance = 0.02; //0.0;
     m_lateral_stiffness = 185*1000.; // N/mm -> N/m
     m_measured_side = LEFT;
 
@@ -95,89 +95,65 @@ void WVP_Pac89Tire::SetPac89Params() {
     m_PacCoeff.C16 = -2.275;
     m_PacCoeff.C17 = 40.78;
 
-    //parameters from the HMMWV
-    // m_unloaded_radius = 326.0/1000;
-    // m_width = 245.0/1000;
-    // m_rolling_resistance = 0.0;
-    // m_lateral_stiffness = 190*1000.; // N/mm -> N/m
-    // m_measured_side = LEFT;
-
-    // m_PacCoeff.A0 = 1.650;
-    // m_PacCoeff.A1 = -34.0;
-    // m_PacCoeff.A2 = 1250.0;
-    // m_PacCoeff.A3 = 3036.0;
-    // m_PacCoeff.A4 = 12.80;
-    // m_PacCoeff.A5 = 0.00501;
-    // m_PacCoeff.A6 = -0.02103;
-    // m_PacCoeff.A7 = 0.77394;
-    // m_PacCoeff.A8 = 0.0022890;
-    // m_PacCoeff.A9 = 0.013442;
-    // m_PacCoeff.A10 = 0.003709;
-    // m_PacCoeff.A11 = 19.1656;
-    // m_PacCoeff.A12 = 1.21356;
-    // m_PacCoeff.A13 = 6.26206;
-
-    // m_PacCoeff.B0 = 1.67272;
-    // m_PacCoeff.B1 = -9.46;
-    // m_PacCoeff.B2 = 1490.0;
-    // m_PacCoeff.B3 = 30.0;
-    // m_PacCoeff.B4 = 176.0;
-    // m_PacCoeff.B5 = 0.08860;
-    // m_PacCoeff.B6 = 0.00402;
-    // m_PacCoeff.B7 = -0.06150;
-    // m_PacCoeff.B8 = 0.20;
-    // m_PacCoeff.B9 = 0.02990;
-    // m_PacCoeff.B10 = -0.176;
-
-    // m_PacCoeff.C0 = 2.34;
-    // m_PacCoeff.C1 = 1.4950;
-    // m_PacCoeff.C2 = 6.416654;
-    // m_PacCoeff.C3 = -3.57403;
-    // m_PacCoeff.C4 = -0.087737;
-    // m_PacCoeff.C5 = 0.098410;
-    // m_PacCoeff.C6 = 0.0027699;
-    // m_PacCoeff.C7 = -0.0001151;
-    // m_PacCoeff.C8 = 0.10;
-    // m_PacCoeff.C9 = -1.3329;
-    // m_PacCoeff.C10 = 0.025501;
-    // m_PacCoeff.C11 = -0.02357;
-    // m_PacCoeff.C12 = 0.03027;
-    // m_PacCoeff.C13 = -0.0647;
-    // m_PacCoeff.C14 = 0.0211329;
-    // m_PacCoeff.C15 = 0.89469;
-    // m_PacCoeff.C16 = -0.099443;
-    // m_PacCoeff.C17 = -3.336941;
+    m_stiffnessMap.AddPoint(0.0, 0.0);
+    m_stiffnessMap.AddPoint(10.0e-3, 3276.0);
+    m_stiffnessMap.AddPoint(20.0e-3, 6729.0);
+    m_stiffnessMap.AddPoint(30.0e-3, 10361.0);
+    m_stiffnessMap.AddPoint(40.0e-3, 14171.0);
+    m_stiffnessMap.AddPoint(50.0e-3, 18159.0);
+    m_stiffnessMap.AddPoint(60.0e-3, 22325.0);
+    m_stiffnessMap.AddPoint(70.0e-3, 26670.0);
+    m_stiffnessMap.AddPoint(80.0e-3, 31192.0);
+    m_stiffnessMap.AddPoint(90.0e-3, 35893.0);
+    m_stiffnessMap.AddPoint(100.0e-3, 40772.0);
 
 }
 
 double WVP_Pac89Tire::GetNormalStiffnessForce(double depth) const {
     // corresponding depths = 0 : 0.01 : 0.10
-    double normalforcetabel[11] = {0.0,
-                                   3276.0,
-                                   6729.0,
-                                   10361.0,
-                                   14171.0,
-                                   18159.0,
-                                   22325.0,
-                                   26670.0,
-                                   31192.0,
-                                   35893.0,
-                                   40772.0};
+    // double normalforcetabel[11] = {0.0,
+    //                                3276.0,
+    //                                6729.0,
+    //                                10361.0,
+    //                                14171.0,
+    //                                18159.0,
+    //                                22325.0,
+    //                                26670.0,
+    //                                31192.0,
+    //                                35893.0,
+    //                                40772.0};
 
-    depth = depth * (depth > 0);  // Ensure that depth is positive;
+    // depth = depth * (depth > 0);  // Ensure that depth is positive;
 
-    double position = (10. * (depth / 0.1));
+    // double position = (10. * (depth / 0.1));
 
-    // Linear extrapolation if the depth is at or greater than the maximum depth in the table (0.08128)
-    if (position >= 10) {
-        return (40772.0 + (depth - 0.1) * 407720.0);
+    // // Linear extrapolation if the depth is at or greater than the maximum depth in the table (0.08128)
+    // if (position >= 10) {
+    //     return (40772.0 + (depth - 0.1) * 407720.0);
+    // }
+    // // Linearly interpolate between the table entries
+    // else {
+    //     double scale = std::ceil(position) - position;
+
+    //     std::cout<<"|DEPTH|"<<depth<<"|FORCE|"<<normalforcetabel[int(std::floor(position))] * (1 - scale) +
+    //             normalforcetabel[int(std::floor(position) + 1)] * scale<<std::endl;
+
+    //     return (normalforcetabel[int(std::floor(position))] * (1 - scale) +
+    //             normalforcetabel[int(std::floor(position) + 1)] * scale);
+    // }
+
+    //ensure that depth is greater that 0
+    if(depth < 0) depth = 0;
+
+    //linear extrapolation if outside of map range
+    if(depth > 0.1){
+        return 487900 *(depth - 0.1) + 40772.0; //extrapolate with slope between last two data points in the map (slope=487900)
     }
-    // Linearly interpolate between the table entries
-    else {
-        double scale = std::ceil(position) - position;
-        return (normalforcetabel[int(std::floor(position))] * (1 - scale) +
-                normalforcetabel[int(std::floor(position) + 1)] * scale);
+    //normal case - interpolate from tire map
+    else{
+        return m_stiffnessMap.Get_y(depth);
     }
+
 }
 
 // -----------------------------------------------------------------------------

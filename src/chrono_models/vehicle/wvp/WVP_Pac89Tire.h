@@ -56,6 +56,8 @@ class CH_MODELS_API WVP_Pac89Tire : public ChPac89Tire {
     static const std::string m_meshName;
     static const std::string m_meshFile;
     std::shared_ptr<ChTriangleMeshShape> m_trimesh_shape;
+
+    ChFunction_Recorder m_stiffnessMap;
 };
 
 /// @} vehicle_models_wvp
