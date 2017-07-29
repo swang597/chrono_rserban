@@ -110,38 +110,7 @@ void WVP_Pac89Tire::SetPac89Params() {
 }
 
 double WVP_Pac89Tire::GetNormalStiffnessForce(double depth) const {
-    // corresponding depths = 0 : 0.01 : 0.10
-    // double normalforcetabel[11] = {0.0,
-    //                                3276.0,
-    //                                6729.0,
-    //                                10361.0,
-    //                                14171.0,
-    //                                18159.0,
-    //                                22325.0,
-    //                                26670.0,
-    //                                31192.0,
-    //                                35893.0,
-    //                                40772.0};
-
-    // depth = depth * (depth > 0);  // Ensure that depth is positive;
-
-    // double position = (10. * (depth / 0.1));
-
-    // // Linear extrapolation if the depth is at or greater than the maximum depth in the table (0.08128)
-    // if (position >= 10) {
-    //     return (40772.0 + (depth - 0.1) * 407720.0);
-    // }
-    // // Linearly interpolate between the table entries
-    // else {
-    //     double scale = std::ceil(position) - position;
-
-    //     std::cout<<"|DEPTH|"<<depth<<"|FORCE|"<<normalforcetabel[int(std::floor(position))] * (1 - scale) +
-    //             normalforcetabel[int(std::floor(position) + 1)] * scale<<std::endl;
-
-    //     return (normalforcetabel[int(std::floor(position))] * (1 - scale) +
-    //             normalforcetabel[int(std::floor(position) + 1)] * scale);
-    // }
-
+    
     //ensure that depth is greater that 0
     if(depth < 0) depth = 0;
 

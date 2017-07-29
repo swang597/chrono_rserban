@@ -62,7 +62,7 @@ double step_size = 1e-5;
 double tire_step_size = step_size;
 
 // Simulation end time
-double tend = 15;
+double tend = 2;
 
 // Time interval between two render frames
 double render_step_size = 1.0 / 50;  // FPS = 50
@@ -83,11 +83,18 @@ std::string path_file("paths/straightOrigin.txt");
 std::string steering_controller_file("wvp/SteeringController.json");
 std::string speed_controller_file("wvp/SpeedController.json");
 
-// #define USE_IRRLICHT
+#define USE_IRRLICHT
 
 // =============================================================================
 
 int main(int argc, char* argv[]) {
+    
+    //read in argument as simulation duration
+    if(argc > 1){
+        tend = atof(argv[1]);
+    }
+
+
     // --------------
     // Create systems
     // --------------
@@ -191,21 +198,6 @@ int main(int argc, char* argv[]) {
     int step_number = 0;
     int render_frame = 0;
 
-    std::cout << "Vehicle COM: " << wvp.GetVehicle().GetVehicleCOMPos().x() <<", "<<wvp.GetVehicle().GetVehicleCOMPos().y() <<", "<<wvp.GetVehicle().GetVehicleCOMPos().z() << std::endl;
-    std::cout<< "Front Susp COM x: "<<wvp.GetVehicle().GetSuspension(0)->GetCOMPos().x()<<std::endl;
-    std::cout<< "Rear Susp COM x: "<<wvp.GetVehicle().GetSuspension(1)->GetCOMPos().x()<<std::endl;
-    std::cout<< "Steering COM x: "<<wvp.GetVehicle().GetSteering(0)->GetCOMPos().x()<<std::endl;
-    std::cout<< "Wheel0 COM x: "<<wvp.GetVehicle().GetWheel(0)->GetCOMPos().x()<<std::endl;
-    std::cout<< "Wheel1 COM x: "<<wvp.GetVehicle().GetWheel(1)->GetCOMPos().x()<<std::endl;
-    std::cout<< "Wheel2 COM x: "<<wvp.GetVehicle().GetWheel(2)->GetCOMPos().x()<<std::endl;
-    std::cout<< "Wheel3 COM x: "<<wvp.GetVehicle().GetWheel(3)->GetCOMPos().x()<<std::endl;
-
-
-    double engVelAvg = 0;
-    double wheelVelAvg = 0;
-    double engAlpha = 1;
-    double wheelAlpha = 1;
-
     double time = 0;
 
 #ifdef USE_IRRLICHT
@@ -271,26 +263,6 @@ int main(int argc, char* argv[]) {
 #endif
 
 
-        //check engine vs wheel speed
-        // std::cout<<"Time|"<<time<<"|vehicle gear|"<<wvp.GetPowertrain().GetCurrentTransmissionGear();
-
-        double avgWheelSpeed = 0;
-        for(int i=0;i<4;i++){
-          avgWheelSpeed += wvp.GetVehicle().GetWheelAngVel(i).y();
-        }
-        avgWheelSpeed = avgWheelSpeed / 4.0;
-        // std::cout<<"|wheelAngVel|"<<avgWheelSpeed<<"|EngWheelRatio|"<<wvp.GetPowertrain().GetMotorSpeed() / avgWheelSpeed<<std::endl;
-
-        wheelVelAvg = avgWheelSpeed*(wheelAlpha) + wheelVelAvg*(1-wheelAlpha);
-        engVelAvg = wvp.GetPowertrain().GetMotorSpeed()*(engAlpha) + engVelAvg*(1-engAlpha);
-
-        // std::cout<<"|WheelSpeed|"<<wheelVelAvg<<"|EngineSpeed|"<<engVelAvg<<std::endl;
-
-
-
-
-
-
         if(data_output && step_number % output_steps == 0){
             std::cout<<time<<std::endl;
             csv << time;
@@ -304,6 +276,12 @@ int main(int argc, char* argv[]) {
             }
             csv << wvp.GetVehicle().GetVehicleSpeed();
             csv << wvp.GetVehicle().GetVehicleAcceleration(wvp.GetVehicle().GetChassis()->GetLocalDriverCoordsys().pos);
+            
+            for(int i=0;i<4;i++){
+                csv << wvp.GetTire(i)->GetTireForce().force.z();
+            }
+
+
             csv << std::endl;
         }
 
