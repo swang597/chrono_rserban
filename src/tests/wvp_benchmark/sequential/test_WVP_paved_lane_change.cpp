@@ -49,7 +49,7 @@ using namespace chrono::vehicle::wvp;
 // =============================================================================
 
 // Initial vehicle location and orientation
-ChVector<> initLoc(-125,-125, 1.0);
+ChVector<> initLoc(0,0, 1.0);
 ChQuaternion<> initRot(1, 0, 0, 0);
 
 // Visualization type for vehicle parts (PRIMITIVES, MESH, or NONE)
@@ -87,7 +87,8 @@ bool data_output = true;
 double mph_to_ms = 0.44704;
 double target_speed = 35*mph_to_ms;
 
-std::string path_file("paths/NATO_double_lane_change.txt");
+// std::string path_file("paths/NATO_double_lane_change.txt");
+std::string path_file("paths/straightOrigin.txt");
 std::string steering_controller_file("wvp/SteeringController.json");
 std::string speed_controller_file("wvp/SpeedController.json");
 
@@ -107,11 +108,11 @@ int main(int argc, char* argv[]) {
     //read from args
     if(argc > 2){
         tend = atof(argv[1]);
-        target_speed = atof(argv[2]);
+        target_speed = atof(argv[2])*mph_to_ms;
         if(atof(argv[3])==0){
             LtR = true;
         }
-        else if(atof(argv[3])==1){
+        else if(atof(argv[3])==1){ //0 = LTR, 1=RtL
             LtR = false;
         }
 
@@ -138,6 +139,12 @@ int main(int argc, char* argv[]) {
     else{
         std::cout<<"RtL 35mph"<<std::endl;
     }
+
+    //if an additional parameter given, run at that speed instead
+    // if(argc > 3){
+    //     target_speed = atof(argv[4])*mph_to_ms;
+    //     output_file_name += "_closed_" + std::to_string((int)target_speed);
+    // }
 
     // --------------
     // Create systems
@@ -178,12 +185,19 @@ int main(int argc, char* argv[]) {
 
     //create the path follower/data follower combined driver
     auto path = ChBezierCurve::read(vehicle::GetDataFile(path_file));
+    //driver for open loop controller
     WVP_FollowerDataDriver driver(wvp.GetVehicle(),
             vehicle::GetDataFile(steering_controller_file),
             vehicle::GetDataFile(speed_controller_file), path, "double_lane_change",
             target_speed, vehicle::GetDataFile(steering_input_file), 1, 3, 20.0
             );
 
+    //for closed loop, can just not switch to data for now
+    // WVP_FollowerDataDriver driver(wvp.GetVehicle(),
+    //         vehicle::GetDataFile(steering_controller_file),
+    //         vehicle::GetDataFile(speed_controller_file), path, "double_lane_change",
+    //         target_speed, vehicle::GetDataFile(steering_input_file), 1, 3, 800.0
+    //         );
 
 
     driver.Initialize();
@@ -353,7 +367,7 @@ int main(int argc, char* argv[]) {
 
 
 
-        std::cout<<time<<std::endl;
+        // std::cout<<time<<std::endl;
         // Increment frame number
         step_number++;
     }

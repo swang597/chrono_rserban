@@ -45,7 +45,7 @@ void WVP_Pac89Tire::SetPac89Params() {
 
     m_unloaded_radius = 1.0960/2; //Diameter to Radius
     m_width = 0.372;
-    m_rolling_resistance = 0.02; //0.0;
+    m_rolling_resistance = 0.015; //0.0;
     m_lateral_stiffness = 185*1000.; // N/mm -> N/m
     m_measured_side = LEFT;
 
