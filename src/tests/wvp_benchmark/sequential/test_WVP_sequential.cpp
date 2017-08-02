@@ -49,13 +49,13 @@ VisualizationType wheel_vis_type = VisualizationType::NONE;
 VisualizationType tire_vis_type = VisualizationType::PRIMITIVES;
 
 // Type of tire model (RIGID, FIALA, PAC89)
-TireModelType tire_model = TireModelType::PAC89;
+TireModelType tire_model = TireModelType::RIGID;
 
 // Point on chassis tracked by the camera
 ChVector<> trackPoint(0.0, 0.0, 1.75);
 
 // Simulation step sizes
-double step_size = 1e-4;
+double step_size = 1e-3;
 double tire_step_size = step_size;
 
 // Simulation end time
@@ -158,6 +158,8 @@ int main(int argc, char* argv[]) {
         terrain.Advance(step_size);
         wvp.Advance(step_size);
         app.Advance(step_size);
+        ChQuaternion<> q= wvp.GetVehicle().GetWheelRot(1);
+        std::cout<<q.Q_to_NasaAngles().x()*180/CH_C_PI<<"|"<<q.Q_to_NasaAngles().y()*180/CH_C_PI<<"|"<<q.Q_to_NasaAngles().z()*180/CH_C_PI<<std::endl;
 
 
         // auto susp0 = std::static_pointer_cast<ChDoubleWishbone>(wvp.GetVehicle().GetSuspension(0));

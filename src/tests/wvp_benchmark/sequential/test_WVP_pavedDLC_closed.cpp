@@ -20,16 +20,20 @@
 //
 // =============================================================================
 
-//#define USE_IRRLICHT
+// #define USE_IRRLICHT
+
 
 #include "chrono_vehicle/ChConfigVehicle.h"
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/terrain/RigidTerrain.h"
+
 #ifdef USE_IRRLICHT
 #include "chrono_vehicle/driver/ChIrrGuiDriver.h"
-#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
 #endif
+
+#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"
+#include "chrono_models/vehicle/wvp/WVP_FollowerDataDriver.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
 #include "chrono/core/ChFileutils.h"
 
@@ -66,36 +70,57 @@ double step_size = 1e-5;
 double tire_step_size = step_size;
 
 // Simulation end time
-double tend = 2;
+double tend = 15;
 
 // Time interval between two render frames
 double render_step_size = 1.0 / 50;  // FPS = 50
 double output_step_size = 1e-2;
 
-//vehicle driver inputs
-// Desired vehicle speed (m/s)
-double target_speed = 1000;
-
 //output directory
-const std::string out_dir = "../WVP_ACCELERATION";
+const std::string out_dir = "../WVP_DLC_PAVED";
 const std::string pov_dir = out_dir + "/POVRAY";
 bool povray_output = false;
 bool data_output = true;
 
+//vehicle driver inputs
+// Desired vehicle speed (m/s)
+double mph_to_ms = 0.44704;
+double target_speed = 35*mph_to_ms;
 
+// std::string path_file("paths/NATO_double_lane_change.txt");
 std::string path_file("paths/straightOrigin.txt");
+std::string path_fileLtR("wvp/WVP_NATO_DLC_LtR.txt");
+std::string path_fileRtL("wvp/WVP_NATO_DLC_RtL.txt");
+
 std::string steering_controller_file("wvp/SteeringController.json");
 std::string speed_controller_file("wvp/SpeedController.json");
 
 
+std::string output_file_name("DLC_Paved_closed_");
+
+bool LtR = false;
 
 // =============================================================================
 
 int main(int argc, char* argv[]) {
-    
-    //read in argument as simulation duration
-    if(argc > 1){
+    //send in args: filename time speed LtR(or RtL)
+    //read from args
+    if(argc > 2){
+        std::cout<<argv[0]<<"|"<<argv[1]<<"|"<<argv[2]<<"|"<<argv[3]<<std::endl;
         tend = atof(argv[1]);
+        target_speed = atof(argv[2]);
+        if(atof(argv[3])==0){
+            LtR = true;
+            path_file = path_fileLtR;
+            output_file_name += "LtR";
+        }   
+        else if(atof(argv[3])==1){ //0 = LTR, 1=RtL
+            LtR = false;
+            path_file = path_fileRtL;
+            output_file_name += "RtL";
+        }
+        output_file_name += std::to_string((int)target_speed);
+        target_speed = target_speed*mph_to_ms;
     }
 
 
@@ -119,31 +144,32 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Total vehicle mass: " << wvp.GetVehicle().GetVehicleMass() << std::endl;
 
-
     // ------------------
     // Create the terrain
     // ------------------
 
     RigidTerrain terrain(wvp.GetSystem());
-    terrain.SetContactFrictionCoefficient(0.9f);
+    terrain.SetContactFrictionCoefficient(0.8f);
     terrain.SetContactRestitutionCoefficient(0.01f);
     terrain.SetContactMaterialProperties(2e7f, 0.3f);
     terrain.SetColor(ChColor(0.8f, 0.8f, 0.5f));
-    terrain.SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 2000, 20);
-    terrain.Initialize(0, 2000, 20);
+    terrain.SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 20, 20);
+    terrain.Initialize(0, 2000, 30);
 
-    //create the driver
+    //create the driver -> path follower
     auto path = ChBezierCurve::read(vehicle::GetDataFile(path_file));
     ChPathFollowerDriver driver(wvp.GetVehicle(), vehicle::GetDataFile(steering_controller_file),
                                 vehicle::GetDataFile(speed_controller_file), path, "my_path", target_speed, false);
+
     driver.Initialize();
 
+
+#ifdef USE_IRRLICHT
     // -------------------------------------
     // Create the vehicle Irrlicht interface
     // Create the driver system
     // -------------------------------------
 
-#ifdef USE_IRRLICHT
     ChWheeledVehicleIrrApp app(&wvp.GetVehicle(), &wvp.GetPowertrain(), L"WVP sequential test");
     app.SetSkyBox();
     app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
@@ -157,9 +183,8 @@ int main(int argc, char* argv[]) {
     irr::scene::IMeshSceneNode* ballT = app.GetSceneManager()->addSphereSceneNode(0.1f);
     ballS->getMaterial(0).EmissiveColor = irr::video::SColor(0, 255, 0, 0);
     ballT->getMaterial(0).EmissiveColor = irr::video::SColor(0, 0, 255, 0);
-
 #endif
-
+    
     // -------------
     // Prepare output
     // -------------
@@ -188,9 +213,6 @@ int main(int argc, char* argv[]) {
     // Number of simulation steps between two output frames
     int output_steps = (int)std::ceil(output_step_size / step_size);
 
-
-
-
     // ---------------
     // Simulation loop
     // ---------------
@@ -204,25 +226,32 @@ int main(int argc, char* argv[]) {
 
     double time = 0;
 
-#ifdef USE_IRRLICHT
-    while (app.GetDevice()->run()) {
-#else
-    while(time < tend){
-#endif
-        time = wvp.GetSystem()->GetChTime();
+    //output headings for the saved data file
+    csv <<"time"<<"Steering Angle"<<"vehicle Speed" ;
+
+    csv <<"Chassis Attitude"<<"Chassis Bank"<<"Chassis Heading";
+    csv <<"Chassis Omega X"<<"Chassis Omega Y"<<"Chassis Omega Z";
+
+    csv <<"Lateral Acceleration"<<"W0 long"<<"W0 lat"<<"W0 vert"<<"W1 long"<<"W1 lat"<<"W1 vert";
+    csv <<"W2 long"<<"W2 lat"<<"W2 vert"<<"W3 long"<<"W3 lat"<<"W3 vert";
+    csv <<"W0 Pos x"<<"W0 Pos Y"<<"W0 Pos Z"<<"W1 Pos x"<<"W1 Pos Y"<<"W1 Pos Z";
+    csv <<"W2 Pos x"<<"W2 Pos Y"<<"W2 Pos Z"<<"W3 Pos x"<<"W3 Pos Y"<<"W3 Pos Z"<< std::endl;
+
 
 #ifdef USE_IRRLICHT
+    while (app.GetDevice()->run()) {
+        
+
         //path visualization
         const ChVector<>& pS = driver.GetSteeringController().GetSentinelLocation();
         const ChVector<>& pT = driver.GetSteeringController().GetTargetLocation();
         ballS->setPosition(irr::core::vector3df((irr::f32)pS.x(), (irr::f32)pS.y(), (irr::f32)pS.z()));
         ballT->setPosition(irr::core::vector3df((irr::f32)pT.x(), (irr::f32)pT.y(), (irr::f32)pT.z()));
 
-
-        // std::cout<<"Target:\t"<<(irr::f32)pT.x()<<",\t "<<(irr::f32)pT.y()<<",\t "<<(irr::f32)pT.z()<<std::endl;
-        // std::cout<<"Vehicle:\t"<<wvp.GetVehicle().GetChassisBody()->GetPos().x()
-        //   <<",\t "<<wvp.GetVehicle().GetChassisBody()->GetPos().y()<<",\t "
-        //   <<wvp.GetVehicle().GetChassisBody()->GetPos().z()<<std::endl;
+        /*std::cout<<"Target:\t"<<(irr::f32)pT.x()<<",\t "<<(irr::f32)pT.y()<<",\t "<<(irr::f32)pT.z()<<std::endl;
+        std::cout<<"Vehicle:\t"<<wvp.GetVehicle().GetChassisBody()->GetPos().x()
+          <<",\t "<<wvp.GetVehicle().GetChassisBody()->GetPos().y()<<",\t "
+          <<wvp.GetVehicle().GetChassisBody()->GetPos().z()<<std::endl;*/
 
         // Render scene
         if (step_number % render_steps == 0) {
@@ -230,18 +259,11 @@ int main(int argc, char* argv[]) {
             app.DrawAll();
             app.EndScene();
         }
-
+#else
+    while(wvp.GetSystem()->GetChTime() < tend){
 #endif
 
-        if (povray_output && step_number % render_steps == 0) {
-            char filename[100];
-            sprintf(filename, "%s/data_%03d.dat", pov_dir.c_str(), render_frame + 1);
-            utils::WriteShapesPovray(wvp.GetSystem(), filename);
-            render_frame++;
-
-        }
-        
-
+        time = wvp.GetSystem()->GetChTime();
         // Collect output data from modules (for inter-module communication)
         double throttle_input = driver.GetThrottle();
         double steering_input = driver.GetSteering();
@@ -251,7 +273,6 @@ int main(int argc, char* argv[]) {
         driver.Synchronize(time);
         terrain.Synchronize(time);
         wvp.Synchronize(time, steering_input, braking_input, throttle_input, terrain);
-
 #ifdef USE_IRRLICHT
         app.Synchronize("Follower driver", steering_input, throttle_input, braking_input);
 #endif
@@ -261,42 +282,60 @@ int main(int argc, char* argv[]) {
         driver.Advance(step_size);
         terrain.Advance(step_size);
         wvp.Advance(step_size);
-
 #ifdef USE_IRRLICHT
         app.Advance(step_size);
 #endif
 
+        if (povray_output && step_number % render_steps == 0) {
+            char filename[100];
+            sprintf(filename, "%s/data_%03d.dat", pov_dir.c_str(), render_frame + 1);
+            utils::WriteShapesPovray(wvp.GetSystem(), filename);
+            render_frame++;
+
+        }
 
         if(data_output && step_number % output_steps == 0){
+            //output time to check simulation is running
             std::cout<<time<<std::endl;
-            csv << time;
-            csv << wvp.GetPowertrain().GetMotorSpeed();
-            csv << wvp.GetPowertrain().GetCurrentTransmissionGear();
-            for(int i=0;i<4;i++){
-                csv << wvp.GetVehicle().GetDriveline()->GetWheelTorque(i);
-            }
-            for(int i=0;i<4;i++){
-                csv << wvp.GetVehicle().GetWheelAngVel(i);
-            }
-            csv << wvp.GetVehicle().GetVehicleSpeed();
-            csv << wvp.GetVehicle().GetVehicleAcceleration(wvp.GetVehicle().GetChassis()->GetLocalDriverCoordsys().pos);
-            
-            for(int i=0;i<4;i++){
-                csv << wvp.GetTire(i)->GetTireForce().force.z();
-            }
+
+            csv <<time<<steering_input<<wvp.GetVehicle().GetVehicleSpeed();
+            ChQuaternion<> q= wvp.GetVehicle().GetVehicleRot();
+            csv << q.Q_to_NasaAngles();
+            csv <<wvp.GetChassisBody()->GetWvel_loc();
 
 
+
+            csv << wvp.GetVehicle().GetVehicleAcceleration(wvp.GetVehicle().GetChassis()->GetCOMPos()).y();
+
+            for(int i=0;i<4;i++){
+                csv << wvp.GetTire(i)->GetTireForce().force;
+            }
+
+            for(int i=0;i<4;i++){
+                csv << wvp.GetVehicle().GetWheelPos(i);
+
+            }
             csv << std::endl;
+
+
+
+
         }
 
 
 
+
+
+
+
+        // std::cout<<time<<std::endl;
         // Increment frame number
         step_number++;
     }
 
     if (data_output) {
-        csv.write_to_file(out_dir + "/output.dat");
+        csv.write_to_file(out_dir + "/" + output_file_name + ".dat");
     }
+
     return 0;
 }

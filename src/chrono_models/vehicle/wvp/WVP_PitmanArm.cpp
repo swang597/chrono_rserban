@@ -32,7 +32,7 @@ const double WVP_PitmanArm::m_pitmanArmMass = 2.0;
 const double WVP_PitmanArm::m_steeringLinkRadius = 0.03;
 const double WVP_PitmanArm::m_pitmanArmRadius = 0.02;
 
-const double WVP_PitmanArm::m_maxAngle = 35.0 * (CH_C_PI / 180);
+const double WVP_PitmanArm::m_maxAngle = 41.25 * (CH_C_PI / 180);
 
 const ChVector<> WVP_PitmanArm::m_steeringLinkInertiaMoments(6.34e-2, 4.47e-4, 6.37e-2);
 const ChVector<> WVP_PitmanArm::m_steeringLinkInertiaProducts(0.0, 0.0, 0.0);

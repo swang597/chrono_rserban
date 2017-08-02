@@ -107,8 +107,9 @@ int main(int argc, char* argv[]) {
     //send in args: filename time speed LtR(or RtL)
     //read from args
     if(argc > 2){
+        std::cout<<argv[0]<<"|"<<argv[1]<<"|"<<argv[2]<<"|"<<argv[3]<<std::endl;
         tend = atof(argv[1]);
-        target_speed = atof(argv[2])*mph_to_ms;
+        target_speed = atof(argv[2]);
         if(atof(argv[3])==0){
             LtR = true;
         }
@@ -140,9 +141,12 @@ int main(int argc, char* argv[]) {
         std::cout<<"RtL 35mph"<<std::endl;
     }
 
-    //if an additional parameter given, run at that speed instead
+    target_speed = target_speed*mph_to_ms;
+
+    // if an additional parameter given, run at that speed instead
     // if(argc > 3){
     //     target_speed = atof(argv[4])*mph_to_ms;
+    //     std::cout<<"Target Speed"<<target_speed<<std::endl;
     //     output_file_name += "_closed_" + std::to_string((int)target_speed);
     // }
 
@@ -259,6 +263,7 @@ int main(int argc, char* argv[]) {
     std::cout<<"data at: "<<vehicle::GetDataFile(steering_controller_file)<<std::endl;
     std::cout<<"data at: "<<vehicle::GetDataFile(speed_controller_file)<<std::endl;
     std::cout<<"data at: "<<vehicle::GetDataFile(path_file)<<std::endl;
+    std::cout<<"data at: "<<vehicle::GetDataFile(steering_input_file)<<std::endl;
 
     int step_number = 0;
     int render_frame = 0;
