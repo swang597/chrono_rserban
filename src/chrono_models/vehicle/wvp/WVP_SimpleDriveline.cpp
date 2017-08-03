@@ -38,8 +38,8 @@ WVP_SimpleDriveline::WVP_SimpleDriveline(const std::string& name) : ChDriveline(
 // suspension subsystems.
 // -----------------------------------------------------------------------------
 void WVP_SimpleDriveline::Initialize(std::shared_ptr<ChBody> chassis,
-                                   const ChSuspensionList& suspensions,
-                                   const std::vector<int>& driven_axles) {
+                                     const ChSuspensionList& suspensions,
+                                     const std::vector<int>& driven_axles) {
     assert(suspensions.size() >= 2);
 
     m_driven_axles = driven_axles;
@@ -55,18 +55,17 @@ void WVP_SimpleDriveline::Initialize(std::shared_ptr<ChBody> chassis,
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 double WVP_SimpleDriveline::GetDriveshaftSpeed() const {
-
-    if(!m_diffLockCenter){
-        double speed_front = 0.5 * m_gearHubReduction * m_diffGearReduction * (m_front_left->GetPos_dt() + m_front_right->GetPos_dt());
-        double speed_rear = 0.5 * m_gearHubReduction * m_diffGearReduction * (m_rear_left->GetPos_dt() + m_rear_right->GetPos_dt());
+    if (!m_diffLockCenter) {
+        double speed_front =
+            0.5 * m_gearHubReduction * m_diffGearReduction * (m_front_left->GetPos_dt() + m_front_right->GetPos_dt());
+        double speed_rear =
+            0.5 * m_gearHubReduction * m_diffGearReduction * (m_rear_left->GetPos_dt() + m_rear_right->GetPos_dt());
         double alpha = m_frontTorqueFraction;
 
-        return -1*(alpha * speed_front + (1 - alpha) * speed_rear);
+        return -1 * (alpha * speed_front + (1 - alpha) * speed_rear);
+    } else {
+        return 0;  // what should it return when locked?
     }
-    else{
-        return 0; //what should it return when locked?
-    }
-
 }
 
 // -----------------------------------------------------------------------------
@@ -119,8 +118,8 @@ void WVP_SimpleDriveline::Synchronize(double torque) {
     torque_front = torque_front * (m_gearHubReduction * m_diffGearReduction);
     torque_rear = torque_rear * (m_gearHubReduction * m_diffGearReduction);
 
-    differentialSplit(torque_front, m_frontDifferentialMaxBias, m_front_left->GetPos_dt(),
-                      m_front_right->GetPos_dt(), torque_left, torque_right);
+    differentialSplit(torque_front, m_frontDifferentialMaxBias, m_front_left->GetPos_dt(), m_front_right->GetPos_dt(),
+                      torque_left, torque_right);
     m_front_left->SetAppliedTorque(-torque_left);
     m_front_right->SetAppliedTorque(-torque_right);
 
@@ -152,6 +151,6 @@ double WVP_SimpleDriveline::GetWheelTorque(const WheelID& wheel_id) const {
     return 0;
 }
 
-} //end namespace wvp
+}  // end namespace wvp
 }  // end namespace vehicle
-} // end namespace chrono
+}  // end namespace chrono

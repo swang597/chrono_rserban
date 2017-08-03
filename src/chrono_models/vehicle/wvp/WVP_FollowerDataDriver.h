@@ -31,9 +31,11 @@
 #include "chrono_vehicle/utils/ChSpeedController.h"
 #include "chrono_vehicle/utils/ChSteeringController.h"
 
+#include "chrono_models/ChApiModels.h"
+
 namespace chrono {
 namespace vehicle {
-namespace wvp{
+namespace wvp {
 
 /// @addtogroup vehicle_driver
 /// @{
@@ -46,22 +48,22 @@ namespace wvp{
 ///
 /// @sa ChPathSteeringController
 /// @sa ChSpeedController
-class CH_VEHICLE_API WVP_FollowerDataDriver : public ChDriver {
+class CH_MODELS_API WVP_FollowerDataDriver : public ChDriver {
   public:
     /// Construct using JSON specification files.
     /// The two files must contain specification for the path-follower steering controller
     /// and the constant-speed controller, respectively.
     WVP_FollowerDataDriver(ChVehicle& vehicle,                    ///< associated vehicle
-                         const std::string& steering_filename,  ///< JSON file with steering controller specification
-                         const std::string& speed_filename,     ///< JSON file with speed controller specification
-                         std::shared_ptr<ChBezierCurve> path,   ///< Bezier curve with target path
-                         const std::string& path_name,          ///< name of the path curve
-                         double target_speed,                   ///< constant target speed
-                         const std::string data_input_file, //location of data input file
-                         int time_column,   //which column in csv is time data -> 0 indexed
-                         int steering_column, //which column in csv is steering data -> 0 indexed
-                         double time_til_steady //when should simulation switch to input data
-                         );
+                           const std::string& steering_filename,  ///< JSON file with steering controller specification
+                           const std::string& speed_filename,     ///< JSON file with speed controller specification
+                           std::shared_ptr<ChBezierCurve> path,   ///< Bezier curve with target path
+                           const std::string& path_name,          ///< name of the path curve
+                           double target_speed,                   ///< constant target speed
+                           const std::string data_input_file,     // location of data input file
+                           int time_column,                       // which column in csv is time data -> 0 indexed
+                           int steering_column,                   // which column in csv is steering data -> 0 indexed
+                           double time_til_steady                 // when should simulation switch to input data
+                           );
 
     ~WVP_FollowerDataDriver() {}
 
@@ -103,11 +105,10 @@ class CH_VEHICLE_API WVP_FollowerDataDriver : public ChDriver {
     double m_dataStartTime = 0;
 
     void ParseCSV(std::string m_data_input_file, int timeCol, int steeringCol);
-
 };
 
 /// @} vehicle_driver
-} //end namespace wvp
+}  // end namespace wvp
 }  // end namespace vehicle
 }  // end namespace chrono
 

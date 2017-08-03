@@ -27,20 +27,20 @@
 
 namespace chrono {
 namespace vehicle {
-namespace wvp{
+namespace wvp {
 
-double steeringFactor = -0.052889; //ratio of steering wheel full turn to wheel full turn
+double steeringFactor = -0.052889;  // ratio of steering wheel full turn to wheel full turn
 
 WVP_FollowerDataDriver::WVP_FollowerDataDriver(ChVehicle& vehicle,
-                                           const std::string& steering_filename,
-                                           const std::string& speed_filename,
-                                           std::shared_ptr<ChBezierCurve> path,
-                                           const std::string& path_name,
-                                           double target_speed,
-                                           const std::string data_input_file,
-                                           int time_column,
-                                           int steering_column,
-                                           double time_til_steady)
+                                               const std::string& steering_filename,
+                                               const std::string& speed_filename,
+                                               std::shared_ptr<ChBezierCurve> path,
+                                               const std::string& path_name,
+                                               double target_speed,
+                                               const std::string data_input_file,
+                                               int time_column,
+                                               int steering_column,
+                                               double time_til_steady)
     : ChDriver(vehicle),
       m_steeringPID(steering_filename, path, false),
       m_speedPID(speed_filename),
@@ -48,11 +48,8 @@ WVP_FollowerDataDriver::WVP_FollowerDataDriver(ChVehicle& vehicle,
       m_target_speed(target_speed),
       m_throttle_threshold(0.2),
       m_time_til_steady(time_til_steady) {
-
     ParseCSV(data_input_file, time_column, steering_column);
     Create();
-
-
 }
 
 void WVP_FollowerDataDriver::Create() {
@@ -97,68 +94,64 @@ void WVP_FollowerDataDriver::Advance(double step) {
     }
     double time = m_vehicle.GetChTime();
 
-    if(time < m_time_til_steady){
-      // Set the steering value based on the output from the steering controller.
-      double out_steering = m_steeringPID.Advance(m_vehicle, step);
-      ChClampValue(out_steering, -1.0, 1.0);
-      m_steering = out_steering;
+    if (time < m_time_til_steady) {
+        // Set the steering value based on the output from the steering controller.
+        double out_steering = m_steeringPID.Advance(m_vehicle, step);
+        ChClampValue(out_steering, -1.0, 1.0);
+        m_steering = out_steering;
+    } else {
+        m_steering = m_steering_map.Get_y(time - m_time_til_steady + m_dataStartTime);
+        m_steering = m_steering * steeringFactor;
     }
-    else{
-      m_steering = m_steering_map.Get_y(time - m_time_til_steady + m_dataStartTime);
-      m_steering = m_steering*steeringFactor;
-    }
-
 }
 
 void WVP_FollowerDataDriver::ExportPathPovray(const std::string& out_dir) {
     utils::WriteCurvePovray(*m_steeringPID.GetPath(), m_pathName, out_dir, 0.04, ChColor(0.8f, 0.5f, 0.0f));
 }
 
-void WVP_FollowerDataDriver::ParseCSV(std::string dataFile, int timeCol, int steeringCol){
-  // std::cout<<"parsing CSV"<<std::endl;
-  std::ifstream file(dataFile);
-  std::string line;
+void WVP_FollowerDataDriver::ParseCSV(std::string dataFile, int timeCol, int steeringCol) {
+    // std::cout<<"parsing CSV"<<std::endl;
+    std::ifstream file(dataFile);
+    std::string line;
 
-  // std::cout<<"file at: "<<dataFile<<std::endl;
+    // std::cout<<"file at: "<<dataFile<<std::endl;
 
-  //skip the first 8 lines
-  for(int i=0;i<8;i++){
-    // std::cout<<"skipped line"<<std::endl;
-    std::getline(file,line);
-    // std::cout<<line<<std::endl;
-  }
-  bool recStartTime = true;
-  while(std::getline(file,line)){
-    std::vector<std::string> parts;
-    std::stringstream linestring(line);
-    std::string val;
-
-    while(std::getline(linestring,val,',')){
-      parts.push_back(val);
+    // skip the first 8 lines
+    for (int i = 0; i < 8; i++) {
+        // std::cout<<"skipped line"<<std::endl;
+        std::getline(file, line);
+        // std::cout<<line<<std::endl;
     }
-    std::stringstream convertTime(parts[timeCol]);
-    std::stringstream convertSteer(parts[steeringCol]);
+    bool recStartTime = true;
+    while (std::getline(file, line)) {
+        std::vector<std::string> parts;
+        std::stringstream linestring(line);
+        std::string val;
 
-    double tempTime;
-    double tempSteer;
+        while (std::getline(linestring, val, ',')) {
+            parts.push_back(val);
+        }
+        std::stringstream convertTime(parts[timeCol]);
+        std::stringstream convertSteer(parts[steeringCol]);
 
-    convertTime >> tempTime;
-    convertSteer >> tempSteer;
+        double tempTime;
+        double tempSteer;
 
-    if(recStartTime) {
-      m_dataStartTime = tempTime;
-      recStartTime = false;
+        convertTime >> tempTime;
+        convertSteer >> tempSteer;
+
+        if (recStartTime) {
+            m_dataStartTime = tempTime;
+            recStartTime = false;
+        }
+
+        m_steering_map.AddPoint(tempTime, tempSteer);
+        /*std::cout<<"added point: "<<tempTime<<", "<<tempSteer<<std::endl;*/
+        /*std::cout<<line<<std::endl;*/
+        /*std::cout<<"read in another line"<<std::endl;*/
     }
-
-    m_steering_map.AddPoint(tempTime, tempSteer);
-    /*std::cout<<"added point: "<<tempTime<<", "<<tempSteer<<std::endl;*/
-    /*std::cout<<line<<std::endl;*/
-    /*std::cout<<"read in another line"<<std::endl;*/
-
-  }
-
 }
 
-} //end namespace wvp
+}  // end namespace wvp
 }  // end namespace vehicle
 }  // end namespace chrono
