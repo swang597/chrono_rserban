@@ -92,7 +92,7 @@ int main(int argc, char* argv[]) {
     // ------------------
 
     RigidTerrain terrain(wvp.GetSystem());
-    terrain.SetContactFrictionCoefficient(0.9f);
+    terrain.SetContactFrictionCoefficient(0.1f);
     terrain.SetContactRestitutionCoefficient(0.01f);
     terrain.SetContactMaterialProperties(2e7f, 0.3f);
     terrain.SetColor(ChColor(0.8f, 0.8f, 0.5f));
@@ -158,22 +158,22 @@ int main(int argc, char* argv[]) {
         terrain.Advance(step_size);
         wvp.Advance(step_size);
         app.Advance(step_size);
-        ChQuaternion<> q= wvp.GetVehicle().GetWheelRot(1);
-        std::cout<<q.Q_to_NasaAngles().x()*180/CH_C_PI<<"|"<<q.Q_to_NasaAngles().y()*180/CH_C_PI<<"|"<<q.Q_to_NasaAngles().z()*180/CH_C_PI<<std::endl;
+        // ChQuaternion<> q= wvp.GetVehicle().GetWheelRot(1);
+        // std::cout<<q.Q_to_NasaAngles().x()*180/CH_C_PI<<"|"<<q.Q_to_NasaAngles().y()*180/CH_C_PI<<"|"<<q.Q_to_NasaAngles().z()*180/CH_C_PI<<std::endl;
 
 
-        // auto susp0 = std::static_pointer_cast<ChDoubleWishbone>(wvp.GetVehicle().GetSuspension(0));
-        // auto susp1 = std::static_pointer_cast<ChDoubleWishbone>(wvp.GetVehicle().GetSuspension(1));
+        auto susp0 = std::static_pointer_cast<ChDoubleWishbone>(wvp.GetVehicle().GetSuspension(0));
+        auto susp1 = std::static_pointer_cast<ChDoubleWishbone>(wvp.GetVehicle().GetSuspension(1));
 
-        // std::cout<<"SpringDef0|"<<susp0->GetSpringLength(LEFT)
-        // // <<"|force0|"<<susp0->GetSpringForce(LEFT);
-        // <<"|SpringDef1|"<<susp0->GetSpringLength(RIGHT)
-        // // <<"|force1|"<<susp0->GetSpringForce(RIGHT);
-        // <<"|SpringDef2|"<<susp1->GetSpringLength(LEFT)
-        // // <<"|force2|"<<susp1->GetSpringForce(LEFT);
-        // <<"|SpringDef3|"<<susp1->GetSpringLength(RIGHT)
-        // // <<"|force3|"<<susp1->GetSpringForce(RIGHT)
-        // <<std::endl;
+        std::cout<<"SpringDef0|"<<susp0->GetSpringLength(LEFT)
+        // <<"|force0|"<<susp0->GetSpringForce(LEFT);
+        <<"|SpringDef1|"<<susp0->GetSpringLength(RIGHT)
+        // <<"|force1|"<<susp0->GetSpringForce(RIGHT);
+        <<"|SpringDef2|"<<susp1->GetSpringLength(LEFT)
+        // <<"|force2|"<<susp1->GetSpringForce(LEFT);
+        <<"|SpringDef3|"<<susp1->GetSpringLength(RIGHT)
+        // <<"|force3|"<<susp1->GetSpringForce(RIGHT)
+        <<std::endl;
 
         //log suspension locations
         /*std::cout<<"|wheel pos|"<<wvp.GetVehicle().GetSuspension(0)->GetSpindle(LEFT)->GetPos().x()-wvp.GetVehicle().GetVehiclePos().x()

@@ -25,6 +25,7 @@ SET(DEMOS
     test_WVP_straight_accel
     test_WVP_wall2wall
     test_WVP_pavedDLC_closed
+    test_WVP_gravelDLC_closed
     #test_WVP_slope_grade
     #test_WVP_tractive_effort
 )
