@@ -119,10 +119,10 @@ int main(int argc, char* argv[]) {
     }
 
     // Chassis Corner Point Locations
-    ChVector<> FrontLeftCornerLoc(926e-3, 1224.5e-3, 0.0);
-    ChVector<> FrontRightCornerLoc(926e-3, -1224.5e-3, 0.0);
-    ChVector<> RearLeftCornerLoc(-4672e-3, 1224.5e-3, 0);
-    ChVector<> RearRightCornerLoc(-4672e-3, -1224.5e-3, 0);
+    ChVector<> FrontLeftCornerLoc(926e-3, 1224.5e-3, 0.5);
+    ChVector<> FrontRightCornerLoc(926e-3, -1224.5e-3, 0.5);
+    ChVector<> RearLeftCornerLoc(-4672e-3, 1224.5e-3, 0.5);
+    ChVector<> RearRightCornerLoc(-4672e-3, -1224.5e-3, 0.5);
 
     // --------------
     // Create systems

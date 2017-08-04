@@ -29,7 +29,7 @@ namespace chrono {
 namespace vehicle {
 namespace wvp {
 
-double steeringFactor = -0.052889;  // ratio of steering wheel full turn to wheel full turn
+double steeringFactor = -.001282;  // ratio of steering wheel full turn to -1:1
 
 WVP_FollowerDataDriver::WVP_FollowerDataDriver(ChVehicle& vehicle,
                                                const std::string& steering_filename,

@@ -39,7 +39,7 @@ static const double lbf2N = 4.44822162;
 static const double lbfpin2Npm = 175.12677;
 
 const double WVP_DoubleWishboneFront::m_UCAMass = 14;
-const double WVP_DoubleWishboneFront::m_LCAMass = 42+80;
+const double WVP_DoubleWishboneFront::m_LCAMass = 42+40;
 const double WVP_DoubleWishboneFront::m_uprightMass = 150;
 const double WVP_DoubleWishboneFront::m_spindleMass = 52;
 
@@ -102,8 +102,8 @@ const double WVP_DoubleWishboneRear::m_springRestLength = .831;//+.051;
 /*const double WVP_DoubleWishboneRear::m_springCoefficient = 769149.000;*/
 
 
-const double frontSpringPreLoad = 5000.0;
-const double rearSpringPreLoad = 2500.0;
+const double frontSpringPreLoad = 5750.0;
+const double rearSpringPreLoad = 3400.0;
 
 // -----------------------------------------------------------------------------
 // WVP suspension spring functor class
