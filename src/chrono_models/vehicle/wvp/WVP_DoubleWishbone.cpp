@@ -453,43 +453,46 @@ class WVP_ShockForce : public ChLinkSpringCB::ForceFunctor {
 
 
       //roll stabilization table
-      m_roll_map.AddPoint(-127.8e-3, -145.2e3);
-      m_roll_map.AddPoint(-120e-3, -140.4e3);
-      m_roll_map.AddPoint(-110e-3, -129.6e3);
-      m_roll_map.AddPoint(-100e-3, -122.1e3);
-      m_roll_map.AddPoint(-90e-3, -111.6e3);
-      m_roll_map.AddPoint(-80e-3, -104.4e3);
-      m_roll_map.AddPoint(-70e-3, -94.8e3);
-      m_roll_map.AddPoint(-60e-3, -88.2e3);
-      m_roll_map.AddPoint(-50e-3, -82.2e3);
-      m_roll_map.AddPoint(-40e-3, -76.2e3);
-      m_roll_map.AddPoint(-30e-3, -66.9e3);
-      m_roll_map.AddPoint(-20e-3, -50.4e3);
-      m_roll_map.AddPoint(-10e-3, -13.8e3);
-      m_roll_map.AddPoint(0, -11.4e3);
-      m_roll_map.AddPoint(10e-3, -9.3e3);
-      m_roll_map.AddPoint(20e-3, -6.6e3);
-      m_roll_map.AddPoint(30e-3, -4.8e3);
-      m_roll_map.AddPoint(40e-3, -2.7e3);
-      m_roll_map.AddPoint(50e-3, -0.6e3);
-      m_roll_map.AddPoint(60e-3, 1.2e3);
-      m_roll_map.AddPoint(70e-3, 3e3);
-      m_roll_map.AddPoint(80e-3, 5.1e3);
-      m_roll_map.AddPoint(90e-3, 6.9e3);
-      m_roll_map.AddPoint(100e-3, 8.4e3);
-      m_roll_map.AddPoint(110e-3, 10.2e3);
-      m_roll_map.AddPoint(120e-3, 12e3);
-      m_roll_map.AddPoint(130e-3, 13.2e3);
-      m_roll_map.AddPoint(140e-3, 14.7e3);
-      m_roll_map.AddPoint(150e-3, 15.9e3);
-      m_roll_map.AddPoint(160e-3, 16.8e3);
-      m_roll_map.AddPoint(170e-3, 18e3);
-      m_roll_map.AddPoint(180e-3, 18.6e3);
-      m_roll_map.AddPoint(190e-3, 18.9e3);
-      m_roll_map.AddPoint(200e-3, 18.9e3);
-      m_roll_map.AddPoint(210e-3, 19.2e3);
-      m_roll_map.AddPoint(220e-3, 19.2e3);
-      m_roll_map.AddPoint(227.2e-3, 19.5e3);
+      m_roll_map.AddPoint(-127.8e-3+15e-3, -145.2e3+30e-3);
+      m_roll_map.AddPoint(-120e-3+15e-3, -140.4e3+30e-3);
+      m_roll_map.AddPoint(-110e-3+15e-3, -129.6e3+30e-3);
+      m_roll_map.AddPoint(-100e-3+15e-3, -122.1e3+30e-3);
+      m_roll_map.AddPoint(-90e-3+15e-3, -111.6e3+30e-3);
+      m_roll_map.AddPoint(-80e-3+15e-3, -104.4e3+30e-3);
+      m_roll_map.AddPoint(-70e-3+15e-3, -94.8e3+30e-3);
+      m_roll_map.AddPoint(-60e-3+15e-3, -88.2e3+30e-3);
+      m_roll_map.AddPoint(-50e-3+15e-3, -82.2e3+30e-3);
+      m_roll_map.AddPoint(-40e-3+15e-3, -76.2e3+30e-3);
+      m_roll_map.AddPoint(-30e-3+15e-3, -66.9e3+30e-3);
+      m_roll_map.AddPoint(-20e-3+15e-3, -50.4e3+30e-3);
+
+      m_roll_map.AddPoint(0, 0);
+
+      m_roll_map.AddPoint(-10e-3+15e-3, -13.8e3+30e-3);
+      m_roll_map.AddPoint(0+15e-3, -11.4e3+30e-3);
+      m_roll_map.AddPoint(10e-3+15e-3, -9.3e3+30e-3);
+      m_roll_map.AddPoint(20e-3+15e-3, -6.6e3+30e-3);
+      m_roll_map.AddPoint(30e-3+15e-3, -4.8e3+30e-3);
+      m_roll_map.AddPoint(40e-3+15e-3, -2.7e3+30e-3);
+      m_roll_map.AddPoint(50e-3+15e-3, -0.6e3+30e-3);
+      m_roll_map.AddPoint(60e-3+15e-3, 1.2e3+30e-3);
+      m_roll_map.AddPoint(70e-3+15e-3, 3e3+30e-3);
+      m_roll_map.AddPoint(80e-3+15e-3, 5.1e3+30e-3);
+      m_roll_map.AddPoint(90e-3+15e-3, 6.9e3+30e-3);
+      m_roll_map.AddPoint(100e-3+15e-3, 8.4e3+30e-3);
+      m_roll_map.AddPoint(110e-3+15e-3, 10.2e3+30e-3);
+      m_roll_map.AddPoint(120e-3+15e-3, 12e3+30e-3);
+      m_roll_map.AddPoint(130e-3+15e-3, 13.2e3+30e-3);
+      m_roll_map.AddPoint(140e-3+15e-3, 14.7e3+30e-3);
+      m_roll_map.AddPoint(150e-3+15e-3, 15.9e3+30e-3);
+      m_roll_map.AddPoint(160e-3+15e-3, 16.8e3+30e-3);
+      m_roll_map.AddPoint(170e-3+15e-3, 18e3+30e-3);
+      m_roll_map.AddPoint(180e-3+15e-3, 18.6e3+30e-3);
+      m_roll_map.AddPoint(190e-3+15e-3, 18.9e3+30e-3);
+      m_roll_map.AddPoint(200e-3+15e-3, 18.9e3+30e-3);
+      m_roll_map.AddPoint(210e-3+15e-3, 19.2e3+30e-3);
+      m_roll_map.AddPoint(220e-3+15e-3, 19.2e3+30e-3);
+      m_roll_map.AddPoint(227.2e-3+15e-3, 19.5e3+30e-3);
     }
 
     virtual double operator()(double time,

@@ -30,7 +30,7 @@ namespace wvp {
 // Static variables
 // -----------------------------------------------------------------------------
 
-const double WVP_Pac89Tire::m_normalDamping = 8154;
+const double WVP_Pac89Tire::m_normalDamping = 8154*.1;
 
 const std::string WVP_Pac89Tire::m_meshName = "hmmwv_tire_POV_geom";
 const std::string WVP_Pac89Tire::m_meshFile = "hmmwv/hmmwv_tire.obj";
