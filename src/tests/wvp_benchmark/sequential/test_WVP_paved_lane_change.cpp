@@ -20,7 +20,7 @@
 //
 // =============================================================================
 
-// #define USE_IRRLICHT
+#define USE_IRRLICHT
 
 
 #include "chrono_vehicle/ChConfigVehicle.h"
@@ -49,7 +49,7 @@ using namespace chrono::vehicle::wvp;
 // =============================================================================
 
 // Initial vehicle location and orientation
-ChVector<> initLoc(0,0, 1.0);
+ChVector<> initLoc(0,0, 0.5);
 ChQuaternion<> initRot(1, 0, 0, 0);
 
 // Visualization type for vehicle parts (PRIMITIVES, MESH, or NONE)
@@ -66,7 +66,7 @@ TireModelType tire_model = TireModelType::PAC89;
 ChVector<> trackPoint(0.0, 0.0, 1.75);
 
 // Simulation step sizes
-double step_size = 1e-5;
+double step_size =1e-3;
 double tire_step_size = step_size;
 
 // Simulation end time
@@ -136,12 +136,13 @@ int main(int argc, char* argv[]) {
         else{
             std::cout<<"RtL 35mph"<<std::endl;
         }
+        target_speed = target_speed*mph_to_ms;
     }
     else{
         std::cout<<"RtL 35mph"<<std::endl;
     }
 
-    target_speed = target_speed*mph_to_ms;
+    
 
     // if an additional parameter given, run at that speed instead
     // if(argc > 3){
@@ -175,12 +176,12 @@ int main(int argc, char* argv[]) {
     // ------------------
 
     RigidTerrain terrain(wvp.GetSystem());
-    terrain.SetContactFrictionCoefficient(0.8f);
+    terrain.SetContactFrictionCoefficient(2.8f);
     terrain.SetContactRestitutionCoefficient(0.01f);
     terrain.SetContactMaterialProperties(2e7f, 0.3f);
     terrain.SetColor(ChColor(0.8f, 0.8f, 0.5f));
     terrain.SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 20, 20);
-    terrain.Initialize(0, 4000, 300);
+    terrain.Initialize(0, 1000, 30);
 
     //create the driver -> path follower
     /*auto path = ChBezierCurve::read(vehicle::GetDataFile(path_file));

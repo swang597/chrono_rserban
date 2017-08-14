@@ -37,6 +37,7 @@
 
 #include <chrono>
 #include <thread>
+#include <math.h>
 
 using namespace chrono;
 using namespace chrono::vehicle;
@@ -62,7 +63,7 @@ TireModelType tire_model = TireModelType::PAC89;
 ChVector<> trackPoint(0.0, 0.0, 1.75);
 
 // Simulation step sizes
-double step_size = 1e-5;
+double step_size = 1e-4;
 double tire_step_size = step_size;
 
 // Simulation end time
@@ -190,6 +191,34 @@ int main(int argc, char* argv[]) {
 
 
 
+    csv << "time";
+    csv << "throttle";
+    csv << "MotorSpeed";
+    csv << "CurrentTransmissionGear";
+    for(int i=0;i<4;i++){
+        csv << "WheelTorque";
+    }
+    for(int i=0;i<4;i++){
+        csv << "WheelAngVelX";
+        csv << "WheelAngVelY";
+        csv << "WheelAngVelZ";
+    }
+    csv << "VehicleSpeed";
+    csv << "VehicleDriverAccelerationX";
+    csv << "VehicleDriverAccelerationY";
+    csv << "VehicleDriverAccelerationZ";
+
+    for(int i=0;i<4;i++){
+        csv << "TireForce";
+    }
+    csv << "EngineTorque";
+
+    csv << std::endl;
+
+
+
+
+
 
     // ---------------
     // Simulation loop
@@ -247,6 +276,14 @@ int main(int argc, char* argv[]) {
         double steering_input = driver.GetSteering();
         double braking_input = driver.GetBraking();
 
+
+        if(time<3) {
+            throttle_input = 0;
+        }
+        else if(time < 4){
+            throttle_input = 1-exp(-8*(time-3));
+        }
+
         // Update modules (process inputs from other modules)
         driver.Synchronize(time);
         terrain.Synchronize(time);
@@ -270,6 +307,7 @@ int main(int argc, char* argv[]) {
         if(data_output && step_number % output_steps == 0){
             std::cout<<time<<std::endl;
             csv << time;
+            csv << throttle_input;
             csv << wvp.GetPowertrain().GetMotorSpeed();
             csv << wvp.GetPowertrain().GetCurrentTransmissionGear();
             for(int i=0;i<4;i++){
@@ -284,6 +322,8 @@ int main(int argc, char* argv[]) {
             for(int i=0;i<4;i++){
                 csv << wvp.GetTire(i)->GetTireForce().force.z();
             }
+
+            csv << wvp.GetPowertrain().GetMotorTorque();
 
 
             csv << std::endl;

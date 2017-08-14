@@ -102,8 +102,8 @@ const double WVP_DoubleWishboneRear::m_springRestLength = .831;//+.051;
 /*const double WVP_DoubleWishboneRear::m_springCoefficient = 769149.000;*/
 
 
-const double frontSpringPreLoad = 5750.0;
-const double rearSpringPreLoad = 3400.0;
+const double frontSpringPreLoad = 5200.0;
+const double rearSpringPreLoad = 2500.0;
 
 // -----------------------------------------------------------------------------
 // WVP suspension spring functor class

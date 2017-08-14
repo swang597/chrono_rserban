@@ -38,7 +38,7 @@ using namespace chrono::vehicle::wvp;
 // =============================================================================
 
 // Initial vehicle location and orientation
-ChVector<> initLoc(0, 0, 1.0);
+ChVector<> initLoc(0, 0, 0.5);
 ChQuaternion<> initRot(1, 0, 0, 0);
 
 // Visualization type for vehicle parts (PRIMITIVES, MESH, or NONE)
@@ -49,13 +49,13 @@ VisualizationType wheel_vis_type = VisualizationType::NONE;
 VisualizationType tire_vis_type = VisualizationType::PRIMITIVES;
 
 // Type of tire model (RIGID, FIALA, PAC89)
-TireModelType tire_model = TireModelType::PAC89;
+TireModelType tire_model = TireModelType::RIGID;
 
 // Point on chassis tracked by the camera
 ChVector<> trackPoint(0.0, 0.0, 1.75);
 
 // Simulation step sizes
-double step_size = 1e-4;
+double step_size = 1e-3;
 double tire_step_size = step_size;
 
 // Simulation end time
@@ -77,6 +77,7 @@ int main(int argc, char* argv[]) {
     wvp.SetInitPosition(ChCoordsys<>(initLoc, initRot));
     wvp.SetTireType(tire_model);
     wvp.SetTireStepSize(tire_step_size);
+    wvp.SetInitFwdVel(0.0);
     wvp.Initialize();
 
     wvp.SetChassisVisualizationType(chassis_vis_type);
@@ -97,7 +98,7 @@ int main(int argc, char* argv[]) {
     terrain.SetContactMaterialProperties(2e7f, 0.3f);
     terrain.SetColor(ChColor(0.8f, 0.8f, 0.5f));
     terrain.SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 200);
-    terrain.Initialize(0, 200, 200);
+    terrain.Initialize(0, 600, 600);
 
     // -------------------------------------
     // Create the vehicle Irrlicht interface
@@ -165,18 +166,18 @@ int main(int argc, char* argv[]) {
         //     <<"\t|Wheel1|"<<(qW1.Q_to_NasaAngles().z()*180/CH_C_PI) - (qV.Q_to_NasaAngles().z()*180/CH_C_PI)<<std::endl;
 
 
-        // auto susp0 = std::static_pointer_cast<ChDoubleWishbone>(wvp.GetVehicle().GetSuspension(0));
-        // auto susp1 = std::static_pointer_cast<ChDoubleWishbone>(wvp.GetVehicle().GetSuspension(1));
+        auto susp0 = std::static_pointer_cast<ChDoubleWishbone>(wvp.GetVehicle().GetSuspension(0));
+        auto susp1 = std::static_pointer_cast<ChDoubleWishbone>(wvp.GetVehicle().GetSuspension(1));
 
-        // std::cout<<"SpringDef0|"<<susp0->GetSpringLength(LEFT)
-        // // <<"|force0|"<<susp0->GetSpringForce(LEFT);
-        // <<"|SpringDef1|"<<susp0->GetSpringLength(RIGHT)
-        // // <<"|force1|"<<susp0->GetSpringForce(RIGHT);
-        // <<"|SpringDef2|"<<susp1->GetSpringLength(LEFT)
-        // // <<"|force2|"<<susp1->GetSpringForce(LEFT);
-        // <<"|SpringDef3|"<<susp1->GetSpringLength(RIGHT)
-        // // <<"|force3|"<<susp1->GetSpringForce(RIGHT)
-        // <<std::endl;
+        std::cout<<"SpringDef0|"<<susp0->GetSpringLength(LEFT)
+        // <<"|force0|"<<susp0->GetSpringForce(LEFT);
+        <<"|SpringDef1|"<<susp0->GetSpringLength(RIGHT)
+        // <<"|force1|"<<susp0->GetSpringForce(RIGHT);
+        <<"|SpringDef2|"<<susp1->GetSpringLength(LEFT)
+        // <<"|force2|"<<susp1->GetSpringForce(LEFT);
+        <<"|SpringDef3|"<<susp1->GetSpringLength(RIGHT)
+        // <<"|force3|"<<susp1->GetSpringForce(RIGHT)
+        <<std::endl;
 
         // std::cout<<wvp.GetVehicle().GetWheelPos(0).x()<<"|"<<wvp.GetVehicle().GetWheelPos(0).y()<<"|"<<wvp.GetVehicle().GetWheelPos(0).z()<<"|||"
         //     <<wvp.GetVehicle().GetWheelPos(2).x()<<"|"<<wvp.GetVehicle().GetWheelPos(2).y()<<"|"<<wvp.GetVehicle().GetWheelPos(2).z()<<std::endl;
@@ -204,10 +205,10 @@ int main(int argc, char* argv[]) {
         /*}*/
         /*std::cout<<std::endl;*/
 
-        /*std::cout<<"Vehicle COM|"<<wvp.GetVehicle().GetVehicleCOMPos().x()<<"|"
-          <<wvp.GetVehicle().GetVehicleCOMPos().y()<<"|"
-          <<(wvp.GetVehicle().GetVehicleCOMPos().z()-0.548)*/
-          /*std::cout<<std::endl;*/
+        // std::cout<<"Vehicle COM|"<<wvp.GetVehicle().GetVehicleCOMPos().x()-wvp.GetVehicle().GetVehiclePos().x()<<"|"
+        //   <<wvp.GetVehicle().GetVehicleCOMPos().y()-wvp.GetVehicle().GetVehiclePos().y()<<"|"
+        //   <<(wvp.GetVehicle().GetVehicleCOMPos().z()-wvp.GetVehicle().GetVehiclePos().z());
+        // std::cout<<std::endl;
 
         /*std::cout<<"COM: "<< wvp.GetChassis()->GetCOMPos().x() <<", "<<wvp.GetChassis()->GetCOMPos().y()<<", "<<wvp.GetChassis()->GetCOMPos().z()<< std::endl;*/
 

@@ -66,7 +66,7 @@ TireModelType tire_model = TireModelType::PAC89;
 ChVector<> trackPoint(0.0, 0.0, 1.75);
 
 // Simulation step sizes
-double step_size = 1e-5;
+double step_size = 1e-3;
 double tire_step_size = step_size;
 
 // Simulation end time
@@ -107,10 +107,15 @@ bool LtR = false;
 int main(int argc, char* argv[]) {
     //send in args: filename time speed LtR(or RtL)
     //read from args
-    if(argc > 3){
+    if(argc > 4){
         tend = atof(argv[1]);
         target_speed = atof(argv[2])*mph_to_ms;
         turn_direction = atof(argv[3]);
+        step_size = atof(argv[4]);
+        tire_step_size = step_size;
+
+        output_file_name += std::to_string((int)(step_size*1000000));
+
         if(turn_direction>0) output_file_name += "Left";
         else{output_file_name += "Right";}
 
