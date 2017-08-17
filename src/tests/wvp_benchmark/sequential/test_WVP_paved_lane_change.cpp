@@ -20,7 +20,7 @@
 //
 // =============================================================================
 
-#define USE_IRRLICHT
+//#define USE_IRRLICHT
 
 
 #include "chrono_vehicle/ChConfigVehicle.h"
@@ -66,7 +66,7 @@ TireModelType tire_model = TireModelType::PAC89;
 ChVector<> trackPoint(0.0, 0.0, 1.75);
 
 // Simulation step sizes
-double step_size =1e-3;
+double step_size =1e-4;
 double tire_step_size = step_size;
 
 // Simulation end time
@@ -176,7 +176,7 @@ int main(int argc, char* argv[]) {
     // ------------------
 
     RigidTerrain terrain(wvp.GetSystem());
-    terrain.SetContactFrictionCoefficient(2.8f);
+    terrain.SetContactFrictionCoefficient(0.8f);
     terrain.SetContactRestitutionCoefficient(0.01f);
     terrain.SetContactMaterialProperties(2e7f, 0.3f);
     terrain.SetColor(ChColor(0.8f, 0.8f, 0.5f));

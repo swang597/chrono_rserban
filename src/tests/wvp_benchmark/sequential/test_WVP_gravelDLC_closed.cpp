@@ -20,7 +20,7 @@
 //
 // =============================================================================
 
-// #define USE_IRRLICHT
+//#define USE_IRRLICHT
 
 
 #include "chrono_vehicle/ChConfigVehicle.h"
@@ -66,7 +66,7 @@ TireModelType tire_model = TireModelType::PAC89;
 ChVector<> trackPoint(0.0, 0.0, 1.75);
 
 // Simulation step sizes
-double step_size = 1e-5;
+double step_size = 1e-4;
 double tire_step_size = step_size;
 
 // Simulation end time
@@ -94,7 +94,6 @@ std::string path_fileRtL("wvp/WVP_NATO_DLC_RtL.txt");
 
 std::string steering_controller_file("wvp/SteeringController.json");
 std::string speed_controller_file("wvp/SpeedController.json");
-
 
 std::string output_file_name("DLC_Gravel_closed_");
 
@@ -149,7 +148,7 @@ int main(int argc, char* argv[]) {
     // ------------------
 
     RigidTerrain terrain(wvp.GetSystem());
-    terrain.SetContactFrictionCoefficient(0.5f);
+    terrain.SetContactFrictionCoefficient(0.4f);
     terrain.SetContactRestitutionCoefficient(0.01f);
     terrain.SetContactMaterialProperties(2e7f, 0.3f);
     terrain.SetColor(ChColor(0.8f, 0.8f, 0.5f));
@@ -227,15 +226,15 @@ int main(int argc, char* argv[]) {
     double time = 0;
 
     //output headings for the saved data file
-    csv <<"time"<<"Steering Angle"<<"vehicle Speed" ;
+    csv <<"time"<<"SteeringAngle"<<"vehicleSpeed" ;
 
-    csv <<"Chassis Attitude"<<"Chassis Bank"<<"Chassis Heading";
-    csv <<"Chassis Omega X"<<"Chassis Omega Y"<<"Chassis Omega Z";
+    csv <<"ChassisAttitude"<<"ChassisBank"<<"ChassisHeading";
+    csv <<"ChassisOmegaX"<<"ChassisOmegaY"<<"ChassisOmegaZ";
 
-    csv <<"Lateral Acceleration"<<"W0 long"<<"W0 lat"<<"W0 vert"<<"W1 long"<<"W1 lat"<<"W1 vert";
-    csv <<"W2 long"<<"W2 lat"<<"W2 vert"<<"W3 long"<<"W3 lat"<<"W3 vert";
-    csv <<"W0 Pos x"<<"W0 Pos Y"<<"W0 Pos Z"<<"W1 Pos x"<<"W1 Pos Y"<<"W1 Pos Z";
-    csv <<"W2 Pos x"<<"W2 Pos Y"<<"W2 Pos Z"<<"W3 Pos x"<<"W3 Pos Y"<<"W3 Pos Z"<< std::endl;
+    csv <<"LateralAcceleration"<<"W0long"<<"W0lat"<<"W0vert"<<"W1long"<<"W1lat"<<"W1vert";
+    csv <<"W2long"<<"W2lat"<<"W2vert"<<"W3long"<<"W3lat"<<"W3vert";
+    csv <<"W0Pos x"<<"W0PosY"<<"W0PosZ"<<"W1Posx"<<"W1PosY"<<"W1PosZ";
+    csv <<"W2Pos x"<<"W2PosY"<<"W2PosZ"<<"W3Posx"<<"W3PosY"<<"W3PosZ"<< std::endl;
 
 
 #ifdef USE_IRRLICHT
