@@ -41,7 +41,8 @@ WVP::WVP()
       m_pacejkaParamFile(""),
       m_initFwdVel(0),
       m_initPos(ChCoordsys<>(ChVector<>(0, 0, 1), QUNIT)),
-      m_initOmega({0, 0, 0, 0}) {}
+      m_initOmega({0, 0, 0, 0}),
+      m_apply_drag(false) {}
 
 WVP::WVP(ChSystem* system)
     : m_system(system),
@@ -56,7 +57,8 @@ WVP::WVP(ChSystem* system)
       m_pacejkaParamFile(""),
       m_initFwdVel(0),
       m_initPos(ChCoordsys<>(ChVector<>(0, 0, 1), QUNIT)),
-      m_initOmega({0, 0, 0, 0}) {}
+      m_initOmega({0, 0, 0, 0}),
+      m_apply_drag(false) {}
 
 WVP::~WVP() {
     delete m_vehicle;
@@ -68,6 +70,15 @@ WVP::~WVP() {
 }
 
 // -----------------------------------------------------------------------------
+void WVP::SetAerodynamicDrag(double Cd, double area, double air_density) {
+    m_Cd = Cd;
+    m_area = area;
+    m_air_density = air_density;
+
+    m_apply_drag = true;
+}
+
+// -----------------------------------------------------------------------------
 void WVP::Initialize() {
     // Create and initialize the WVP vehicle
     m_vehicle = m_system ? new WVP_Vehicle(m_system, m_fixed, m_chassisCollisionType)
@@ -75,6 +86,11 @@ void WVP::Initialize() {
 
     m_vehicle->SetInitWheelAngVel(m_initOmega);
     m_vehicle->Initialize(m_initPos, m_initFwdVel);
+
+    // If specified, enable aerodynamic drag
+    if (m_apply_drag) {
+        m_vehicle->GetChassis()->SetAerodynamicDrag(m_Cd, m_area, m_air_density);
+    }
 
     // Create and initialize the powertrain system
     m_powertrain = new WVP_SimpleMapPowertrain;
