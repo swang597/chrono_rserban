@@ -48,8 +48,8 @@ void WVP_SimpleMapPowertrain::SetEngineTorqueMaps(ChFunction_Recorder& map0, ChF
     map0.AddPoint(2400 * rpm2rads, -100.0);
     map0.AddPoint(2700 * rpm2rads, -800.0);
 
-    mapF.AddPoint(-100 * rpm2rads, 406.7*drive_eff);
-    mapF.AddPoint(800 * rpm2rads, 517.9*drive_eff);
+    mapF.AddPoint(-100 * rpm2rads, 806.7*drive_eff); //406.7
+    mapF.AddPoint(800 * rpm2rads, 817.9*drive_eff); //517.9
     mapF.AddPoint(1000 * rpm2rads, 926.0*drive_eff);
     mapF.AddPoint(1200 * rpm2rads, 1216.2*drive_eff);
     mapF.AddPoint(1400 * rpm2rads, 1300.2*drive_eff);

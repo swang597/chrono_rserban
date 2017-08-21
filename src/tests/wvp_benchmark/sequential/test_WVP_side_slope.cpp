@@ -142,6 +142,8 @@ int main(int argc, char* argv[]) {
     wvp.SetTireStepSize(tire_step_size);
     wvp.Initialize();
 
+    wvp.GetSystem()->Set_G_acc(gravity);
+
     wvp.SetChassisVisualizationType(chassis_vis_type);
     wvp.SetSuspensionVisualizationType(suspension_vis_type);
     wvp.SetSteeringVisualizationType(steering_vis_type);
