@@ -28,6 +28,7 @@
 #include <thrust/transform_reduce.h>
 
 #include "chrono/core/ChTimer.h"
+#include "chrono/parallel/ChOpenMP.h"
 
 #include "chrono_parallel/math/real3.h"
 #include "chrono_parallel/collision/ChCollision.h"
@@ -145,6 +146,17 @@ void RigidBoundingBox_par(const custom_vector<real3>& aabb_min,
 // =================================================================================
 
 int main(int argc, char* argv[]) {
+    // Set number of threads
+    int threads = 10;
+    int max_threads = CHOMPfunctions::GetNumProcs();
+    if (threads > max_threads)
+        threads = max_threads;
+    CHOMPfunctions::SetNumThreads(threads);
+
+#pragma omp parallel
+#pragma omp master
+    std::cout << "Using " << CHOMPfunctions::GetNumThreads() << " threads.\n" << std::endl;
+
     // Set an arbitrary number of bodies
     uint nbodies = 100;
 
@@ -156,7 +168,10 @@ int main(int argc, char* argv[]) {
     std::uniform_real_distribution<> dist_loc(-1.0, +1.0);
     std::uniform_real_distribution<> dist_size(0.0, +1.0);
 
-    uint nshapes = 10;
+    // Number of shapes
+    // - use a small number (e.g. 10) to check correctness
+    // - use a lrage number (1 million +) to check performance
+    uint nshapes = 1000000;
 
     // Set bounding boxes for the "shapes"
     custom_vector<real3> aabb_min(nshapes);
