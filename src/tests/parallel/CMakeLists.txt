@@ -26,6 +26,7 @@ ENDIF()
 SET(DEMOS
     rotate_gravity
     incline_particles
+    global_aabb
 )
 
 # Programs that require OpenGL
