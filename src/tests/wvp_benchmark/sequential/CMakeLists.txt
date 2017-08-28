@@ -29,6 +29,7 @@ SET(DEMOS
     test_WVP_slope_grade
     test_WVP_tractive_effort
     test_WVP_ride_quality
+    test_WPV_softsoil_traction
 )
 
 # ------------------------------------------------------------------------------
