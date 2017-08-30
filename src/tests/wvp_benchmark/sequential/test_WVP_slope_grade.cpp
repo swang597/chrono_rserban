@@ -20,7 +20,7 @@
 //
 // =============================================================================
 
-// #define USE_IRRLICHT
+#define USE_IRRLICHT
 
 
 #include "chrono_vehicle/ChConfigVehicle.h"

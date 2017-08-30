@@ -37,7 +37,10 @@ const std::string WVP_Pac89Tire::m_meshFile = "hmmwv/hmmwv_tire.obj";
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-WVP_Pac89Tire::WVP_Pac89Tire(const std::string& name) : ChPac89Tire(name) {}
+WVP_Pac89Tire::WVP_Pac89Tire(const std::string& name) : ChPac89Tire(name) {
+  //ChPac89Tire::SetGammaLimit(85);
+
+}
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
@@ -110,7 +113,7 @@ void WVP_Pac89Tire::SetPac89Params() {
 }
 
 double WVP_Pac89Tire::GetNormalStiffnessForce(double depth) const {
-    
+
     //ensure that depth is greater that 0
     if(depth < 0) depth = 0;
 

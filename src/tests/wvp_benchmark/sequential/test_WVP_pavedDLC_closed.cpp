@@ -20,7 +20,7 @@
 //
 // =============================================================================
 
-#define USE_IRRLICHT
+// #define USE_IRRLICHT
 
 
 #include "chrono_vehicle/ChConfigVehicle.h"
@@ -113,7 +113,7 @@ int main(int argc, char* argv[]) {
             LtR = true;
             path_file = path_fileLtR;
             output_file_name += "LtR";
-        }   
+        }
         else if(atof(argv[3])==1){ //0 = LTR, 1=RtL
             LtR = false;
             path_file = path_fileRtL;
@@ -184,7 +184,7 @@ int main(int argc, char* argv[]) {
     ballS->getMaterial(0).EmissiveColor = irr::video::SColor(0, 255, 0, 0);
     ballT->getMaterial(0).EmissiveColor = irr::video::SColor(0, 0, 255, 0);
 #endif
-    
+
     // -------------
     // Prepare output
     // -------------
@@ -240,7 +240,7 @@ int main(int argc, char* argv[]) {
 
 #ifdef USE_IRRLICHT
     while (app.GetDevice()->run()) {
-        
+
 
         //path visualization
         const ChVector<>& pS = driver.GetSteeringController().GetSentinelLocation();

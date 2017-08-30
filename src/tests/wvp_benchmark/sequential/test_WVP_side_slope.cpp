@@ -20,7 +20,7 @@
 //
 // =============================================================================
 
-//#define USE_IRRLICHT
+#define USE_IRRLICHT
 
 
 #include "chrono_vehicle/ChConfigVehicle.h"
@@ -33,14 +33,17 @@
 
 #include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"
+#include "chrono_vehicle/terrain/SCMDeformableTerrain.h"
 #include "chrono_models/vehicle/wvp/WVP_FollowerDataDriver.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
 #include "chrono/core/ChFileutils.h"
+
 
 #include "chrono_models/vehicle/wvp/WVP.h"
 
 #include <chrono>
 #include <thread>
+#include <math.h>
 
 using namespace chrono;
 using namespace chrono::vehicle;
@@ -49,10 +52,11 @@ using namespace chrono::vehicle::wvp;
 // =============================================================================
 
 // Initial vehicle location and orientation
-ChVector<> initLoc(0, 0, 1.0);
+ChVector<> initLoc(-180, 0, 0.5);
 ChQuaternion<> initRot(1, 0, 0, 0);
 
-ChVector<>gravity(0,2.80604,-9.353468);
+ChVector<>gravity(0,0,-9.81);
+ChVector<>slopegravity(0,0,-9.81);
 
 // Visualization type for vehicle parts (PRIMITIVES, MESH, or NONE)
 VisualizationType chassis_vis_type = VisualizationType::NONE;
@@ -62,13 +66,17 @@ VisualizationType wheel_vis_type = VisualizationType::NONE;
 VisualizationType tire_vis_type = VisualizationType::PRIMITIVES;
 
 // Type of tire model (RIGID, FIALA, PAC89)
-TireModelType tire_model = TireModelType::PAC89;
+TireModelType tire_model = TireModelType::RIGID;
 
 // Point on chassis tracked by the camera
 ChVector<> trackPoint(0.0, 0.0, 1.75);
 
+double terrainLength = 400;
+double terrainWidth = 5;
+double terrainHeight = 0;
+
 // Simulation step sizes
-double step_size =1e-4;
+double step_size =1e-3;
 double tire_step_size = step_size;
 
 // Simulation end time
@@ -102,11 +110,14 @@ std::string steering_input_file("wvp/30Per Side Slope - Left Side Down Serpentin
 
 bool LtR = false;
 
+
 // =============================================================================
 
 int main(int argc, char* argv[]) {
     //send in args: filename time speed LtR(or RtL)
     //read from args
+
+    //arg1=simulation length, arg2=target speed, arg3=0 for left side down, arg3=1 for right side down
     if(argc > 2){
         tend = atof(argv[1]);
         target_speed = atof(argv[2]);
@@ -119,8 +130,7 @@ int main(int argc, char* argv[]) {
         else if(atof(argv[3])==1){ //0 = LTR, 1=RtL
             steering_input_file = steering_input_fileLeft;
             output_file_name = "RightSideDown" + std::to_string((int)target_speed);
-            gravity = ChVector<>({0,-2.80604,-9.353468});
-            
+            gravity = ChVector<>({0,-2.80604,-9.353468}); 
         }
 
         target_speed = target_speed*mph_to_ms;
@@ -128,6 +138,7 @@ int main(int argc, char* argv[]) {
     else{
         std::cout<<"Standard Setup"<<std::endl;
     }
+
 
 
     // --------------
@@ -162,32 +173,25 @@ int main(int argc, char* argv[]) {
     terrain.SetContactMaterialProperties(2e7f, 0.3f);
     terrain.SetColor(ChColor(0.8f, 0.8f, 0.5f));
     terrain.SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 20, 20);
-    terrain.Initialize(0, 1000, 30);
+    terrain.Initialize(0, 2000, 1000);
 
-    std::cout<<"loaded vehicle and terrain"<<std::endl;
-    //create the driver -> path follower
-    // auto path = ChBezierCurve::read(vehicle::GetDataFile(path_file));
-    // ChPathFollowerDriver driver(wvp.GetVehicle(), vehicle::GetDataFile(steering_controller_file),
-    //                             vehicle::GetDataFile(speed_controller_file), path, "my_path", target_speed, false);
 
-   //create the path follower/data follower combined driver
+
     auto path = ChBezierCurve::read(vehicle::GetDataFile(path_file));
-    //driver for open loop controller
+    // //driver for open loop controller
     WVP_FollowerDataDriver driver(wvp.GetVehicle(),
             vehicle::GetDataFile(steering_controller_file),
             vehicle::GetDataFile(speed_controller_file), path, "side slope slalom",
-            target_speed, vehicle::GetDataFile(steering_input_file), 1, 2, 20.0
+            target_speed, vehicle::GetDataFile(steering_input_file), 1, 2, 20.0 //1,2,20 corresponds to read column 1 for time, 2 for steering, and wait 20 seconds before switching from closed loop to open loop
             );
 
-    //for closed loop, can just not switch to data for now
-    // WVP_FollowerDataDriver driver(wvp.GetVehicle(),
-    //         vehicle::GetDataFile(steering_controller_file),
-    //         vehicle::GetDataFile(speed_controller_file), path, "double_lane_change",
-    //         target_speed, vehicle::GetDataFile(steering_input_file), 1, 3, 800.0
-    //         );
 
-
+    //create the driver
+    // auto path = ChBezierCurve::read(vehicle::GetDataFile(path_file));
+    // ChPathFollowerDriver driver(wvp.GetVehicle(), vehicle::GetDataFile(steering_controller_file),
+    //                             vehicle::GetDataFile(speed_controller_file), path, "my_path", target_speed, false);
     driver.Initialize();
+
 
 
 #ifdef USE_IRRLICHT
@@ -210,7 +214,7 @@ int main(int argc, char* argv[]) {
     ballS->getMaterial(0).EmissiveColor = irr::video::SColor(0, 255, 0, 0);
     ballT->getMaterial(0).EmissiveColor = irr::video::SColor(0, 0, 255, 0);
 #endif
-    
+
     // -------------
     // Prepare output
     // -------------
@@ -243,17 +247,13 @@ int main(int argc, char* argv[]) {
     // Simulation loop
     // ---------------
 
-    std::cout<<"data at: "<<vehicle::GetDataFile(steering_controller_file)<<std::endl;
-    std::cout<<"data at: "<<vehicle::GetDataFile(speed_controller_file)<<std::endl;
-    std::cout<<"data at: "<<vehicle::GetDataFile(path_file)<<std::endl;
-    std::cout<<"data at: "<<vehicle::GetDataFile(steering_input_file)<<std::endl;
-
     int step_number = 0;
     int render_frame = 0;
 
     double time = 0;
 
     //output headings for the saved data file
+        //output headings for the saved data file
     csv <<"time"<<"Steering Angle"<<"vehicle Speed";
 
     csv <<"Chassis Attitude"<<"Chassis Bank"<<"Chassis Heading";
@@ -262,12 +262,13 @@ int main(int argc, char* argv[]) {
     csv <<"Lateral Acceleration"<<"W0 long"<<"W0 lat"<<"W0 vert"<<"W1 long"<<"W1 lat"<<"W1 vert";
     csv <<"W2 long"<<"W2 lat"<<"W2 vert"<<"W3 long"<<"W3 lat"<<"W3 vert";
     csv <<"W0 Pos x"<<"W0 Pos Y"<<"W0 Pos Z"<<"W1 Pos x"<<"W1 Pos Y"<<"W1 Pos Z";
-    csv <<"W2 Pos x"<<"W2 Pos Y"<<"W2 Pos Z"<<"W3 Pos x"<<"W3 Pos Y"<<"W3 Pos Z"<< std::endl;
+    csv <<"W2 Pos x"<<"W2 Pos Y"<<"W2 Pos Z"<<"W3 Pos x"<<"W3 Pos Y"<<"W3 Pos Z";
+    csv << "GravityX"<<"GravityY"<<"GravityZ"<< std::endl;
 
 
 #ifdef USE_IRRLICHT
     while (app.GetDevice()->run()) {
-        
+
 
         //path visualization
         const ChVector<>& pS = driver.GetSteeringController().GetSentinelLocation();
@@ -291,6 +292,10 @@ int main(int argc, char* argv[]) {
 #endif
 
         time = wvp.GetSystem()->GetChTime();
+
+        if(time>=10.0 && time<10.1) wvp.GetSystem()->Set_G_acc(slopegravity);
+
+
         // Collect output data from modules (for inter-module communication)
         double throttle_input = driver.GetThrottle();
         double steering_input = driver.GetSteering();
@@ -321,9 +326,10 @@ int main(int argc, char* argv[]) {
 
         }
 
+
         if(data_output && step_number % output_steps == 0){
             //output time to check simulation is running
-            std::cout<<time<<std::endl;
+            std::cout<<time<<"|"<<driver.GetSteeringController().GetTargetLocation().x()<<"|"<<std::endl;
 
             csv <<time<<steering_input<<wvp.GetVehicle().GetVehicleSpeed();
             ChQuaternion<> q= wvp.GetVehicle().GetVehicleRot();
@@ -340,6 +346,7 @@ int main(int argc, char* argv[]) {
                 csv << wvp.GetVehicle().GetWheelPos(i);
 
             }
+            csv << wvp.GetSystem()->Get_G_acc();
             csv << std::endl;
         }
 
@@ -355,3 +362,4 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
+

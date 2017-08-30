@@ -113,6 +113,8 @@ bool LtR = false;
 int main(int argc, char* argv[]) {
     //send in args: filename time speed LtR(or RtL)
     //read from args
+
+    //arg1: simulationg length, arg2=max force to be ramped to over t=10 to t=100
     double fullForce = 0;
     if(argc > 2){
         tend = atof(argv[1]);
@@ -196,10 +198,9 @@ int main(int argc, char* argv[]) {
     auto drawForce = std::make_shared<ChForce>();
     wvp.GetVehicle().GetChassisBody()->AddForce(drawForce);
     drawForce->SetMode(ChForce::ForceType::FORCE); // force or torque
-    drawForce->SetFrame(ChForce::ReferenceFrame::WORLD);
+    drawForce->SetFrame(ChForce::ReferenceFrame::BODY);
     drawForce->SetAlign(ChForce::AlignmentFrame::WORLD_DIR);
-
-    //drawForce->SetF_x(std::make_shared<ChFunction_Const>(0));
+    drawForce->SetVrelpoint(wvp.GetChassis()->GetLocalPosCOM());
     drawForce->SetF_x(std::make_shared<ChFunction_Recorder>(forceFunct));
 
     drawForce->SetF_y(std::make_shared<ChFunction_Const>(0));

@@ -252,6 +252,13 @@ int main(int argc, char* argv[]) {
     }
     csv << "EngineTorque";
 
+    csv <<"W0 Pos x"<<"W0 Pos Y"<<"W0 Pos Z"<<"W1 Pos x"<<"W1 Pos Y"<<"W1 Pos Z";
+    csv <<"W2 Pos x"<<"W2 Pos Y"<<"W2 Pos Z"<<"W3 Pos x"<<"W3 Pos Y"<<"W3 Pos Z";
+
+    for(int i=0;i<4;i++){
+        csv << wvp.GetVehicle().GetWheelPos(i);
+    }
+
     csv << std::endl;
 
 
