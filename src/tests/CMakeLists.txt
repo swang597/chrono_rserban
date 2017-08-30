@@ -38,6 +38,10 @@ if(ENABLE_MODULE_PARALLEL)
     add_subdirectory(rolling)
 endif()
 
+if(ENABLE_MODULE_PARALLEL AND ENABLE_MODULE_IRRLICHT AND ENABLE_MODULE_OPENGL)
+    add_subdirectory(body_force)
+endif()
+
 if(ENABLE_MODULE_VEHICLE AND ENABLE_MODULE_PARALLEL)
     add_subdirectory(go_nogo)
     add_subdirectory(wvp_benchmark/parallel)
