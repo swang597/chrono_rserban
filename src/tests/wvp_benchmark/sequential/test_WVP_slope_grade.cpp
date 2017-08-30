@@ -20,7 +20,7 @@
 //
 // =============================================================================
 
-#define USE_IRRLICHT
+//#define USE_IRRLICHT
 
 
 #include "chrono_vehicle/ChConfigVehicle.h"
@@ -111,6 +111,8 @@ bool LtR = false;
 int main(int argc, char* argv[]) {
     //send in args: filename time speed LtR(or RtL)
     //read from args
+
+    //arg1=simulation length, arg2=angle of slope in degrees
     if(argc > 2){
         tend = atof(argv[1]);
         double angle = atof(argv[2]);

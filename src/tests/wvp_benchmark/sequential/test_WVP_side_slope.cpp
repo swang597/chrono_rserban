@@ -20,7 +20,7 @@
 //
 // =============================================================================
 
-#define USE_IRRLICHT
+//#define USE_IRRLICHT
 
 
 #include "chrono_vehicle/ChConfigVehicle.h"
@@ -66,7 +66,7 @@ VisualizationType wheel_vis_type = VisualizationType::NONE;
 VisualizationType tire_vis_type = VisualizationType::PRIMITIVES;
 
 // Type of tire model (RIGID, FIALA, PAC89)
-TireModelType tire_model = TireModelType::RIGID;
+TireModelType tire_model = TireModelType::PAC89;
 
 // Point on chassis tracked by the camera
 ChVector<> trackPoint(0.0, 0.0, 1.75);
@@ -76,7 +76,7 @@ double terrainWidth = 5;
 double terrainHeight = 0;
 
 // Simulation step sizes
-double step_size =1e-3;
+double step_size =1e-4;
 double tire_step_size = step_size;
 
 // Simulation end time
