@@ -1,3 +1,7 @@
+IF(NOT ENABLE_MODULE_PARALLEL OR NOT ENABLE_MODULE_OPENGL)
+  RETURN()
+ENDIF()
+
 # ------------------------------------------------------------------------------
 # Additional include paths and libraries
 # ------------------------------------------------------------------------------
@@ -25,6 +29,7 @@ ENDIF()
 # Programs that can work with or without OpenGL
 SET(DEMOS
     test_WVP_parallel
+    test_WVP_granular_traction
 )
 
 # ------------------------------------------------------------------------------
