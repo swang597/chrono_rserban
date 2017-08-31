@@ -66,13 +66,12 @@ using std::endl;
 // Specification of the terrain
 // -----------------------------------------------------------------------------
 
-// Container
+// Patch half-dimensions
 double hdimX = 3.5;
 double hdimY = 1.5;
-double hdimZ = 0.5;
 
 // Minimum number of particles
-unsigned int num_particles = 45000;
+unsigned int num_particles = 80000;
 
 // Fixed base layer?
 bool rough = false;
@@ -81,15 +80,18 @@ bool rough = false;
 bool moving_patch = true;
 
 // Particle radius (mm)
-double radius = 20;
+double radius = 15;
 
 // Granular material density (kg/m3)
-double rho = 2000;
+// Assume a bulk density of 1650 and a void ratio of 30%
+double rho = 2350;
 
 // Coefficient of friction
-double mu = 0.9;
+// This needs to be calibrated!
+double mu = 0.75;
 
 // Cohesion pressure (kPa)
+// This needs to be calibrated!  
 double coh = 400;
 
 // Moving patch parameters
@@ -118,14 +120,14 @@ double mph_to_ms = 0.44704;
 double target_speed = 5 * mph_to_ms;
 
 // Drawbar pull force
-double full_force = 1000;
+double full_force = 50000;
 
 // -----------------------------------------------------------------------------
 // Timed events
 // -----------------------------------------------------------------------------
 
 // Total simulation duration.
-double time_end = 7;
+double time_end = 50;
 
 // Time when the vehicle is created (allows for granular material settling)
 double time_create_vehicle = 0.05;//// 0.25;
@@ -134,12 +136,12 @@ double time_create_vehicle = 0.05;//// 0.25;
 double delay_start_engine = 0.25;
 double time_start_engine = time_create_vehicle + delay_start_engine;
 
-// Delay before start applying drawbar force
-double delay_start_drawbar = 4;
+// Delay before start applying drawbar force (allows for reaching target speed)
+double delay_start_drawbar = 10;
 double time_start_drawbar = time_start_engine + delay_start_drawbar;
 
 // Time to ramp to full drawbar pull force
-double delay_max_drawbar = 10;
+double delay_max_drawbar = 40;
 double time_max_drawbar = time_start_drawbar + delay_max_drawbar;
 
 // -----------------------------------------------------------------------------
@@ -150,7 +152,7 @@ double time_max_drawbar = time_start_drawbar + delay_max_drawbar;
 bool thread_tuning = false;
 
 // Number of threads
-int threads = 8;
+int threads = 20;
 
 // Integration step size
 double time_step = 1e-3;
@@ -286,9 +288,10 @@ int main(int argc, char* argv[]) {
     system->GetSettings()->collision.fixed_bins = true;
 
     // Specify active box.
-    system->GetSettings()->collision.use_aabb_active = false;
-    system->GetSettings()->collision.aabb_min = real3(-1.1 * hdimX, -1.1 * hdimY, 0);
-    system->GetSettings()->collision.aabb_max = real3(+1.1 * hdimX, +1.1 * hdimY, 10 * hdimZ);
+    // NOTE: this would need to be moved with the patch!
+    ////system->GetSettings()->collision.use_aabb_active = false;
+    ////system->GetSettings()->collision.aabb_min = real3(-1.1 * hdimX, -1.1 * hdimY, 0);
+    ////system->GetSettings()->collision.aabb_max = real3(+1.1 * hdimX, +1.1 * hdimY, 10);
 
     // ------------------
     // Create the terrain
