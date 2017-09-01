@@ -553,6 +553,8 @@ ChPathFollowerDriver* CreateDriver(WVP* wvp) {
 
     driver->Initialize();
 
+    driver->ExportPathPovray(out_dir);
+
     return driver;
 }
 
