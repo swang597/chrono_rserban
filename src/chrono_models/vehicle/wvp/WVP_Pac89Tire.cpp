@@ -38,7 +38,7 @@ const std::string WVP_Pac89Tire::m_meshFile = "hmmwv/hmmwv_tire.obj";
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 WVP_Pac89Tire::WVP_Pac89Tire(const std::string& name) : ChPac89Tire(name) {
-  //ChPac89Tire::SetGammaLimit(85);
+  ChPac89Tire::SetGammaLimit(85);
 
 }
 

@@ -114,7 +114,7 @@ int main(int argc, char* argv[]) {
     //send in args: filename time speed LtR(or RtL)
     //read from args
 
-    //arg1: simulationg length, arg2=max force to be ramped to over t=10 to t=100
+    //arg1: simulationg length, arg2=max force to be ramped to over t=10 to t=20 and hold
     double fullForce = 0;
     if(argc > 2){
         tend = atof(argv[1]);
@@ -189,7 +189,7 @@ int main(int argc, char* argv[]) {
     ChFunction_Recorder forceFunct;
     forceFunct.AddPoint(0,0);
     forceFunct.AddPoint(10,0);
-    forceFunct.AddPoint(100,-fullForce);
+    forceFunct.AddPoint(20.0,-fullForce);
 
     // forceFunct.AddPoint(0,0);
     // forceFunct.AddPoint(3,0);
