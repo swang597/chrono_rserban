@@ -20,9 +20,9 @@
 //
 // =============================================================================
 
-#define USE_IRRLICHT
+//#define USE_IRRLICHT
 
-#define MAC_PATH_HACK
+//#define MAC_PATH_HACK
 
 #include "chrono_vehicle/ChConfigVehicle.h"
 #include "chrono_vehicle/ChVehicleModelData.h"
@@ -259,10 +259,9 @@ int main(int argc, char* argv[]) {
     auto drawForce = std::make_shared<ChForce>();
     wvp.GetVehicle().GetChassisBody()->AddForce(drawForce);
     drawForce->SetMode(ChForce::ForceType::FORCE); // force or torque
-    drawForce->SetFrame(ChForce::ReferenceFrame::WORLD);
+    drawForce->SetFrame(ChForce::ReferenceFrame::BODY);
     drawForce->SetAlign(ChForce::AlignmentFrame::WORLD_DIR);
-
-    //drawForce->SetF_x(std::make_shared<ChFunction_Const>(0));
+    drawForce->SetVrelpoint(wvp.GetChassis()->GetLocalPosCOM());
     drawForce->SetF_x(std::make_shared<ChFunction_Recorder>(forceFunct));
 
     drawForce->SetF_y(std::make_shared<ChFunction_Const>(0));

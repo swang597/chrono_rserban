@@ -102,7 +102,7 @@ double target_speed = 5*mph_to_ms;
 // std::string path_file("paths/NATO_double_lane_change.txt");
 std::string path_file("paths/straightOrigin.txt");
 std::string steering_controller_file("wvp/SteeringController.json");
-std::string speed_controller_file("wvp/SpeedControllerAgr.json");
+std::string speed_controller_file("wvp/SpeedControllerAgrPI.json");
 
 std::string output_file_name("tractive");
 
