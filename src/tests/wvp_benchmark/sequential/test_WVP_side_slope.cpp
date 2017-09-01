@@ -52,11 +52,10 @@ using namespace chrono::vehicle::wvp;
 // =============================================================================
 
 // Initial vehicle location and orientation
-ChVector<> initLoc(-180, 0, 0.5);
+ChVector<> initLoc(-180, 0, 0.8);
 ChQuaternion<> initRot(1, 0, 0, 0);
 
 ChVector<>gravity(0,0,-9.81);
-ChVector<>slopegravity(0,0,-9.81);
 
 // Visualization type for vehicle parts (PRIMITIVES, MESH, or NONE)
 VisualizationType chassis_vis_type = VisualizationType::NONE;
@@ -131,6 +130,7 @@ int main(int argc, char* argv[]) {
             steering_input_file = steering_input_fileLeft;
             output_file_name = "RightSideDown" + std::to_string((int)target_speed);
             gravity = ChVector<>({0,-2.80604,-9.353468}); 
+            std::cout<<output_file_name<<std::endl;
         }
 
         target_speed = target_speed*mph_to_ms;
@@ -292,9 +292,6 @@ int main(int argc, char* argv[]) {
 #endif
 
         time = wvp.GetSystem()->GetChTime();
-
-        if(time>=10.0 && time<10.1) wvp.GetSystem()->Set_G_acc(slopegravity);
-
 
         // Collect output data from modules (for inter-module communication)
         double throttle_input = driver.GetThrottle();

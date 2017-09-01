@@ -93,7 +93,7 @@ int main(int argc, char* argv[]) {
     // ------------------
 
     RigidTerrain terrain(wvp.GetSystem());
-    terrain.SetContactFrictionCoefficient(0.8f);
+    terrain.SetContactFrictionCoefficient(0.1f);
     terrain.SetContactRestitutionCoefficient(0.01f);
     terrain.SetContactMaterialProperties(2e7f, 0.3f);
     terrain.SetColor(ChColor(0.8f, 0.8f, 0.5f));
@@ -169,15 +169,19 @@ int main(int argc, char* argv[]) {
         auto susp0 = std::static_pointer_cast<ChDoubleWishbone>(wvp.GetVehicle().GetSuspension(0));
         auto susp1 = std::static_pointer_cast<ChDoubleWishbone>(wvp.GetVehicle().GetSuspension(1));
 
-        std::cout<<"SpringDef0|"<<susp0->GetSpringLength(LEFT)
-        // <<"|force0|"<<susp0->GetSpringForce(LEFT);
-        <<"|SpringDef1|"<<susp0->GetSpringLength(RIGHT)
-        // <<"|force1|"<<susp0->GetSpringForce(RIGHT);
-        <<"|SpringDef2|"<<susp1->GetSpringLength(LEFT)
-        // <<"|force2|"<<susp1->GetSpringForce(LEFT);
-        <<"|SpringDef3|"<<susp1->GetSpringLength(RIGHT)
-        // <<"|force3|"<<susp1->GetSpringForce(RIGHT)
-        <<std::endl;
+        // std::cout<<"SpringDef0|"<<susp0->GetSpringLength(LEFT)
+        // // <<"|force0|"<<susp0->GetSpringForce(LEFT);
+        // <<"|SpringDef1|"<<susp0->GetSpringLength(RIGHT)
+        // // <<"|force1|"<<susp0->GetSpringForce(RIGHT);
+        // <<"|SpringDef2|"<<susp1->GetSpringLength(LEFT)
+        // // <<"|force2|"<<susp1->GetSpringForce(LEFT);
+        // <<"|SpringDef3|"<<susp1->GetSpringLength(RIGHT)
+        // // <<"|force3|"<<susp1->GetSpringForce(RIGHT)
+        // <<std::endl;
+
+        ChQuaternion<> q= wvp.GetVehicle().GetVehicleRot();
+        std::cout<<"attitude|"<<q.Q_to_NasaAngles().x()<<"|bank|"<<q.Q_to_NasaAngles().y()<<"|heading|"<<q.Q_to_NasaAngles().z()<<std::endl;
+
 
         // std::cout<<wvp.GetVehicle().GetWheelPos(0).x()<<"|"<<wvp.GetVehicle().GetWheelPos(0).y()<<"|"<<wvp.GetVehicle().GetWheelPos(0).z()<<"|||"
         //     <<wvp.GetVehicle().GetWheelPos(2).x()<<"|"<<wvp.GetVehicle().GetWheelPos(2).y()<<"|"<<wvp.GetVehicle().GetWheelPos(2).z()<<std::endl;
