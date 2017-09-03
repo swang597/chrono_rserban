@@ -32,7 +32,6 @@
 
 #include "chrono_parallel/math/real3.h"
 #include "chrono_parallel/collision/ChCollision.h"
-#include "chrono_parallel/collision/ChBroadphaseUtils.h"
 
 #if defined(CHRONO_OPENMP_ENABLED)
 #include <thrust/system/omp/execution_policy.h>
@@ -47,6 +46,24 @@ using namespace chrono;
 using namespace chrono::collision;
 
 // Original implementation in Chrono::Parallel (ChBroadphase.cpp)
+// --------------------------------------------------------------
+
+typedef thrust::pair<real3, real3> bbox;
+
+struct bbox_reduction : public thrust::binary_function<bbox, bbox, bbox> {
+    bbox operator()(bbox a, bbox b) {
+        real3 ll = real3(Min(a.first.x, b.first.x), Min(a.first.y, b.first.y),
+            Min(a.first.z, b.first.z));  // lower left corner
+        real3 ur = real3(Max(a.second.x, b.second.x), Max(a.second.y, b.second.y),
+            Max(a.second.z, b.second.z));  // upper right corner
+        return bbox(ll, ur);
+    }
+};
+
+struct bbox_transformation : public thrust::unary_function<real3, bbox> {
+    bbox operator()(real3 point) { return bbox(point, point); }
+};
+
 void RigidBoundingBox(const custom_vector<real3>& aabb_min,
                       const custom_vector<real3>& aabb_max,
                       real3& min_point,
