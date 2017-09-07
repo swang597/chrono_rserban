@@ -12,7 +12,8 @@
 // Author: Radu Serban
 // =============================================================================
 //
-// Demonstration of the granular terrain system in Chrono::Vehicle.
+// Demonstration of the moving patch option for the granular terrain system in
+// Chrono::Vehicle.
 //
 // =============================================================================
 
@@ -45,7 +46,9 @@ int main(int argc, char* argv[]) {
     unsigned int num_particles = 12500;  // Minimum requested number of particles
     bool rough = false;                  // Fixed base layer?
     bool moving_patch = true;            // Enable moving patch feature?
-    double slope = 0;                    // Terrain slope (degrees)
+    double buffer_dist = 2.0;            // Look-ahead distance (m)
+    double shift_dist = 0.4;             // Patch shift distance (m)
+    double slope = 30;                   // Terrain slope (degrees)
     double radius = 20;                  // Particle radius (mm)
     double rho = 2000;                   // Granular material density (kg/m3)
     double mu = 0.9;                     // Coefficient of friction
@@ -60,16 +63,17 @@ int main(int argc, char* argv[]) {
     double coh_force = area * (coh * 1e3);     // Cohesion force (N)
     double coh_g = coh_force * time_step;      // Cohesion impulse (Ns)
 
-    // Tire parameters
-    double tire_rad = 0.8;           // Radius (m)
-    double tire_ang_vel = CH_C_2PI;  // Tire angular velocity (rad/s)
+    // Tracked body parameters
+    double kmh_to_ms = 1000.0 / 3600;
+    double body_rad = 0.2;               // Radius (m)
+    double body_speed = 50 * kmh_to_ms;  // Forward speed (m/s)
 
     // Collision envelope (10% of particle radius)
     double envelope = 0.1 * r_g;
 
     // Camera location
     enum CameraType { FIXED, FRONT, TRACK };
-    CameraType cam_type = FIXED;
+    CameraType cam_type = FRONT;
 
     // ---------------------------------
     // Create the parallel Chrono system
@@ -127,7 +131,7 @@ int main(int argc, char* argv[]) {
     terrain.EnableVisualization(true);
     terrain.EnableVerbose(true);
 
-    terrain.Initialize(center, 2 * hdimX, 2 * hdimY, num_particles, r_g, rho_g);
+    terrain.Initialize(center, 2 * hdimX, 2 * hdimY, num_particles, r_g, rho_g, ChVector<>(0, 0, -2));
     uint actual_num_particles = terrain.GetNumParticles();
     double terrain_height = terrain.GetHeight(0, 0);
 
@@ -135,46 +139,29 @@ int main(int argc, char* argv[]) {
     std::cout << "Terrain height:      " << terrain_height << std::endl;
 
     // ---------------
-    // Create the tire
+    // Create the body
     // ---------------
 
-    ChVector<> tire_center(terrain.GetPatchRear() + tire_rad, (terrain.GetPatchLeft() + terrain.GetPatchRight()) / 2,
-                           terrain_height + 1.01 * tire_rad);
+    ChVector<> pos(terrain.GetPatchRear(), (terrain.GetPatchLeft() + terrain.GetPatchRight()) / 2,
+                   terrain_height + 2 * body_rad);
     auto body = std::shared_ptr<ChBody>(system->NewBody());
-    body->SetMass(500);
-    body->SetInertiaXX(ChVector<>(20, 20, 20));
-    body->SetPos(tire_center);
-    body->SetRot(Q_from_AngZ(CH_C_PI_2));
+    body->SetMass(1);
+    body->SetInertiaXX(ChVector<>(1, 1, 1));
+    body->SetPos_dt(ChVector<>(body_speed, 0, 0));
+    body->SetPos(pos);
     system->AddBody(body);
 
-    auto mesh = std::make_shared<ChTriangleMeshShape>();
-    mesh->GetMesh().LoadWavefrontMesh(GetChronoDataFile("tractor_wheel.obj"));
-    body->AddAsset(mesh);
-
     body->GetCollisionModel()->ClearModel();
-    body->GetCollisionModel()->AddTriangleMesh(mesh->GetMesh(), false, false, VNULL, ChMatrix33<>(1), 0.01);
+    utils::AddSphereGeometry(body.get(), body_rad, ChVector<>(0, 0, 0));
     body->GetCollisionModel()->BuildModel();
 
-    ////utils::AddSphereGeometry(body.get(), tire_rad, ChVector<>(0, 0, 0));
+    auto joint = std::make_shared<ChLinkLockPrismatic>();
+    joint->Initialize(terrain.GetGroundBody(), body, ChCoordsys<>(pos, Q_from_AngY(CH_C_PI_2)));
+    system->AddLink(joint);
 
-    body->SetCollide(true);
-
-    auto col = std::make_shared<ChColorAsset>();
-    col->SetColor(ChColor(0.3f, 0.3f, 0.3f));
-    body->AddAsset(col);
-
-    std::shared_ptr<ChLinkEngine> engine(new ChLinkEngine);
-    engine->Set_shaft_mode(ChLinkEngine::ENG_SHAFT_OLDHAM);
-    engine->Set_eng_mode(ChLinkEngine::ENG_MODE_ROTATION);
-    engine->Set_rot_funct(std::make_shared<ChFunction_Ramp>(0, -tire_ang_vel));  // phase, speed
-    engine->Initialize(body, terrain.GetGroundBody(), ChCoordsys<>(tire_center, Q_from_AngX(CH_C_PI_2)));
-    system->Add(engine);
-
-    std::cout << "Tire location: " << tire_center.x() << " " << tire_center.y() << " " << tire_center.z() << std::endl;
-
-    // Enable moving patch, based on tire location
+    // Enable moving patch, based on body location
     if (moving_patch)
-        terrain.EnableMovingPatch(body, 2.0, 0.2);
+        terrain.EnableMovingPatch(body, buffer_dist, shift_dist, ChVector<>(0, 0, -2));
 
     // -----------------
     // Initialize OpenGL
@@ -216,14 +203,15 @@ int main(int argc, char* argv[]) {
         if (gl_window.Active()) {
             switch (cam_type) {
                 case FRONT: {
-                    ChVector<> cam_loc(terrain.GetPatchFront(), -3, 0);
-                    ChVector<> cam_point(terrain.GetPatchFront(), 0, 0);
+                    double body_x = body->GetPos().x();
+                    ChVector<> cam_loc(body_x + buffer_dist, -4, 0);
+                    ChVector<> cam_point(body_x + buffer_dist, 0, 0);
                     gl_window.SetCamera(cam_loc, cam_point, ChVector<>(0, 0, 1), 0.05f);
                     break;
                 }
                 case TRACK: {
                     ChVector<> cam_point = body->GetPos();
-                    ChVector<> cam_loc = cam_point + ChVector<>(-3 * tire_rad, -1, 0.6);
+                    ChVector<> cam_loc = cam_point + ChVector<>(-3 * body_rad, -1, 0.6);
                     gl_window.SetCamera(cam_loc, cam_point, ChVector<>(0, 0, 1), 0.05f);
                     break;
                 }
