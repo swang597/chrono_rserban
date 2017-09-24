@@ -9,19 +9,30 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Radu Serban
-// =============================================================================
-//
-// Base class for a terrain subsystem.
-//
+// Authors: Alessandro Tasora
 // =============================================================================
 
-#include "chrono_vehicle/ChTerrain.h"
+#include "chrono/motion_functions/ChFunction_Setpoint.h"
 
 namespace chrono {
-namespace vehicle {
 
-ChTerrain::ChTerrain() : m_friction_fun(nullptr) {}
+// Register into the object factory, to enable run-time dynamic creation and persistence
+CH_FACTORY_REGISTER(ChFunction_Setpoint)
 
-}  // end namespace vehicle
+
+void ChFunction_Setpoint::SetSetpoint(double setpoint, double x) {
+    Y = setpoint;
+    if (x > this->last_x) {
+      
+        double dx = x-last_x;
+        Y_dx = ( Y - last_Y ) / dx;
+        Y_dxdx = (Y_dx - last_Y_dx) / dx;
+
+    }
+    last_x = x;
+    last_Y = Y;
+    last_Y_dx = Y_dx;
+}
+
+
 }  // end namespace chrono
