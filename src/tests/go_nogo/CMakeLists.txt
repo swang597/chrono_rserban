@@ -22,25 +22,32 @@ ENDIF()
 
 # ------------------------------------------------------------------------------
 
-SET(GO_NOGO_FILES
-    hmmwv_granular.cpp
-    driver_model.h
-    event_queue.h
+SET(PROGRAMS
+    gonogo_hmmwv
+    #gonogo_wvp_mp
 )
 
-SOURCE_GROUP("" FILES ${GO_NOGO_FILES})
+SET(COMMON_FILES
+    driver_model.h
+    event_queue.h
+    prog_arguments.cpp
+    prog_display.cpp
+)
 
 # ------------------------------------------------------------------------------
 
-MESSAGE(STATUS "HMMWV GO/NO-GO program...")
-MESSAGE(STATUS "...add go_nogo")
+MESSAGE(STATUS "GO/NO-GO programs...")
 
-ADD_EXECUTABLE(go_nogo  ${GO_NOGO_FILES})
+FOREACH(PROG ${PROGRAMS})
 
-SET_TARGET_PROPERTIES(go_nogo PROPERTIES
-        FOLDER tests
-        COMPILE_FLAGS "${CH_CXX_FLAGS} ${CH_PARALLEL_CXX_FLAGS}"
-        LINK_FLAGS "${CH_LINKERFLAG_EXE}"
-)
+    MESSAGE(STATUS "...add ${PROG}")
 
-TARGET_LINK_LIBRARIES(go_nogo ${LIBRARIES})
+    ADD_EXECUTABLE(${PROG}  ${PROG}.cpp ${COMMON_FILES})
+    SOURCE_GROUP("" FILES ${PROG}.cpp ${COMMON_FILES})
+    SET_TARGET_PROPERTIES(${PROG} PROPERTIES
+                          FOLDER tests
+                          COMPILE_FLAGS "${CH_CXX_FLAGS} ${CH_PARALLEL_CXX_FLAGS}"
+                          LINK_FLAGS "${CH_LINKERFLAG_EXE}")
+    TARGET_LINK_LIBRARIES(${PROG} ${LIBRARIES})
+
+ENDFOREACH()

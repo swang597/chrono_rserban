@@ -31,7 +31,6 @@
 #include "chrono/ChConfig.h"
 #include "chrono/core/ChMathematics.h"
 #include "chrono/core/ChFileutils.h"
-#include "chrono/core/ChStream.h"
 #include "chrono/utils/ChUtilsGeometry.h"
 #include "chrono/utils/ChUtilsCreators.h"
 #include "chrono/utils/ChUtilsGenerators.h"
@@ -39,18 +38,16 @@
 
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/terrain/FlatTerrain.h"
+#include "chrono_vehicle/utils/ChVehiclePath.h"
 
 #include "chrono_models/vehicle/hmmwv/HMMWV.h"
 
 #include "chrono_parallel/physics/ChSystemParallel.h"
-#include "chrono_parallel/solver/ChSystemDescriptorParallel.h"
 #include "chrono_parallel/physics/Ch3DOFContainer.h"
 
 #ifdef CHRONO_OPENGL
 #include "chrono_opengl/ChOpenGLWindow.h"
 #endif
-
-#include "chrono_thirdparty/SimpleOpt/SimpleOpt.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 #include "chrono_thirdparty/filesystem/resolver.h"
@@ -227,7 +224,7 @@ class MyLuggedTire : public ChTireContactCallback {
 // Custom material composition law.
 // Use the maximum coefficient of friction.
 class CustomCompositionStrategy : public ChMaterialCompositionStrategy<real> {
-public:
+  public:
     virtual real CombineFriction(real a1, real a2) const override { return std::max<real>(a1, a2); }
 };
 
@@ -246,7 +243,7 @@ int CreateParticles(ChSystemParallelNSC* system,
                     double top_height);
 double FindHighestParticle(ChSystem* system);
 HMMWV_Full* CreateVehicle(ChSystem* system, double vertical_offset);
-HMMWV_Driver* CreateDriver(HMMWV_Full* hmmwv);
+GONOGO_Driver* CreateDriver(HMMWV_Full* hmmwv);
 
 void progressbar(unsigned int x, unsigned int n, unsigned int w = 50);
 void TimingOutput(chrono::ChSystem* mSys, chrono::ChStreamOutAsciiFile* ofile = NULL);
@@ -468,7 +465,7 @@ int main(int argc, char* argv[]) {
     // ---------------
 
     HMMWV_Full* hmmwv = nullptr;
-    HMMWV_Driver* driver = nullptr;
+    GONOGO_Driver* driver = nullptr;
     FlatTerrain terrain(0);
 
     // Number of simulation steps between two output frames
@@ -610,85 +607,6 @@ int main(int argc, char* argv[]) {
     delete driver;
 
     return 0;
-}
-
-// =============================================================================
-
-// ID values to identify command line arguments
-enum { OPT_HELP, OPT_FILE, OPT_LINE, OPT_THREADS, OPT_NO_RENDERING, OPT_NO_COPY };
-
-// Table of CSimpleOpt::Soption structures. Each entry specifies:
-// - the ID for the option (returned from OptionId() during processing)
-// - the option as it should appear on the command line
-// - type of the option
-// The last entry must be SO_END_OF_OPTIONS
-CSimpleOptA::SOption g_options[] = {{OPT_FILE, "-f", SO_REQ_CMB},
-                                    {OPT_LINE, "-l", SO_REQ_CMB},
-                                    {OPT_THREADS, "-t", SO_REQ_CMB},
-                                    {OPT_NO_RENDERING, "--no-rendering", SO_NONE},
-                                    {OPT_NO_COPY, "--no-copy", SO_NONE},
-                                    {OPT_HELP, "-?", SO_NONE},
-                                    {OPT_HELP, "-h", SO_NONE},
-                                    {OPT_HELP, "--help", SO_NONE},
-                                    SO_END_OF_OPTIONS};
-
-void ShowUsage(const std::string& name) {
-    std::cout << "Usage: " << name << " [OPTIONS]" << std::endl;
-    std::cout << " -f=FILE_NAME" << std::endl;
-    std::cout << "        Name of input file" << std::endl;
-    std::cout << "        Each line contains a point in parameter space:" << std::endl;
-    std::cout << "        slope (deg), radius (mm), density (kg/m3), coef. friction, cohesion" << std::endl;
-    std::cout << " -l=LINE" << std::endl;
-    std::cout << "        Line in input file" << std::endl;
-    std::cout << " -t=THREADS" << std::endl;
-    std::cout << "        Number of OpenMP threads" << std::endl;
-    std::cout << " --no-rendering" << std::endl;
-    std::cout << "        Disable OpenGL rendering" << std::endl;
-    std::cout << " -? -h --help" << std::endl;
-    std::cout << "        Print this message and exit." << std::endl;
-    std::cout << std::endl;
-}
-
-bool GetProblemSpecs(int argc, char** argv, std::string& file, int& line, int& threads, bool& render, bool& copy) {
-    // Create the option parser and pass it the program arguments and the array of valid options.
-    CSimpleOptA args(argc, argv, g_options);
-
-    render = true;
-    copy = true;
-
-    // Then loop for as long as there are arguments to be processed.
-    while (args.Next()) {
-        // Exit immediately if we encounter an invalid argument.
-        if (args.LastError() != SO_SUCCESS) {
-            std::cout << "Invalid argument: " << args.OptionText() << std::endl;
-            ShowUsage(argv[0]);
-            return false;
-        }
-
-        // Process the current argument.
-        switch (args.OptionId()) {
-            case OPT_HELP:
-                ShowUsage(argv[0]);
-                return false;
-            case OPT_FILE:
-                file = args.OptionArg();
-                break;
-            case OPT_LINE:
-                line = std::stoi(args.OptionArg());
-                break;
-            case OPT_THREADS:
-                threads = std::stoi(args.OptionArg());
-                break;
-            case OPT_NO_RENDERING:
-                render = false;
-                break;
-            case OPT_NO_COPY:
-                copy = false;
-                break;
-        }
-    }
-
-    return true;
 }
 
 // =============================================================================
@@ -871,83 +789,18 @@ HMMWV_Full* CreateVehicle(ChSystem* system, double vertical_offset) {
     return hmmwv;
 }
 
-HMMWV_Driver* CreateDriver(HMMWV_Full* hmmwv) {
-    // Create the straigh-line path
+GONOGO_Driver* CreateDriver(HMMWV_Full* hmmwv) {
     double height = initLoc.z();
+    auto path = StraightLinePath(ChVector<>(-10 * hdimX, 0, height), ChVector<>(10 * hdimX, 0, height));
 
-    std::vector<ChVector<>> points;
-    std::vector<ChVector<>> inCV;
-    std::vector<ChVector<>> outCV;
-
-    points.push_back(ChVector<>(-10 * hdimX, 0, height));
-    inCV.push_back(ChVector<>(-10 * hdimX, 0, height));
-    outCV.push_back(ChVector<>(-9 * hdimX, 0, height));
-
-    points.push_back(ChVector<>(10 * hdimX, 0, height));
-    inCV.push_back(ChVector<>(9 * hdimX, 0, height));
-    outCV.push_back(ChVector<>(10 * hdimX, 0, height));
-
-    auto path = std::make_shared<ChBezierCurve>(points, inCV, outCV);
-
+    auto driver = new GONOGO_Driver(hmmwv->GetVehicle(), path, time_start_engine, time_max_throttle);
     double look_ahead_dist = 5;
     double Kp_steering = 0.5;
     double Ki_steering = 0;
     double Kd_steering = 0;
-    auto driver = new HMMWV_Driver(hmmwv->GetVehicle(), path, time_start_engine, time_max_throttle);
     driver->SetLookAheadDistance(look_ahead_dist);
     driver->SetGains(Kp_steering, Ki_steering, Kd_steering);
-
     driver->Initialize();
 
     return driver;
-}
-
-// =============================================================================
-
-// Utility function for displaying an ASCII progress bar for the quantity x
-// which must be a value between 0 and n. The width 'w' represents the number
-// of '=' characters corresponding to 100%.
-void progressbar(unsigned int x, unsigned int n, unsigned int w) {
-    if ((x != n) && (x % (n / 100 + 1) != 0))
-        return;
-
-    float ratio = x / (float)n;
-    unsigned int c = (unsigned int)(ratio * w);
-
-    std::cout << std::setw(3) << (int)(ratio * 100) << "% [";
-    for (unsigned int x = 0; x < c; x++)
-        std::cout << "=";
-    for (unsigned int x = c; x < w; x++)
-        std::cout << " ";
-    std::cout << "]\r" << std::flush;
-}
-
-// Utility function to print to console a few important step statistics
-void TimingOutput(chrono::ChSystem* mSys, chrono::ChStreamOutAsciiFile* ofile) {
-    double TIME = mSys->GetChTime();
-    double STEP = mSys->GetTimerStep();
-    double BROD = mSys->GetTimerCollisionBroad();
-    double NARR = mSys->GetTimerCollisionNarrow();
-    double SOLVER = mSys->GetTimerSolver();
-    double UPDT = mSys->GetTimerUpdate();
-    double RESID = 0;
-    int REQ_ITS = 0;
-    int BODS = mSys->GetNbodies();
-    int CNTC = mSys->GetNcontacts();
-    if (chrono::ChSystemParallel* parallel_sys = dynamic_cast<chrono::ChSystemParallel*>(mSys)) {
-        RESID = std::static_pointer_cast<chrono::ChIterativeSolverParallel>(mSys->GetSolver())->GetResidual();
-        REQ_ITS = std::static_pointer_cast<chrono::ChIterativeSolverParallel>(mSys->GetSolver())->GetTotalIterations();
-        BODS = parallel_sys->GetNbodies();
-        CNTC = parallel_sys->GetNcontacts();
-    }
-
-    if (ofile) {
-        char buf[200];
-        sprintf(buf, "%8.5f  %7.4f  %7.4f  %7.4f  %7.4f  %7.4f  %7d  %7d  %7d  %7.4f\n", TIME, STEP, BROD, NARR, SOLVER,
-                UPDT, BODS, CNTC, REQ_ITS, RESID);
-        *ofile << buf;
-    }
-
-    printf("   %8.5f | %7.4f | %7.4f | %7.4f | %7.4f | %7.4f | %7d | %7d | %7d | %7.4f\n", TIME, STEP, BROD, NARR,
-           SOLVER, UPDT, BODS, CNTC, REQ_ITS, RESID);
 }
