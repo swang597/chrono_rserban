@@ -70,8 +70,8 @@ using std::endl;
 double hdimX = 3.5;
 double hdimY = 1.5;
 
-// Minimum number of particles
-unsigned int num_particles = 80000;
+// Number of particle layers
+unsigned int num_layers = 6;
 
 // Fixed base layer?
 bool rough = false;
@@ -309,7 +309,7 @@ int main(int argc, char* argv[]) {
     terrain.EnableVisualization(true);
     terrain.EnableVerbose(true);
 
-    terrain.Initialize(ChVector<>(0, 0, 0), 2 * hdimX, 2 * hdimY, num_particles, r_g, rho_g);
+    terrain.Initialize(ChVector<>(0, 0, 0), 2 * hdimX, 2 * hdimY, num_layers, r_g, rho_g);
     uint actual_num_particles = terrain.GetNumParticles();
 
     std::cout << "Number of particles: " << actual_num_particles << std::endl;
