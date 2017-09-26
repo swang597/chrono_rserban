@@ -24,7 +24,7 @@ ENDIF()
 
 SET(PROGRAMS
     gonogo_hmmwv
-    #gonogo_wvp_mp
+    gonogo_wvp_mp
 )
 
 SET(COMMON_FILES
