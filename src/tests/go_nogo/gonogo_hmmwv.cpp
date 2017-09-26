@@ -63,25 +63,6 @@ using std::cout;
 using std::endl;
 
 // -----------------------------------------------------------------------------
-// Input parameter ranges
-// -----------------------------------------------------------------------------
-
-// Terrain slope (in degrees)
-std::pair<double, double> slope_range(0, 30);
-
-// Particle radius (in mm)
-std::pair<double, double> radius_range(4, 10);
-
-// Particle density (in Kg/m3)
-std::pair<double, double> density_range(1500, 3000);
-
-// Inter-particle coefficient of friction
-std::pair<double, double> friction_range(0.2, 1.0);
-
-// Cohesion pressure (in kPa)
-std::pair<double, double> cohesion_range(100, 1000);
-
-// -----------------------------------------------------------------------------
 // Specification of the terrain
 // -----------------------------------------------------------------------------
 
@@ -167,7 +148,7 @@ float contact_recovery_speed = 1000;
 // Output
 bool output = true;
 double output_frequency = 100.0;
-std::string out_dir = "../HMMWV_GO_NOGO";
+std::string out_dir = GetChronoOutputPath() + "HMMWV_GO_NOGO";
 
 // =============================================================================
 
@@ -243,7 +224,7 @@ int CreateParticles(ChSystemParallelNSC* system,
                     double top_height);
 double FindHighestParticle(ChSystem* system);
 HMMWV_Full* CreateVehicle(ChSystem* system, double vertical_offset);
-GONOGO_Driver* CreateDriver(HMMWV_Full* hmmwv);
+GONOGO_Driver* CreateDriver(ChVehicle& vehicle);
 
 void progressbar(unsigned int x, unsigned int n, unsigned int w = 50);
 void TimingOutput(chrono::ChSystem* mSys, chrono::ChStreamOutAsciiFile* ofile = NULL);
@@ -251,6 +232,8 @@ void TimingOutput(chrono::ChSystem* mSys, chrono::ChStreamOutAsciiFile* ofile = 
 // =============================================================================
 
 int main(int argc, char* argv[]) {
+    GetLog() << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
+    
     // ----------------------------
     // Parse command line arguments
     // ----------------------------
@@ -316,6 +299,7 @@ int main(int argc, char* argv[]) {
     double area = CH_C_PI * r_g * r_g;
     double coh_force = area * (coh_val * 1e3);
     double coh_g = coh_force * time_step;
+    double envelope = 0.1 * r_g;
 
     int num_layers = static_cast<int>(depth / (2 * r_val));
     ChClampValue(num_layers, num_layers_min, num_layers_max);
@@ -410,7 +394,7 @@ int main(int argc, char* argv[]) {
     ////system->SetLoggingLevel(LoggingLevel::LOG_INFO);
     ////system->SetLoggingLevel(LoggingLevel::LOG_TRACE);
 
-    system->GetSettings()->collision.collision_envelope = 0.1 * r_g;
+    system->GetSettings()->collision.collision_envelope = envelope;
     system->GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
     system->GetSettings()->collision.bins_per_axis = vec3(100, 30, 2);
     system->GetSettings()->collision.fixed_bins = true;
@@ -512,7 +496,7 @@ int main(int argc, char* argv[]) {
 
             double max_height = FindHighestParticle(system);
             hmmwv = CreateVehicle(system, max_height);
-            driver = CreateDriver(hmmwv);
+            driver = CreateDriver(hmmwv->GetVehicle());
 
             next_out_frame = sim_frame;
         }
@@ -786,14 +770,16 @@ HMMWV_Full* CreateVehicle(ChSystem* system, double vertical_offset) {
     hmmwv->SetWheelVisualizationType(VisualizationType::PRIMITIVES);
     hmmwv->SetTireVisualizationType(VisualizationType::PRIMITIVES);
 
+    hmmwv->GetVehicle().SetStepsize(time_step);
+
     return hmmwv;
 }
 
-GONOGO_Driver* CreateDriver(HMMWV_Full* hmmwv) {
+GONOGO_Driver* CreateDriver(ChVehicle& vehicle) {
     double height = initLoc.z();
     auto path = StraightLinePath(ChVector<>(-10 * hdimX, 0, height), ChVector<>(10 * hdimX, 0, height));
 
-    auto driver = new GONOGO_Driver(hmmwv->GetVehicle(), path, time_start_engine, time_max_throttle);
+    auto driver = new GONOGO_Driver(vehicle, path, time_start_engine, time_max_throttle);
     double look_ahead_dist = 5;
     double Kp_steering = 0.5;
     double Ki_steering = 0;
