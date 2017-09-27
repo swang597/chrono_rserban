@@ -36,6 +36,7 @@
 #include "chrono/core/ChMathematics.h"
 #include "chrono/core/ChFileutils.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
+#include "chrono/utils/ChFilters.h"
 
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/utils/ChVehiclePath.h"
@@ -67,7 +68,7 @@ using std::endl;
 // -----------------------------------------------------------------------------
 
 // Patch half-dimensions
-double hdimX = 3.5;
+double hdimX = 3.75;
 double hdimY = 1.5;
 
 // Fixed base layer?
@@ -80,7 +81,7 @@ int num_layers_max = 8;
 
 // Moving patch parameters
 bool moving_patch = true;
-double buffer_distance = 1.5;
+double buffer_distance = 2.0;
 double shift_distance = 0.25;
 
 // -----------------------------------------------------------------------------
@@ -88,7 +89,7 @@ double shift_distance = 0.25;
 // -----------------------------------------------------------------------------
 
 // Vehicle horizontal offset
-double horizontal_offset = 5;
+double horizontal_offset = 5.25;
 double horizontal_pos = hdimX - horizontal_offset;
 
 // Initial vehicle position, orientation, and forward velocity
@@ -117,6 +118,11 @@ double time_start_engine = time_create_vehicle + delay_start_engine;
 // Delay before throttle reaches maximum (linear ramp)
 double delay_max_throttle = 0.5;
 double time_max_throttle = time_start_engine + delay_max_throttle;
+
+// Delay before checking for steady-state
+double filter_interval = 2.0;
+double delay_start_check = 4.0;
+double time_start_check = time_max_throttle + delay_start_check;
 
 // Time when terrain is pitched (rotate gravity)
 double time_pitch = time_start_engine;
@@ -242,12 +248,13 @@ int main(int argc, char* argv[]) {
     ChClampValue(num_layers, num_layers_min, num_layers_max);
 
     cout << "Set up" << endl;
-    cout << "  File:     " << input_file << "  Line: " << line_number << endl;
-    cout << "  Slope:    " << slope_val << "  " << slope << endl;
-    cout << "  Radius:   " << r_val << "  " << r_g << endl;
-    cout << "  Density:  " << rho_val << "  " << rho_g << endl;
-    cout << "  Friction: " << mu_val << "  " << mu_g << endl;
-    cout << "  Cohesion: " << coh_val << "  " << coh_g << endl;
+    cout << "  File:        " << input_file << "  Line: " << line_number << endl;
+    cout << "  Slope:       " << slope_val << "  " << slope << endl;
+    cout << "  Radius:      " << r_val << "  " << r_g << endl;
+    cout << "  Density:     " << rho_val << "  " << rho_g << endl;
+    cout << "  Friction:    " << mu_val << "  " << mu_g << endl;
+    cout << "  Cohesion:    " << coh_val << "  " << coh_g << endl;
+    cout << "  Num. layers: " << num_layers << endl;
 
     // ---------------------------------
     // Create output directory and files
@@ -407,19 +414,10 @@ int main(int argc, char* argv[]) {
     bool is_pitched = false;
     double x_pos = -horizontal_pos;
 
+    int filter_steps = (int)std::ceil(filter_interval / time_step);
+    utils::ChRunningAverage fwd_acc_filter(filter_steps);
+
     while (true) {
-        // Check exit conditions
-
-        //// TODO: reached steady-state maximum speed
-
-        if (x_pos <= -hdimX) {
-            if (output) {
-                ofile << "# " << endl;
-                ofile << "# Vehicle sliding backward" << endl;
-            }
-            break;
-        }
-
         if (time >= time_end) {
             if (output) {
                 ofile << "# " << endl;
@@ -470,24 +468,12 @@ int main(int argc, char* argv[]) {
             if (output && sim_frame == next_out_frame) {
                 ChVector<> pv = wvp->GetChassisBody()->GetFrame_REF_to_abs().GetPos();
                 ChVector<> vv = wvp->GetChassisBody()->GetFrame_REF_to_abs().GetPos_dt();
-                ChVector<> av = wvp->GetChassisBody()->GetFrame_REF_to_abs().GetPos_dtdt();
-
-                ChVector<> v0 = wvp->GetVehicle().GetWheelLinVel(0);
-                ChVector<> v1 = wvp->GetVehicle().GetWheelLinVel(1);
-                ChVector<> v2 = wvp->GetVehicle().GetWheelLinVel(2);
-                ChVector<> v3 = wvp->GetVehicle().GetWheelLinVel(3);
 
                 ofile << system->GetChTime() << del;
                 ofile << throttle_input << del << steering_input << del;
 
                 ofile << pv.x() << del << pv.y() << del << pv.z() << del;
                 ofile << vv.x() << del << vv.y() << del << vv.z() << del;
-                ////ofile << av.x() << del << av.y() << del << av.z() << del;
-
-                ////ofile << v0.x() << del << v0.y() << del << v0.z() << del;
-                ////ofile << v1.x() << del << v1.y() << del << v1.z() << del;
-                ////ofile << v2.x() << del << v2.y() << del << v2.z() << del;
-                ////ofile << v3.x() << del << v3.y() << del << v3.z() << del;
 
                 ofile << endl;
 
@@ -498,6 +484,29 @@ int main(int argc, char* argv[]) {
             // Advance vehicle systems
             driver->Advance(time_step);
             wvp->Advance(time_step);
+
+            // Check if vehicle reached steady-state speed
+            ChVector<> va = wvp->GetChassisBody()->GetFrame_REF_to_abs().GetPos_dtdt();
+            double fwd_acc = fwd_acc_filter.Add(va.x());
+            if (time > time_start_check) {
+                cout << std::abs(fwd_acc) << endl;
+            }
+            if (time > time_start_check && std::abs(fwd_acc) < 0.1 ) {
+                if (output) {
+                    ofile << "# " << endl;
+                    ofile << "# Vehicle reached steady state" << endl;
+                }
+                break;
+            }
+
+            // Check if vehicle is sliding backward
+            if (x_pos <= -hdimX) {
+                if (output) {
+                    ofile << "# " << endl;
+                    ofile << "# Vehicle sliding backward" << endl;
+                }
+                break;
+            }
         } else {
             // Advance system state (no vehicle created yet)
             system->DoStepDynamics(time_step);
