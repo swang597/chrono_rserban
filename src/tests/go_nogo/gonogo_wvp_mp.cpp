@@ -119,10 +119,12 @@ double time_start_engine = time_create_vehicle + delay_start_engine;
 double delay_max_throttle = 0.5;
 double time_max_throttle = time_start_engine + delay_max_throttle;
 
-// Delay before checking for steady-state
-double filter_interval = 2.0;
-double delay_start_check = 4.0;
-double time_start_check = time_max_throttle + delay_start_check;
+// Delays before checking for slow-down and steady-state
+double filter_interval = 3.0;
+double delay_start_check_slow = 15.0;
+double delay_start_check_steady = 30.0;
+double time_start_check_slow = time_max_throttle + delay_start_check_slow;
+double time_start_check_steady = time_max_throttle + delay_start_check_steady;
 
 // Time when terrain is pitched (rotate gravity)
 double time_pitch = time_start_engine;
@@ -138,7 +140,7 @@ bool thread_tuning = false;
 double time_step = 1e-3;
 
 // Solver settings
-int max_iteration_bilateral = 100;
+int max_iteration_bilateral = 25;
 int max_iteration_normal = 0;
 int max_iteration_sliding = 50;
 int max_iteration_spinning = 0;
@@ -412,9 +414,9 @@ int main(int argc, char* argv[]) {
     double exec_time = 0;
 
     bool is_pitched = false;
-    double x_pos = -horizontal_pos;
 
     int filter_steps = (int)std::ceil(filter_interval / time_step);
+    utils::ChRunningAverage fwd_vel_filter(filter_steps);
     utils::ChRunningAverage fwd_acc_filter(filter_steps);
 
     while (true) {
@@ -457,41 +459,39 @@ int main(int argc, char* argv[]) {
             double braking_input = driver->GetBraking();
             double throttle_input = driver->GetThrottle();
 
-            // Synchronize vehicle systems
-            driver->Synchronize(time);
-            wvp->Synchronize(time, steering_input, braking_input, throttle_input, terrain);
+            // Extract chassis state
+            ChVector<> pv = wvp->GetChassisBody()->GetFrame_REF_to_abs().GetPos();
+            ChVector<> vv = wvp->GetChassisBody()->GetFrame_REF_to_abs().GetPos_dt();
+            ChVector<> av = wvp->GetChassisBody()->GetFrame_REF_to_abs().GetPos_dtdt();
 
-            // Update vehicle x position
-            x_pos = wvp->GetChassis()->GetPos().x();
+            // Filtered forward velocity and acceleration
+            double fwd_vel_mean = fwd_vel_filter.Add(vv.x());
+            double fwd_vel_std = fwd_vel_filter.GetStdDev();
+            double fwd_acc_mean = fwd_acc_filter.Add(av.x());
+            double fwd_acc_std = fwd_acc_filter.GetStdDev();
 
-            // Save output
-            if (output && sim_frame == next_out_frame) {
-                ChVector<> pv = wvp->GetChassisBody()->GetFrame_REF_to_abs().GetPos();
-                ChVector<> vv = wvp->GetChassisBody()->GetFrame_REF_to_abs().GetPos_dt();
+            cout << fwd_acc_mean << "  " << fwd_vel_std << endl;
 
-                ofile << system->GetChTime() << del;
-                ofile << throttle_input << del << steering_input << del;
-
-                ofile << pv.x() << del << pv.y() << del << pv.z() << del;
-                ofile << vv.x() << del << vv.y() << del << vv.z() << del;
-
-                ofile << endl;
-
-                out_frame++;
-                next_out_frame += output_steps;
+            // Check if vehicle is sliding backward
+            if (pv.x() <= -hdimX) {
+                if (output) {
+                    ofile << "# " << endl;
+                    ofile << "# Vehicle sliding backward" << endl;
+                }
+                break;
             }
 
-            // Advance vehicle systems
-            driver->Advance(time_step);
-            wvp->Advance(time_step);
+            // Check if vehicle is slowing down
+            if (time > time_start_check_slow && fwd_acc_mean < 0.1) {
+                if (output) {
+                    ofile << "# " << endl;
+                    ofile << "# Vehicle slowing down" << endl;
+                }
+                break;
+            }
 
             // Check if vehicle reached steady-state speed
-            ChVector<> va = wvp->GetChassisBody()->GetFrame_REF_to_abs().GetPos_dtdt();
-            double fwd_acc = fwd_acc_filter.Add(va.x());
-            if (time > time_start_check) {
-                cout << std::abs(fwd_acc) << endl;
-            }
-            if (time > time_start_check && std::abs(fwd_acc) < 0.1 ) {
+            if (time > time_start_check_steady && std::abs(fwd_acc_mean) < 0.05 && fwd_vel_std < 0.03) {
                 if (output) {
                     ofile << "# " << endl;
                     ofile << "# Vehicle reached steady state" << endl;
@@ -499,14 +499,30 @@ int main(int argc, char* argv[]) {
                 break;
             }
 
-            // Check if vehicle is sliding backward
-            if (x_pos <= -hdimX) {
-                if (output) {
-                    ofile << "# " << endl;
-                    ofile << "# Vehicle sliding backward" << endl;
-                }
-                break;
+            // Save output
+            if (output && sim_frame == next_out_frame) {
+                ofile << system->GetChTime() << del;
+                ofile << throttle_input << del << steering_input << del;
+
+                ofile << pv.x() << del << pv.y() << del << pv.z() << del;
+                ofile << vv.x() << del << vv.y() << del << vv.z() << del;
+
+                ofile << fwd_vel_mean << del << fwd_vel_std << del;
+                ofile << fwd_acc_mean << del << fwd_acc_std << del;
+
+                ofile << endl;
+
+                out_frame++;
+                next_out_frame += output_steps;
             }
+
+            // Synchronize subsystems
+            driver->Synchronize(time);
+            wvp->Synchronize(time, steering_input, braking_input, throttle_input, terrain);
+
+            // Advance subsystems
+            driver->Advance(time_step);
+            wvp->Advance(time_step);
         } else {
             // Advance system state (no vehicle created yet)
             system->DoStepDynamics(time_step);
@@ -574,7 +590,7 @@ WVP* CreateVehicle(ChSystem* system, double vertical_offset) {
 
 GONOGO_Driver* CreateDriver(ChVehicle& vehicle) {
     double height = initLoc.z();
-    auto path = StraightLinePath(ChVector<>(-2 * hdimX, 0, height), ChVector<>(20 * hdimX, 0, height));
+    auto path = StraightLinePath(ChVector<>(-2 * hdimX, 0, height), ChVector<>(200 * hdimX, 0, height));
 
     auto driver = new GONOGO_Driver(vehicle, path, time_start_engine, time_max_throttle);
     double look_ahead_dist = 5;
