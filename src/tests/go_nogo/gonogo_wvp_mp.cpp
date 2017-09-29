@@ -140,7 +140,7 @@ bool thread_tuning = false;
 double time_step = 1e-3;
 
 // Solver settings
-int max_iteration_bilateral = 25;
+int max_iteration_bilateral = 100;
 int max_iteration_normal = 0;
 int max_iteration_sliding = 50;
 int max_iteration_spinning = 0;
