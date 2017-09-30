@@ -24,6 +24,7 @@ ENDIF()
 
 SET(PROGRAMS
     gonogo_hmmwv
+    gonogo_hmmwv_mp
     gonogo_wvp_mp
 )
 

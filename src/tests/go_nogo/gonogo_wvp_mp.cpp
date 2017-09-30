@@ -152,7 +152,7 @@ float contact_recovery_speed = 1000;
 // Output
 bool output = true;
 double output_frequency = 100.0;
-std::string out_dir = GetChronoOutputPath() + "WVP_GO_NOGO";
+std::string out_dir = "../GONOGO_WVP_MP";
 
 // =============================================================================
 
@@ -185,7 +185,7 @@ int main(int argc, char* argv[]) {
 
     std::string input_file = "";  // Name of input file
     int line_number = 0;          // Line of inputs
-    int threads = 8;              // Number of threads
+    int threads = 0;              // Number of threads
     bool render = true;           // Render?
     bool copy = true;             // Copy input file?
 
@@ -194,19 +194,32 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // ----------------
-    // Parse input file
-    // ----------------
-
     // Check that input file exists
     filesystem::path inpath(input_file);
     if (!inpath.exists()) {
         cout << "Input file " << input_file << " does not exist" << endl;
         return 1;
-    } else if (!inpath.is_file()) {
+    }
+    else if (!inpath.is_file()) {
         cout << "Input file " << input_file << " is not a regular file" << endl;
         return 1;
     }
+
+    // Check that a line number was specified
+    if (line_number <= 0) {
+        cout << "Incorrect line number." << endl;
+        return 1;
+    }
+
+    // Check that the number of threads was specified
+    if (threads <= 0) {
+        cout << "Incorrect number of threads." << endl;
+        return 1;
+    }
+
+    // ----------------
+    // Parse input file
+    // ----------------
 
     // Extract the filename, the basename, and extension of the input file
     std::string filename = inpath.filename();
@@ -216,11 +229,6 @@ int main(int argc, char* argv[]) {
     // Open input file
     std::ifstream ifile;
     ifile.open(input_file.c_str());
-
-    if (line_number <= 0) {
-        cout << "Incorrect line number." << endl;
-        return 1;
-    }
 
     std::string line;
     for (int i = 0; i < line_number; i++) {
@@ -304,9 +312,7 @@ int main(int argc, char* argv[]) {
     std::unique_ptr<CustomCompositionStrategy> strategy(new CustomCompositionStrategy);
     system->SetMaterialCompositionStrategy(std::move(strategy));
 
-    int max_threads = CHOMPfunctions::GetNumProcs();
-    if (threads > max_threads)
-        threads = max_threads;
+    // Set number of threads
     system->SetParallelThreadNumber(threads);
     CHOMPfunctions::SetNumThreads(threads);
 #pragma omp parallel
@@ -380,6 +386,7 @@ int main(int argc, char* argv[]) {
         ofile << "# Cohesion (kPa):  " << coh_val << endl;
         ofile << "# " << endl;
         ofile << "# Num threads:     " << threads << endl;
+        ofile << "# Num layers:      " << num_layers << endl;
         ofile << "# Num particles:   " << actual_num_particles << endl;
         ofile << "# " << endl;
 
@@ -580,8 +587,8 @@ WVP* CreateVehicle(ChSystem* system, double vertical_offset) {
     wvp->SetChassisVisualizationType(VisualizationType::NONE);
     wvp->SetSuspensionVisualizationType(VisualizationType::PRIMITIVES);
     wvp->SetSteeringVisualizationType(VisualizationType::PRIMITIVES);
-    wvp->SetWheelVisualizationType(VisualizationType::PRIMITIVES);
-    wvp->SetTireVisualizationType(VisualizationType::NONE);
+    wvp->SetWheelVisualizationType(VisualizationType::NONE);
+    wvp->SetTireVisualizationType(VisualizationType::PRIMITIVES);
 
     wvp->GetVehicle().SetStepsize(time_step);
 

@@ -38,7 +38,7 @@ CSimpleOptA::SOption g_options[] = {{OPT_FILE, "-f", SO_REQ_CMB},
                                     SO_END_OF_OPTIONS};
 
 void ShowUsage(const std::string& name) {
-    std::cout << "Usage: " << name << " [OPTIONS]" << std::endl;
+    std::cout << "Usage: " << name << " -f=FILE_NAME -l=LINE -t=THREADS [OPTIONS]" << std::endl;
     std::cout << " -f=FILE_NAME" << std::endl;
     std::cout << "        Name of input file" << std::endl;
     std::cout << "        Each line contains a point in parameter space:" << std::endl;

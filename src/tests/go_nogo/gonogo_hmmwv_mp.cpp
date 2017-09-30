@@ -13,7 +13,7 @@
 // =============================================================================
 //
 // Chrono::Vehicle + Chrono::Parallel program for simulating a HMMWV vehicle
-// on granular terrain.
+// on granular terrain using the mobing patch feature.
 //
 // Contact uses non-smooth (DVI) formulation.
 //
@@ -24,26 +24,22 @@
 #include <cstdlib>
 #include <string>
 #include <iostream>
-#include <vector>
 #include <cmath>
 #include <algorithm>
 
 #include "chrono/ChConfig.h"
 #include "chrono/core/ChMathematics.h"
 #include "chrono/core/ChFileutils.h"
-#include "chrono/utils/ChUtilsGeometry.h"
-#include "chrono/utils/ChUtilsCreators.h"
-#include "chrono/utils/ChUtilsGenerators.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
+#include "chrono/utils/ChFilters.h"
 
 #include "chrono_vehicle/ChVehicleModelData.h"
-#include "chrono_vehicle/terrain/FlatTerrain.h"
 #include "chrono_vehicle/utils/ChVehiclePath.h"
+#include "chrono_vehicle/terrain/GranularTerrain.h"
 
 #include "chrono_models/vehicle/hmmwv/HMMWV.h"
 
 #include "chrono_parallel/physics/ChSystemParallel.h"
-#include "chrono_parallel/physics/Ch3DOFContainer.h"
 
 #ifdef CHRONO_OPENGL
 #include "chrono_opengl/ChOpenGLWindow.h"
@@ -66,30 +62,26 @@ using std::endl;
 // Specification of the terrain
 // -----------------------------------------------------------------------------
 
-// Use 3DOF particles?
-//#define USE_PARTICLES
-
-// Container
-double hdimX = 6;
-double hdimY = 1.75;
-double hdimZ = 0.5;
-double hthick = 0.05;
+// Patch half-dimensions
+double hdimX = 3.5;
+double hdimY = 1.5;
 
 // Fixed base layer?
-bool rough = true;
+bool rough = false;
 
 // Depth of granular material (mm)
 double depth = 100;
 int num_layers_min = 4;
 int num_layers_max = 8;
 
+// Moving patch parameters
+bool moving_patch = true;
+double buffer_distance = 4.0;
+double shift_distance = 0.25;
+
 // -----------------------------------------------------------------------------
 // Specification of the vehicle model
 // -----------------------------------------------------------------------------
-
-// Type of wheel/tire (controls both contact and visualization)
-enum WheelType { CYLINDRICAL, LUGGED };
-WheelType wheel_type = CYLINDRICAL;
 
 // Vehicle horizontal offset
 double horizontal_offset = 2.5;
@@ -101,7 +93,7 @@ ChQuaternion<> initRot(1, 0, 0, 0);
 double initSpeed = 0;
 
 // Contact material properties for tires
-float mu_t = 0.8f;
+float mu_t = 1.0f;
 float cr_t = 0;
 
 // -----------------------------------------------------------------------------
@@ -109,18 +101,25 @@ float cr_t = 0;
 // -----------------------------------------------------------------------------
 
 // Total simulation duration.
-double time_end = 7;
+double time_end = 50;
 
 // Time when the vehicle is created (allows for granular material settling)
-double time_create_vehicle = 0.25;
+double time_create_vehicle = 0.05;  //// 0.25;
 
-// Duration before starting to apply throttle (allows for vehicle settling)
+// Delay before starting the engine (before setting the target speed)
 double delay_start_engine = 0.25;
 double time_start_engine = time_create_vehicle + delay_start_engine;
 
 // Delay before throttle reaches maximum (linear ramp)
 double delay_max_throttle = 0.5;
 double time_max_throttle = time_start_engine + delay_max_throttle;
+
+// Delays before checking for slow-down and steady-state
+double filter_interval = 3.0;
+double delay_start_check_slow = 15.0;
+double delay_start_check_steady = 30.0;
+double time_start_check_slow = time_max_throttle + delay_start_check_slow;
+double time_start_check_steady = time_max_throttle + delay_start_check_steady;
 
 // Time when terrain is pitched (rotate gravity)
 double time_pitch = time_start_engine;
@@ -148,57 +147,7 @@ float contact_recovery_speed = 1000;
 // Output
 bool output = true;
 double output_frequency = 100.0;
-std::string out_dir = "../GONOGO_HMMWV";
-
-// =============================================================================
-
-/*
-
-// Callback class for specifying rigid tire contact model.
-// This version uses a collection of convex contact shapes (meshes).
-class MyLuggedTire : public ChTireContactCallback {
-  public:
-    MyLuggedTire() {
-        std::string lugged_file("hmmwv/lugged_wheel_section.obj");
-        geometry::ChTriangleMeshConnected lugged_mesh;
-        utils::LoadConvexMesh(vehicle::GetDataFile(lugged_file), lugged_mesh, lugged_convex);
-        num_hulls = lugged_convex.GetHullCount();
-    }
-
-    virtual void onCallback(std::shared_ptr<ChBody> wheelBody) {
-        auto coll_model = std::make_shared<collision::ChCollisionModelParallel>();
-        wheelBody->SetCollisionModel(coll_model);
-
-        coll_model->ClearModel();
-
-        // Assemble the tire contact from 15 segments, properly offset.
-        // Each segment is further decomposed in convex hulls.
-        for (int iseg = 0; iseg < 15; iseg++) {
-            ChQuaternion<> rot = Q_from_AngAxis(iseg * 24 * CH_C_DEG_TO_RAD, VECT_Y);
-            for (int ihull = 0; ihull < num_hulls; ihull++) {
-                std::vector<ChVector<> > convexhull;
-                lugged_convex.GetConvexHullResult(ihull, convexhull);
-                coll_model->AddConvexHull(convexhull, VNULL, rot);
-            }
-        }
-
-        // Add a cylinder to represent the wheel hub.
-        coll_model->AddCylinder(0.223, 0.223, 0.126);
-
-        coll_model->BuildModel();
-
-        coll_model->SetFamily(coll_fam_t);
-
-        wheelBody->GetMaterialSurfaceDEM()->SetFriction(mu_t);
-        wheelBody->GetMaterialSurfaceDEM()->SetRestitution(cr_t);
-    }
-
-  private:
-    ChConvexDecompositionHACDv2 lugged_convex;
-    int num_hulls;
-};
-
-*/
+std::string out_dir = "../GONOGO_HMMWV_MP";
 
 // =============================================================================
 
@@ -214,15 +163,6 @@ class CustomCompositionStrategy : public ChMaterialCompositionStrategy<real> {
 void ShowUsage(const std::string& name);
 bool GetProblemSpecs(int argc, char** argv, std::string& file, int& line, int& threads, bool& render, bool& copy);
 
-double CreateContainer(ChSystem* system, double mu, double coh, double radius);
-int CreateParticles(ChSystemParallelNSC* system,
-                    int num_layers,
-                    double radius,
-                    double rho,
-                    double mu,
-                    double coh,
-                    double top_height);
-double FindHighestParticle(ChSystem* system);
 HMMWV_Full* CreateVehicle(ChSystem* system, double vertical_offset);
 GONOGO_Driver* CreateDriver(ChVehicle& vehicle);
 
@@ -233,7 +173,7 @@ void TimingOutput(chrono::ChSystem* mSys, chrono::ChStreamOutAsciiFile* ofile = 
 
 int main(int argc, char* argv[]) {
     GetLog() << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
-    
+
     // ----------------------------
     // Parse command line arguments
     // ----------------------------
@@ -260,6 +200,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    // Check that a line number was specified
     if (line_number <= 0) {
         cout << "Incorrect line number." << endl;
         return 1;
@@ -312,16 +253,17 @@ int main(int argc, char* argv[]) {
     ChClampValue(num_layers, num_layers_min, num_layers_max);
 
     cout << "Set up" << endl;
-    cout << "  File:     " << input_file << "  Line: " << line_number << endl;
-    cout << "  Slope:    " << slope_val << "  " << slope << endl;
-    cout << "  Radius:   " << r_val << "  " << r_g << endl;
-    cout << "  Density:  " << rho_val << "  " << rho_g << endl;
-    cout << "  Friction: " << mu_val << "  " << mu_g << endl;
-    cout << "  Cohesion: " << coh_val << "  " << coh_g << endl;
+    cout << "  File:        " << input_file << "  Line: " << line_number << endl;
+    cout << "  Slope:       " << slope_val << "  " << slope << endl;
+    cout << "  Radius:      " << r_val << "  " << r_g << endl;
+    cout << "  Density:     " << rho_val << "  " << rho_g << endl;
+    cout << "  Friction:    " << mu_val << "  " << mu_g << endl;
+    cout << "  Cohesion:    " << coh_val << "  " << coh_g << endl;
+    cout << "  Num. layers: " << num_layers << endl;
 
-    // --------------------------------
-    // Create output directory and file
-    // --------------------------------
+    // ---------------------------------
+    // Create output directory and files
+    // ---------------------------------
 
     std::ofstream ofile;
     std::string del("  ");
@@ -366,15 +308,11 @@ int main(int argc, char* argv[]) {
     system->SetMaterialCompositionStrategy(std::move(strategy));
 
     // Set number of threads
-    ////cout << "Environment variables:" << endl;
-    ////cout << "  OMP_NUM_THREADS = " << std::getenv("OMP_NUM_THREADS") << endl;
-
-    // Set number of threads
     system->SetParallelThreadNumber(threads);
-    omp_set_num_threads(threads);
+    CHOMPfunctions::SetNumThreads(threads);
 #pragma omp parallel
 #pragma omp master
-    cout << "Using " << omp_get_num_threads() << " threads" << endl;
+    cout << "Using " << CHOMPfunctions::GetNumThreads() << " threads" << endl;
 
     system->GetSettings()->perform_thread_tuning = thread_tuning;
 
@@ -396,8 +334,6 @@ int main(int argc, char* argv[]) {
     system->GetSettings()->solver.bilateral_clamp_speed = 1e8;
     system->GetSettings()->min_threads = threads;
     system->ChangeSolverType(SolverType::BB);
-    ////system->SetLoggingLevel(LoggingLevel::LOG_INFO);
-    ////system->SetLoggingLevel(LoggingLevel::LOG_TRACE);
 
     system->GetSettings()->collision.collision_envelope = envelope;
     system->GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
@@ -405,17 +341,31 @@ int main(int argc, char* argv[]) {
     system->GetSettings()->collision.fixed_bins = true;
 
     // Specify active box.
-    system->GetSettings()->collision.use_aabb_active = false;
-    system->GetSettings()->collision.aabb_min = real3(-1.1 * hdimX, -1.1 * hdimY, 0);
-    system->GetSettings()->collision.aabb_max = real3(+1.1 * hdimX, +1.1 * hdimY, 10 * hdimZ);
+    // NOTE: this would need to be moved with the patch!
+    ////system->GetSettings()->collision.use_aabb_active = false;
+    ////system->GetSettings()->collision.aabb_min = real3(-1.1 * hdimX, -1.1 * hdimY, 0);
+    ////system->GetSettings()->collision.aabb_max = real3(+1.1 * hdimX, +1.1 * hdimY, 10);
 
     // ------------------
     // Create the terrain
     // ------------------
 
-    double top_height = CreateContainer(system, mu_g, coh_g, (rough ? r_g : -1));
-    int actual_num_particles = CreateParticles(system, num_layers, r_g, rho_g, mu_g, coh_g, top_height);
-    cout << "Created " << actual_num_particles << " particles." << endl;
+    GranularTerrain terrain(system);
+    terrain.SetContactFrictionCoefficient((float)mu_g);
+    terrain.SetContactCohesion((float)coh_g);
+    terrain.SetCollisionEnvelope(envelope / 5);
+    if (rough) {
+        int nx = (int)std::round((2 * hdimX) / (4 * r_g));
+        int ny = (int)std::round((2 * hdimY) / (4 * r_g));
+        terrain.EnableRoughSurface(nx, ny);
+    }
+    terrain.EnableVisualization(true);
+    terrain.EnableVerbose(true);
+
+    terrain.Initialize(ChVector<>(0, 0, 0), 2 * hdimX, 2 * hdimY, num_layers, r_g, rho_g);
+    uint actual_num_particles = terrain.GetNumParticles();
+
+    std::cout << "Number of particles: " << actual_num_particles << std::endl;
 
     // Save parameters and problem setup to output file
     if (output) {
@@ -444,7 +394,7 @@ int main(int argc, char* argv[]) {
     if (render) {
         opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
         gl_window.Initialize(1280, 720, "HMMWV go/no-go", system);
-        gl_window.SetCamera(ChVector<>(0, -10, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1));
+        gl_window.SetCamera(ChVector<>(-horizontal_pos, -5, 0), ChVector<>(-horizontal_pos, 0, 0), ChVector<>(0, 0, 1));
         gl_window.SetRenderMode(opengl::WIREFRAME);
     }
 #endif
@@ -455,7 +405,6 @@ int main(int argc, char* argv[]) {
 
     HMMWV_Full* hmmwv = nullptr;
     GONOGO_Driver* driver = nullptr;
-    FlatTerrain terrain(0);
 
     // Number of simulation steps between two output frames
     int output_steps = (int)std::ceil((1 / output_frequency) / time_step);
@@ -467,26 +416,12 @@ int main(int argc, char* argv[]) {
     double exec_time = 0;
 
     bool is_pitched = false;
-    double x_pos = -horizontal_pos;
+
+    int filter_steps = (int)std::ceil(filter_interval / time_step);
+    utils::ChRunningAverage fwd_vel_filter(filter_steps);
+    utils::ChRunningAverage fwd_acc_filter(filter_steps);
 
     while (true) {
-        // Check exit conditions
-        if (x_pos >= horizontal_pos) {
-            if (output) {
-                ofile << "# " << endl;
-                ofile << "# Reached maximum x position" << endl;
-            }
-            break;
-        }
-
-        if (x_pos <= -hdimX) {
-            if (output) {
-                ofile << "# " << endl;
-                ofile << "# Vehicle sliding backward" << endl;
-            }
-            break;
-        }
-
         if (time >= time_end) {
             if (output) {
                 ofile << "# " << endl;
@@ -499,9 +434,13 @@ int main(int argc, char* argv[]) {
         if (!hmmwv && time > time_create_vehicle) {
             cout << time << "    Create vehicle" << endl;
 
-            double max_height = FindHighestParticle(system);
+            double max_height = terrain.GetHeight(0, 0);
             hmmwv = CreateVehicle(system, max_height);
             driver = CreateDriver(hmmwv->GetVehicle());
+
+            // Enable moving patch, based on vehicle location
+            if (moving_patch)
+                terrain.EnableMovingPatch(hmmwv->GetChassisBody(), buffer_distance, shift_distance);
 
             next_out_frame = sim_frame;
         }
@@ -513,41 +452,65 @@ int main(int argc, char* argv[]) {
             is_pitched = true;
         }
 
+        // Synchronize terrain system
+        terrain.Synchronize(time);
+
         if (hmmwv) {
             // Extract current driver inputs
             double steering_input = driver->GetSteering();
             double braking_input = driver->GetBraking();
             double throttle_input = driver->GetThrottle();
 
-            // Synchronize vehicle systems
-            driver->Synchronize(time);
-            hmmwv->Synchronize(time, steering_input, braking_input, throttle_input, terrain);
+            // Extract chassis state
+            ChVector<> pv = hmmwv->GetChassisBody()->GetFrame_REF_to_abs().GetPos();
+            ChVector<> vv = hmmwv->GetChassisBody()->GetFrame_REF_to_abs().GetPos_dt();
+            ChVector<> av = hmmwv->GetChassisBody()->GetFrame_REF_to_abs().GetPos_dtdt();
 
-            // Update vehicle x position
-            x_pos = hmmwv->GetChassis()->GetPos().x();
+            // Filtered forward velocity and acceleration
+            double fwd_vel_mean = fwd_vel_filter.Add(vv.x());
+            double fwd_vel_std = fwd_vel_filter.GetStdDev();
+            double fwd_acc_mean = fwd_acc_filter.Add(av.x());
+            double fwd_acc_std = fwd_acc_filter.GetStdDev();
+
+            cout << fwd_acc_mean << "  " << fwd_vel_std << endl;
+
+            // Check if vehicle is sliding backward
+            if (pv.x() <= -hdimX) {
+                if (output) {
+                    ofile << "# " << endl;
+                    ofile << "# Vehicle sliding backward" << endl;
+                }
+                break;
+            }
+
+            // Check if vehicle is slowing down
+            if (time > time_start_check_slow && fwd_acc_mean < 0.1) {
+                if (output) {
+                    ofile << "# " << endl;
+                    ofile << "# Vehicle slowing down" << endl;
+                }
+                break;
+            }
+
+            // Check if vehicle reached steady-state speed
+            if (time > time_start_check_steady && std::abs(fwd_acc_mean) < 0.05 && fwd_vel_std < 0.03) {
+                if (output) {
+                    ofile << "# " << endl;
+                    ofile << "# Vehicle reached steady state" << endl;
+                }
+                break;
+            }
 
             // Save output
             if (output && sim_frame == next_out_frame) {
-                ChVector<> pv = hmmwv->GetChassisBody()->GetFrame_REF_to_abs().GetPos();
-                ChVector<> vv = hmmwv->GetChassisBody()->GetFrame_REF_to_abs().GetPos_dt();
-                ChVector<> av = hmmwv->GetChassisBody()->GetFrame_REF_to_abs().GetPos_dtdt();
-
-                ChVector<> v0 = hmmwv->GetVehicle().GetWheelLinVel(0);
-                ChVector<> v1 = hmmwv->GetVehicle().GetWheelLinVel(1);
-                ChVector<> v2 = hmmwv->GetVehicle().GetWheelLinVel(2);
-                ChVector<> v3 = hmmwv->GetVehicle().GetWheelLinVel(3);
-
                 ofile << system->GetChTime() << del;
                 ofile << throttle_input << del << steering_input << del;
 
                 ofile << pv.x() << del << pv.y() << del << pv.z() << del;
                 ofile << vv.x() << del << vv.y() << del << vv.z() << del;
-                ////ofile << av.x() << del << av.y() << del << av.z() << del;
 
-                ////ofile << v0.x() << del << v0.y() << del << v0.z() << del;
-                ////ofile << v1.x() << del << v1.y() << del << v1.z() << del;
-                ////ofile << v2.x() << del << v2.y() << del << v2.z() << del;
-                ////ofile << v3.x() << del << v3.y() << del << v3.z() << del;
+                ofile << fwd_vel_mean << del << fwd_vel_std << del;
+                ofile << fwd_acc_mean << del << fwd_acc_std << del;
 
                 ofile << endl;
 
@@ -555,7 +518,11 @@ int main(int argc, char* argv[]) {
                 next_out_frame += output_steps;
             }
 
-            // Advance vehicle systems
+            // Synchronize subsystems
+            driver->Synchronize(time);
+            hmmwv->Synchronize(time, steering_input, braking_input, throttle_input, terrain);
+
+            // Advance subsystems
             driver->Advance(time_step);
             hmmwv->Advance(time_step);
         } else {
@@ -600,189 +567,32 @@ int main(int argc, char* argv[]) {
 
 // =============================================================================
 
-double CreateContainer(ChSystem* system,  // containing system
-                       double mu,         // coefficient of friction
-                       double coh,        // cohesion (constant impulse)
-                       double radius      // radius of roughness spheres (if positive)
-                       ) {
-    bool visible_walls = false;
-
-    auto material = std::make_shared<ChMaterialSurfaceNSC>();
-    material->SetFriction((float)mu);
-    material->SetCohesion((float)coh);
-    material->SetCompliance(1e-9f);
-
-    auto ground = std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>());
-    ground->SetIdentifier(-1);
-    ground->SetMass(1000);
-    ground->SetBodyFixed(true);
-    ground->SetCollide(true);
-
-    ground->SetMaterialSurface(material);
-
-    ground->GetCollisionModel()->ClearModel();
-
-    // Attention: collision family for ground should be >= 5 (first values used in Chrono::Vehicle)
-    ground->GetCollisionModel()->SetFamily(5);
-    ground->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(WheeledCollisionFamily::TIRES);
-
-    // Bottom box
-    utils::AddBoxGeometry(ground.get(), ChVector<>(hdimX, hdimY, hthick), ChVector<>(0, 0, -hthick),
-                          ChQuaternion<>(1, 0, 0, 0), true);
-    // Left box
-    utils::AddBoxGeometry(ground.get(), ChVector<>(hdimX, hthick, hdimZ + hthick),
-                          ChVector<>(0, hdimY + hthick, hdimZ - hthick), ChQuaternion<>(1, 0, 0, 0), visible_walls);
-    // Right box
-    utils::AddBoxGeometry(ground.get(), ChVector<>(hdimX, hthick, hdimZ + hthick),
-                          ChVector<>(0, -hdimY - hthick, hdimZ - hthick), ChQuaternion<>(1, 0, 0, 0), visible_walls);
-
-    // Front box
-    utils::AddBoxGeometry(ground.get(), ChVector<>(hthick, hdimY, hdimZ + hthick),
-                          ChVector<>(hdimX + hthick, 0, hdimZ - hthick), ChQuaternion<>(1, 0, 0, 0), visible_walls);
-    // Rear box
-    utils::AddBoxGeometry(ground.get(), ChVector<>(hthick, hdimY, hdimZ + hthick),
-                          ChVector<>(-hdimX - hthick, 0, hdimZ - hthick), ChQuaternion<>(1, 0, 0, 0), visible_walls);
-
-    // If a positive radius was provided, create a "rough" surface
-    if (radius > 0) {
-        double d = 4 * radius;
-        int nx = (int)std::floor(hdimX / d);
-        int ny = (int)std::floor(hdimY / d);
-        for (int ix = -nx; ix <= nx; ix++) {
-            for (int iy = -ny; iy <= ny; iy++) {
-                utils::AddSphereGeometry(ground.get(), radius, ChVector<>(ix * d, iy * d, radius));
-            }
-        }
-    }
-
-    ground->GetCollisionModel()->BuildModel();
-
-    system->AddBody(ground);
-
-    return (radius > 0) ? 2 * radius : 0;
-}
-
-// =============================================================================
-
-int CreateParticles(ChSystemParallelNSC* system,  // containing system
-                    int num_layers,               // number of layers
-                    double radius,                // particle radius
-                    double rho,                   // particle density
-                    double mu,                    // coefficient of friction
-                    double coh,                   // cohesion (constant impulse)
-                    double top_height             // top height of rigid container
-                    ) {
-#ifdef USE_PARTICLES
-    auto particle_container = std::make_shared<ChParticleContainer>();
-    system->Add3DOFContainer(particle_container);
-
-    particle_container->kernel_radius = 2 * radius;
-    particle_container->mass = rho * (4 * CH_C_PI / 3) * std::pow(radius, 3);
-
-    particle_container->contact_mu = mu;
-    particle_container->contact_cohesion = coh;
-    particle_container->contact_compliance = 1e-9;
-
-    particle_container->mu = mu;
-    particle_container->cohesion = coh;
-    particle_container->compliance = 1e-9;
-
-    particle_container->alpha = alpha;
-
-    particle_container->contact_recovery_speed = contact_recovery_speed;
-    particle_container->collision_envelope = 0.1 * radius;
-
-    std::vector<real3> pos;
-    std::vector<real3> vel;
-
-    double r = 1.01 * radius;
-    ChVector<> hdims(hdimX - r, hdimY - r, 0);
-    ChVector<> center(0, 0, top_height + 2 * r);
-
-    utils::PDSampler<> sampler(2 * r);
-    for (int il = 0; il < num_layers; il++) {
-        utils::Generator::PointVector points = sampler.SampleBox(center, hdims);
-        center.z() += 2 * r;
-        for (int i = 0; i < points.size(); i++) {
-            pos.push_back(real3(points[i].x(), points[i].y(), points[i].z()));
-            vel.push_back(real3(0, 0, 0));
-        }
-    }
-
-    particle_container->UpdatePosition(0);
-    particle_container->AddBodies(pos, vel);
-
-    return (int)pos.size();
-#else
-    // Create a material
-    auto mat_g = std::make_shared<ChMaterialSurfaceNSC>();
-    mat_g->SetFriction((float)mu);
-    mat_g->SetCohesion((float)coh);
-    mat_g->SetCompliance(1e-9f);
-
-    // Create a particle generator and a mixture entirely made out of spheres
-    utils::Generator gen(system);
-    std::shared_ptr<utils::MixtureIngredient> m1 = gen.AddMixtureIngredient(utils::SPHERE, 1.0);
-    m1->setDefaultMaterial(mat_g);
-    m1->setDefaultDensity(rho);
-    m1->setDefaultSize(radius);
-
-    // Set starting value for body identifiers
-    gen.setBodyIdentifier(1);
-
-    // Create particles in layers until reaching the desired number of particles
-    double r = 1.01 * radius;
-    ChVector<> hdims(hdimX - r, hdimY - r, 0);
-    ChVector<> center(0, 0, top_height + 2 * r);
-
-    for (int il = 0; il < num_layers; il++) {
-        gen.createObjectsBox(utils::POISSON_DISK, 2 * r, center, hdims);
-        center.z() += 2 * r;
-    }
-
-    return gen.getTotalNumBodies();
-#endif
-}
-
-double FindHighestParticle(ChSystem* system) {
-    double highest = 0;
-    for (size_t i = 0; i < system->Get_bodylist()->size(); ++i) {
-        auto body = (*system->Get_bodylist())[i];
-        if (body->GetIdentifier() > 0 && body->GetPos().z() > highest)
-            highest = body->GetPos().z();
-    }
-    return highest;
-}
-
-// =============================================================================
-
 HMMWV_Full* CreateVehicle(ChSystem* system, double vertical_offset) {
-    auto hmmwv = new HMMWV_Full(system);
+    auto wvp = new HMMWV_Full(system);
 
-    hmmwv->SetContactMethod(ChMaterialSurface::NSC);
-    hmmwv->SetChassisFixed(false);
-    hmmwv->SetInitPosition(ChCoordsys<>(initLoc + ChVector<>(0, 0, vertical_offset), initRot));
-    hmmwv->SetInitFwdVel(initSpeed);
-    hmmwv->SetPowertrainType(PowertrainModelType::SIMPLE_MAP);
-    hmmwv->SetDriveType(DrivelineType::AWD);
-    hmmwv->SetTireType(TireModelType::RIGID);
+    wvp->SetContactMethod(ChMaterialSurface::NSC);
+    wvp->SetChassisFixed(false);
+    wvp->SetInitPosition(ChCoordsys<>(initLoc + ChVector<>(0, 0, vertical_offset), initRot));
+    wvp->SetInitFwdVel(initSpeed);
+    wvp->SetTireType(TireModelType::RIGID);
+    wvp->SetTireStepSize(time_step);
 
-    hmmwv->Initialize();
+    wvp->Initialize();
 
-    hmmwv->SetChassisVisualizationType(VisualizationType::NONE);
-    hmmwv->SetSuspensionVisualizationType(VisualizationType::PRIMITIVES);
-    hmmwv->SetSteeringVisualizationType(VisualizationType::PRIMITIVES);
-    hmmwv->SetWheelVisualizationType(VisualizationType::PRIMITIVES);
-    hmmwv->SetTireVisualizationType(VisualizationType::PRIMITIVES);
+    wvp->SetChassisVisualizationType(VisualizationType::NONE);
+    wvp->SetSuspensionVisualizationType(VisualizationType::PRIMITIVES);
+    wvp->SetSteeringVisualizationType(VisualizationType::PRIMITIVES);
+    wvp->SetWheelVisualizationType(VisualizationType::NONE);
+    wvp->SetTireVisualizationType(VisualizationType::PRIMITIVES);
 
-    hmmwv->GetVehicle().SetStepsize(time_step);
+    wvp->GetVehicle().SetStepsize(time_step);
 
-    return hmmwv;
+    return wvp;
 }
 
 GONOGO_Driver* CreateDriver(ChVehicle& vehicle) {
     double height = initLoc.z();
-    auto path = StraightLinePath(ChVector<>(-10 * hdimX, 0, height), ChVector<>(10 * hdimX, 0, height));
+    auto path = StraightLinePath(ChVector<>(-2 * hdimX, 0, height), ChVector<>(200 * hdimX, 0, height));
 
     auto driver = new GONOGO_Driver(vehicle, path, time_start_engine, time_max_throttle);
     double look_ahead_dist = 5;
