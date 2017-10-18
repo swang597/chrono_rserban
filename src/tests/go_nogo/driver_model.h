@@ -27,13 +27,13 @@
 #include "chrono_vehicle/ChVehicle.h"
 #include "chrono_vehicle/utils/ChSteeringController.h"
 
-class HMMWV_Driver : public chrono::vehicle::ChDriver {
+class GONOGO_Driver : public chrono::vehicle::ChDriver {
   public:
-    HMMWV_Driver(chrono::vehicle::ChVehicle& vehicle,          // associated vehicle
-                 std::shared_ptr<chrono::ChBezierCurve> path,  // target path
-                 double time_start,                            // time throttle start
-                 double time_max                               // time throttle max
-                 );
+    GONOGO_Driver(chrono::vehicle::ChVehicle& vehicle,          // associated vehicle
+                  std::shared_ptr<chrono::ChBezierCurve> path,  // target path
+                  double time_start,                            // time throttle start
+                  double time_max                               // time throttle max
+                  );
 
     void SetGains(double Kp, double Ki, double Kd) { m_steeringPID.SetGains(Kp, Ki, Kd); }
     void SetLookAheadDistance(double dist) { m_steeringPID.SetLookAheadDistance(dist); }
@@ -52,14 +52,11 @@ class HMMWV_Driver : public chrono::vehicle::ChDriver {
     double m_end;
 };
 
-inline HMMWV_Driver::HMMWV_Driver(chrono::vehicle::ChVehicle& vehicle,
-                                  std::shared_ptr<chrono::ChBezierCurve> path,
-                                  double time_start,
-                                  double time_max)
-    : chrono::vehicle::ChDriver(vehicle),
-      m_steeringPID(path, false),
-      m_start(time_start),
-      m_end(time_max) {
+inline GONOGO_Driver::GONOGO_Driver(chrono::vehicle::ChVehicle& vehicle,
+                                    std::shared_ptr<chrono::ChBezierCurve> path,
+                                    double time_start,
+                                    double time_max)
+    : chrono::vehicle::ChDriver(vehicle), m_steeringPID(path, false), m_start(time_start), m_end(time_max) {
     m_steeringPID.Reset(m_vehicle);
 
     auto road = std::shared_ptr<chrono::ChBody>(m_vehicle.GetSystem()->NewBody());
@@ -73,7 +70,7 @@ inline HMMWV_Driver::HMMWV_Driver(chrono::vehicle::ChVehicle& vehicle,
     road->AddAsset(path_asset);
 }
 
-inline void HMMWV_Driver::Synchronize(double time) {
+inline void GONOGO_Driver::Synchronize(double time) {
     m_braking = 0;
     if (time < m_start) {
         m_throttle = 0;
@@ -84,13 +81,13 @@ inline void HMMWV_Driver::Synchronize(double time) {
     }
 }
 
-inline void HMMWV_Driver::Advance(double step) {
+inline void GONOGO_Driver::Advance(double step) {
     double out_steering = m_steeringPID.Advance(m_vehicle, step);
     chrono::ChClampValue(out_steering, -1.0, 1.0);
     m_steering = out_steering;
 }
 
-inline void HMMWV_Driver::ExportPathPovray(const std::string& out_dir) {
+inline void GONOGO_Driver::ExportPathPovray(const std::string& out_dir) {
     chrono::utils::WriteCurvePovray(*m_steeringPID.GetPath(), "straight_path", out_dir, 0.04,
                                     chrono::ChColor(0.8f, 0.5f, 0.0f));
 }
