@@ -30,11 +30,11 @@ namespace hmmwv {
 // Static variables
 // -----------------------------------------------------------------------------
 
-const double HMMWV_Wheel::m_mass = 67.9; // Tire mass = 45.4 + Rim mass = 0.5 * Tire mass
-const ChVector<> HMMWV_Wheel::m_inertia(17.9504, 33.2979, 17.9504); // Estimated from Rim/Tire Geometry+Mass
+const double HMMWV_Wheel::m_mass = 45.4;
+const ChVector<> HMMWV_Wheel::m_inertia(0.113, 0.113, 0.113);
 
-const double HMMWV_Wheel::m_radius = 0.4699; // 37*12.5*16.5
-const double HMMWV_Wheel::m_width  = 0.3175;
+const double HMMWV_Wheel::m_radius = 0.268;
+const double HMMWV_Wheel::m_width = 0.22;
 
 const std::string HMMWV_WheelLeft::m_meshName = "wheel_L_POV_geom";
 const std::string HMMWV_WheelLeft::m_meshFile = "hmmwv/wheel_L.obj";
