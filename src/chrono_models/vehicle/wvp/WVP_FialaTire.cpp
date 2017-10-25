@@ -16,11 +16,11 @@
 //
 // =============================================================================
 
-#include <cmath>
 #include <algorithm>
+#include <cmath>
 
-#include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_models/vehicle/wvp/WVP_FialaTire.h"
+#include "chrono_vehicle/ChVehicleModelData.h"
 
 namespace chrono {
 namespace vehicle {
@@ -31,6 +31,9 @@ namespace wvp {
 // -----------------------------------------------------------------------------
 
 const double WVP_FialaTire::m_normalDamping = 4077;
+
+const double WVP_FialaTire::m_mass = 71.1;
+const ChVector<> WVP_FialaTire::m_inertia(9.62, 16.84, 9.62);
 
 const std::string WVP_FialaTire::m_meshName = "hmmwv_tire_POV_geom";
 const std::string WVP_FialaTire::m_meshFile = "hmmwv/hmmwv_tire.obj";
@@ -64,7 +67,6 @@ void WVP_FialaTire::SetFialaParams() {
     m_u_max = 0.8;
     m_relax_length_x = 1.2388;
     m_relax_length_y = 1.2388;
-
 }
 
 double WVP_FialaTire::GetNormalStiffnessForce(double depth) const {
@@ -85,7 +87,7 @@ double WVP_FialaTire::GetNormalStiffnessForce(double depth) const {
         return (normalforcetabel[int(std::floor(position))] * (1 - scale) +
                 normalforcetabel[int(std::floor(position) + 1)] * scale);
     }*/
-    return 407715.0*depth;
+    return 407715.0 * depth;
 }
 
 // -----------------------------------------------------------------------------
@@ -98,8 +100,7 @@ void WVP_FialaTire::AddVisualizationAssets(VisualizationType vis) {
         m_trimesh_shape->SetMesh(trimesh);
         m_trimesh_shape->SetName(m_meshName);
         m_wheel->AddAsset(m_trimesh_shape);
-    }
-    else {
+    } else {
         ChFialaTire::AddVisualizationAssets(vis);
     }
 }

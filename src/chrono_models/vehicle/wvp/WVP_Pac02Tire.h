@@ -2,7 +2,7 @@
 // PROJECT CHRONO - http://projectchrono.org
 //
 // Copyright (c) 2014 projectchrono.org
-// All right reserved.
+// All rights reserved.
 //
 // Use of this source code is governed by a BSD-style license that can be found
 // in the LICENSE file at the top level of the distribution and at
@@ -12,16 +12,16 @@
 // Authors: Radu Serban
 // =============================================================================
 //
-// WVP rigid tire subsystem
+// WVP Pacejka 2002 tire subsystem
 //
 // =============================================================================
 
-#ifndef WVP_RIGID_TIRE_H
-#define WVP_RIGID_TIRE_H
+#ifndef WVP_PAC02_TIRE_H
+#define WVP_PAC02_TIRE_H
 
 #include "chrono/assets/ChTriangleMeshShape.h"
 
-#include "chrono_vehicle/wheeled_vehicle/tire/ChRigidTire.h"
+#include "chrono_vehicle/wheeled_vehicle/tire/ChPacejkaTire.h"
 
 #include "chrono_models/ChApiModels.h"
 
@@ -29,13 +29,12 @@ namespace chrono {
 namespace vehicle {
 namespace wvp {
 
-class CH_MODELS_API WVP_RigidTire : public ChRigidTire {
+/// Pacejka 2002 tire model for the WVP vehicle.
+class CH_MODELS_API WVP_Pac02Tire : public ChPacejkaTire {
   public:
-    WVP_RigidTire(const std::string& name, bool use_mesh = false);
-    ~WVP_RigidTire() {}
+    WVP_Pac02Tire(const std::string& name);
+    ~WVP_Pac02Tire() {}
 
-    virtual double GetRadius() const override { return m_radius; }
-    virtual double GetWidth() const override { return m_width; }
     virtual double GetMass() const override { return m_mass; }
     virtual ChVector<> GetInertia() const override { return m_inertia; }
 
@@ -43,10 +42,10 @@ class CH_MODELS_API WVP_RigidTire : public ChRigidTire {
     virtual void RemoveVisualizationAssets() override final;
 
   private:
-    static const double m_radius;
-    static const double m_width;
     static const double m_mass;
     static const ChVector<> m_inertia;
+
+    static const std::string m_pacTireFile;
 
     static const std::string m_meshName;
     static const std::string m_meshFile;

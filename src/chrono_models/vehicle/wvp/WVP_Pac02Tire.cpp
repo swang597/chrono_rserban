@@ -2,7 +2,7 @@
 // PROJECT CHRONO - http://projectchrono.org
 //
 // Copyright (c) 2014 projectchrono.org
-// All right reserved.
+// All rights reserved.
 //
 // Use of this source code is governed by a BSD-style license that can be found
 // in the LICENSE file at the top level of the distribution and at
@@ -12,15 +12,16 @@
 // Authors: Radu Serban
 // =============================================================================
 //
-// WVP wheel subsystem
+// WVP Pacejka 2002 tire subsystem
+//
+// TODO: Needs Pacejka *.tir parameter file specific to this tire (365/80R20)
 //
 // =============================================================================
 
 #include <algorithm>
 
 #include "chrono_vehicle/ChVehicleModelData.h"
-
-#include "chrono_models/vehicle/wvp/WVP_Wheel.h"
+#include "chrono_models/vehicle/wvp/WVP_Pac02Tire.h"
 
 namespace chrono {
 namespace vehicle {
@@ -30,50 +31,42 @@ namespace wvp {
 // Static variables
 // -----------------------------------------------------------------------------
 
-const double WVP_Wheel::m_mass = 134.9;
-const ChVector<> WVP_Wheel::m_inertia(4.38, 9.16, 4.38);
+const double WVP_Pac02Tire::m_mass = 71.1;
+const ChVector<> WVP_Pac02Tire::m_inertia(9.62, 16.84, 9.62);
 
-const double WVP_Wheel::m_radius = 1.096/2.0;
-const double WVP_Wheel::m_width = 0.372;
+const std::string WVP_Pac02Tire::m_pacTireFile = "hmmwv/tire/HMMWV_pacejka.tir";
 
-const std::string WVP_WheelLeft::m_meshName = "wheel_L_POV_geom";
-const std::string WVP_WheelLeft::m_meshFile = "hmmwv/wheel_L.obj";
-
-const std::string WVP_WheelRight::m_meshName = "wheel_R_POV_geom";
-const std::string WVP_WheelRight::m_meshFile = "hmmwv/wheel_R.obj";
+const std::string WVP_Pac02Tire::m_meshName = "hmmwv_tire_POV_geom";
+const std::string WVP_Pac02Tire::m_meshFile = "hmmwv/hmmwv_tire.obj";
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-WVP_Wheel::WVP_Wheel(const std::string& name) : ChWheel(name) {}
-
-WVP_WheelLeft::WVP_WheelLeft(const std::string& name) : WVP_Wheel(name) {}
-
-WVP_WheelRight::WVP_WheelRight(const std::string& name) : WVP_Wheel(name) {}
+WVP_Pac02Tire::WVP_Pac02Tire(const std::string& name) : ChPacejkaTire(name, vehicle::GetDataFile(m_pacTireFile)) {}
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-void WVP_Wheel::AddVisualizationAssets(VisualizationType vis) {
+void WVP_Pac02Tire::AddVisualizationAssets(VisualizationType vis) {
     if (vis == VisualizationType::MESH) {
         geometry::ChTriangleMeshConnected trimesh;
-        trimesh.LoadWavefrontMesh(GetMeshFile(), false, false);
+        trimesh.LoadWavefrontMesh(vehicle::GetDataFile(m_meshFile), false, false);
         m_trimesh_shape = std::make_shared<ChTriangleMeshShape>();
         m_trimesh_shape->SetMesh(trimesh);
-        m_trimesh_shape->SetName(GetMeshName());
-        m_spindle->AddAsset(m_trimesh_shape);
+        m_trimesh_shape->SetName(m_meshName);
+        m_wheel->AddAsset(m_trimesh_shape);
     } else {
-        ChWheel::AddVisualizationAssets(vis);
+        ChPacejkaTire::AddVisualizationAssets(vis);
     }
 }
 
-void WVP_Wheel::RemoveVisualizationAssets() {
-    ChWheel::RemoveVisualizationAssets();
+void WVP_Pac02Tire::RemoveVisualizationAssets() {
+    ChPacejkaTire::RemoveVisualizationAssets();
 
-    // Make sure we only remove the assets added by WVP_Wheel::AddVisualizationAssets.
-    // This is important for the ChWheel object because a tire may add its own assets
-    // to the same body (the spindle).
-    auto it = std::find(m_spindle->GetAssets().begin(), m_spindle->GetAssets().end(), m_trimesh_shape);
-    if (it != m_spindle->GetAssets().end())
-        m_spindle->GetAssets().erase(it);
+    // Make sure we only remove the assets added by HMMWV_Pac02Tire::AddVisualizationAssets.
+    // This is important for the ChTire object because a wheel may add its own assets
+    // to the same body (the spindle/wheel).
+    auto it = std::find(m_wheel->GetAssets().begin(), m_wheel->GetAssets().end(), m_trimesh_shape);
+    if (it != m_wheel->GetAssets().end())
+        m_wheel->GetAssets().erase(it);
 }
 
 }  // end namespace wvp

@@ -18,8 +18,8 @@
 
 #include <algorithm>
 
-#include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_models/vehicle/wvp/WVP_RigidTire.h"
+#include "chrono_vehicle/ChVehicleModelData.h"
 
 namespace chrono {
 namespace vehicle {
@@ -29,8 +29,11 @@ namespace wvp {
 // Static variables
 // -----------------------------------------------------------------------------
 
-const double WVP_RigidTire::m_radius = 1.096/2.0;
+const double WVP_RigidTire::m_radius = 1.096 / 2.0;
 const double WVP_RigidTire::m_width = 0.372;
+
+const double WVP_RigidTire::m_mass = 71.1;
+const ChVector<> WVP_RigidTire::m_inertia(9.62, 16.84, 9.62);
 
 const std::string WVP_RigidTire::m_meshName = "hmmwv_tire_POV_geom";
 const std::string WVP_RigidTire::m_meshFile = "hmmwv/hmmwv_tire.obj";

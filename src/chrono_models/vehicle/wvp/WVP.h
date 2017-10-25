@@ -27,11 +27,12 @@
 
 #include "chrono_models/ChApiModels.h"
 #include "chrono_models/vehicle/wvp/WVP_Vehicle.h"
-#include "chrono_models/vehicle/wvp/WVP_Powertrain.h"
 #include "chrono_models/vehicle/wvp/WVP_SimpleMapPowertrain.h"
 #include "chrono_models/vehicle/wvp/WVP_FialaTire.h"
-#include "chrono_models/vehicle/wvp/WVP_RigidTire.h"
+#include "chrono_models/vehicle/wvp/WVP_Pac02Tire.h"
 #include "chrono_models/vehicle/wvp/WVP_Pac89Tire.h"
+#include "chrono_models/vehicle/wvp/WVP_Powertrain.h"
+#include "chrono_models/vehicle/wvp/WVP_RigidTire.h"
 
 namespace chrono {
 namespace vehicle {
@@ -56,7 +57,6 @@ class CH_MODELS_API WVP {
     void SetInitWheelAngVel(const std::vector<double>& omega) { m_initOmega = omega; }
 
     void SetTireStepSize(double step_size) { m_tire_step_size = step_size; }
-    void SetPacejkaParamfile(const std::string& filename) { m_pacejkaParamFile = filename; }
 
     ChSystem* GetSystem() const { return m_vehicle->GetSystem(); }
     ChWheeledVehicle& GetVehicle() const { return *m_vehicle; }
@@ -83,7 +83,6 @@ class CH_MODELS_API WVP {
 
     void Advance(double step);
 
-
     void LogHardpointLocations() { m_vehicle->LogHardpointLocations(); }
     void DebugLog(int what) { m_vehicle->DebugLog(what); }
 
@@ -95,7 +94,6 @@ class CH_MODELS_API WVP {
     TireModelType m_tireType;
 
     double m_tire_step_size;
-    std::string m_pacejkaParamFile;
 
     ChCoordsys<> m_initPos;
     double m_initFwdVel;

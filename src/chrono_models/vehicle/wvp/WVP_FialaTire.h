@@ -43,11 +43,16 @@ class CH_MODELS_API WVP_FialaTire : public ChFialaTire {
 
     virtual void SetFialaParams() override;
 
+    virtual double GetMass() const override { return m_mass; }
+    virtual ChVector<> GetInertia() const override { return m_inertia; }
+
     virtual void AddVisualizationAssets(VisualizationType vis) override;
     virtual void RemoveVisualizationAssets() override final;
 
   private:
     static const double m_normalDamping;
+    static const double m_mass;
+    static const ChVector<> m_inertia;
 
     static const std::string m_meshName;
     static const std::string m_meshFile;

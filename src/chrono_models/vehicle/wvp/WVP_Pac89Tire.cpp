@@ -16,11 +16,11 @@
 //
 // =============================================================================
 
-#include <cmath>
 #include <algorithm>
+#include <cmath>
 
-#include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_models/vehicle/wvp/WVP_Pac89Tire.h"
+#include "chrono_vehicle/ChVehicleModelData.h"
 
 namespace chrono {
 namespace vehicle {
@@ -30,7 +30,10 @@ namespace wvp {
 // Static variables
 // -----------------------------------------------------------------------------
 
-const double WVP_Pac89Tire::m_normalDamping = 8154*.01;
+const double WVP_Pac89Tire::m_normalDamping = 8154 * .01;
+
+const double WVP_Pac89Tire::m_mass = 71.1;
+const ChVector<> WVP_Pac89Tire::m_inertia(9.62, 16.84, 9.62);
 
 const std::string WVP_Pac89Tire::m_meshName = "hmmwv_tire_POV_geom";
 const std::string WVP_Pac89Tire::m_meshFile = "hmmwv/hmmwv_tire.obj";
@@ -38,18 +41,16 @@ const std::string WVP_Pac89Tire::m_meshFile = "hmmwv/hmmwv_tire.obj";
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 WVP_Pac89Tire::WVP_Pac89Tire(const std::string& name) : ChPac89Tire(name) {
-  ChPac89Tire::SetGammaLimit(85);
-
+    ChPac89Tire::SetGammaLimit(85);
 }
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 void WVP_Pac89Tire::SetPac89Params() {
-
-    m_unloaded_radius = 1.0960/2; //Diameter to Radius
+    m_unloaded_radius = 1.0960 / 2;  // Diameter to Radius
     m_width = 0.372;
-    m_rolling_resistance = 0.015; //0.0;
-    m_lateral_stiffness = 185*1000.; // N/mm -> N/m
+    m_rolling_resistance = 0.015;       // 0.0;
+    m_lateral_stiffness = 185 * 1000.;  // N/mm -> N/m
     m_measured_side = LEFT;
 
     m_PacCoeff.A0 = 1.0012;
@@ -109,23 +110,22 @@ void WVP_Pac89Tire::SetPac89Params() {
     m_stiffnessMap.AddPoint(80.0e-3, 31192.0);
     m_stiffnessMap.AddPoint(90.0e-3, 35893.0);
     m_stiffnessMap.AddPoint(100.0e-3, 40772.0);
-
 }
 
 double WVP_Pac89Tire::GetNormalStiffnessForce(double depth) const {
+    // ensure that depth is greater that 0
+    if (depth < 0)
+        depth = 0;
 
-    //ensure that depth is greater that 0
-    if(depth < 0) depth = 0;
-
-    //linear extrapolation if outside of map range
-    if(depth > 0.1){
-        return 487900 *(depth - 0.1) + 40772.0; //extrapolate with slope between last two data points in the map (slope=487900)
+    // linear extrapolation if outside of map range
+    if (depth > 0.1) {
+        return 487900 * (depth - 0.1) +
+               40772.0;  // extrapolate with slope between last two data points in the map (slope=487900)
     }
-    //normal case - interpolate from tire map
-    else{
+    // normal case - interpolate from tire map
+    else {
         return m_stiffnessMap.Get_y(depth);
     }
-
 }
 
 // -----------------------------------------------------------------------------
@@ -138,8 +138,7 @@ void WVP_Pac89Tire::AddVisualizationAssets(VisualizationType vis) {
         m_trimesh_shape->SetMesh(trimesh);
         m_trimesh_shape->SetName(m_meshName);
         m_wheel->AddAsset(m_trimesh_shape);
-    }
-    else {
+    } else {
         ChPac89Tire::AddVisualizationAssets(vis);
     }
 }

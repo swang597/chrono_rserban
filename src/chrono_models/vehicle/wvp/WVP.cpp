@@ -38,7 +38,6 @@ WVP::WVP()
       m_fixed(false),
       m_tireType(TireModelType::RIGID),
       m_tire_step_size(-1),
-      m_pacejkaParamFile(""),
       m_initFwdVel(0),
       m_initPos(ChCoordsys<>(ChVector<>(0, 0, 1), QUNIT)),
       m_initOmega({0, 0, 0, 0}),
@@ -54,7 +53,6 @@ WVP::WVP(ChSystem* system)
       m_fixed(false),
       m_tireType(TireModelType::RIGID),
       m_tire_step_size(-1),
-      m_pacejkaParamFile(""),
       m_initFwdVel(0),
       m_initPos(ChCoordsys<>(ChVector<>(0, 0, 1), QUNIT)),
       m_initOmega({0, 0, 0, 0}),
@@ -100,7 +98,7 @@ void WVP::Initialize() {
     switch (m_tireType) {
         case TireModelType::RIGID:
         case TireModelType::RIGID_MESH: {
-            std::cout<<"Init RIGID"<<std::endl;
+            std::cout << "Init RIGID" << std::endl;
             bool use_mesh = (m_tireType == TireModelType::RIGID_MESH);
             WVP_RigidTire* tire_FL = new WVP_RigidTire("FL", use_mesh);
             WVP_RigidTire* tire_FR = new WVP_RigidTire("FR", use_mesh);
@@ -115,7 +113,7 @@ void WVP::Initialize() {
             break;
         }
         case TireModelType::FIALA: {
-          std::cout<<"Init FIALA"<<std::endl;
+            std::cout << "Init FIALA" << std::endl;
             WVP_FialaTire* tire_FL = new WVP_FialaTire("FL");
             WVP_FialaTire* tire_FR = new WVP_FialaTire("FR");
             WVP_FialaTire* tire_RL = new WVP_FialaTire("RL");
@@ -136,15 +134,10 @@ void WVP::Initialize() {
             break;
         }
         case TireModelType::PACEJKA: {
-            if (m_pacejkaParamFile.empty())
-                throw ChException("Pacejka parameter file not specified.");
-
-            std::string param_file = vehicle::GetDataFile(m_pacejkaParamFile);
-
-            ChPacejkaTire* tire_FL = new ChPacejkaTire("FL", param_file);
-            ChPacejkaTire* tire_FR = new ChPacejkaTire("FR", param_file);
-            ChPacejkaTire* tire_RL = new ChPacejkaTire("RL", param_file);
-            ChPacejkaTire* tire_RR = new ChPacejkaTire("RR", param_file);
+            WVP_Pac02Tire* tire_FL = new WVP_Pac02Tire("FL");
+            WVP_Pac02Tire* tire_FR = new WVP_Pac02Tire("FR");
+            WVP_Pac02Tire* tire_RL = new WVP_Pac02Tire("RL");
+            WVP_Pac02Tire* tire_RR = new WVP_Pac02Tire("RR");
 
             tire_FL->SetDrivenWheel(false);
             tire_FR->SetDrivenWheel(false);
@@ -206,10 +199,10 @@ void WVP::SetTireVisualizationType(VisualizationType vis) {
 
 // -----------------------------------------------------------------------------
 void WVP::Synchronize(double time,
-                        double steering_input,
-                        double braking_input,
-                        double throttle_input,
-                        const ChTerrain& terrain) {
+                      double steering_input,
+                      double braking_input,
+                      double throttle_input,
+                      const ChTerrain& terrain) {
     TireForces tire_forces(4);
     WheelState wheel_states[4];
 
