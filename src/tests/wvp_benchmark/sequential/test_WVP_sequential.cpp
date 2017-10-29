@@ -205,7 +205,7 @@ int main(int argc, char* argv[]) {
           <<std::endl;*/
 
         /*for(int i=0;i<4;i++){*/
-          /*std::cout<<"wheel:"<<i<< "|Z Force:|" << wvp.GetTire(i)->GetTireForce(true).force.z()<<"|";*/
+          /*std::cout<<"wheel:"<<i<< "|Z Force:|" << wvp.GetTire(i)->ReportTireForce(&terrain).force.z()<<"|";*/
         /*}*/
         /*std::cout<<std::endl;*/
 

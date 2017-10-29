@@ -308,7 +308,7 @@ int main(int argc, char* argv[]) {
             csv << wvp.GetVehicle().GetVehicleAcceleration(wvp.GetVehicle().GetChassis()->GetCOMPos()).y();
 
             for(int i=0;i<4;i++){
-                csv << wvp.GetTire(i)->GetTireForce().force;
+                csv << wvp.GetTire(i)->ReportTireForce(&terrain).force;
             }
 
             for(int i=0;i<4;i++){

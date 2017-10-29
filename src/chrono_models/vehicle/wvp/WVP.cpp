@@ -110,6 +110,8 @@ void WVP::Initialize() {
             m_tires[2] = tire_RL;
             m_tires[3] = tire_RR;
 
+            m_tire_mass = tire_FL->GetMass();
+
             break;
         }
         case TireModelType::FIALA: {
@@ -130,6 +132,8 @@ void WVP::Initialize() {
             m_tires[1] = tire_FR;
             m_tires[2] = tire_RL;
             m_tires[3] = tire_RR;
+
+            m_tire_mass = tire_FL->GetMass();
 
             break;
         }
@@ -156,6 +160,8 @@ void WVP::Initialize() {
             m_tires[2] = tire_RL;
             m_tires[3] = tire_RR;
 
+            m_tire_mass = tire_FL->GetMass();
+
             break;
         }
         case TireModelType::PAC89: {
@@ -175,6 +181,8 @@ void WVP::Initialize() {
             m_tires[1] = tire_FR;
             m_tires[2] = tire_RL;
             m_tires[3] = tire_RR;
+
+            m_tire_mass = tire_FL->GetMass();
 
             break;
         }
@@ -240,6 +248,11 @@ void WVP::Advance(double step) {
     m_powertrain->Advance(step);
 
     m_vehicle->Advance(step);
+}
+
+// -----------------------------------------------------------------------------
+double WVP::GetTotalMass() const {
+    return m_vehicle->GetVehicleMass() + 4 * m_tire_mass;
 }
 
 }  // end namespace wvp

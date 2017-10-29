@@ -320,7 +320,7 @@ int main(int argc, char* argv[]) {
             csv << wvp.GetVehicle().GetVehicleAcceleration(wvp.GetVehicle().GetChassis()->GetLocalDriverCoordsys().pos);
             
             for(int i=0;i<4;i++){
-                csv << wvp.GetTire(i)->GetTireForce().force.z();
+                csv << wvp.GetTire(i)->ReportTireForce(&terrain).force.z();
             }
 
             csv << wvp.GetPowertrain().GetMotorTorque();
