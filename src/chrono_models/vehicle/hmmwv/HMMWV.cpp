@@ -42,7 +42,8 @@ HMMWV::HMMWV()
       m_tire_step_size(-1),
       m_initFwdVel(0),
       m_initPos(ChCoordsys<>(ChVector<>(0, 0, 1), QUNIT)),
-      m_initOmega({0, 0, 0, 0}) {}
+      m_initOmega({0, 0, 0, 0}),
+      m_apply_drag(false) {}
 
 HMMWV::HMMWV(ChSystem* system)
     : m_system(system),
@@ -133,8 +134,6 @@ void HMMWV::Initialize() {
             m_tires[2] = tire_RL;
             m_tires[3] = tire_RR;
 
-            m_tire_mass = tire_FL->GetMass();
-
             break;
         }
         case TireModelType::LUGRE: {
@@ -154,8 +153,6 @@ void HMMWV::Initialize() {
             m_tires[1] = tire_FR;
             m_tires[2] = tire_RL;
             m_tires[3] = tire_RR;
-
-            m_tire_mass = tire_FL->GetMass();
 
             break;
         }
@@ -177,8 +174,6 @@ void HMMWV::Initialize() {
             m_tires[2] = tire_RL;
             m_tires[3] = tire_RR;
 
-            m_tire_mass = tire_FL->GetMass();
-
             break;
         }
         case TireModelType::TMEASY: {
@@ -199,8 +194,6 @@ void HMMWV::Initialize() {
             m_tires[2] = tire_RL;
             m_tires[3] = tire_RR;
 
-            m_tire_mass = tire_FL->GetMass();
-
             break;
         }
         case TireModelType::PAC89: {
@@ -220,8 +213,6 @@ void HMMWV::Initialize() {
             m_tires[1] = tire_FR;
             m_tires[2] = tire_RL;
             m_tires[3] = tire_RR;
-
-            m_tire_mass = tire_FL->GetMass();
 
             break;
         }
@@ -248,8 +239,6 @@ void HMMWV::Initialize() {
             m_tires[2] = tire_RL;
             m_tires[3] = tire_RR;
 
-            m_tire_mass = tire_FL->GetMass();
-
             break;
         }
         case TireModelType::ANCF: {
@@ -263,8 +252,6 @@ void HMMWV::Initialize() {
             m_tires[1] = tire_FR;
             m_tires[2] = tire_RL;
             m_tires[3] = tire_RR;
-
-            m_tire_mass = tire_FL->GetTireMass();
 #endif
             break;
         }
@@ -279,8 +266,6 @@ void HMMWV::Initialize() {
             m_tires[1] = tire_FR;
             m_tires[2] = tire_RL;
             m_tires[3] = tire_RR;
-
-            m_tire_mass = tire_FL->GetTireMass();
 #endif
             break;
         }
@@ -293,6 +278,8 @@ void HMMWV::Initialize() {
     m_tires[1]->Initialize(m_vehicle->GetWheelBody(FRONT_RIGHT), RIGHT);
     m_tires[2]->Initialize(m_vehicle->GetWheelBody(REAR_LEFT), LEFT);
     m_tires[3]->Initialize(m_vehicle->GetWheelBody(REAR_RIGHT), RIGHT);
+
+    m_tire_mass = m_tires[0]->ReportMass();
 }
 
 // -----------------------------------------------------------------------------
