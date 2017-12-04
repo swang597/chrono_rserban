@@ -154,12 +154,13 @@ int main(int argc, char* argv[]) {
     // ------------------
 
     RigidTerrain terrain(wvp.GetSystem());
-    terrain.SetContactFrictionCoefficient(0.8f);
-    terrain.SetContactRestitutionCoefficient(0.01f);
-    terrain.SetContactMaterialProperties(2e7f, 0.3f);
-    terrain.SetColor(ChColor(0.8f, 0.8f, 0.5f));
-    terrain.SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 20, 20);
-    terrain.Initialize(0, 500, 500);
+    auto patch = terrain.AddPatch(ChCoordsys<>(ChVector<>(0, 0, -5), QUNIT), ChVector<>(500, 500, 10));
+    patch->SetContactFrictionCoefficient(0.8f);
+    patch->SetContactRestitutionCoefficient(0.01f);
+    patch->SetContactMaterialProperties(2e7f, 0.3f);
+    patch->SetColor(ChColor(0.8f, 0.8f, 0.5f));
+    patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 20, 20);
+    terrain.Initialize();
 
     //create the driver -> path follower
     /*auto path = ChBezierCurve::read(vehicle::GetDataFile(path_file));

@@ -160,12 +160,13 @@ int main(int argc, char* argv[]) {
     double swept_radius = 0.01;
 
     RigidTerrain terrain(wvp.GetSystem());
-    terrain.SetContactFrictionCoefficient(0.9f);
-    terrain.SetContactRestitutionCoefficient(0.01f);
-    terrain.SetContactMaterialProperties(2e7f, 0.3f);
-    terrain.SetColor(ChColor(0.8f, 0.8f, 0.5f));
-    terrain.SetTexture(vehicle::GetDataFile("terrain/textures/dirt.jpg"), 12, 12);
-    terrain.Initialize(vehicle::GetDataFile(terrainFile), "test_mesh", swept_radius);
+    auto patch = terrain.AddPatch(CSYSNORM, vehicle::GetDataFile(terrainFile), "test_mesh", swept_radius);
+    patch->SetContactFrictionCoefficient(0.9f);
+    patch->SetContactRestitutionCoefficient(0.01f);
+    patch->SetContactMaterialProperties(2e7f, 0.3f);
+    patch->SetColor(ChColor(0.8f, 0.8f, 0.5f));
+    patch->SetTexture(vehicle::GetDataFile("terrain/textures/dirt.jpg"), 12, 12);
+    terrain.Initialize();
 
 
     //create the driver
