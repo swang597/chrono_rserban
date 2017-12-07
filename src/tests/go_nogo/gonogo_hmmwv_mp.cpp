@@ -64,7 +64,7 @@ using std::endl;
 
 // Patch half-dimensions
 double hdimX = 3.5;
-double hdimY = 1.5;
+double hdimY = 1.75;
 
 // Fixed base layer?
 bool rough = false;
@@ -93,7 +93,7 @@ ChQuaternion<> initRot(1, 0, 0, 0);
 double initSpeed = 0;
 
 // Contact material properties for tires
-float mu_t = 1.0f;
+float mu_t = 0.8f; // 1.0f;
 float cr_t = 0;
 
 // -----------------------------------------------------------------------------
@@ -104,7 +104,7 @@ float cr_t = 0;
 double time_end = 50;
 
 // Time when the vehicle is created (allows for granular material settling)
-double time_create_vehicle = 0.05;  //// 0.25;
+double time_create_vehicle = 0.25;
 
 // Delay before starting the engine (before setting the target speed)
 double delay_start_engine = 0.25;
@@ -473,6 +473,15 @@ int main(int argc, char* argv[]) {
             double fwd_acc_std = fwd_acc_filter.GetStdDev();
 
             cout << fwd_acc_mean << "  " << fwd_vel_std << endl;
+
+            // Check if vehicle at maximum position
+            if (!moving_patch && pv.x() >= horizontal_pos) {
+                if (output) {
+                    ofile << "# " << endl;
+                    ofile << "# Reached maximum x position" << endl;
+                }
+                break;
+            }
 
             // Check if vehicle is sliding backward
             if (pv.x() <= -hdimX) {
