@@ -24,6 +24,8 @@ endif("${isSystemDir}" STREQUAL "-1")
 
 message(STATUS "==== Test programs ====")
 
+add_subdirectory(filesystem)
+
 if(ENABLE_MODULE_IRRLICHT)
 	add_subdirectory(collision)
 endif()
