@@ -577,26 +577,28 @@ int main(int argc, char* argv[]) {
 // =============================================================================
 
 HMMWV_Full* CreateVehicle(ChSystem* system, double vertical_offset) {
-    auto wvp = new HMMWV_Full(system);
+    auto hmmwv = new HMMWV_Full(system);
 
-    wvp->SetContactMethod(ChMaterialSurface::NSC);
-    wvp->SetChassisFixed(false);
-    wvp->SetInitPosition(ChCoordsys<>(initLoc + ChVector<>(0, 0, vertical_offset), initRot));
-    wvp->SetInitFwdVel(initSpeed);
-    wvp->SetTireType(TireModelType::RIGID);
-    wvp->SetTireStepSize(time_step);
+    hmmwv->SetContactMethod(ChMaterialSurface::NSC);
+    hmmwv->SetChassisFixed(false);
+    hmmwv->SetInitPosition(ChCoordsys<>(initLoc + ChVector<>(0, 0, vertical_offset), initRot));
+    hmmwv->SetInitFwdVel(initSpeed);
+    hmmwv->SetTireType(TireModelType::RIGID);
+    hmmwv->SetPowertrainType(PowertrainModelType::SIMPLE_MAP);
+    hmmwv->SetDriveType(DrivelineType::AWD);
+    hmmwv->SetTireStepSize(time_step);
 
-    wvp->Initialize();
+    hmmwv->Initialize();
 
-    wvp->SetChassisVisualizationType(VisualizationType::NONE);
-    wvp->SetSuspensionVisualizationType(VisualizationType::PRIMITIVES);
-    wvp->SetSteeringVisualizationType(VisualizationType::PRIMITIVES);
-    wvp->SetWheelVisualizationType(VisualizationType::NONE);
-    wvp->SetTireVisualizationType(VisualizationType::PRIMITIVES);
+    hmmwv->SetChassisVisualizationType(VisualizationType::NONE);
+    hmmwv->SetSuspensionVisualizationType(VisualizationType::PRIMITIVES);
+    hmmwv->SetSteeringVisualizationType(VisualizationType::PRIMITIVES);
+    hmmwv->SetWheelVisualizationType(VisualizationType::NONE);
+    hmmwv->SetTireVisualizationType(VisualizationType::PRIMITIVES);
 
-    wvp->GetVehicle().SetStepsize(time_step);
+    hmmwv->GetVehicle().SetStepsize(time_step);
 
-    return wvp;
+    return hmmwv;
 }
 
 GONOGO_Driver* CreateDriver(ChVehicle& vehicle) {
