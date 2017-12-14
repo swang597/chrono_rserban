@@ -25,6 +25,7 @@ endif("${isSystemDir}" STREQUAL "-1")
 message(STATUS "==== Test programs ====")
 
 add_subdirectory(filesystem)
+add_subdirectory(hdf5)
 
 if(ENABLE_MODULE_IRRLICHT)
 	add_subdirectory(collision)
