@@ -33,6 +33,7 @@
 #include "chrono_models/vehicle/wvp/WVP_Pac89Tire.h"
 #include "chrono_models/vehicle/wvp/WVP_Powertrain.h"
 #include "chrono_models/vehicle/wvp/WVP_RigidTire.h"
+#include "chrono_models/vehicle/wvp/WVP_TMeasyTire.h"
 
 namespace chrono {
 namespace vehicle {

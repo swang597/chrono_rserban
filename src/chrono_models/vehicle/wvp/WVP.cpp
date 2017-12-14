@@ -110,8 +110,6 @@ void WVP::Initialize() {
             m_tires[2] = tire_RL;
             m_tires[3] = tire_RR;
 
-            m_tire_mass = tire_FL->GetMass();
-
             break;
         }
         case TireModelType::FIALA: {
@@ -132,8 +130,6 @@ void WVP::Initialize() {
             m_tires[1] = tire_FR;
             m_tires[2] = tire_RL;
             m_tires[3] = tire_RR;
-
-            m_tire_mass = tire_FL->GetMass();
 
             break;
         }
@@ -160,8 +156,6 @@ void WVP::Initialize() {
             m_tires[2] = tire_RL;
             m_tires[3] = tire_RR;
 
-            m_tire_mass = tire_FL->GetMass();
-
             break;
         }
         case TireModelType::PAC89: {
@@ -182,7 +176,25 @@ void WVP::Initialize() {
             m_tires[2] = tire_RL;
             m_tires[3] = tire_RR;
 
-            m_tire_mass = tire_FL->GetMass();
+            break;
+        }
+        case TireModelType::TMEASY: {
+            WVP_TMeasyTire* tire_FL = new WVP_TMeasyTire("FL");
+            WVP_TMeasyTire* tire_FR = new WVP_TMeasyTire("FR");
+            WVP_TMeasyTire* tire_RL = new WVP_TMeasyTire("RL");
+            WVP_TMeasyTire* tire_RR = new WVP_TMeasyTire("RR");
+
+            if (m_tire_step_size > 0) {
+                tire_FL->SetStepsize(m_tire_step_size);
+                tire_FR->SetStepsize(m_tire_step_size);
+                tire_RL->SetStepsize(m_tire_step_size);
+                tire_RR->SetStepsize(m_tire_step_size);
+            }
+
+            m_tires[0] = tire_FL;
+            m_tires[1] = tire_FR;
+            m_tires[2] = tire_RL;
+            m_tires[3] = tire_RR;
 
             break;
         }
@@ -195,6 +207,8 @@ void WVP::Initialize() {
     m_tires[1]->Initialize(m_vehicle->GetWheelBody(FRONT_RIGHT), RIGHT);
     m_tires[2]->Initialize(m_vehicle->GetWheelBody(REAR_LEFT), LEFT);
     m_tires[3]->Initialize(m_vehicle->GetWheelBody(REAR_RIGHT), RIGHT);
+
+    m_tire_mass = m_tires[0]->ReportMass();
 }
 
 // -----------------------------------------------------------------------------

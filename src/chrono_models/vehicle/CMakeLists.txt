@@ -151,6 +151,8 @@ set(CVM_WVP_FILES
     wvp/WVP_Pac89Tire.h
     wvp/WVP_Pac02Tire.cpp
     wvp/WVP_Pac02Tire.h
+    wvp/WVP_TMeasyTire.cpp
+    wvp/WVP_TMeasyTire.h
 )
 source_group("wvp" FILES ${CVM_WVP_FILES})
 
