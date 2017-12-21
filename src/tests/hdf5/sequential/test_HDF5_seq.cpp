@@ -60,13 +60,13 @@ int main(int argc, char* argv[]) {
     sys.SetMaxItersSolverStab(5);
 
     // Open the ASCII file
-    std::string fileASCII_name = "testfile.txt";
+    std::string fileASCII_name = "testfile_seq.txt";
     std::ofstream fileASCII;
     fileASCII.open(fileASCII_name);
 
     // Create output HDF5 file (overwrite existing file)
     // and create a group for the simulation frames
-    H5std_string fileHDF5_name("testfile.h5");
+    H5std_string fileHDF5_name("testfile_seq.h5");
     H5::H5File fileHDF5(fileHDF5_name, H5F_ACC_TRUNC);
     H5::Group frames_group(fileHDF5.createGroup("/Frames"));
 
@@ -108,6 +108,13 @@ std::string format_number(int num, int precision) {
     return out.str();
 }
 
+struct vec {
+    double x, y, z;
+};
+struct quat {
+    double w, x, y, z;
+};
+
 void output_frame_hdf5(ChSystemNSC& sys, int frame, H5::H5File& file) {
     double time = sys.GetChTime();
     auto frame_name = std::string("Frame_") + format_number(frame, 6);
@@ -123,69 +130,100 @@ void output_frame_hdf5(ChSystemNSC& sys, int frame, H5::H5File& file) {
         att.write(H5::PredType::NATIVE_DOUBLE, &time);
     }
 
+    // HDF5 compund datatypes
+    H5::CompType vec_type(sizeof(vec));
+    vec_type.insertMember("x", HOFFSET(vec, x), H5::PredType::NATIVE_DOUBLE);
+    vec_type.insertMember("y", HOFFSET(vec, y), H5::PredType::NATIVE_DOUBLE);
+    vec_type.insertMember("z", HOFFSET(vec, z), H5::PredType::NATIVE_DOUBLE);
+
+    H5::CompType quat_type(sizeof(quat));
+    quat_type.insertMember("e0", HOFFSET(quat, w), H5::PredType::NATIVE_DOUBLE);
+    quat_type.insertMember("e1", HOFFSET(quat, x), H5::PredType::NATIVE_DOUBLE);
+    quat_type.insertMember("e2", HOFFSET(quat, y), H5::PredType::NATIVE_DOUBLE);
+    quat_type.insertMember("e3", HOFFSET(quat, z), H5::PredType::NATIVE_DOUBLE);
+
     // Populate body group
-    auto n_bodies = sys.Get_bodylist()->size();
-    if (n_bodies > 0) {
+    auto nbodies = sys.Get_bodylist()->size();
+    if (nbodies > 0) {
         H5::Group b_group(f_group.createGroup("Bodies"));
+        hsize_t dim[] = { nbodies };
+        H5::DataSpace dataspace(1, dim);
 
         // Write positions and velocities
-        std::vector<double> pos;
-        std::vector<double> vel;
-        for (auto body : *sys.Get_bodylist()) {
-            ChVector<> p = body->GetPos();
-            ChVector<> v = body->GetPos_dt();
-            pos.push_back(p.x());
-            pos.push_back(p.y());
-            pos.push_back(p.z());
-            vel.push_back(v.x());
-            vel.push_back(v.y());
-            vel.push_back(v.z());
+        auto bodies = *sys.Get_bodylist();
+        std::vector<vec> pos(nbodies);
+        std::vector<quat> rot(nbodies);
+        std::vector<vec> lin_vel(nbodies);
+        std::vector<vec> ang_vel(nbodies);
+        for (auto i = 0; i < nbodies; i++) {
+            const ChVector<>& p = bodies[i]->GetPos();
+            const ChQuaternion<>& q = bodies[i]->GetRot();
+            const ChVector<>& lv = bodies[i]->GetPos_dt();
+            const ChVector<>& av = bodies[i]->GetWvel_loc();
+            pos[i] = { p.x(), p.y(), p.z() };
+            rot[i] = { q.e0(), q.e1(), q.e2(), q.e3() };
+            lin_vel[i] = { lv.x(), lv.x(), lv.x() };
+            ang_vel[i] = { av.x(), av.y(), av.z() };
         }
 
-        ////auto p = sys.Get_bodylist()->at(0)->GetPos();
-        ////std::cout << "Frame " << frame << "Body: " << p.x() << " " << p.y() << " " << p.z() << std::endl;
         {
-            hsize_t dims[2] = {n_bodies, 3};
-            H5::DataSpace dataspace(2, dims);
-            H5::DataSet dataset = b_group.createDataSet("Positions", H5::PredType::NATIVE_DOUBLE, dataspace);
-            dataset.write(pos.data(), H5::PredType::NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT);
+            H5::DataSet set_pos = b_group.createDataSet("Positions", vec_type, dataspace);
+            H5::DataSet set_rot = b_group.createDataSet("Rotations", quat_type, dataspace);
+            set_pos.write(pos.data(), vec_type);
+            set_rot.write(rot.data(), quat_type);
         }
         {
-            hsize_t dims[2] = {n_bodies, 3};
-            H5::DataSpace dataspace(2, dims);
-            H5::DataSet dataset = b_group.createDataSet("Velocities", H5::PredType::NATIVE_DOUBLE, dataspace);
-            dataset.write(vel.data(), H5::PredType::NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT);
+            H5::DataSet set_lin = b_group.createDataSet("Linear Velocities", vec_type, dataspace);
+            H5::DataSet set_ang = b_group.createDataSet("Angular Velocities", vec_type, dataspace);
+            set_lin.write(lin_vel.data(), vec_type);
+            set_ang.write(ang_vel.data(), vec_type);
         }
+
     }
 
     // Populate link group
-    auto n_links = sys.Get_linklist()->size();
-    if (n_links > 0) {
+    auto nlinks = sys.Get_linklist()->size();
+    if (nlinks > 0) {
         H5::Group l_group(f_group.createGroup("Links"));
     }
+}
+
+std::ostream& operator<<(std::ostream& out, const vec& a) {
+    return out << a.x << " " << a.y << " " << a.z;
+}
+
+std::ostream& operator<<(std::ostream& out, const quat& a) {
+    return out << a.w << " " << a.x << " " << a.y << " " << a.z;
 }
 
 void output_frame_ascii(ChSystemNSC& sys, int frame, std::ofstream& file) {
     file << frame << " " << sys.GetChTime() << std::endl;
 
-    auto n_bodies = sys.Get_bodylist()->size();
-    if (n_bodies > 0) {
+    auto nbodies = sys.Get_bodylist()->size();
+    if (nbodies > 0) {
         // Write positions and velocities
-        std::vector<double> pos;
-        std::vector<double> vel;
-        for (auto body : *sys.Get_bodylist()) {
-            ChVector<> p = body->GetPos();
-            ChVector<> v = body->GetPos_dt();
-            pos.push_back(p.x());
-            pos.push_back(p.y());
-            pos.push_back(p.z());
-            vel.push_back(v.x());
-            vel.push_back(v.y());
-            vel.push_back(v.z());
+        auto bodies = *sys.Get_bodylist();
+        std::vector<vec> pos(nbodies);
+        std::vector<quat> rot(nbodies);
+        std::vector<vec> lin_vel(nbodies);
+        std::vector<vec> ang_vel(nbodies);
+        for (auto i = 0; i < nbodies; i++) {
+            const ChVector<>& p = bodies[i]->GetPos();
+            const ChQuaternion<>& q = bodies[i]->GetRot();
+            const ChVector<>& lv = bodies[i]->GetPos_dt();
+            const ChVector<>& av = bodies[i]->GetWvel_loc();
+            pos[i] = { p.x(), p.y(), p.z() };
+            rot[i] = { q.e0(), q.e1(), q.e2(), q.e3() };
+            lin_vel[i] = { lv.x(), lv.x(), lv.x() };
+            ang_vel[i] = { av.x(), av.y(), av.z() };
         }
-        std::copy(pos.begin(), pos.end(), std::ostream_iterator<double>(file, " "));
+        std::copy(pos.begin(), pos.end(), std::ostream_iterator<vec>(file, "\t"));
         file << std::endl;
-        std::copy(vel.begin(), vel.end(), std::ostream_iterator<double>(file, " "));
+        std::copy(rot.begin(), rot.end(), std::ostream_iterator<quat>(file, "\t"));
+        file << std::endl;
+        std::copy(lin_vel.begin(), lin_vel.end(), std::ostream_iterator<vec>(file, "\t"));
+        file << std::endl;
+        std::copy(ang_vel.begin(), ang_vel.end(), std::ostream_iterator<vec>(file, "\t"));
         file << std::endl;
     }
 }

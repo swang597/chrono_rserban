@@ -22,41 +22,10 @@ message(STATUS "HDF5 include dir: ${HDF5_INCLUDE_DIR}")
 message(STATUS "HDF5 C library:   ${HDF5_C_${LIB_TYPE}_LIBRARY}")
 message(STATUS "HDF5 C++ library: ${HDF5_CXX_${LIB_TYPE}_LIBRARY}")
 
-# ------------------------------------------------------------------------------
-# List of all executables
-# ------------------------------------------------------------------------------
+if (ENABLE_MODULE_IRRLICHT)
+  add_subdirectory(sequential)
+endif()
 
-SET(DEMOS
-    test_HDF5
-)
-
-# ------------------------------------------------------------------------------
-
-include_directories(${CH_IRRLICHTINC})
-include_directories(${HDF5_INCLUDE_DIR})
-
-set(CXX_FLAGS "${CH_CXX_FLAGS} ${CH_IRRLICHT_CXX_FLAGS}")
-set(LIBRARIES ChronoEngine ChronoEngine_irrlicht ${HDF5_CXX_${LIB_TYPE}_LIBRARY})
-
-
-# ------------------------------------------------------------------------------
-# Add all executables
-# ------------------------------------------------------------------------------
-
-foreach(PROGRAM ${DEMOS})
-    message(STATUS "...add ${PROGRAM}")
-
-    add_executable(${PROGRAM}  "${PROGRAM}.cpp")
-    source_group(""  FILES "${PROGRAM}.cpp")
-
-    set_target_properties(${PROGRAM} PROPERTIES
-        FOLDER demos
-        COMPILE_FLAGS "${CH_CXX_FLAGS} ${CH_IRRLICHT_CXX_FLAGS}"
-        COMPILE_DEFINITIONS "H5_BUILT_AS_DYNAMIC_LIB "
-        LINK_FLAGS "${CH_LINKERFLAG_EXE}"
-    )
-
-    target_link_libraries(${PROGRAM} ${LIBRARIES})
-
-endforeach(PROGRAM)
-
+if (ENABLE_MODULE_PARALLEL AND ENABLE_MODULE_OPENGL)
+  add_subdirectory(parallel)
+endif()  
