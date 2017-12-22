@@ -47,15 +47,14 @@ endif()
 
 if(ENABLE_MODULE_VEHICLE AND ENABLE_MODULE_PARALLEL)
     add_subdirectory(go_nogo)
-    add_subdirectory(wvp_benchmark/parallel)
 endif()
 
 if(ENABLE_MODULE_VEHICLE AND ENABLE_MODULE_IRRLICHT)
 	add_subdirectory(vehicle)
-	add_subdirectory(wvp_benchmark/sequential)
 endif()
 
 if(ENABLE_MODULE_VEHICLE)
+    add_subdirectory(wvp_benchmark)
 	add_subdirectory(go_nogo_SCM)
 endif()
 
