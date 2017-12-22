@@ -103,6 +103,8 @@ class CH_MODELS_API WVP_DoubleWishboneFront : public ChDoubleWishbone {
 
     static const double m_springRestLength;
     static const double m_springCoefficient;
+
+    static const double m_springPreload;
 };
 
 // -----------------------------------------------------------------------------
@@ -174,6 +176,60 @@ class CH_MODELS_API WVP_DoubleWishboneRear : public ChDoubleWishbone {
 
     static const double m_springRestLength;
     static const double m_springCoefficient;
+
+    static const double m_springPreload;
+};
+
+// -----------------------------------------------------------------------------
+
+class CH_MODELS_API WVP_SpringForce : public ChLinkSpringCB::ForceFunctor {
+  public:
+    WVP_SpringForce(int axle_index, double rest_length, double preload);
+
+    virtual double operator()(double time,
+                              double rest_length,
+                              double length,
+                              double vel,
+                              ChLinkSpringCB* link) override;
+
+    double evaluate(double displ);
+
+  private:
+    int m_axle_index;
+    double m_rest_length;
+    double m_preload;
+    ChFunction_Recorder m_map;
+};
+
+// -----------------------------------------------------------------------------
+
+class CH_MODELS_API WVP_ShockForce : public ChLinkSpringCB::ForceFunctor {
+  public:
+    WVP_ShockForce(int axle_index, double rest_length);
+
+    virtual double operator()(double time,
+                              double rest_length,
+                              double length,
+                              double vel,
+                              ChLinkSpringCB* link) override;
+
+    double evaluate(double displ, double vel, double displ_other, double vel_other);
+
+  private:
+    int m_axle_index;
+    double m_rest_length;
+
+    std::shared_ptr<ChLinkSpringCB> m_shock_left;
+    std::shared_ptr<ChLinkSpringCB> m_shock_right;
+
+    ChFunction_Recorder m_roll_map;
+    std::map<double, ChFunction_Recorder> m_para_damp_map;
+    std::map<double, ChFunction_Recorder> m_single_damp_map;
+
+    double interpolate2D(double x, double y, std::map<double, ChFunction_Recorder> map2D);
+
+    friend class WVP_DoubleWishboneFront;
+    friend class WVP_DoubleWishboneRear;
 };
 
 }  // end namespace wvp
