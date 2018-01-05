@@ -31,6 +31,10 @@ if(ENABLE_MODULE_IRRLICHT)
 	add_subdirectory(collision)
 endif()
 
+if(ENABLE_MODULE_FEA AND ENABLE_MODULE_IRRLICHT)
+    add_subdirectory(collision_FEA)
+endif()
+
 if(ENABLE_MODULE_POSTPROCESS)
     add_subdirectory(postprocess)
 endif()
