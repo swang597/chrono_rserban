@@ -71,29 +71,28 @@ void CheckSuspension(WVP_Vehicle& vehicle, int axle, utils::CSV_writer& csv) {
 
 
 	//single spring curve check
-	csv << "Displacement" << "SpringForce"<<std::endl;
+	/*csv << "Displacement" << "SpringForce"<<std::endl;
 	for (int i = -1000; i < 1000; i++){
 		double displ_mine = i*.001;
 		csv << displ_mine;
 		csv << springForce->evaluate(displ_mine) << std::endl;
-	}
+	}*/
 
 
-	//single wheel damping curve check
+	//opposite wheel travel
 	double displ_other = 0;
 	double vel_other = 0;
 	csv << "displ_mine" << "vel_mine" << "displ_other" << "vel_other" << "shockForce" << std::endl;
-	for (int i = -100; i < 100; i++) {
-		for (int j = -300; j < 300; j++) {
-			double displ_mine = i*0.005;
-			double vel_mine = j*.01;
+	for (int i = -15; i < 15; i++) {
+		for (int j = -20; j < 30; j++) {
+			double displ_mine = i*0.02;
+			double vel_mine = j*.1;
+			double displ_other = -displ_mine;
+			double vel_other = -vel_mine;
 			csv << displ_mine << vel_mine << displ_other << vel_other;
 			csv << shockForce->evaluate(displ_mine, vel_mine, displ_other, vel_other) << std::endl;
 		}
 	}
-
-
-
 
 
 
@@ -101,21 +100,17 @@ void CheckSuspension(WVP_Vehicle& vehicle, int axle, utils::CSV_writer& csv) {
 	/*double displ_other = 0;
 	double vel_other = 0;
 	csv << "displ_mine" << "vel_mine" << "displ_other" << "vel_other" << "shockForce" << std::endl;
-	for (int i = -100; i < 100; i++) {
-		for (int j = -300; j < 300; j++) {
-			double displ_mine = i*0.005;
-			double vel_mine = j*.01;
+	for (int i = -15; i < 15; i++) {
+		for (int j = -20; j < 30; j++) {
+			double displ_mine = i*0.02;
+			double vel_mine = j*.1;
 			double displ_other = displ_mine;
 			double vel_other = vel_mine;
 			csv << displ_mine << vel_mine << displ_other << vel_other;
 			csv << shockForce->evaluate(displ_mine, vel_mine, displ_other, vel_other) << std::endl;
 		}
-	}*/
-
-
-
-	//opposite wheel curve check (includes roll stabilization)
-
+	}
+	*/
 
 
 
