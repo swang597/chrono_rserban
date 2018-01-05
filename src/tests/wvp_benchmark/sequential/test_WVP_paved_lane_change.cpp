@@ -49,7 +49,7 @@ using namespace chrono::vehicle::wvp;
 // =============================================================================
 
 // Initial vehicle location and orientation
-ChVector<> initLoc(0,0, 0.5);
+ChVector<> initLoc(0,0, 0.75);
 ChQuaternion<> initRot(1, 0, 0, 0);
 
 // Visualization type for vehicle parts (PRIMITIVES, MESH, or NONE)
@@ -156,18 +156,19 @@ int main(int argc, char* argv[]) {
     // --------------
 
     // Create the vehicle, set parameters, and initialize
-    WVP wvp;
-    wvp.SetChassisFixed(false);
-    wvp.SetInitPosition(ChCoordsys<>(initLoc, initRot));
-    wvp.SetTireType(tire_model);
-    wvp.SetTireStepSize(tire_step_size);
-    wvp.Initialize();
+	WVP wvp;
+	wvp.SetChassisFixed(false);
+	wvp.SetInitPosition(ChCoordsys<>(initLoc, initRot));
+	wvp.SetTireType(tire_model);
+	wvp.SetTireStepSize(tire_step_size);
+	wvp.SetInitFwdVel(0.0);
+	wvp.Initialize();
 
-    wvp.SetChassisVisualizationType(chassis_vis_type);
-    wvp.SetSuspensionVisualizationType(suspension_vis_type);
-    wvp.SetSteeringVisualizationType(steering_vis_type);
-    wvp.SetWheelVisualizationType(wheel_vis_type);
-    wvp.SetTireVisualizationType(tire_vis_type);
+	wvp.SetChassisVisualizationType(chassis_vis_type);
+	wvp.SetSuspensionVisualizationType(suspension_vis_type);
+	wvp.SetSteeringVisualizationType(steering_vis_type);
+	wvp.SetWheelVisualizationType(wheel_vis_type);
+	wvp.SetTireVisualizationType(tire_vis_type);
 
     std::cout << "Total vehicle mass: " << wvp.GetVehicle().GetVehicleMass() << std::endl;
 
@@ -184,6 +185,28 @@ int main(int argc, char* argv[]) {
     patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 20, 20);
     terrain.Initialize();
 
+
+#ifdef USE_IRRLICHT
+	// -------------------------------------
+	// Create the vehicle Irrlicht interface
+	// Create the driver system
+	// -------------------------------------
+
+	ChWheeledVehicleIrrApp app(&wvp.GetVehicle(), &wvp.GetPowertrain(), L"WVP sequential test");
+	app.SetSkyBox();
+	app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
+	app.SetChaseCamera(trackPoint, 6.0, 0.5);
+	/*app.SetTimestep(step_size);*/
+	app.AssetBindAll();
+	app.AssetUpdateAll();
+
+	// Visualization of controller points (sentinel & target)
+	irr::scene::IMeshSceneNode* ballS = app.GetSceneManager()->addSphereSceneNode(0.1f);
+	irr::scene::IMeshSceneNode* ballT = app.GetSceneManager()->addSphereSceneNode(0.1f);
+	ballS->getMaterial(0).EmissiveColor = irr::video::SColor(0, 255, 0, 0);
+	ballT->getMaterial(0).EmissiveColor = irr::video::SColor(0, 0, 255, 0);
+#endif
+
     //create the driver -> path follower
     /*auto path = ChBezierCurve::read(vehicle::GetDataFile(path_file));
     ChPathFollowerDriver driver(wvp.GetVehicle(), vehicle::GetDataFile(steering_controller_file),
@@ -198,6 +221,8 @@ int main(int argc, char* argv[]) {
             target_speed, vehicle::GetDataFile(steering_input_file), 1, 3, 20.0
             );
 
+
+
     //for closed loop, can just not switch to data for now
     // WVP_FollowerDataDriver driver(wvp.GetVehicle(),
     //         vehicle::GetDataFile(steering_controller_file),
@@ -209,26 +234,7 @@ int main(int argc, char* argv[]) {
     driver.Initialize();
 
 
-#ifdef USE_IRRLICHT
-    // -------------------------------------
-    // Create the vehicle Irrlicht interface
-    // Create the driver system
-    // -------------------------------------
 
-    ChWheeledVehicleIrrApp app(&wvp.GetVehicle(), &wvp.GetPowertrain(), L"WVP sequential test");
-    app.SetSkyBox();
-    app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
-    app.SetChaseCamera(trackPoint, 6.0, 0.5);
-    /*app.SetTimestep(step_size);*/
-    app.AssetBindAll();
-    app.AssetUpdateAll();
-
-    // Visualization of controller points (sentinel & target)
-    irr::scene::IMeshSceneNode* ballS = app.GetSceneManager()->addSphereSceneNode(0.1f);
-    irr::scene::IMeshSceneNode* ballT = app.GetSceneManager()->addSphereSceneNode(0.1f);
-    ballS->getMaterial(0).EmissiveColor = irr::video::SColor(0, 255, 0, 0);
-    ballT->getMaterial(0).EmissiveColor = irr::video::SColor(0, 0, 255, 0);
-#endif
     
     // -------------
     // Prepare output
