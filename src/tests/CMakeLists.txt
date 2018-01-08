@@ -29,6 +29,7 @@ add_subdirectory(hdf5)
 
 if(ENABLE_MODULE_IRRLICHT)
 	add_subdirectory(collision)
+  add_subdirectory(render)
 endif()
 
 if(ENABLE_MODULE_FEA AND ENABLE_MODULE_IRRLICHT)
