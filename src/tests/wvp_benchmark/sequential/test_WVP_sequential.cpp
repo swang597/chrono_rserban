@@ -86,7 +86,6 @@ int main(int argc, char* argv[]) {
     wvp.SetWheelVisualizationType(wheel_vis_type);
     wvp.SetTireVisualizationType(tire_vis_type);
 
-    std::cout << "Total vehicle mass: " << wvp.GetVehicle().GetVehicleMass() << std::endl;
     {
         auto suspF = std::static_pointer_cast<WVP_DoubleWishboneFront>(wvp.GetVehicle().GetSuspension(0));
         auto springFL = suspF->GetSpring(VehicleSide::LEFT);
@@ -103,6 +102,9 @@ int main(int argc, char* argv[]) {
         std::cout << "Spring rest length rear: " << springRL->GetSpringRestLength() << std::endl;
         std::cout << "Shock rest length rear:  " << shockRL->GetSpringRestLength() << std::endl;
     }
+
+    std::cout << "Vehicle mass:               " << wvp.GetVehicle().GetVehicleMass() << std::endl;
+    std::cout << "Vehicle mass (with tires):  " << wvp.GetTotalMass() << std::endl;
 
     // ------------------
     // Create the terrain
