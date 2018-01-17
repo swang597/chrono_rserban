@@ -123,6 +123,10 @@ void WVP_FollowerDataDriver::ParseCSV(std::string dataFile, int timeCol, int ste
         // std::cout<<line<<std::endl;
     }
     bool recStartTime = true;
+    //add 0 steering point to map\
+    //m_steering_map.AddPoint(0.0, 0.0);
+    double startSteeringVal = 0;
+
     while (std::getline(file, line)) {
         std::vector<std::string> parts;
         std::stringstream linestring(line);
@@ -142,10 +146,11 @@ void WVP_FollowerDataDriver::ParseCSV(std::string dataFile, int timeCol, int ste
 
         if (recStartTime) {
             m_dataStartTime = tempTime;
+            startSteeringVal = tempSteer;
             recStartTime = false;
         }
 
-        m_steering_map.AddPoint(tempTime, tempSteer);
+        m_steering_map.AddPoint(tempTime, tempSteer-startSteeringVal);
         /*std::cout<<"added point: "<<tempTime<<", "<<tempSteer<<std::endl;*/
         /*std::cout<<line<<std::endl;*/
         /*std::cout<<"read in another line"<<std::endl;*/

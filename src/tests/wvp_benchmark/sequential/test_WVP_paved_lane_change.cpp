@@ -74,7 +74,7 @@ double tend = 15;
 
 // Time interval between two render frames
 double render_step_size = 1.0 / 50;  // FPS = 50
-double output_step_size = 1e-2;
+double output_step_size = 1e-3;
 
 //output directory
 const std::string out_dir = "../WVP_DLC_PAVED";
@@ -142,7 +142,7 @@ int main(int argc, char* argv[]) {
         std::cout<<"RtL 35mph"<<std::endl;
     }
 
-    
+
 
     // if an additional parameter given, run at that speed instead
     // if(argc > 3){
@@ -236,7 +236,7 @@ int main(int argc, char* argv[]) {
 
 
 
-    
+
     // -------------
     // Prepare output
     // -------------
@@ -293,7 +293,7 @@ int main(int argc, char* argv[]) {
 
 #ifdef USE_IRRLICHT
     while (app.GetDevice()->run()) {
-        
+
 
         //path visualization
         const ChVector<>& pS = driver.GetSteeringController().GetSentinelLocation();
@@ -351,6 +351,27 @@ int main(int argc, char* argv[]) {
             //output time to check simulation is running
             std::cout<<time<<std::endl;
 
+
+            auto susp0 = std::static_pointer_cast<ChDoubleWishbone>(wvp.GetVehicle().GetSuspension(0));
+            auto susp1 = std::static_pointer_cast<ChDoubleWishbone>(wvp.GetVehicle().GetSuspension(1));
+            double def0 = susp0->GetSpringLength(LEFT)-.779;
+            double def1 = susp0->GetSpringLength(RIGHT)-.779;
+            double def2 = susp1->GetSpringLength(LEFT)-.831;
+            double def3 = susp1->GetSpringLength(RIGHT)-.831;
+
+            if(def0 > .124 || def0 < -.169){
+                std::cout<<"Strut 0 BUMP STOP ENGAGED!\n";
+            }
+            if(def1 > .124 || def1 < -.169){
+                std::cout<<"Strut 1 BUMP STOP ENGAGED!\n";
+            }
+            if(def2 > .124 || def2 < -.169){
+                std::cout<<"Strut 2 BUMP STOP ENGAGED!\n";
+            }
+            if(def3 > .124 || def3 < -.169){
+                std::cout<<"Strut 3 BUMP STOP ENGAGED!\n";
+            }
+
             csv <<time<<steering_input<<wvp.GetVehicle().GetVehicleSpeed();
             ChQuaternion<> q= wvp.GetVehicle().GetVehicleRot();
             csv << q.Q_to_NasaAngles();
@@ -358,7 +379,10 @@ int main(int argc, char* argv[]) {
 
 
 
-            csv << wvp.GetVehicle().GetVehicleAcceleration(wvp.GetVehicle().GetChassis()->GetCOMPos()).y();
+            //csv << wvp.GetVehicle().GetVehicleAcceleration(wvp.GetVehicle().GetChassis()->GetCOMPos()).y();
+            csv << wvp.GetVehicle().GetVehicleAcceleration({-2.070,.01,.495}).y();
+            //csv << wvp.GetVehicle().GetVehiclePointVelocity(wvp.GetVehicle().GetChassis()->GetCOMPos()).y();
+            //csv << wvp.GetVehicle().GetChassisBody()->GetFrame_REF_to_abs().TransformPointParentToLocal(wvp.GetVehicle().GetChassis()->GetCOMPos());
 
             for(int i=0;i<4;i++){
                 csv << wvp.GetTire(i)->ReportTireForce(&terrain).force;
