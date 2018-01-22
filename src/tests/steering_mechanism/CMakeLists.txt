@@ -4,6 +4,7 @@
 
 SET(DEMOS
     test_steering_input
+    test_steering_compliance
 )
 
 # ------------------------------------------------------------------------------
