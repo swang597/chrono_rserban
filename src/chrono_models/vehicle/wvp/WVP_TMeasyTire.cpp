@@ -39,7 +39,16 @@ const ChVector<> WVP_TMeasyTire::m_inertia(9.62, 16.84, 9.62);
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 WVP_TMeasyTire::WVP_TMeasyTire(const std::string& name) : ChTMeasyTire(name) {
+
+}
+
+// -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+void WVP_TMeasyTire::SetTMeasyParams() {
 	// Set Handling Charecteristics as close as possible to Pacejka89 model data
+    
+    m_TMeasyCoeff.pn = GetTireMaxLoad(152)/2.0;
+    m_TMeasyCoeff.mu_0 = 0.8;
     
     // Set nonlinear vertical stiffness
     std::vector<double> disp, force;
@@ -54,41 +63,42 @@ WVP_TMeasyTire::WVP_TMeasyTire(const std::string& name) : ChTMeasyTire(name) {
     disp.push_back(0.09); force.push_back(35893.0);
     disp.push_back(0.10); force.push_back(40772.0);
     
-    VerticalStiffnessByTable(disp,force);
+    SetVerticalStiffness(disp,force);
     
-    double xi = 0.05;                  // tire damping ratio
-
     m_width 		  	 = 0.372;
     m_unloaded_radius 	 = 1.096 / 2.0;
     m_rolling_resistance = 0.015;
     m_TMeasyCoeff.mu_0 	 = 0.8;
     
-    // average tire vertical spring rate
-    double defl = (-m_TMeasyCoeff.cz+sqrt(pow(m_TMeasyCoeff.cz,2)
-    	+4.0*m_TMeasyCoeff.czq*m_TMeasyCoeff.pn))/(2.0*m_TMeasyCoeff.czq);
-	double czm = m_TMeasyCoeff.cz+2.0*m_TMeasyCoeff.czq*defl;
-	m_TMeasyCoeff.dz = 2.0*xi*sqrt(czm*WVP_TMeasyTire::m_mass);
+ 	// Simple damping model from single mass oscilator
+    double xi = 0.05; // tire damping ratio
+	double C1 = 1000.0*sqrt(pow(m_a1,2)+4.0*m_a2*m_TMeasyCoeff.pn/1000);
+	double C2 = 1000.0*sqrt(pow(m_a1,2)+8.0*m_a2*m_TMeasyCoeff.pn/1000);
+	double CZM = (C1 + C2) / 2.0;
 	
-	m_TMeasyCoeff.dfx0_pn    =  208983.611609;
-	m_TMeasyCoeff.sxm_pn     =  0.104000;
-	m_TMeasyCoeff.fxm_pn     =  13832.621098;
+	m_TMeasyCoeff.dz 		 =  2.0 * xi * sqrt(CZM * WVP_TMeasyTire::m_mass);
+
+	
+	m_TMeasyCoeff.dfx0_pn    =  242.678443;
+	m_TMeasyCoeff.sxm_pn     =  0.134552;
+	m_TMeasyCoeff.fxm_pn     =  13.832671;
 	m_TMeasyCoeff.sxs_pn     =  0.500000;
-	m_TMeasyCoeff.fxs_pn     =  12541.768777;
-	m_TMeasyCoeff.dfx0_p2n   =  442370.170045;
-	m_TMeasyCoeff.sxm_p2n    =  0.064000;
-	m_TMeasyCoeff.fxm_p2n    =  24576.287112;
+	m_TMeasyCoeff.fxs_pn     =  12.387002;
+	m_TMeasyCoeff.dfx0_p2n   =  664.223777;
+	m_TMeasyCoeff.sxm_p2n    =  0.109770;
+	m_TMeasyCoeff.fxm_p2n    =  24.576280;
 	m_TMeasyCoeff.sxs_p2n    =  0.800000;
-	m_TMeasyCoeff.fxs_p2n    =  22495.052482;
-	m_TMeasyCoeff.dfy0_pn    =  167824.039124;
-	m_TMeasyCoeff.sym_pn     =  0.385868;
-	m_TMeasyCoeff.fym_pn     =  13201.861871;
+	m_TMeasyCoeff.fxs_p2n    =  22.079064;
+	m_TMeasyCoeff.dfy0_pn    =  168.715739;
+	m_TMeasyCoeff.sym_pn     =  0.258411;
+	m_TMeasyCoeff.fym_pn     =  13.038949;
 	m_TMeasyCoeff.sys_pn     =  0.800000;
-	m_TMeasyCoeff.fys_pn     =  12541.768777;
-	m_TMeasyCoeff.dfy0_p2n   =  276247.933241;
-	m_TMeasyCoeff.sym_p2n    =  0.275446;
-	m_TMeasyCoeff.fym_p2n    =  23679.002612;
+	m_TMeasyCoeff.fys_pn     =  12.387002;
+	m_TMeasyCoeff.dfy0_p2n   =  320.100587;
+	m_TMeasyCoeff.sym_p2n    =  0.238826;
+	m_TMeasyCoeff.fym_p2n    =  23.241121;
 	m_TMeasyCoeff.sys_p2n    =  1.000000;
-	m_TMeasyCoeff.fys_p2n    =  22495.052482;
+	m_TMeasyCoeff.fys_p2n    =  22.079064;
 	m_TMeasyCoeff.nto0_pn    =  0.160000;
 	m_TMeasyCoeff.synto0_pn  =  0.200000;
 	m_TMeasyCoeff.syntoE_pn  =  0.480000;
@@ -96,24 +106,16 @@ WVP_TMeasyTire::WVP_TMeasyTire(const std::string& name) : ChTMeasyTire(name) {
 	m_TMeasyCoeff.synto0_p2n =  0.200000;
 	m_TMeasyCoeff.syntoE_p2n =  0.500000;
 
-}
 
-// -----------------------------------------------------------------------------
-// -----------------------------------------------------------------------------
-void WVP_TMeasyTire::SetTMeasyParams() {
-    // Tire Size = 365/80R20 152K
-
-    unsigned int li     = 152;  
-    const double in2m   = 0.0254;
-    double 		 w      = 0.365;
-    double 		 r      = 0.8;
-    double 		 rimdia = 20.0 * in2m;
-
-    GuessTruck80Par(li,     // load index
-                    w,      // tire width
-                    r,      // aspect ratio
-                    rimdia  // rim diameter
-    );
+	if(CheckParameters()) { 
+		std::cout << "Parameter Set seems to be ok." << std::endl;
+	} else {
+		std::cout << "Badly formed parameter set." << std::endl;
+	}
+	
+	if(GetName().compare("FL") == 0) {
+		GenerateCharacteristicPlots("../");
+	}
 }
 
 void WVP_TMeasyTire::GenerateCharacteristicPlots(const std::string& dirname) {
