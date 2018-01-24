@@ -24,6 +24,8 @@
 
 //#define MAC_PATH_HACK
 
+#define USE_MESH_REFINEMENT
+
 #include "chrono_vehicle/ChConfigVehicle.h"
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/terrain/RigidTerrain.h"
@@ -225,6 +227,19 @@ int main(int argc, char* argv[]) {
     float E = 2e7f;
     float nu = 0.3f;
     double depth = 10;
+    
+#ifdef USE_MESH_REFINEMENT
+    double factor = 2;
+
+    auto terrain = new SCMDeformableTerrain(wvp.GetSystem());
+    terrain->SetPlane(ChCoordsys<>(VNULL, Q_from_AngX(CH_C_PI_2)));
+    terrain->SetSoilParametersSCM(Kphi,Kc,n,c,phi,K,E_elastic,damping);
+    terrain->SetAutomaticRefinement(true);
+    terrain->SetAutomaticRefinementResolution(0.1);
+    terrain->SetPlotType(vehicle::SCMDeformableTerrain::PLOT_SINKAGE, 0, 0.15);
+
+    terrain->Initialize(terrainHeight,terrainLength,terrainWidth,terrainLength * factor, terrainWidth*factor);
+#else
     double factor = 10;
 
     auto terrain = new SCMDeformableTerrain(wvp.GetSystem());
@@ -234,7 +249,7 @@ int main(int argc, char* argv[]) {
     terrain->SetPlotType(vehicle::SCMDeformableTerrain::PLOT_SINKAGE, 0, 0.15);
 
     terrain->Initialize(terrainHeight,terrainLength,terrainWidth,terrainLength * factor, terrainWidth*factor);
-
+#endif
     //create the driver
     auto path = ChBezierCurve::read(vehicle::GetDataFile(path_file));
     ChPathFollowerDriver driver(wvp.GetVehicle(), vehicle::GetDataFile(steering_controller_file),
