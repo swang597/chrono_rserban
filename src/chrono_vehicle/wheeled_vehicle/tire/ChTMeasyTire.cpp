@@ -716,7 +716,7 @@ void ChTMeasyTire::WritePlots(const std::string& plName, const std::string& plTi
     plot << "$Mz << EOD" << std::endl;
     for (int i = 0; i < ndat; i++) {
         double sy = step * double(i);
-        double mz[i], fy[5], fos;
+        double mz[5], fy[5], fos;
         plot << sy;
         for(int j = 0; j<5; j++) {
         	tmxy_combined(fy[j], fos, std::abs(sy), dfy0[j], sym[j], fym[j], sys[j], fys[j]);
