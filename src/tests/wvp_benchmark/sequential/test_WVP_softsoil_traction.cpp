@@ -24,8 +24,6 @@
 
 //#define MAC_PATH_HACK
 
-#define USE_MESH_REFINEMENT
-
 #include "chrono_vehicle/ChConfigVehicle.h"
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/terrain/RigidTerrain.h"
@@ -35,18 +33,18 @@
 #include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
 #endif
 
-#include "chrono_vehicle/driver/ChPathFollowerDriver.h"
-#include "chrono_vehicle/terrain/SCMDeformableTerrain.h"
-#include "chrono_models/vehicle/wvp/WVP_FollowerDataDriver.h"
-#include "chrono/utils/ChUtilsInputOutput.h"
 #include "chrono/core/ChFileutils.h"
 #include "chrono/motion_functions/ChFunction.h"
+#include "chrono/utils/ChUtilsInputOutput.h"
+#include "chrono_models/vehicle/wvp/WVP_FollowerDataDriver.h"
+#include "chrono_vehicle/driver/ChPathFollowerDriver.h"
+#include "chrono_vehicle/terrain/SCMDeformableTerrain.h"
 
 #include "chrono_models/vehicle/wvp/WVP.h"
 
+#include <math.h>
 #include <chrono>
 #include <thread>
-#include <math.h>
 
 using namespace chrono;
 using namespace chrono::vehicle;
@@ -58,8 +56,8 @@ using namespace chrono::vehicle::wvp;
 ChVector<> initLoc(-180, 0, 1.0);
 ChQuaternion<> initRot(1, 0, 0, 0);
 
-ChVector<>gravity(0,0,-9.81);
-ChVector<>slopegravity(0,0,-9.81);
+ChVector<> gravity(0, 0, -9.81);
+ChVector<> slopegravity(0, 0, -9.81);
 
 // Visualization type for vehicle parts (PRIMITIVES, MESH, or NONE)
 VisualizationType chassis_vis_type = VisualizationType::NONE;
@@ -79,7 +77,7 @@ double terrainWidth = 5;
 double terrainHeight = 0;
 
 // Simulation step sizes
-double step_size =1e-3;
+double step_size = 1e-3;
 double tire_step_size = step_size;
 
 // Simulation end time
@@ -89,16 +87,16 @@ double tend = 15;
 double render_step_size = 1.0 / 50;  // FPS = 50
 double output_step_size = 1e-2;
 
-//output directory
+// output directory
 const std::string out_dir = "../WVP_TRACTIVE_EFFORT";
 const std::string pov_dir = out_dir + "/POVRAY";
 bool povray_output = false;
 bool data_output = true;
 
-//vehicle driver inputs
+// vehicle driver inputs
 // Desired vehicle speed (m/s)
 double mph_to_ms = 0.44704;
-double target_speed = 5*mph_to_ms;
+double target_speed = 5 * mph_to_ms;
 
 // std::string path_file("paths/NATO_double_lane_change.txt");
 std::string path_file("paths/straightOrigin.txt");
@@ -108,74 +106,74 @@ std::string speed_controller_file("wvp/SpeedControllerAgrPI.json");
 std::string output_file_name("softsoil");
 
 bool LtR = false;
+bool use_mesh_refinement = true;
 
-std::string progName = "test_WPV_softsoil_traction";
+std::string progName = "test_WVP_softsoil_traction";
 
 // =============================================================================
 
 int main(int argc, char* argv[]) {
-    //send in args: filename time speed LtR(or RtL)
-    //read from args
+    // send in args: filename time speed LtR(or RtL)
+    // read from args
     std::cout << "argc=" << argc << std::endl;
     double fullForce = 0;
     double fullSlope = 0.0;
     double sweepTime = 10.0;
     int isoil = 1;
-    switch(argc) {
+    switch (argc) {
         case 2:
-             tend = atof(argv[1]);
-              output_file_name += "_force" + std::to_string((int)fullForce) + "_soil" + std::to_string(isoil);
-              break;
+            tend = atof(argv[1]);
+            output_file_name += "_force" + std::to_string((int)fullForce) + "_soil" + std::to_string(isoil);
+            break;
         case 3:
-             tend = atof(argv[1]);
-             fullForce = atof(argv[2]);
-             output_file_name += "_force" + std::to_string((int)fullForce) + "_soil" + std::to_string(isoil);
-             break;
+            tend = atof(argv[1]);
+            fullForce = atof(argv[2]);
+            output_file_name += "_force" + std::to_string((int)fullForce) + "_soil" + std::to_string(isoil);
+            break;
         case 4:
-             tend = atof(argv[1]);
-             fullForce = atof(argv[2]);
-             isoil = atoi(argv[3]);
-             output_file_name += "_force" + std::to_string((int)fullForce) + "_soil" + std::to_string(isoil);
-             break;
+            tend = atof(argv[1]);
+            fullForce = atof(argv[2]);
+            isoil = atoi(argv[3]);
+            output_file_name += "_force" + std::to_string((int)fullForce) + "_soil" + std::to_string(isoil);
+            break;
         case 5:
-             tend = atof(argv[1]);
-             fullForce = 0.0;
-             isoil = atoi(argv[3]);
-             fullSlope = atoi(argv[4]);
-             output_file_name += "_soil" + std::to_string(isoil)+"_slope"+std::to_string((int)fullSlope);
-             break;
+            tend = atof(argv[1]);
+            fullForce = 0.0;
+            isoil = atoi(argv[3]);
+            fullSlope = atoi(argv[4]);
+            output_file_name += "_soil" + std::to_string(isoil) + "_slope" + std::to_string((int)fullSlope);
+            break;
         default:
-             std::cout << "usage: "<<  progName << " Tend FullForce [[1|2] FullSlope]" << std::endl;
-             return 1;
+            std::cout << "usage: " << progName << " Tend FullForce [[1|2] FullSlope]" << std::endl;
+            return 1;
     }
-    if(isoil < 1 || isoil > 2) {
+    if (isoil < 1 || isoil > 2) {
         isoil = 1;
     }
-    
+
 #ifdef MAC_PATH_HACK
-/*
- * On MacOS it is not easy to get the Chrono Data directories, especially in combination with Irrlicht 3D graphics
- * This work around sets the correct paths. The example shows the settings for a chrono distribution inside the 
- * user home directory.
- * 
- * Without the correct settings you will get this cryptic error message:
- * 
- * ./test_WPV_softsoil_traction 10
- * Init RIGID
- * Total vehicle mass: 8935.76
- * libc++abi.dylib: terminating with uncaught exception of type chrono::ChException: Cannot open input file
- * Abort trap: 6
-*/
+    /*
+     * On MacOS it is not easy to get the Chrono Data directories, especially in combination with Irrlicht 3D graphics
+     * This work around sets the correct paths. The example shows the settings for a chrono distribution inside the
+     * user home directory.
+     *
+     * Without the correct settings you will get this cryptic error message:
+     *
+     * ./test_WPV_softsoil_traction 10
+     * Init RIGID
+     * Total vehicle mass: 8935.76
+     * libc++abi.dylib: terminating with uncaught exception of type chrono::ChException: Cannot open input file
+     * Abort trap: 6
+     */
     std::string chrono_dir = "";
     std::string vehicle_dir = "";
-    
+
     chrono_dir += getenv("HOME");
     chrono_dir += "/chrono/data/";
     vehicle_dir = chrono_dir + "vehicle/";
     SetChronoDataPath(chrono_dir);
     SetDataPath(vehicle_dir);
 #endif
-
 
     // --------------
     // Create systems
@@ -203,21 +201,21 @@ int main(int argc, char* argv[]) {
     // Create the terrain
     // ------------------
 
-    //Deformable terrain properties (LETE sand)
+    // Deformable terrain properties (LETE sand)
     double Kphi = 5301e3;
     double Kc = 102e3;
     double n = 0.793;
     double c = 1.3e3;
     double phi = 31.1;
     double K = 1.2e-2;
-    if(isoil == 2) {
-    //Deformable terrain properties (loose sand)
-        Kc   = 0.99e3;
+    if (isoil == 2) {
+        // Deformable terrain properties (loose sand)
+        Kc = 0.99e3;
         Kphi = 1528.43e3;
-        c    = 1.04e3;
-        n    = 1.1;
-        phi  = 28.0;
-        K    = 0.025;
+        c = 1.04e3;
+        n = 1.1;
+        phi = 28.0;
+        K = 0.025;
     }
     double E_elastic = 2e8;
     double damping = 3e4;
@@ -227,53 +225,44 @@ int main(int argc, char* argv[]) {
     float E = 2e7f;
     float nu = 0.3f;
     double depth = 10;
-    
-#ifdef USE_MESH_REFINEMENT
-    double factor = 2;
 
     auto terrain = new SCMDeformableTerrain(wvp.GetSystem());
     terrain->SetPlane(ChCoordsys<>(VNULL, Q_from_AngX(CH_C_PI_2)));
-    terrain->SetSoilParametersSCM(Kphi,Kc,n,c,phi,K,E_elastic,damping);
-    terrain->SetAutomaticRefinement(true);
-    terrain->SetAutomaticRefinementResolution(0.1);
+    terrain->SetSoilParametersSCM(Kphi, Kc, n, c, phi, K, E_elastic, damping);
     terrain->SetPlotType(vehicle::SCMDeformableTerrain::PLOT_SINKAGE, 0, 0.15);
+    double factor;
+    if (use_mesh_refinement) {
+        factor = 2;
+        terrain->SetAutomaticRefinement(true);
+        terrain->SetAutomaticRefinementResolution(0.1);
+    } else {
+        factor = 10;
+    }
+    terrain->Initialize(terrainHeight, terrainLength, terrainWidth, terrainLength * factor, terrainWidth * factor);
 
-    terrain->Initialize(terrainHeight,terrainLength,terrainWidth,terrainLength * factor, terrainWidth*factor);
-#else
-    double factor = 10;
-
-    auto terrain = new SCMDeformableTerrain(wvp.GetSystem());
-    terrain->SetPlane(ChCoordsys<>(VNULL, Q_from_AngX(CH_C_PI_2)));
-    terrain->SetSoilParametersSCM(Kphi,Kc,n,c,phi,K,E_elastic,damping);
-    // terrain->SetPlotType(vehicle::SCMDeformableTerrain::PLOT_PRESSURE_YIELD,0,30000.2);
-    terrain->SetPlotType(vehicle::SCMDeformableTerrain::PLOT_SINKAGE, 0, 0.15);
-
-    terrain->Initialize(terrainHeight,terrainLength,terrainWidth,terrainLength * factor, terrainWidth*factor);
-#endif
-    //create the driver
+    // create the driver
     auto path = ChBezierCurve::read(vehicle::GetDataFile(path_file));
     ChPathFollowerDriver driver(wvp.GetVehicle(), vehicle::GetDataFile(steering_controller_file),
                                 vehicle::GetDataFile(speed_controller_file), path, "my_path", target_speed, false);
     driver.Initialize();
 
-
-    //create the drawbar force
+    // create the drawbar force
     ChFunction_Recorder forceFunct;
-    forceFunct.AddPoint(0,0);
-    forceFunct.AddPoint(10,0);
-    forceFunct.AddPoint(10.0+sweepTime,-fullForce);
-    forceFunct.AddPoint(tend,-fullForce);
+    forceFunct.AddPoint(0, 0);
+    forceFunct.AddPoint(10, 0);
+    forceFunct.AddPoint(10.0 + sweepTime, -fullForce);
+    forceFunct.AddPoint(tend, -fullForce);
 
-    // create slope 
+    // create slope
     ChFunction_Recorder slopeFunct;
-    slopeFunct.AddPoint(0,0);
-    slopeFunct.AddPoint(10,0);
-    slopeFunct.AddPoint(10.0+sweepTime,fullSlope/100.0);
-    slopeFunct.AddPoint(tend,fullSlope/100.0);
+    slopeFunct.AddPoint(0, 0);
+    slopeFunct.AddPoint(10, 0);
+    slopeFunct.AddPoint(10.0 + sweepTime, fullSlope / 100.0);
+    slopeFunct.AddPoint(tend, fullSlope / 100.0);
 
     auto drawForce = std::make_shared<ChForce>();
     wvp.GetVehicle().GetChassisBody()->AddForce(drawForce);
-    drawForce->SetMode(ChForce::ForceType::FORCE); // force or torque
+    drawForce->SetMode(ChForce::ForceType::FORCE);  // force or torque
     drawForce->SetFrame(ChForce::ReferenceFrame::BODY);
     drawForce->SetAlign(ChForce::AlignmentFrame::WORLD_DIR);
     drawForce->SetVrelpoint(wvp.GetChassis()->GetLocalPosCOM());
@@ -282,24 +271,21 @@ int main(int argc, char* argv[]) {
     drawForce->SetF_y(std::make_shared<ChFunction_Const>(0));
     drawForce->SetF_z(std::make_shared<ChFunction_Const>(0));
 
-
-
-
 #ifdef USE_IRRLICHT
     // -------------------------------------
     // Create the vehicle Irrlicht interface
     // Create the driver system
     // -------------------------------------
     std::wstring windowName = L"WVP soft soil test";
-    if(isoil == 1) {
+    if (isoil == 1) {
         windowName += L"- LETE Sand";
     } else {
         windowName += L"- Loose Sand";
     }
-    if(fullForce > 0.0) {
+    if (fullForce > 0.0) {
         windowName += L" - Max. Drawbar Pull = " + std::to_wstring((int)fullForce) += L" N";
     }
-    if(fullSlope > 0.0) {
+    if (fullSlope > 0.0) {
         windowName += L" - Max. Slope = " + std::to_wstring((int)fullSlope) += L" %";
     }
     ChWheeledVehicleIrrApp app(&wvp.GetVehicle(), &wvp.GetPowertrain(), windowName.c_str());
@@ -354,20 +340,20 @@ int main(int argc, char* argv[]) {
 
     double time = 0;
 
-    //output headings for the saved data file
+    // output headings for the saved data file
     csv << "time";
     csv << "throttle";
     csv << "MotorSpeed";
     csv << "VehicleSpeed";
     csv << "EngineTorque";
 
-    for(int i=0;i<4;i++){
+    for (int i = 0; i < 4; i++) {
         csv << "WheelAngVelX";
         csv << "WheelAngVelY";
         csv << "WheelAngVelZ";
     }
 
-    for(int i=0;i<4;i++){
+    for (int i = 0; i < 4; i++) {
         csv << "WheelLongSlip";
     }
 
@@ -375,12 +361,9 @@ int main(int argc, char* argv[]) {
     csv << "SlopeAngle";
     csv << std::endl;
 
-
 #ifdef USE_IRRLICHT
     while (app.GetDevice()->run()) {
-
-
-        //path visualization
+        // path visualization
         const ChVector<>& pS = driver.GetSteeringController().GetSentinelLocation();
         const ChVector<>& pT = driver.GetSteeringController().GetTargetLocation();
         ballS->setPosition(irr::core::vector3df((irr::f32)pS.x(), (irr::f32)pS.y(), (irr::f32)pS.z()));
@@ -398,16 +381,15 @@ int main(int argc, char* argv[]) {
             app.EndScene();
         }
 #else
-    while(wvp.GetSystem()->GetChTime() < tend){
+    while (wvp.GetSystem()->GetChTime() < tend) {
 #endif
 
         time = wvp.GetSystem()->GetChTime();
         double alpha = atan(slopeFunct.Get_y(time));
-        slopegravity[0] = -9.81*sin(alpha);
+        slopegravity[0] = -9.81 * sin(alpha);
         slopegravity[1] = 0.0;
-        slopegravity[2] = -9.81*cos(alpha);
+        slopegravity[2] = -9.81 * cos(alpha);
         wvp.GetSystem()->Set_G_acc(slopegravity);
-
 
         // Collect output data from modules (for inter-module communication)
         double throttle_input = driver.GetThrottle();
@@ -436,33 +418,31 @@ int main(int argc, char* argv[]) {
             sprintf(filename, "%s/data_%03d.dat", pov_dir.c_str(), render_frame + 1);
             utils::WriteShapesPovray(wvp.GetSystem(), filename);
             render_frame++;
-
         }
 
+        if (data_output && step_number % output_steps == 0) {
+            // output time to check simulation is running
+            std::cout << time << std::endl;
 
-        if(data_output && step_number % output_steps == 0){
-            //output time to check simulation is running
-            std::cout<<time<<std::endl;
-
-            csv << time<<throttle_input;
+            csv << time << throttle_input;
             csv << wvp.GetPowertrain().GetMotorSpeed();
             csv << wvp.GetVehicle().GetVehicleSpeed();
             csv << wvp.GetPowertrain().GetMotorTorque();
 
-            for(int i=0;i<4;i++){
+            for (int i = 0; i < 4; i++) {
                 csv << wvp.GetVehicle().GetWheelAngVel(i);
             }
 
-            for(int i=0;i<4;i++){
+            for (int i = 0; i < 4; i++) {
                 csv << wvp.GetTire(i)->GetLongitudinalSlip();
             }
             csv << forceFunct.Get_y(time);
-            csv << CH_C_RAD_TO_DEG*atan(slopeFunct.Get_y(time));
+            csv << CH_C_RAD_TO_DEG * atan(slopeFunct.Get_y(time));
 
             csv << std::endl;
         }
 
-        if(time >= tend) {
+        if (time >= tend) {
             break;
         }
 
