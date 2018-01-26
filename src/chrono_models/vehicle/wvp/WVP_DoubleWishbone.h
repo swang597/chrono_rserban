@@ -223,10 +223,10 @@ class CH_MODELS_API WVP_ShockForce : public ChLinkSpringCB::ForceFunctor {
     std::shared_ptr<ChLinkSpringCB> m_shock_right;
 
     ChFunction_Recorder m_roll_map;
-    std::map<double, ChFunction_Recorder> m_para_damp_map;
-    std::map<double, ChFunction_Recorder> m_single_damp_map;
+    std::map<double, std::shared_ptr<ChFunction_Recorder>> m_para_damp_map;
+    std::map<double, std::shared_ptr<ChFunction_Recorder>> m_single_damp_map;
 
-    double interpolate2D(double x, double y, std::map<double, ChFunction_Recorder> map2D);
+    double interpolate2D(double x, double y, std::map<double, std::shared_ptr<ChFunction_Recorder>> map2D);
 
     friend class WVP_DoubleWishboneFront;
     friend class WVP_DoubleWishboneRear;
