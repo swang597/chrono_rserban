@@ -30,6 +30,7 @@ SET(DEMOS
     test_WVP_tractive_effort
     test_WVP_ride_quality
     test_WVP_softsoil_traction
+    test_WVP_drawbar_pull
 )
 
 # ------------------------------------------------------------------------------
