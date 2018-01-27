@@ -81,6 +81,7 @@ int main(int argc, char* argv[]) {
     wvp.SetInitFwdVel(vel);
     wvp.SetTireType(TireModelType::RIGID);
     wvp.SetTireStepSize(step_size);
+    wvp.DisconnectPowertrain();
     wvp.Initialize();
 
     wvp.GetSystem()->Set_G_acc(ChVector<>(0, 0, -9.81));
@@ -116,6 +117,7 @@ int main(int argc, char* argv[]) {
     auto rig = std::shared_ptr<ChBody>(wvp.GetSystem()->NewBody());
     rig->SetPos(initLoc);
     rig->SetRot(QUNIT);
+    rig->SetMass(100);
     rig->SetBodyFixed(false);
     rig->SetCollide(false);
     wvp.GetSystem()->AddBody(rig);

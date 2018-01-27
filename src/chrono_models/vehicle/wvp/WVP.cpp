@@ -41,7 +41,8 @@ WVP::WVP()
       m_initFwdVel(0),
       m_initPos(ChCoordsys<>(ChVector<>(0, 0, 1), QUNIT)),
       m_initOmega({0, 0, 0, 0}),
-      m_apply_drag(false) {}
+      m_apply_drag(false),
+      m_powertrain_connected(true) {}
 
 WVP::WVP(ChSystem* system)
     : m_system(system),
@@ -56,7 +57,8 @@ WVP::WVP(ChSystem* system)
       m_initFwdVel(0),
       m_initPos(ChCoordsys<>(ChVector<>(0, 0, 1), QUNIT)),
       m_initOmega({0, 0, 0, 0}),
-      m_apply_drag(false) {}
+      m_apply_drag(false),
+      m_powertrain_connected(true) {}
 
 WVP::~WVP() {
     delete m_vehicle;
@@ -238,9 +240,12 @@ void WVP::Synchronize(double time,
     wheel_states[2] = m_vehicle->GetWheelState(REAR_LEFT);
     wheel_states[3] = m_vehicle->GetWheelState(REAR_RIGHT);
 
-    double powertrain_torque = m_powertrain->GetOutputTorque();
-
-    double driveshaft_speed = m_vehicle->GetDriveshaftSpeed();
+    double powertrain_torque = 0;
+    double driveshaft_speed = 0;
+    if (m_powertrain_connected) {
+        powertrain_torque = m_powertrain->GetOutputTorque();
+        driveshaft_speed = m_vehicle->GetDriveshaftSpeed();
+    }
 
     m_tires[0]->Synchronize(time, wheel_states[0], terrain);
     m_tires[1]->Synchronize(time, wheel_states[1], terrain);

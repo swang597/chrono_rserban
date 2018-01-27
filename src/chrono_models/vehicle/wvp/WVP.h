@@ -59,6 +59,8 @@ class CH_MODELS_API WVP {
 
     void SetTireStepSize(double step_size) { m_tire_step_size = step_size; }
 
+    void DisconnectPowertrain() { m_powertrain_connected = false; }
+
     ChSystem* GetSystem() const { return m_vehicle->GetSystem(); }
     ChWheeledVehicle& GetVehicle() const { return *m_vehicle; }
     std::shared_ptr<ChChassis> GetChassis() const { return m_vehicle->GetChassis(); }
@@ -105,6 +107,8 @@ class CH_MODELS_API WVP {
     double m_Cd;
     double m_area;
     double m_air_density;
+
+    bool m_powertrain_connected;
 
     ChSystem* m_system;
     WVP_Vehicle* m_vehicle;
