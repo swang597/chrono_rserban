@@ -38,6 +38,7 @@ WVP::WVP()
       m_fixed(false),
       m_tireType(TireModelType::RIGID),
       m_tire_step_size(-1),
+      m_steeringType(SteeringType::PITMAN_ARM),
       m_initFwdVel(0),
       m_initPos(ChCoordsys<>(ChVector<>(0, 0, 1), QUNIT)),
       m_initOmega({0, 0, 0, 0}),
@@ -54,6 +55,7 @@ WVP::WVP(ChSystem* system)
       m_fixed(false),
       m_tireType(TireModelType::RIGID),
       m_tire_step_size(-1),
+      m_steeringType(SteeringType::PITMAN_ARM),
       m_initFwdVel(0),
       m_initPos(ChCoordsys<>(ChVector<>(0, 0, 1), QUNIT)),
       m_initOmega({0, 0, 0, 0}),
@@ -81,8 +83,8 @@ void WVP::SetAerodynamicDrag(double Cd, double area, double air_density) {
 // -----------------------------------------------------------------------------
 void WVP::Initialize() {
     // Create and initialize the WVP vehicle
-    m_vehicle = m_system ? new WVP_Vehicle(m_system, m_fixed, m_chassisCollisionType)
-                         : new WVP_Vehicle(m_fixed, m_contactMethod, m_chassisCollisionType);
+    m_vehicle = m_system ? new WVP_Vehicle(m_system, m_fixed, m_steeringType, m_chassisCollisionType)
+                         : new WVP_Vehicle(m_fixed, m_steeringType, m_contactMethod, m_chassisCollisionType);
 
     m_vehicle->SetInitWheelAngVel(m_initOmega);
     m_vehicle->Initialize(m_initPos, m_initFwdVel);

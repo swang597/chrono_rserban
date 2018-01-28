@@ -31,18 +31,22 @@ namespace wvp {
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 WVP_Vehicle::WVP_Vehicle(const bool fixed,
+                         SteeringType steering_model,
                          ChMaterialSurface::ContactMethod contact_method,
                          ChassisCollisionType chassis_collision_type)
     : ChWheeledVehicle("WVP", contact_method), m_omega({0, 0, 0, 0}) {
-    Create(fixed, chassis_collision_type);
+    Create(fixed, steering_model, chassis_collision_type);
 }
 
-WVP_Vehicle::WVP_Vehicle(ChSystem* system, const bool fixed, ChassisCollisionType chassis_collision_type)
+WVP_Vehicle::WVP_Vehicle(ChSystem* system,
+                         const bool fixed,
+                         SteeringType steering_model,
+                         ChassisCollisionType chassis_collision_type)
     : ChWheeledVehicle("WVP", system), m_omega({0, 0, 0, 0}) {
-    Create(fixed, chassis_collision_type);
+    Create(fixed, steering_model, chassis_collision_type);
 }
 
-void WVP_Vehicle::Create(bool fixed, ChassisCollisionType chassis_collision_type) {
+void WVP_Vehicle::Create(bool fixed, SteeringType steering_model, ChassisCollisionType chassis_collision_type) {
     // -------------------------------------------
     // Create the chassis subsystem
     // -------------------------------------------
@@ -59,7 +63,15 @@ void WVP_Vehicle::Create(bool fixed, ChassisCollisionType chassis_collision_type
     // Create the steering subsystem
     // -----------------------------
     m_steerings.resize(1);
-    m_steerings[0] = std::make_shared<WVP_PitmanArm>("Steering");
+    switch (steering_model) {
+        case SteeringType::PITMAN_ARM:
+            m_steerings[0] = std::make_shared<WVP_PitmanArm>("Steering");
+            break;
+        case SteeringType::PITMAN_ARM_SHAFTS:
+            m_steerings[0] = std::make_shared<WVP_PitmanArmShafts>("Steering", false);
+            ////m_steerings[0] = std::make_shared<WVP_PitmanArmShafts>("Steering", true);
+            break;
+    }
 
     // -----------------
     // Create the wheels

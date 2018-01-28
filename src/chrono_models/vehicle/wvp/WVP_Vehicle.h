@@ -36,6 +36,7 @@
 #include "chrono_models/vehicle/wvp/WVP_Driveline4WD.h"
 #include "chrono_models/vehicle/wvp/WVP_SimpleDriveline.h"
 #include "chrono_models/vehicle/wvp/WVP_PitmanArm.h"
+#include "chrono_models/vehicle/wvp/WVP_PitmanArmShafts.h"
 #include "chrono_models/vehicle/wvp/WVP_Wheel.h"
 
 namespace chrono {
@@ -45,11 +46,13 @@ namespace wvp {
 class CH_MODELS_API WVP_Vehicle : public ChWheeledVehicle {
   public:
     WVP_Vehicle(const bool fixed = false,
+                SteeringType steering_model = SteeringType::PITMAN_ARM,
                 ChMaterialSurface::ContactMethod contact_method = ChMaterialSurface::NSC,
                 ChassisCollisionType chassis_collision_type = ChassisCollisionType::NONE);
 
     WVP_Vehicle(ChSystem* system,
                 const bool fixed = false,
+                SteeringType steering_model = SteeringType::PITMAN_ARM,
                 ChassisCollisionType chassis_collision_type = ChassisCollisionType::NONE);
 
     ~WVP_Vehicle();
@@ -76,7 +79,7 @@ class CH_MODELS_API WVP_Vehicle : public ChWheeledVehicle {
     void DebugLog(int what);       /// shock forces and lengths, constraints, etc.
 
   private:
-    void Create(bool fixed, ChassisCollisionType chassis_collision_type);
+    void Create(bool fixed, SteeringType steering_model, ChassisCollisionType chassis_collision_type);
 
     std::vector<double> m_omega;
 };

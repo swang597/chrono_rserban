@@ -53,6 +53,8 @@ class CH_MODELS_API WVP {
 
     void SetTireType(TireModelType val) { m_tireType = val; }
 
+    void setSteeringType(SteeringType val) { m_steeringType = val; }
+
     void SetInitPosition(const ChCoordsys<>& pos) { m_initPos = pos; }
     void SetInitFwdVel(double fwdVel) { m_initFwdVel = fwdVel; }
     void SetInitWheelAngVel(const std::vector<double>& omega) { m_initOmega = omega; }
@@ -96,8 +98,9 @@ class CH_MODELS_API WVP {
     bool m_fixed;
 
     TireModelType m_tireType;
-
     double m_tire_step_size;
+
+    SteeringType m_steeringType;
 
     ChCoordsys<> m_initPos;
     double m_initFwdVel;

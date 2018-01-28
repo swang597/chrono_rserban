@@ -62,6 +62,9 @@ VisualizationType tire_vis_type = VisualizationType::PRIMITIVES;
 // Type of tire model (RIGID, FIALA, PAC89)
 TireModelType tire_model = TireModelType::PAC89;
 
+// Type of steering model (PITMAN_ARM or PITMAN_ARM_SHAFTS)
+SteeringType steering_model = SteeringType::PITMAN_ARM;
+
 // Point on chassis tracked by the camera
 ChVector<> trackPoint(0.0, 0.0, 1.75);
 
@@ -160,6 +163,7 @@ int main(int argc, char* argv[]) {
 	wvp.SetChassisFixed(false);
 	wvp.SetInitPosition(ChCoordsys<>(initLoc, initRot));
 	wvp.SetTireType(tire_model);
+    wvp.setSteeringType(steering_model);
 	wvp.SetTireStepSize(tire_step_size);
 	wvp.SetInitFwdVel(0.0);
 	wvp.Initialize();

@@ -135,6 +135,8 @@ set(CVM_WVP_FILES
     wvp/WVP_FialaTire.h
     wvp/WVP_PitmanArm.cpp
     wvp/WVP_PitmanArm.h
+    wvp/WVP_PitmanArmShafts.cpp
+    wvp/WVP_PitmanArmShafts.h
     wvp/WVP_Powertrain.cpp
     wvp/WVP_Powertrain.h
     wvp/WVP_RigidTire.cpp
