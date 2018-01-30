@@ -49,7 +49,7 @@ VisualizationType wheel_vis_type = VisualizationType::NONE;
 VisualizationType tire_vis_type = VisualizationType::PRIMITIVES;
 
 // Type of tire model (RIGID, FIALA, PAC89)
-TireModelType tire_model = TireModelType::RIGID;
+TireModelType tire_model = TireModelType::PAC89;
 
 // Type of steering model (PITMAN_ARM or PITMAN_ARM_SHAFTS)
 SteeringType steering_model = SteeringType::PITMAN_ARM;
@@ -192,52 +192,38 @@ int main(int argc, char* argv[]) {
         auto susp0 = std::static_pointer_cast<ChDoubleWishbone>(wvp.GetVehicle().GetSuspension(0));
         auto susp1 = std::static_pointer_cast<ChDoubleWishbone>(wvp.GetVehicle().GetSuspension(1));
 
-        // std::cout<<"SpringDef0|"<<susp0->GetSpringLength(LEFT)
-        // // <<"|force0|"<<susp0->GetSpringForce(LEFT);
-        // <<"|SpringDef1|"<<susp0->GetSpringLength(RIGHT)
-        // // <<"|force1|"<<susp0->GetSpringForce(RIGHT);
-        // <<"|SpringDef2|"<<susp1->GetSpringLength(LEFT)
-        // // <<"|force2|"<<susp1->GetSpringForce(LEFT);
-        // <<"|SpringDef3|"<<susp1->GetSpringLength(RIGHT)
-        // // <<"|force3|"<<susp1->GetSpringForce(RIGHT)
-        // <<std::endl;
+        std::cout<<"SpringDef0|"<<susp0->GetSpringLength(LEFT)
+        // <<"|force0|"<<susp0->GetSpringForce(LEFT);
+        <<"|SpringDef1|"<<susp0->GetSpringLength(RIGHT)
+        // <<"|force1|"<<susp0->GetSpringForce(RIGHT);
+        <<"|SpringDef2|"<<susp1->GetSpringLength(LEFT)
+        // <<"|force2|"<<susp1->GetSpringForce(LEFT);
+        <<"|SpringDef3|"<<susp1->GetSpringLength(RIGHT)
+        // <<"|force3|"<<susp1->GetSpringForce(RIGHT)
+        <<std::endl;
 
-        ChQuaternion<> q= wvp.GetVehicle().GetVehicleRot();
-        std::cout<<"attitude|"<<q.Q_to_NasaAngles().x()<<"|bank|"<<q.Q_to_NasaAngles().y()<<"|heading|"<<q.Q_to_NasaAngles().z()<<std::endl;
+        //ChQuaternion<> q= wvp.GetVehicle().GetVehicleRot();
+        //std::cout<<"attitude|"<<q.Q_to_NasaAngles().x()<<"|bank|"<<q.Q_to_NasaAngles().y()<<"|heading|"<<q.Q_to_NasaAngles().z()<<std::endl;
 
 
         // std::cout<<wvp.GetVehicle().GetWheelPos(0).x()<<"|"<<wvp.GetVehicle().GetWheelPos(0).y()<<"|"<<wvp.GetVehicle().GetWheelPos(0).z()<<"|||"
         //     <<wvp.GetVehicle().GetWheelPos(2).x()<<"|"<<wvp.GetVehicle().GetWheelPos(2).y()<<"|"<<wvp.GetVehicle().GetWheelPos(2).z()<<std::endl;
 
         //log suspension locations
-        /*std::cout<<"|wheel pos|"<<wvp.GetVehicle().GetSuspension(0)->GetSpindle(LEFT)->GetPos().x()-wvp.GetVehicle().GetVehiclePos().x()
+        /* std::cout<<"|wheel pos|"<<wvp.GetVehicle().GetSuspension(0)->GetSpindle(LEFT)->GetPos().x()-wvp.GetVehicle().GetVehiclePos().x()
           <<"|"<<wvp.GetVehicle().GetSuspension(0)->GetSpindle(LEFT)->GetPos().y()-wvp.GetVehicle().GetVehiclePos().y()
           <<"|"<<wvp.GetVehicle().GetSuspension(0)->GetSpindle(LEFT)->GetPos().z()-wvp.GetVehicle().GetVehiclePos().z()
-          <<std::endl;*/
+          <<std::endl; */
 
 
-
-        /*wvp.LogHardpointLocations();*/
-
-        //check engine vs wheel speed
-        /*std::cout<<"Engine Speed|"<<wvp.GetPowertrain().GetMotorSpeed()*(30.0/3.14159)
-          <<"|vehicle speed|"<<wvp.GetVehicle().GetVehicleSpeed()
-          <<"|vehicle gear|"<<wvp.GetPowertrain().GetCurrentTransmissionGear()
-          <<"|time|"<<wvp.GetSystem()->GetChTime()
-          <<"|throttle|"<<throttle_input
-          <<std::endl;*/
-
-        /*for(int i=0;i<4;i++){*/
-          /*std::cout<<"wheel:"<<i<< "|Z Force:|" << wvp.GetTire(i)->ReportTireForce(&terrain).force.z()<<"|";*/
-        /*}*/
         /*std::cout<<std::endl;*/
-
-        // std::cout<<"Vehicle COM|"<<wvp.GetVehicle().GetVehicleCOMPos().x()-wvp.GetVehicle().GetVehiclePos().x()<<"|"
-        //   <<wvp.GetVehicle().GetVehicleCOMPos().y()-wvp.GetVehicle().GetVehiclePos().y()<<"|"
-        //   <<(wvp.GetVehicle().GetVehicleCOMPos().z()-wvp.GetVehicle().GetVehiclePos().z());
-        // std::cout<<std::endl;
-
-        /*std::cout<<"COM: "<< wvp.GetChassis()->GetCOMPos().x() <<", "<<wvp.GetChassis()->GetCOMPos().y()<<", "<<wvp.GetChassis()->GetCOMPos().z()<< std::endl;*/
+        ChCoordsys<> vehCoord = ChCoordsys<>(wvp.GetVehicle().GetVehiclePos(),wvp.GetVehicle().GetVehicleRot());
+        ChVector<> vehCOM = vehCoord.TransformPointParentToLocal(wvp.GetVehicle().GetVehicleCOMPos());
+        std::cout<<"Vehicle COM: "<<vehCOM.x()<<"|"<<vehCOM.y()<<"|"<<vehCOM.z()<<std::endl;
+        /* std::cout<<"Vehicle COM|"<<wvp.GetVehicle().GetVehicleCOMPos().x()-wvp.GetVehicle().GetVehiclePos().x()<<"|"
+            <<wvp.GetVehicle().GetVehicleCOMPos().y()-wvp.GetVehicle().GetVehiclePos().y()<<"|"
+            <<(wvp.GetVehicle().GetVehicleCOMPos().z()-wvp.GetVehicle().GetVehiclePos().z());
+        std::cout<<std::endl; */
 
         // Increment frame number
         step_number++;
