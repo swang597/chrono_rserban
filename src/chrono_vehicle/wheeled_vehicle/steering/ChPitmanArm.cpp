@@ -19,9 +19,9 @@
 
 #include <vector>
 
+#include "chrono/assets/ChColorAsset.h"
 #include "chrono/assets/ChCylinderShape.h"
 #include "chrono/assets/ChPointPointDrawing.h"
-#include "chrono/assets/ChColorAsset.h"
 
 #include "chrono_vehicle/wheeled_vehicle/steering/ChPitmanArm.h"
 
@@ -49,8 +49,8 @@ void ChPitmanArm::Initialize(std::shared_ptr<ChBodyAuxRef> chassis,
     steering_to_abs.ConcatenatePreTransformation(chassis->GetFrame_REF_to_abs());
 
     // Transform all points and directions to absolute frame.
-    std::vector<ChVector<> > points(NUM_POINTS);
-    std::vector<ChVector<> > dirs(NUM_DIRS);
+    std::vector<ChVector<>> points(NUM_POINTS);
+    std::vector<ChVector<>> dirs(NUM_DIRS);
 
     for (int i = 0; i < NUM_POINTS; i++) {
         ChVector<> rel_pos = getLocation(static_cast<PointId>(i));
@@ -109,7 +109,6 @@ void ChPitmanArm::Initialize(std::shared_ptr<ChBodyAuxRef> chassis,
     m_pC = m_arm->TransformPointParentToLocal(points[REV]);
     m_pL = m_arm->TransformPointParentToLocal(points[UNIV]);
 
-
     // Create and initialize the revolute joint between chassis and Pitman arm.
     // Note that this is modeled as a ChLinkEngine to allow driving it with
     // imposed rotation (steering input).
@@ -122,6 +121,7 @@ void ChPitmanArm::Initialize(std::shared_ptr<ChBodyAuxRef> chassis,
     rot.Set_A_axis(u, v, dirs[REV_AXIS]);
 
     m_revolute = std::make_shared<ChLinkMotorRotationAngle>();
+    m_revolute->SetNameString(m_name + "_revolute");
     m_revolute->Initialize(chassis, m_arm, ChFrame<>(points[REV], rot.Get_A_quaternion()));
     auto motor_fun = std::make_shared<ChFunction_Setpoint>();
     m_revolute->SetAngleFunction(motor_fun);
@@ -265,6 +265,39 @@ void ChPitmanArm::LogConstraintViolations() {
         GetLog() << "  " << C->GetElement(0, 0) << "  ";
         GetLog() << "  " << C->GetElement(1, 0) << "\n";
     }
+}
+
+// -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+void ChPitmanArm::ExportComponentList(rapidjson::Document& jsonDocument) const {
+    ChPart::ExportComponentList(jsonDocument);
+
+    std::vector<std::shared_ptr<ChBody>> bodies;
+    bodies.push_back(m_link);
+    bodies.push_back(m_arm);
+    ChPart::ExportBodyList(jsonDocument, bodies);
+
+    std::vector<std::shared_ptr<ChLink>> joints;
+    joints.push_back(m_revolute);
+    joints.push_back(m_revsph);
+    joints.push_back(m_universal);
+    ChPart::ExportJointList(jsonDocument, joints);
+}
+
+void ChPitmanArm::Output(ChVehicleOutput& database) const {
+    if (!m_output)
+        return;
+
+    std::vector<std::shared_ptr<ChBody>> bodies;
+    bodies.push_back(m_link);
+    bodies.push_back(m_arm);
+    database.WriteBodies(bodies);
+
+    std::vector<std::shared_ptr<ChLink>> joints;
+    joints.push_back(m_revolute);
+    joints.push_back(m_revsph);
+    joints.push_back(m_universal);
+    database.WriteJoints(joints);
 }
 
 }  // end namespace vehicle
