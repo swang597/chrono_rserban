@@ -38,7 +38,17 @@
 
 ////#define MAC_PATH_HACK
 
+// Define USE_IRRLICHT to enable run-time visualization
 #define USE_IRRLICHT
+
+// Define LOCK_WHEELS to simulate the case of slip -> -infinity
+// In this case, no motors are attached to the wheels (spindles). Instead, these are welded to the upright.
+// Note that this scenario can also be simulated by setting slip to a large negative value (e.g. -100).
+////#define LOCK_WHEELS
+
+// Define USE_LINEAR_MOTOR to use a ChLinkMotorLinearSpeed to enforce vehicle forward speed.
+// Otherwise, a ChLinkLinActuator is used.
+////#define USE_LINEAR_MOTOR
 
 using namespace chrono;
 using namespace chrono::vehicle;
@@ -176,17 +186,18 @@ int main(int argc, char* argv[]) {
     // Create actuators
     // ----------------
 
-    // Calculate wheel angular velocity for given slip
-    double omega = vel / (radius * (1 - slip));
+#ifdef USE_LINEAR_MOTOR
+    // Impose forward vehicle velocity using a ChLinkMotorLinearSpeed
+    std::cout << "Use ChLinkMotorLinearSpeed." << std::endl;
 
-    std::cout << "Slip: " << slip << "  Forward vel: " << vel << "  Wheel omg: " << omega << std::endl;
-
-    // Impose forward vehicle velocity
-    ////auto fun_vel = std::make_shared<ChFunction_Const>(vel);
-    ////auto actuator = std::make_shared<ChLinkMotorLinearSpeed>();
-    ////actuator->Initialize(rig, ground, ChFrame<>(rigLoc, QUNIT));
-    ////actuator->SetSpeedFunction(fun_vel);
-    ////wvp.GetSystem()->AddLink(actuator);
+    auto fun_vel = std::make_shared<ChFunction_Const>(vel);
+    auto actuator = std::make_shared<ChLinkMotorLinearSpeed>();
+    actuator->Initialize(rig, ground, ChFrame<>(rigLoc, QUNIT));
+    actuator->SetSpeedFunction(fun_vel);
+    wvp.GetSystem()->AddLink(actuator);
+#else
+    // Impose forward vehicle velocity using a ChLinkLinActuator
+    std::cout << "Use ChLinkLinActuator." << std::endl;
 
     auto fun_vel = std::make_shared<ChFunction_Ramp>(0, vel);
     auto actuator = std::make_shared<ChLinkLinActuator>();
@@ -194,6 +205,36 @@ int main(int argc, char* argv[]) {
     actuator->Set_dist_funct(fun_vel);
     actuator->Initialize(ground, rig, false, ChCoordsys<>(rigLoc, QUNIT), ChCoordsys<>(rigLoc + ChVector<>(1, 0, 0), QUNIT));
     wvp.GetSystem()->AddLink(actuator);
+#endif
+
+    // Wheel angular velocity
+    double omega;
+
+#ifdef LOCK_WHEELS
+    // This is equivalent to slip -> -infinity
+    slip = -999;
+    omega = 0;
+    std::cout << "Locked wheels." << std::endl;
+
+    // Lock the wheels
+    for (int i = 0; i < 4; i++) {
+        WheelID wheel_id(i);
+        auto wheel = wvp.GetVehicle().GetWheelBody(wheel_id);
+        auto wheel_revolute = wvp.GetVehicle().GetSuspension(wheel_id.axle())->GetRevolute(wheel_id.side());
+        std::shared_ptr<ChBodyFrame> bf1(wheel_revolute->GetBody1(), [](ChBodyFrame*) {});
+        std::shared_ptr<ChBodyFrame> bf2(wheel_revolute->GetBody2(), [](ChBodyFrame*) {});
+        auto body1 = std::dynamic_pointer_cast<ChBody>(bf1);
+        auto body2 = std::dynamic_pointer_cast<ChBody>(bf2);
+
+        auto pos = wheel->GetPos();
+        auto weld = std::make_shared<ChLinkLockLock>();
+        weld->Initialize(body1, body2, ChCoordsys<>(pos, QUNIT));
+        wvp.GetSystem()->AddLink(weld);
+    }
+#else
+    // Calculate wheel angular velocity for given slip
+    omega = vel / (radius * (1 - slip));
+    std::cout << "Driven wheels." << std::endl;
 
     // Impose wheel angular velocity
     std::vector<std::shared_ptr<ChLinkMotorRotationSpeed>> motors;
@@ -207,6 +248,9 @@ int main(int argc, char* argv[]) {
         wvp.GetSystem()->AddLink(motor);
         motors.push_back(motor);
     }
+#endif
+
+    std::cout << "Slip: " << slip << "  Forward vel: " << vel << "  Wheel omg: " << omega << std::endl;
 
     // ------------------
     // Create the terrain
@@ -323,12 +367,18 @@ int main(int argc, char* argv[]) {
         // Extract simulation outputs
         if (output && step_number % output_steps == 0) {
             double force = actuator->Get_react_force().x();  // forward speed actuator force
+
+#ifdef LOCK_WHEELS
+            // Note: actual reaction torques could be obtained frm the ChLinkLockLock joints
+            std::vector<double> torques = {0, 0, 0, 0};
+#else
             std::vector<double> torques = {
                 motors[0]->GetMotorTorque(),  // wheel motor torque front-left
                 motors[1]->GetMotorTorque(),  // wheel motor torque front-right
                 motors[2]->GetMotorTorque(),  // wheel motor torque rear-left
                 motors[3]->GetMotorTorque()   // wheel motor torque rear-right
             };
+#endif
 
             // Collect filtered reaction force and torques
             if (time >= skip_time) {
