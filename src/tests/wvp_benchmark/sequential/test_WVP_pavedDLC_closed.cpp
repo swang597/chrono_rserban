@@ -74,7 +74,7 @@ double tend = 15;
 
 // Time interval between two render frames
 double render_step_size = 1.0 / 50;  // FPS = 50
-double output_step_size = 1e-2;
+double output_step_size = 1e-3;
 
 //output directory
 const std::string out_dir = "../WVP_DLC_PAVED";
@@ -305,9 +305,9 @@ int main(int argc, char* argv[]) {
             csv << q.Q_to_NasaAngles();
             csv <<wvp.GetChassisBody()->GetWvel_loc();
 
-
-
-            csv << wvp.GetVehicle().GetVehicleAcceleration(wvp.GetVehicle().GetChassis()->GetCOMPos()).y();
+            //report lateral acceleration at vehicle COM relative to the vehicle reference point
+            csv << wvp.GetVehicle().GetVehicleAcceleration({-2.070,.01,.495}).y();
+            //csv << wvp.GetVehicle().GetVehicleAcceleration(wvp.GetVehicle().GetChassis()->GetCOMPos()).y();
 
             for(int i=0;i<4;i++){
                 csv << wvp.GetTire(i)->ReportTireForce(&terrain).force;

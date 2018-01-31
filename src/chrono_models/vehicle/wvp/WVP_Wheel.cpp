@@ -30,7 +30,7 @@ namespace wvp {
 // Static variables
 // -----------------------------------------------------------------------------
 
-	const double WVP_Wheel::m_mass = 206;// 134.9;
+const double WVP_Wheel::m_mass = 134.9;//206;// 134.9;
 const ChVector<> WVP_Wheel::m_inertia(4.38, 9.16, 4.38);
 
 const double WVP_Wheel::m_radius = 1.096/2.0;

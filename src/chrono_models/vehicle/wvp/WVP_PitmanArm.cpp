@@ -50,7 +50,7 @@ WVP_PitmanArm::WVP_PitmanArm(const std::string& name) : ChPitmanArm(name, true) 
 const ChVector<> WVP_PitmanArm::getLocation(PointId which) {
     switch (which) {
         case STEERINGLINK:
-            return ChVector<>(-483e-3,7e-3,24e-3);
+            return ChVector<>(-483e-3,-7e-3,24e-3);
         case PITMANARM:
             return ChVector<>(-629e-3,474e-3,40e-3);
         case REV:

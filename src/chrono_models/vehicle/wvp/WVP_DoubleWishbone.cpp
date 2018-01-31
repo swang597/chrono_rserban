@@ -67,7 +67,7 @@ const double WVP_DoubleWishboneFront::m_axleInertia = 9.6e-3;
 const double WVP_DoubleWishboneFront::m_springRestLength = .779;  //+.088;
 /*const double WVP_DoubleWishboneFront::m_springCoefficient = 769149.000;*/
 
-const double WVP_DoubleWishboneFront::m_springPreload = 5900;//5200.0;
+const double WVP_DoubleWishboneFront::m_springPreload = 5600;//5200.0;
 
 // -----------------------------------------------------------------------------
 
@@ -103,7 +103,7 @@ const double WVP_DoubleWishboneRear::m_axleInertia = 9.6e-3;
 const double WVP_DoubleWishboneRear::m_springRestLength = .831;  //+.051;
 /*const double WVP_DoubleWishboneRear::m_springCoefficient = 769149.000;*/
 
-const double WVP_DoubleWishboneRear::m_springPreload = 2300;// 2500.0;
+const double WVP_DoubleWishboneRear::m_springPreload = 2700;// 2500.0;
 
 // -----------------------------------------------------------------------------
 // Implementatin of the WVP suspension spring functor class
