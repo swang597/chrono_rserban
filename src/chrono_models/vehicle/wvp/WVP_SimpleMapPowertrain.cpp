@@ -29,7 +29,7 @@ namespace wvp {
 const double rpm2rads = CH_C_PI / 30;
 const double drive_eff = 0.5137; //based on auxillary power consumption and gearbox efficiencies
 
-WVP_SimpleMapPowertrain::WVP_SimpleMapPowertrain() : ChSimpleMapPowertrain() {}
+WVP_SimpleMapPowertrain::WVP_SimpleMapPowertrain() : ChSimpleMapPowertrain("Powertrain") {}
 
 double WVP_SimpleMapPowertrain::GetMaxEngineSpeed() {
     return 2700 * rpm2rads;

@@ -289,7 +289,7 @@ int main(int argc, char* argv[]) {
     m113.GetDriveline()->SetGyrationMode(true);
 
     // Create and initialize the powertrain system
-    M113a_SimplePowertrain powertrain;
+    M113a_SimplePowertrain powertrain("Powertrain");
     powertrain.Initialize(m113.GetChassisBody(), m113.GetDriveshaft());
 
     // -------------------------------------

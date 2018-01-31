@@ -34,7 +34,7 @@ const double WVP_Powertrain::m_ingear_shaft_inertia = 0.3;
 // the direction of the motor block is along the X axis, while the directions of
 // the axles is along the Y axis (relative to the chassis coordinate frame),
 // -----------------------------------------------------------------------------
-WVP_Powertrain::WVP_Powertrain() : ChShaftsPowertrain(ChVector<>(1, 0, 0)) {}
+WVP_Powertrain::WVP_Powertrain() : ChShaftsPowertrain("Powertrain", ChVector<>(1, 0, 0)) {}
 
 // -----------------------------------------------------------------------------
 // Initialize vector of gear ratios
