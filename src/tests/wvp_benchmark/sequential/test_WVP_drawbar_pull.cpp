@@ -64,12 +64,12 @@ ChVector<> initLoc(-terrainLength / 2 + 6, 0, 0.7);
 double step_size = 1e-4;
 
 // Simulation end time [s]
-double tend = 10;
+double tend = 8;
 
 // Imposed forward speed [m/s]
 double mph2ms = 0.44704;
-double vel = 5 * mph2ms;
-////double vel = 1;
+////double vel = 5 * mph2ms;
+double vel = 1;
 
 // Default longitudinal slip (can be specified as a program argument)
 double slip = 0.0;
@@ -88,6 +88,21 @@ const std::string out_dir = "../WVP_DRAWBAR_PULL";
 bool output = true;
 
 // =============================================================================
+
+// Calculate wheel angular velocity
+double calcWheelOmega(WVP& wvp, WheelID id) {
+    auto rev = wvp.GetVehicle().GetSuspension(id.axle())->GetRevolute(id.side());
+    
+    auto marker1 = rev->GetMarker1()->GetAbsCoord();
+    auto marker2 = rev->GetMarker2()->GetAbsCoord();
+    
+    auto marker1_omg = rev->GetMarker1()->GetAbsWvel();
+    auto marker2_omg = rev->GetMarker2()->GetAbsWvel();
+    
+    auto rel_omg = marker1.TransformDirectionParentToLocal(marker2_omg - marker1_omg);
+
+    return rel_omg.z();
+}
 
 // Calculate longitudinal slip from radius, chassis velocity, and wheel angular velocity
 double calcLongSlip(double r, double v, double w) {
@@ -113,6 +128,27 @@ int main(int argc, char* argv[]) {
     SetDataPath(vehicle_dir);
 #endif
 
+    // Tire radius
+    // Note: this is a catch-22.  We need the tire radius to calculate omega before vehicle initialization.
+    // But we can get the radius from the actual tire only after we initialize the vehicle.
+    double radius = 0.548;
+
+    // Wheel angular velocity
+    double omega;
+
+#ifdef LOCK_WHEELS
+    // This is equivalent to slip -> -infinity
+    slip = -999;
+    omega = 0;
+    std::cout << "Locked wheels." << std::endl;
+#else
+    // Calculate wheel angular velocity for given slip
+    omega = vel / (radius * (1 - slip));
+    std::cout << "Driven wheels." << std::endl;
+#endif
+
+    std::cout << "Slip: " << slip << "  Forward vel: " << vel << "  Wheel omg: " << omega << std::endl;
+
     // --------------
     // Create vehicle
     // --------------
@@ -121,6 +157,7 @@ int main(int argc, char* argv[]) {
     wvp.SetChassisFixed(false);
     wvp.SetInitPosition(ChCoordsys<>(initLoc, QUNIT));
     wvp.SetInitFwdVel(vel);
+    wvp.SetInitWheelAngVel({omega, omega, omega, omega});
     wvp.SetTireType(TireModelType::RIGID);
     wvp.SetTireStepSize(step_size);
     wvp.DisconnectPowertrain();
@@ -134,8 +171,6 @@ int main(int argc, char* argv[]) {
     wvp.SetWheelVisualizationType(VisualizationType::NONE);
     wvp.SetTireVisualizationType(VisualizationType::PRIMITIVES);
 
-    double radius = wvp.GetTire(FRONT_LEFT)->GetRadius();
-
     std::cout << "Vehicle mass:               " << wvp.GetVehicle().GetVehicleMass() << std::endl;
     std::cout << "Vehicle mass (with tires):  " << wvp.GetTotalMass() << std::endl;
     std::cout << "Tire radius:                " << radius << std::endl;
@@ -145,7 +180,8 @@ int main(int argc, char* argv[]) {
     // ---------------
 
     // Locate the rig body approximately at the wheel center height
-    ChVector<> rigLoc(initLoc.x(), initLoc.y(), radius);
+    ////ChVector<> rigLoc(initLoc.x(), initLoc.y(), radius);
+    ChVector<> rigLoc(initLoc.x(), initLoc.y(), initLoc.z());
 
     auto ground = std::shared_ptr<ChBody>(wvp.GetSystem()->NewBody());
     ground->SetBodyFixed(true);
@@ -207,15 +243,7 @@ int main(int argc, char* argv[]) {
     wvp.GetSystem()->AddLink(actuator);
 #endif
 
-    // Wheel angular velocity
-    double omega;
-
 #ifdef LOCK_WHEELS
-    // This is equivalent to slip -> -infinity
-    slip = -999;
-    omega = 0;
-    std::cout << "Locked wheels." << std::endl;
-
     // Lock the wheels
     for (int i = 0; i < 4; i++) {
         WheelID wheel_id(i);
@@ -232,10 +260,6 @@ int main(int argc, char* argv[]) {
         wvp.GetSystem()->AddLink(weld);
     }
 #else
-    // Calculate wheel angular velocity for given slip
-    omega = vel / (radius * (1 - slip));
-    std::cout << "Driven wheels." << std::endl;
-
     // Impose wheel angular velocity
     std::vector<std::shared_ptr<ChLinkMotorRotationSpeed>> motors;
     auto fun_omg = std::make_shared<ChFunction_Const>(omega);
@@ -249,8 +273,6 @@ int main(int argc, char* argv[]) {
         motors.push_back(motor);
     }
 #endif
-
-    std::cout << "Slip: " << slip << "  Forward vel: " << vel << "  Wheel omg: " << omega << std::endl;
 
     // ------------------
     // Create the terrain
@@ -266,12 +288,9 @@ int main(int argc, char* argv[]) {
     double E_elastic = 2e8;
     double damping = 3e4;
 
-    float mu = 0.8f;
-    float restitution = 0.01f;
-    float E = 2e7f;
-    float nu = 0.3f;
-    double depth = 10;
     double factor = 2;
+    int divX = static_cast<int>(terrainLength * factor);
+    int divY = static_cast<int>(5 * factor);
 
     auto terrain = new SCMDeformableTerrain(wvp.GetSystem());
     terrain->SetPlane(ChCoordsys<>(VNULL, Q_from_AngX(CH_C_PI_2)));
@@ -280,7 +299,7 @@ int main(int argc, char* argv[]) {
     terrain->SetAutomaticRefinement(true);
     terrain->SetAutomaticRefinementResolution(0.1);
     terrain->EnableMovingPatch(wvp.GetChassisBody(), ChVector<>(-2, 0, 0), 5, 3);
-    terrain->Initialize(0.0, terrainLength, 5.0, terrainLength * factor, 5 * factor);
+    terrain->Initialize(0.0, terrainLength, 5.0, divX, divY);
 
 #ifdef USE_IRRLICHT
     // -------------------------------------
@@ -370,7 +389,7 @@ int main(int argc, char* argv[]) {
 
 #ifdef LOCK_WHEELS
             // Note: actual reaction torques could be obtained frm the ChLinkLockLock joints
-            std::vector<double> torques = {0, 0, 0, 0};
+            std::vector<double> torques = { 0, 0, 0, 0 };
 #else
             std::vector<double> torques = {
                 motors[0]->GetMotorTorque(),  // wheel motor torque front-left
@@ -380,24 +399,27 @@ int main(int argc, char* argv[]) {
             };
 #endif
 
-            // Collect filtered reaction force and torques
             if (time >= skip_time) {
+                // Collect filtered reaction force and torques
                 drawbarpull.push_back(avg_force.Add(force));
                 tractivetorque.push_back(avg_torque1.Add(torques[0]) + avg_torque2.Add(torques[1]) +
                                          avg_torque3.Add(torques[2]) + avg_torque4.Add(torques[3]));
+
+                // Record raw data
+                double actual_v = wvp.GetVehicle().GetVehicleSpeed();
+                csv << time;
+                csv << actual_v;
+                for (int i = 0; i < 4; i++) {
+                    ////double rev_omega = calcWheelOmega(wvp, i);
+                    double actual_omega = -wvp.GetVehicle().GetWheelOmega(i);
+                    double actual_slip = 1 - actual_v / (radius * actual_omega);
+                    csv << actual_omega << actual_slip << torques[i];
+                }
+                csv << force;
+                csv << std::endl;
             }
 
-            // Record raw data
-            double actual_v = wvp.GetVehicle().GetVehicleSpeed();
-            csv << time;
-            csv << actual_v;
-            for (int i = 0; i < 4; i++) {
-                double actual_omega = -wvp.GetVehicle().GetWheelOmega(i);
-                double actual_slip = 1 - actual_v / (radius * actual_omega);
-                csv << actual_omega << actual_slip << torques[i];
-            }
-            csv << force;
-            csv << std::endl;
+            std::cout << time << "\r";
         }
 
         // Increment frame number
