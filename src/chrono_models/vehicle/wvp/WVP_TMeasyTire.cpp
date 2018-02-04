@@ -78,14 +78,13 @@ void WVP_TMeasyTire::SetTMeasyParams() {
 	
 	m_TMeasyCoeff.dz 		 =  2.0 * xi * sqrt(CZM * WVP_TMeasyTire::m_mass);
 
-	
-	m_TMeasyCoeff.dfx0_pn    =  242.678443;
-	m_TMeasyCoeff.sxm_pn     =  0.134552;
+	m_TMeasyCoeff.dfx0_pn    =  215.013101;
+	m_TMeasyCoeff.sxm_pn     =  0.139216;
 	m_TMeasyCoeff.fxm_pn     =  13.832671;
 	m_TMeasyCoeff.sxs_pn     =  0.500000;
 	m_TMeasyCoeff.fxs_pn     =  12.387002;
-	m_TMeasyCoeff.dfx0_p2n   =  664.223777;
-	m_TMeasyCoeff.sxm_p2n    =  0.109770;
+	m_TMeasyCoeff.dfx0_p2n   =  615.071218;
+	m_TMeasyCoeff.sxm_p2n    =  0.112538;
 	m_TMeasyCoeff.fxm_p2n    =  24.576280;
 	m_TMeasyCoeff.sxs_p2n    =  0.800000;
 	m_TMeasyCoeff.fxs_p2n    =  22.079064;
@@ -100,10 +99,10 @@ void WVP_TMeasyTire::SetTMeasyParams() {
 	m_TMeasyCoeff.sys_p2n    =  1.000000;
 	m_TMeasyCoeff.fys_p2n    =  22.079064;
 	m_TMeasyCoeff.nto0_pn    =  0.160000;
-	m_TMeasyCoeff.synto0_pn  =  0.200000;
+	m_TMeasyCoeff.synto0_pn  =  0.180000;
 	m_TMeasyCoeff.syntoE_pn  =  0.480000;
 	m_TMeasyCoeff.nto0_p2n   =  0.170000;
-	m_TMeasyCoeff.synto0_p2n =  0.200000;
+	m_TMeasyCoeff.synto0_p2n =  0.160000;
 	m_TMeasyCoeff.syntoE_p2n =  0.500000;
 
 
