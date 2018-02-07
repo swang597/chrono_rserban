@@ -24,6 +24,7 @@ endif("${isSystemDir}" STREQUAL "-1")
 
 message(STATUS "==== Test programs ====")
 
+add_subdirectory(core)
 add_subdirectory(filesystem)
 add_subdirectory(hdf5)
 
