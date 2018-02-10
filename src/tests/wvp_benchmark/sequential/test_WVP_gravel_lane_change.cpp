@@ -20,7 +20,7 @@
 //
 // =============================================================================
 
-//#define USE_IRRLICHT
+#define USE_IRRLICHT
 
 
 #include "chrono_vehicle/ChConfigVehicle.h"
@@ -74,7 +74,7 @@ double tend = 15;
 
 // Time interval between two render frames
 double render_step_size = 1.0 / 50;  // FPS = 50
-double output_step_size = 1e-2;
+double output_step_size = 1e-3;
 
 //output directory
 const std::string out_dir = "../WVP_DLC_PAVED";
@@ -124,7 +124,7 @@ int main(int argc, char* argv[]) {
             steering_input_file = steering_input_fileLtR36;
             target_speed = 36*mph_to_ms;
             output_file_name = "DLC_Gravel_LtR_36";
-            
+
         }
 
         //slow LtR
@@ -141,7 +141,7 @@ int main(int argc, char* argv[]) {
             output_file_name = "DLC_Gravel_RtL_38";
         }
     }
-    
+
 
     // if an additional parameter given, run at that speed instead
     // if(argc > 3){
@@ -229,7 +229,7 @@ int main(int argc, char* argv[]) {
     ballS->getMaterial(0).EmissiveColor = irr::video::SColor(0, 255, 0, 0);
     ballT->getMaterial(0).EmissiveColor = irr::video::SColor(0, 0, 255, 0);
 #endif
-    
+
     // -------------
     // Prepare output
     // -------------
@@ -272,21 +272,57 @@ int main(int argc, char* argv[]) {
 
     double time = 0;
 
+	csv << "time (s)";
+    csv << "steering wheel angle (deg)";
+    csv << "vehicle speed (m/s)";
+    
+    csv << "roll angle (deg)";
+    csv << "roll rate (deg/s)";
+    csv << "pitch angle (deg)";
+    csv << "pitch rate (deg/s)";
+    csv << "yaw angle (deg)";
+    csv << "yaw rate (deg/s)";
+    csv << "lateral acceleration (g)";
+    csv << "longitudinal tire force FL (N)";
+    csv << "longitudinal tire force FR (N)";
+    csv << "longitudinal tire force RL (N)";
+    csv << "longitudinal tire force RR (N)";
+    csv << "lateral tire force FL (N)";
+    csv << "lateral tire force FR (N)";
+    csv << "lateral tire force RL (N)";
+    csv << "lateral tire force RR (N)";
+    csv << "vertical tire force FL (N)";
+    csv << "vertical tire force FR (N)";
+    csv << "vertical tire force RL (N)";
+    csv << "vertical tire force RR (N)";
+    csv << "strut length FL (m)";
+    csv << "strut length FR (m)";
+    csv << "strut length RL (m)";
+    csv << "strut length RR (m)";
+    csv << "wheel x position FL (m)";
+    csv << "wheel y position FL (m)";
+    csv << "wheel x position FR (m)";
+    csv << "wheel y position FR (m)";
+    csv << "wheel x position RL (m)";
+    csv << "wheel y position RL (m)";
+    csv << "wheel x position RR (m)";
+    csv << "wheel y position RR (m)";
+    csv << std::endl;
     //output headings for the saved data file
-    csv <<"time"<<"Steering Angle"<<"vehicle Speed" ;
+    //csv <<"time"<<"Steering Angle"<<"vehicle Speed" ;
 
-    csv <<"Chassis Attitude"<<"Chassis Bank"<<"Chassis Heading";
-    csv <<"Chassis Omega X"<<"Chassis Omega Y"<<"Chassis Omega Z";
+    //csv <<"Chassis Attitude"<<"Chassis Bank"<<"Chassis Heading";
+    //csv <<"Chassis Omega X"<<"Chassis Omega Y"<<"Chassis Omega Z";
 
-    csv <<"Lateral Acceleration"<<"W0 long"<<"W0 lat"<<"W0 vert"<<"W1 long"<<"W1 lat"<<"W1 vert";
-    csv <<"W2 long"<<"W2 lat"<<"W2 vert"<<"W3 long"<<"W3 lat"<<"W3 vert";
-    csv <<"W0 Pos x"<<"W0 Pos Y"<<"W0 Pos Z"<<"W1 Pos x"<<"W1 Pos Y"<<"W1 Pos Z";
-    csv <<"W2 Pos x"<<"W2 Pos Y"<<"W2 Pos Z"<<"W3 Pos x"<<"W3 Pos Y"<<"W3 Pos Z"<< std::endl;
+    //csv <<"Lateral Acceleration"<<"W0 long"<<"W0 lat"<<"W0 vert"<<"W1 long"<<"W1 lat"<<"W1 vert";
+    //csv <<"W2 long"<<"W2 lat"<<"W2 vert"<<"W3 long"<<"W3 lat"<<"W3 vert";
+    //csv <<"W0 Pos x"<<"W0 Pos Y"<<"W0 Pos Z"<<"W1 Pos x"<<"W1 Pos Y"<<"W1 Pos Z";
+    //csv <<"W2 Pos x"<<"W2 Pos Y"<<"W2 Pos Z"<<"W3 Pos x"<<"W3 Pos Y"<<"W3 Pos Z"<< std::endl;
 
 
 #ifdef USE_IRRLICHT
     while (app.GetDevice()->run()) {
-        
+
 
         //path visualization
         const ChVector<>& pS = driver.GetSteeringController().GetSentinelLocation();
@@ -341,28 +377,60 @@ int main(int argc, char* argv[]) {
         }
 
         if(data_output && step_number % output_steps == 0){
-            //output time to check simulation is running
             std::cout<<time<<std::endl;
 
-            csv <<time<<steering_input<<wvp.GetVehicle().GetVehicleSpeed();
-            ChQuaternion<> q= wvp.GetVehicle().GetVehicleRot();
-            csv << q.Q_to_NasaAngles();
-            csv <<wvp.GetChassisBody()->GetWvel_loc();
 
+            auto susp0 = std::static_pointer_cast<ChDoubleWishbone>(wvp.GetVehicle().GetSuspension(0));
+            auto susp1 = std::static_pointer_cast<ChDoubleWishbone>(wvp.GetVehicle().GetSuspension(1));
+            double def0 = susp0->GetSpringLength(LEFT)-.779;
+            double def1 = susp0->GetSpringLength(RIGHT)-.779;
+            double def2 = susp1->GetSpringLength(LEFT)-.831;
+            double def3 = susp1->GetSpringLength(RIGHT)-.831;
 
-
-            csv << wvp.GetVehicle().GetVehicleAcceleration(wvp.GetVehicle().GetChassis()->GetCOMPos()).y();
-
-            for(int i=0;i<4;i++){
-                csv << wvp.GetTire(i)->ReportTireForce(&terrain).force;
+            if(def0 > .124 || def0 < -.169){
+                std::cout<<"Strut 0 BUMP STOP ENGAGED!\n";
+            }
+            if(def1 > .124 || def1 < -.169){
+                std::cout<<"Strut 1 BUMP STOP ENGAGED!\n";
+            }
+            if(def2 > .124 || def2 < -.169){
+                std::cout<<"Strut 2 BUMP STOP ENGAGED!\n";
+            }
+            if(def3 > .124 || def3 < -.169){
+                std::cout<<"Strut 3 BUMP STOP ENGAGED!\n";
             }
 
+            csv << time;    //time
+            csv << steering_input/-.001282; //steering wheel angle in degrees
+            csv << wvp.GetVehicle().GetVehicleSpeed();  //vehicle speed m/s
+            ChQuaternion<> q= wvp.GetVehicle().GetVehicleRot();
+            csv << q.Q_to_Euler123().x()*180.0/CH_C_PI;   //roll angle in deg
+            csv << wvp.GetChassisBody()->GetWvel_loc().x()*180.0/CH_C_PI; //roll rate deg
+            csv << q.Q_to_Euler123().y()*180.0/CH_C_PI;   //pitch angle deg
+            csv << wvp.GetChassisBody()->GetWvel_loc().y()*180.0/CH_C_PI; //pitch rate deg
+            csv << q.Q_to_Euler123().z()*180.0/CH_C_PI;   //yaw angle deg
+            csv << wvp.GetChassisBody()->GetWvel_loc().z()*180.0/CH_C_PI; //yaw rate deg
+            csv << wvp.GetVehicle().GetVehicleAcceleration({-2.070,.01,.495}).y()/9.81; //lateral acceleration in g's
             for(int i=0;i<4;i++){
-                csv << wvp.GetVehicle().GetWheelPos(i);
+                csv << wvp.GetTire(i)->ReportTireForce(&terrain).force.x(); //longitudinal tire forces FL, FR, RL, RR
+            }
+            for(int i=0;i<4;i++){
+                csv << wvp.GetTire(i)->ReportTireForce(&terrain).force.y(); //lateral tire forces FL, FR, RL, RR
+            }
+            for(int i=0;i<4;i++){
+                csv << wvp.GetTire(i)->ReportTireForce(&terrain).force.z(); //vertical tire forces FL, FR, RL, RR
+            }
 
+            csv << susp0->GetSpringLength(LEFT);//individual strut lengths m
+            csv << susp0->GetSpringLength(RIGHT);//individual strut lengths m
+            csv << susp1->GetSpringLength(LEFT);//individual strut lengths m
+            csv << susp1->GetSpringLength(RIGHT);//individual strut lengths m
+
+            for(int i=0;i<4;i++){
+                csv << wvp.GetVehicle().GetWheelPos(i).x(); //individual wheel paths x m
+                csv << wvp.GetVehicle().GetWheelPos(i).y(); //individual wheel paths y m
             }
             csv << std::endl;
-
 
         }
 

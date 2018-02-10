@@ -83,7 +83,7 @@ double tend = 15;
 
 // Time interval between two render frames
 double render_step_size = 1.0 / 50;  // FPS = 50
-double output_step_size = 1e-2;
+double output_step_size = 1e-3;
 
 //output directory
 const std::string out_dir = "../WVP_SIDE_SLOPE";
@@ -124,12 +124,12 @@ int main(int argc, char* argv[]) {
             steering_input_file = steering_input_fileLeft;
             output_file_name = "LeftSideDown" + std::to_string((int)target_speed);
             gravity = ChVector<>({0,2.80604,-9.353468});
-            
+
         }
         else if(atof(argv[3])==1){ //0 = LTR, 1=RtL
             steering_input_file = steering_input_fileLeft;
             output_file_name = "RightSideDown" + std::to_string((int)target_speed);
-            gravity = ChVector<>({0,-2.80604,-9.353468}); 
+            gravity = ChVector<>({0,-2.80604,-9.353468});
             std::cout<<output_file_name<<std::endl;
         }
 
@@ -253,10 +253,39 @@ int main(int argc, char* argv[]) {
     int render_frame = 0;
 
     double time = 0;
+	
+	csv << "time (s)";
+    csv << "steering wheel angle (deg)";
+    csv << "vehicle speed (m/s)";
+	csv << "lateral acceleration (g)";
+    csv << "roll angle (deg)";
+    csv << "roll rate (deg/s)";
+    csv << "yaw angle (deg)";
+    csv << "yaw rate (deg/s)";
+	csv << "CG X Pos (m)";
+	csv << "CG Y Pos (m)";
+	csv << "longitudinal tire force FL (N)";
+    csv << "longitudinal tire force FR (N)";
+    csv << "longitudinal tire force RL (N)";
+    csv << "longitudinal tire force RR (N)";
+    csv << "lateral tire force FL (N)";
+    csv << "lateral tire force FR (N)";
+    csv << "lateral tire force RL (N)";
+    csv << "lateral tire force RR (N)";
+    csv << "vertical tire force FL (N)";
+    csv << "vertical tire force FR (N)";
+    csv << "vertical tire force RL (N)";
+    csv << "vertical tire force RR (N)";
+    csv << "strut length FL (m)";
+    csv << "strut length FR (m)";
+    csv << "strut length RL (m)";
+    csv << "strut length RR (m)";
+    csv << std::endl;
+	
 
     //output headings for the saved data file
         //output headings for the saved data file
-    csv <<"time"<<"Steering Angle"<<"vehicle Speed";
+    /* csv <<"time"<<"Steering Angle"<<"vehicle Speed";
 
     csv <<"Chassis Attitude"<<"Chassis Bank"<<"Chassis Heading";
     csv <<"Chassis Omega X"<<"Chassis Omega Y"<<"Chassis Omega Z";
@@ -265,7 +294,7 @@ int main(int argc, char* argv[]) {
     csv <<"W2 long"<<"W2 lat"<<"W2 vert"<<"W3 long"<<"W3 lat"<<"W3 vert";
     csv <<"W0 Pos x"<<"W0 Pos Y"<<"W0 Pos Z"<<"W1 Pos x"<<"W1 Pos Y"<<"W1 Pos Z";
     csv <<"W2 Pos x"<<"W2 Pos Y"<<"W2 Pos Z"<<"W3 Pos x"<<"W3 Pos Y"<<"W3 Pos Z";
-    csv << "GravityX"<<"GravityY"<<"GravityZ"<< std::endl;
+    csv << "GravityX"<<"GravityY"<<"GravityZ"<< std::endl; */
 
 
 #ifdef USE_IRRLICHT
@@ -325,27 +354,53 @@ int main(int argc, char* argv[]) {
 
         }
 
-
         if(data_output && step_number % output_steps == 0){
-            //output time to check simulation is running
-            std::cout<<time<<"|"<<driver.GetSteeringController().GetTargetLocation().x()<<"|"<<std::endl;
+            std::cout<<time<<std::endl;
 
-            csv <<time<<steering_input<<wvp.GetVehicle().GetVehicleSpeed();
+
+            auto susp0 = std::static_pointer_cast<ChDoubleWishbone>(wvp.GetVehicle().GetSuspension(0));
+            auto susp1 = std::static_pointer_cast<ChDoubleWishbone>(wvp.GetVehicle().GetSuspension(1));
+            double def0 = susp0->GetSpringLength(LEFT)-.779;
+            double def1 = susp0->GetSpringLength(RIGHT)-.779;
+            double def2 = susp1->GetSpringLength(LEFT)-.831;
+            double def3 = susp1->GetSpringLength(RIGHT)-.831;
+
+            if(def0 > .124 || def0 < -.169){
+                std::cout<<"Strut 0 BUMP STOP ENGAGED!\n";
+            }
+            if(def1 > .124 || def1 < -.169){
+                std::cout<<"Strut 1 BUMP STOP ENGAGED!\n";
+            }
+            if(def2 > .124 || def2 < -.169){
+                std::cout<<"Strut 2 BUMP STOP ENGAGED!\n";
+            }
+            if(def3 > .124 || def3 < -.169){
+                std::cout<<"Strut 3 BUMP STOP ENGAGED!\n";
+            }
+            csv << time;    //time
+            csv << steering_input/-.001282; //steering wheel angle in degrees
+            csv << wvp.GetVehicle().GetVehicleSpeed();  //vehicle speed m/s
+            csv << wvp.GetVehicle().GetVehicleAcceleration({-2.070,.01,.495}).y()/9.81; //lateral acceleration in g's
             ChQuaternion<> q= wvp.GetVehicle().GetVehicleRot();
-            csv << q.Q_to_NasaAngles();
-            csv <<wvp.GetChassisBody()->GetWvel_loc();
-
-            csv << wvp.GetVehicle().GetVehicleAcceleration(wvp.GetVehicle().GetChassis()->GetCOMPos()).y();
-
+            csv << q.Q_to_Euler123().x()*180.0/CH_C_PI;   //roll angle in deg
+            csv << wvp.GetChassisBody()->GetWvel_loc().x()*180.0/CH_C_PI; //roll rate deg
+            csv << q.Q_to_Euler123().z()*180.0/CH_C_PI;   //yaw angle deg
+            csv << wvp.GetChassisBody()->GetWvel_loc().z()*180.0/CH_C_PI; //yaw rate deg
+            csv << wvp.GetVehicle().GetVehicleCOMPos().x(); //COM path x
+            csv << wvp.GetVehicle().GetVehicleCOMPos().y(); //COM path y
             for(int i=0;i<4;i++){
-                csv << wvp.GetTire(i)->ReportTireForce(&terrain).force;
+                csv << wvp.GetTire(i)->ReportTireForce(&terrain).force.x(); //longitudinal tire forces FL, FR, RL, RR
             }
-
             for(int i=0;i<4;i++){
-                csv << wvp.GetVehicle().GetWheelPos(i);
-
+                csv << wvp.GetTire(i)->ReportTireForce(&terrain).force.y(); //lateral tire forces FL, FR, RL, RR
             }
-            csv << wvp.GetSystem()->Get_G_acc();
+            for(int i=0;i<4;i++){
+                csv << wvp.GetTire(i)->ReportTireForce(&terrain).force.z(); //vertical tire forces FL, FR, RL, RR
+            }
+            csv << susp0->GetSpringLength(LEFT);//individual strut lengths m
+            csv << susp0->GetSpringLength(RIGHT);//individual strut lengths m
+            csv << susp1->GetSpringLength(LEFT);//individual strut lengths m
+            csv << susp1->GetSpringLength(RIGHT);//individual strut lengths m
             csv << std::endl;
         }
 
@@ -361,4 +416,3 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
-
