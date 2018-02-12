@@ -18,6 +18,7 @@ SET(LIBRARIES
 SET(DEMOS
     test_WVP_sequential
     test_WVP_suspensionTestRig
+    test_WVP_straight_slow
     test_WVP_constant_radius
     test_WVP_gravel_lane_change
     test_WVP_paved_lane_change
