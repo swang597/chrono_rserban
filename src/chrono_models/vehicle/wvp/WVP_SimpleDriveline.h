@@ -43,6 +43,9 @@ class CH_MODELS_API WVP_SimpleDriveline : public ChDriveline {
 
     virtual ~WVP_SimpleDriveline() {}
 
+    /// Get the name of the vehicle subsystem template.
+    virtual std::string GetTemplateName() const override { return "WVP_SimpleDriveline"; }
+
     /// Return the number of driven axles.
     virtual int GetNumDrivenAxles() const final override { return 2; }
 
