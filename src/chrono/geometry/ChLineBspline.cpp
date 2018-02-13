@@ -12,90 +12,83 @@
 // Authors: Alessandro Tasora
 // =============================================================================
 
-#include "chrono/geometry/ChLineNurbs.h"
+#include "chrono/geometry/ChLineBspline.h"
 
 namespace chrono {
 namespace geometry {
 
 // Register into the object factory, to enable run-time dynamic creation and persistence
-CH_FACTORY_REGISTER(ChLineNurbs)
+CH_FACTORY_REGISTER(ChLineBspline)
 
-ChLineNurbs::ChLineNurbs() {
+ChLineBspline::ChLineBspline() {
     std::vector< ChVector<> > mpoints = { ChVector<>(-1,0,0), ChVector<>(1,0,0)};
     this->SetupData(1, mpoints);
 }
 
-ChLineNurbs::ChLineNurbs(int morder,                ///< order p: 1= linear, 2=quadratic, etc.
+ChLineBspline::ChLineBspline(int morder,            ///< order p: 1= linear, 2=quadratic, etc.
                 std::vector< ChVector<> >& mpoints, ///< control points, size n. Required: at least n >= p+1
-                ChVectorDynamic<>* mknots,          ///< knots, size k. Required k=n+p+1. If not provided, initialized to uniform. 
-                ChVectorDynamic<>* weights          ///< weights, size w. Required w=n. If not provided, all weights as 1. 
+                ChVectorDynamic<>* mknots           ///< knots, size k. Required k=n+p+1. If not provided, initialized to uniform. 
                 ) {
-    this->SetupData(morder, mpoints, mknots, weights);
+    this->SetupData(morder, mpoints, mknots);
 }
 
-ChLineNurbs::ChLineNurbs(const ChLineNurbs& source) : ChLine(source) {
+ChLineBspline::ChLineBspline(const ChLineBspline& source) : ChLine(source) {
     
     this->points = source.points;
     this->p = source.p;
     this->knots = source.knots;
-    this->weights = source.weights;
 }
 
-void ChLineNurbs::Evaluate(
+void ChLineBspline::Evaluate(
                 ChVector<>& pos, 
                 const double parU) const {
 
         double u = ComputeKnotUfromU(parU);
 
-        ChVectorDynamic<> mR(this->p+1);
-        ChBasisToolsNurbs::BasisEvaluate(this->p, u, this->weights, this->knots, mR);
-
         int spanU = ChBasisToolsBspline::FindSpan(this->p, u, this->knots);
+
+        ChVectorDynamic<> N(this->p+1);
+        ChBasisToolsBspline::BasisEvaluate(this->p, spanU, u, this->knots, N);
         
         pos = VNULL;
         int uind = spanU - p;
         for (int i = 0; i <= this->p; i++) {
-            pos += points[uind + i] * mR(i);
+            pos += points[uind + i] * N(i);
         }
 }
 
-void ChLineNurbs::Derive(
+void ChLineBspline::Derive(
                 ChVector<>& dir, 
                 const double parU) const {
 
         double u = ComputeKnotUfromU(parU);
 
-        ChVectorDynamic<> mR(this->p+1);
-        ChVectorDynamic<> mdR(this->p+1);
-        ChBasisToolsNurbs::BasisEvaluateDeriv(this->p, u, this->weights, this->knots, mR, mdR);
-
         int spanU = ChBasisToolsBspline::FindSpan(this->p, u, this->knots);
+
+        ChMatrixDynamic<>  NdN  (2, p + 1); // basis on 1st row and their 1st derivatives on 2nd row
+        ChBasisToolsBspline::BasisEvaluateDeriv(this->p, spanU, u, this->knots, NdN);
         
         dir = VNULL;
         int uind = spanU - p;
         for (int i = 0; i <= this->p; i++) {
-            dir += points[uind + i] * mdR(i);
+            dir += points[uind + i] * NdN(1,i);
         }
 }
 
 
 
-void ChLineNurbs::SetupData( int morder,                ///< order p: 1= linear, 2=quadratic, etc.
+void ChLineBspline::SetupData( int morder,              ///< order p: 1= linear, 2=quadratic, etc.
                     std::vector< ChVector<> >& mpoints, ///< control points, size n. Required: at least n >= p+1
-                    ChVectorDynamic<>* mknots,          ///< knots, size k. Required k=n+p+1. If not provided, initialized to uniform. 
-                    ChVectorDynamic<>* weights          ///< weights, size w. Required w=n. If not provided, all weights as 1. 
+                    ChVectorDynamic<>* mknots           ///< knots, size k. Required k=n+p+1. If not provided, initialized to uniform. 
                     ) {
     if (morder < 1) 
-        throw ChException ("ChLineNurbs::SetupData requires order >= 1."); 
+        throw ChException ("ChLineBspline::SetupData requires order >= 1."); 
 
     if (mpoints.size() < morder+1) 
-        throw ChException ("ChLineNurbs::SetupData requires at least order+1 control points.");
+        throw ChException ("ChLineBspline::SetupData requires at least order+1 control points.");
 
     if (mknots && mknots->GetLength() != (mpoints.size()+morder+1))
-        throw ChException ("ChLineNurbs::SetupData: knots must have size=n_points+order+1");
-
-    if (weights && weights->GetLength() != mpoints.size())
-        throw ChException ("ChLineNurbs::SetupData: weights must have size=n_points");
+        throw ChException ("ChLineBspline::SetupData: knots must have size=n_points+order+1");
 
     this->p = morder;
     this->points = mpoints;
@@ -108,14 +101,6 @@ void ChLineNurbs::SetupData( int morder,                ///< order p: 1= linear,
         this->knots.Reset(n+p+1);
         ChBasisToolsBspline::ComputeKnotUniformMultipleEnds(this->knots,p);
     }
-
-    if (weights)
-        this->weights.CopyFromMatrix(*weights);
-    else {
-        this->weights.Reset(n);
-        this->weights.FillElem(1.0);
-    }
-
 }
 
 
