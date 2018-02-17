@@ -65,3 +65,6 @@ if(ENABLE_MODULE_VEHICLE)
 	add_subdirectory(go_nogo_SCM)
 endif()
 
+if(ENABLE_MODULE_PARALLEL AND ENABLE_MODULE_IRRLICHT AND ENABLE_MODULE_OPENGL)
+    add_subdirectory(robosimian)
+endif()
