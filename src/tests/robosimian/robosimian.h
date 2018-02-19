@@ -18,6 +18,7 @@
 #define ROBO_SIMIAN_H
 
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "chrono/assets/ChColor.h"
@@ -25,7 +26,12 @@
 
 namespace robosimian {
 
-enum LimbID { FRONT_LEFT = 0, FRONT_RIGHT = 1, REAR_LEFT = 2, REAR_RIGHT = 3 };
+enum LimbID {
+    FR = 0,  ///< front right
+    RR = 1,  ///< rear right
+    RL = 2,  ///< rear left
+    FL = 3   ///< front left
+};
 
 enum class VisualizationType {
     NONE,        ///< no visualization
@@ -33,46 +39,54 @@ enum class VisualizationType {
     MESH         ///< use meshes
 };
 
+struct BoxShape {
+    BoxShape(const chrono::ChVector<>& pos, const chrono::ChQuaternion<>& rot, const chrono::ChVector<>& dims)
+        : m_pos(pos), m_rot(rot), m_dims(dims) {}
+    chrono::ChVector<> m_pos;
+    chrono::ChQuaternion<> m_rot;
+    chrono::ChVector<> m_dims;
+};
+
+struct SphereShape {
+    SphereShape(const chrono::ChVector<>& pos, double radius) : m_pos(pos), m_radius(radius) {}
+    chrono::ChVector<> m_pos;
+    double m_radius;
+};
+
+struct CylinderShape {
+    CylinderShape(const chrono::ChVector<>& pos, const chrono::ChQuaternion<>& rot, double radius, double length)
+        : m_pos(pos), m_rot(rot), m_radius(radius), m_length(length) {}
+    chrono::ChVector<> m_pos;
+    chrono::ChQuaternion<> m_rot;
+    double m_radius;
+    double m_length;
+};
+
 class Part {
   public:
-    Part(const std::string& name);
+    Part(const std::string& name, chrono::ChSystem* system);
     virtual ~Part() {}
 
     const std::string& GetName() const { return m_name; }
     void SetName(const std::string& name) { m_name = name; }
     void SetVisualizationType(VisualizationType vis);
-
-    virtual void AddVisualizationAssets(VisualizationType vis) {}
-    virtual void RemoveVisualizationAssets() {}
+    void SetCollide(bool val);
 
   protected:
-    struct BoxShape {
-        BoxShape(const chrono::ChVector<>& pos, const chrono::ChQuaternion<>& rot, const chrono::ChVector<>& dims)
-            : m_pos(pos), m_rot(rot), m_dims(dims) {}
-        chrono::ChVector<> m_pos;
-        chrono::ChQuaternion<> m_rot;
-        chrono::ChVector<> m_dims;
-    };
 
-    struct SphereShape {
-        SphereShape(const chrono::ChVector<>& pos, double radius) : m_pos(pos), m_radius(radius) {}
-        chrono::ChVector<> m_pos;
-        double m_radius;
-    };
+    void AddVisualizationAssets(VisualizationType vis);
+    void AddCollisionShapes();
 
-    struct CylinderShape {
-        CylinderShape(const chrono::ChVector<>& pos, const chrono::ChQuaternion<>& rot, double radius, double length)
-            : m_pos(pos), m_rot(rot), m_radius(radius), m_length(length) {}
-        chrono::ChVector<> m_pos;
-        chrono::ChQuaternion<> m_rot;
-        double m_radius;
-        double m_length;
-    };
+    std::string m_name;                            ///< subsystem name
+    std::shared_ptr<chrono::ChBodyAuxRef> m_body;  ///< rigid body
+    std::vector<BoxShape> m_boxes;                 ///< set of primitive boxes (collision and visualization)
+    std::vector<SphereShape> m_spheres;            ///< set of primitive spheres (collision and visualization)
+    std::vector<CylinderShape> m_cylinders;        ///< set of primitive cylinders (collision and visualization)
+    std::string m_mesh_name;                       ///< visualization mesh name
+    chrono::ChColor m_color;                       ///< visualization asset color
 
-    std::string m_name;                      ///< subsystem name
-    std::vector<BoxShape> m_boxes;           ///< set of primitive boxes (collision and visualization)
-    std::vector<SphereShape> m_spheres;      ///< set of primitive spheres (collision and visualization)
-    std::vector<CylinderShape> m_cylinders;  ///< set of primitive cylinders (collision and visualization)
+    friend class RoboSimian;
+    friend class Limb;
 };
 
 class Chassis : public Part {
@@ -82,42 +96,68 @@ class Chassis : public Part {
 
     void Initialize(const chrono::ChCoordsys<>& pos);
 
-    void SetCollide(bool val);
-
   private:
-    virtual void AddVisualizationAssets(VisualizationType vis) override;
-    virtual void RemoveVisualizationAssets() override final;
-
-    std::shared_ptr<chrono::ChBodyAuxRef> m_body;
-
-    static const double m_mass;                    ///< chassis mass
-    static const chrono::ChVector<> m_COM;         ///< location of the center of mass in the body frame.
-    static const chrono::ChVector<> m_inertia_xx;  ///< moments of inertia (w.r.t. centroidal frame)
-    static const chrono::ChVector<> m_inertia_xy;  ///< products of inertia (w.r.t. centroidal frame)
-
-    static const std::string m_vis_mesh_name;  ///< chassis visualization mesh name
 };
 
-////class Link : public Part {
-////public:
-////    Link(const std::string& name, chrono::ChSystem* system);
-////private:
-////};
-
-class Limb : public Part {
+class Link {
   public:
-    Limb(const std::string& name, chrono::ChSystem* system);
-    ~Limb() {}
-
-    void Initialize();
+    Link(const std::string& mesh_name,
+         double mass,
+         const chrono::ChVector<>& com,
+         const chrono::ChVector<>& inertia_xx,
+         const chrono::ChVector<>& inertia_xy,
+         const std::vector<CylinderShape>& shapes)
+        : m_mesh_name(mesh_name),
+          m_mass(mass),
+          m_com(com),
+          m_inertia_xx(inertia_xx),
+          m_inertia_xy(inertia_xy),
+          m_shapes(shapes) {}
 
   private:
-    virtual void AddVisualizationAssets(VisualizationType vis) override;
-    virtual void RemoveVisualizationAssets() override final;
+    std::string m_mesh_name;
+    double m_mass;
+    chrono::ChVector<> m_com;
+    chrono::ChVector<> m_inertia_xx;
+    chrono::ChVector<> m_inertia_xy;
+    std::vector<CylinderShape> m_shapes;
 
-    chrono::ChColor GetColor(size_t index);
+    friend class Limb;
+};
 
-    static const std::string m_vis_mesh_names[11];  ///< link visualization mesh names
+struct LinkData {
+    std::string name;
+    Link link;
+    bool include;
+};
+
+struct JointData {
+    std::string name;
+    std::string linkA;
+    std::string linkB;
+    bool fixed;
+    bool actuated;
+    chrono::ChVector<> xyz;
+    chrono::ChVector<> rpy;
+    chrono::ChVector<> axis;
+};
+
+class Limb {
+  public:
+    Limb(const std::string& name, LimbID id, const LinkData data[], chrono::ChSystem* system);
+    ~Limb() {}
+
+    void Initialize(std::shared_ptr<chrono::ChBodyAuxRef> chassis,  ///< chassis body
+                    const chrono::ChVector<>& xyz,                  ///< location (relative to chassis)
+                    const chrono::ChVector<>& rpy                   ///< roll-pitch-yaw (relative to chassis)
+    );
+
+    void SetVisualizationType(VisualizationType vis);
+
+  private:
+    LimbID m_id;
+    std::unordered_map<std::string, std::shared_ptr<Part>> m_links;
+    std::unordered_map<std::string, std::shared_ptr<chrono::ChLink>> m_joints;
 };
 
 class RoboSimian {
@@ -129,7 +169,7 @@ class RoboSimian {
     void Initialize(const chrono::ChCoordsys<>& pos);
 
     void SetVisualizationTypeChassis(VisualizationType vis);
-    void SetVisualizationTypeLimb(LimbID which, VisualizationType vis);
+    void SetVisualizationTypeLimbs(VisualizationType vis);
 
   private:
     void Create(bool fixed);
