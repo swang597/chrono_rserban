@@ -73,7 +73,6 @@ class Part {
     void SetCollide(bool val);
 
   protected:
-
     void AddVisualizationAssets(VisualizationType vis);
     void AddCollisionShapes();
 
@@ -83,6 +82,7 @@ class Part {
     std::vector<SphereShape> m_spheres;            ///< set of primitive spheres (collision and visualization)
     std::vector<CylinderShape> m_cylinders;        ///< set of primitive cylinders (collision and visualization)
     std::string m_mesh_name;                       ///< visualization mesh name
+    chrono::ChVector<> m_offset;                   ///< offset for visualization mesh
     chrono::ChColor m_color;                       ///< visualization asset color
 
     friend class RoboSimian;
@@ -99,15 +99,30 @@ class Chassis : public Part {
   private:
 };
 
+class WheelDD : public Part {
+  public:
+    WheelDD(const std::string& name, chrono::ChSystem* system);
+    ~WheelDD() {}
+
+    void Initialize(std::shared_ptr<chrono::ChBodyAuxRef> chassis,  ///< chassis body
+                    const chrono::ChVector<>& xyz,                  ///< location (relative to chassis)
+                    const chrono::ChVector<>& rpy                   ///< roll-pitch-yaw (relative to chassis)
+    );
+};
+
 class Link {
   public:
     Link(const std::string& mesh_name,
+         const chrono::ChVector<>& offset,
+         const chrono::ChColor& color,
          double mass,
          const chrono::ChVector<>& com,
          const chrono::ChVector<>& inertia_xx,
          const chrono::ChVector<>& inertia_xy,
          const std::vector<CylinderShape>& shapes)
         : m_mesh_name(mesh_name),
+          m_offset(offset),
+          m_color(color),
           m_mass(mass),
           m_com(com),
           m_inertia_xx(inertia_xx),
@@ -116,6 +131,8 @@ class Link {
 
   private:
     std::string m_mesh_name;
+    chrono::ChVector<> m_offset;
+    chrono::ChColor m_color;
     double m_mass;
     chrono::ChVector<> m_com;
     chrono::ChVector<> m_inertia_xx;
@@ -170,6 +187,8 @@ class RoboSimian {
 
     void SetVisualizationTypeChassis(VisualizationType vis);
     void SetVisualizationTypeLimbs(VisualizationType vis);
+    void SetVisualizationTypeLimb(LimbID which, VisualizationType vis);
+    void SetVisualizationTypeWheels(VisualizationType vis);
 
   private:
     void Create(bool fixed);
@@ -179,6 +198,8 @@ class RoboSimian {
 
     std::shared_ptr<Chassis> m_chassis;          ///< robot chassis
     std::vector<std::shared_ptr<Limb>> m_limbs;  ///< robot limbs
+    std::shared_ptr<WheelDD> m_wheel_left;       ///< left DD wheel
+    std::shared_ptr<WheelDD> m_wheel_right;      ///< right DD wheel
 };
 
 }  // end namespace robosimian

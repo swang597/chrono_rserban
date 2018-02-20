@@ -16,6 +16,39 @@ using namespace chrono::collision;
 
 double time_step = 1e-3;
 
+class EventReceiver : public irr::IEventReceiver {
+  public:
+    EventReceiver(robosimian::RoboSimian& robot, irrlicht::ChIrrApp& app)
+        : m_robot(robot), m_app(app), m_vis(robosimian::VisualizationType::PRIMITIVES) {}
+
+    virtual bool OnEvent(const irr::SEvent& event) {
+        if (event.EventType != irr::EET_KEY_INPUT_EVENT)
+            return false;
+        if (!event.KeyInput.PressedDown) {
+            switch (event.KeyInput.Key) {
+                case irr::KEY_KEY_C:
+                    m_vis = (m_vis == robosimian::VisualizationType::MESH ? robosimian::VisualizationType::PRIMITIVES
+                                                                          : robosimian::VisualizationType::MESH);
+
+                    m_robot.SetVisualizationTypeChassis(m_vis);
+                    m_robot.SetVisualizationTypeLimbs(m_vis);
+                    m_robot.SetVisualizationTypeWheels(m_vis);
+
+                    m_app.AssetBindAll();
+                    m_app.AssetUpdateAll();
+
+                    return true;
+            }
+        }
+        return false;
+    }
+
+  private:
+    robosimian::RoboSimian& m_robot;
+    robosimian::VisualizationType m_vis;
+    irrlicht::ChIrrApp m_app;
+};
+
 int main(int argc, char* argv[]) {
     // Create system
     ////ChSystemSMC my_sys;
@@ -24,18 +57,26 @@ int main(int argc, char* argv[]) {
     my_sys.Set_G_acc(ChVector<double>(0, 0, 0));
 
     robosimian::RoboSimian robot(&my_sys, true);
-    robot.Initialize(ChCoordsys<>(ChVector<>(0, 0, 0), QUNIT));
-    ////robot.Initialize(ChCoordsys<>(ChVector<>(0, 0, 0), Q_from_AngX(CH_C_PI)));
+    ////robot.Initialize(ChCoordsys<>(ChVector<>(0, 0, 0), QUNIT));
+    robot.Initialize(ChCoordsys<>(ChVector<>(0, 0, 0), Q_from_AngX(CH_C_PI)));
+
     robot.SetVisualizationTypeChassis(robosimian::VisualizationType::PRIMITIVES);
-    robot.SetVisualizationTypeLimbs(robosimian::VisualizationType::PRIMITIVES);
+    robot.SetVisualizationTypeLimb(robosimian::FL, robosimian::VisualizationType::PRIMITIVES);
+    robot.SetVisualizationTypeLimb(robosimian::FR, robosimian::VisualizationType::PRIMITIVES);
+    robot.SetVisualizationTypeLimb(robosimian::RL, robosimian::VisualizationType::PRIMITIVES);
+    robot.SetVisualizationTypeLimb(robosimian::RR, robosimian::VisualizationType::PRIMITIVES);
+    ////robot.SetVisualizationTypeLimbs(robosimian::VisualizationType::MESH);
+    robot.SetVisualizationTypeWheels(robosimian::VisualizationType::PRIMITIVES);
 
     // Create the visualization window
     irrlicht::ChIrrApp application(&my_sys, L"Robosimian", irr::core::dimension2d<irr::u32>(800, 600), false, true);
     irrlicht::ChIrrWizard::add_typical_Logo(application.GetDevice());
     irrlicht::ChIrrWizard::add_typical_Sky(application.GetDevice());
-    irrlicht::ChIrrWizard::add_typical_Lights(application.GetDevice(), irr::core::vector3df(30.f, 30.f, 100.f),
-                                              irr::core::vector3df(30.f, -30.f, 80.f));
+    irrlicht::ChIrrWizard::add_typical_Lights(application.GetDevice(), irr::core::vector3df(100.f, 100.f, 100.f),
+                                              irr::core::vector3df(100.f, -100.f, 80.f));
     irrlicht::ChIrrWizard::add_typical_Camera(application.GetDevice(), irr::core::vector3df(0, -2, 2));
+
+    application.SetUserEventReceiver(new EventReceiver(robot, application));
 
     application.AssetBindAll();
     application.AssetUpdateAll();
