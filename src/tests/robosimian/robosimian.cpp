@@ -22,6 +22,7 @@
 
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/physics/ChSystemSMC.h"
+#include "chrono/motion_functions/ChFunction_Const.h"
 
 #include "robosimian.h"
 
@@ -32,7 +33,7 @@ namespace robosimian {
 // =============================================================================
 
 // Concrete Link types
-//        mesh_name, mass, com, inertia_xx, inertia_xy, shapes
+//     mesh_name, mass, com, inertia_xx, inertia_xy, shapes
 
 const Link FtsLink("robosim_fts",
                    ChVector<>(0, 0, 0),
@@ -120,7 +121,7 @@ const Link WheelLink("robosim_wheel",
                      {CylinderShape(ChVector<>(0, 0, 0), Q_from_AngX(CH_C_PI_2), 0.12, 0.123)});
 
 // List of links for front and rear legs
-//         name, link, body included?
+//     name, link, body included?
 
 const int num_links = 11;
 
@@ -153,53 +154,74 @@ const LinkData rear_links[] = {
 };
 
 // List of joints in a limb chain
+//     name, parent_link, child_link, fixed?, xyz, rpy, axis
 
 const int num_joints = 10;
 
-// {name, parent_link, child_link, fixed?, actuated?, xyz, rpy, axis}
 const JointData joints[] = {
 
-    {"joint1", "link0", "link1", false, true, ChVector<>(0.17203, 0.00000, 0.00000),
-     ChVector<>(3.14159, 0.00000, 0.00000), ChVector<>(1, 0, 0)},
+    { "joint1", "link0", "link1", false, ChVector<>(0.17203, 0.00000, 0.00000),
+    ChVector<>(3.14159, 0.00000, 0.00000), ChVector<>(1, 0, 0) },
 
-    {"joint2", "link1", "link2", false, true, ChVector<>(0.00000, 0.00000, 0.00000),
-     ChVector<>(0.00000, 0.00000, 0.00000), ChVector<>(0, -1, 0)},
+    { "joint2", "link1", "link2", false, ChVector<>(0.00000, 0.00000, 0.00000),
+    ChVector<>(0.00000, 0.00000, 0.00000), ChVector<>(0, -1, 0) },
 
-    {"joint3", "link2", "link3", false, true, ChVector<>(0.28650, -0.11700, 0.00000),
-     ChVector<>(0.00000, 0.00000, 0.00000), ChVector<>(1, 0, 0)},
+    { "joint3", "link2", "link3", false, ChVector<>(0.28650, -0.11700, 0.00000),
+    ChVector<>(0.00000, 0.00000, 0.00000), ChVector<>(1, 0, 0) },
 
-    {"joint4", "link3", "link4", false, true, ChVector<>(0.00000, 0.00000, 0.00000),
-     ChVector<>(0.00000, 0.00000, 0.00000), ChVector<>(0, -1, 0)},
+    { "joint4", "link3", "link4", false, ChVector<>(0.00000, 0.00000, 0.00000),
+    ChVector<>(0.00000, 0.00000, 0.00000), ChVector<>(0, -1, 0) },
 
-    {"joint5", "link4", "link5", false, true, ChVector<>(0.28650, -0.11700, 0.00000),
-     ChVector<>(0.00000, 0.00000, 0.00000), ChVector<>(1, 0, 0)},
+    { "joint5", "link4", "link5", false, ChVector<>(0.28650, -0.11700, 0.00000),
+    ChVector<>(0.00000, 0.00000, 0.00000), ChVector<>(1, 0, 0) },
 
-    {"joint6", "link5", "link6", false, true, ChVector<>(0.00000, 0.00000, 0.00000),
-     ChVector<>(0.00000, 0.00000, 0.00000), ChVector<>(0, -1, 0)},
+    { "joint6", "link5", "link6", false, ChVector<>(0.00000, 0.00000, 0.00000),
+    ChVector<>(0.00000, 0.00000, 0.00000), ChVector<>(0, -1, 0) },
 
-    {"ftadapter_joint", "link6", "ftadapter_link", true, false, ChVector<>(0.20739, -0.12100, 0.00000),
-     ChVector<>(0.00000, 0.00000, 0.00000), ChVector<>(1, 0, 0)},
+    { "ftadapter_joint", "link6", "ftadapter_link", true, ChVector<>(0.20739, -0.12100, 0.00000),
+    ChVector<>(0.00000, 0.00000, 0.00000), ChVector<>(1, 0, 0) },
 
-    {"ft_joint", "ftadapter_link", "ft_link", true, false, ChVector<>(0.0263755, 0.00000, 0.00000),
-     ChVector<>(0.00000, 0.00000, 0.00000), ChVector<>(1, 0, 0)},
+    { "ft_joint", "ftadapter_link", "ft_link", true, ChVector<>(0.0263755, 0.00000, 0.00000),
+    ChVector<>(0.00000, 0.00000, 0.00000), ChVector<>(1, 0, 0) },
 
-    {"joint7", "link6", "link7", false, true, ChVector<>(0.19250, -0.11700, 0.00000),
-     ChVector<>(0.00000, 0.00000, 0.00000), ChVector<>(1, 0, 0)},
+    { "joint7", "link6", "link7", false, ChVector<>(0.19250, -0.11700, 0.00000),
+    ChVector<>(0.00000, 0.00000, 0.00000), ChVector<>(1, 0, 0) },
 
-    {"joint8", "link7", "link8", false, true, ChVector<>(0.12024, 0.17200, 0.00000),
-     ChVector<>(-1.57000, 0.00000, 0.00000), ChVector<>(0, 0, 1)}
+    { "joint8", "link7", "link8", false, ChVector<>(0.12024, 0.17200, 0.00000),
+    ChVector<>(-1.57000, 0.00000, 0.00000), ChVector<>(0, 0, 1) }
 
 };
 
 // =============================================================================
 
+// Convert a triplet (roll-pitch-yaw) to a quaternion
 ChQuaternion<> rpy2quat(const ChVector<>& rpy) {
     return Q_from_AngZ(rpy.z()) * Q_from_AngY(rpy.y()) * Q_from_AngX(rpy.x());
 }
 
+// Calculate a coordinate system with the Z direction along 'axis' (given in 'base').
+// Implicit assumption: 'axis' is always along X, Y, or Z.
+ChCoordsys<> calcJointFrame(const ChFrame<>& base, const ChVector<>& axis) {
+    ChVector<> u;
+    ChVector<> v;
+    ChVector<> w = axis;
+    if (std::abs(axis.x()) > 0.5) {
+        v = ChVector<>(0, 1, 0);
+        u = Vcross(v, w);
+    } else {
+        u = ChVector<>(1, 0, 0);
+        v = Vcross(w, u);
+    }
+    ChMatrix33<> A;
+    A.Set_A_axis(u, v, w);
+    ChMatrix33<> B = base.GetA() * A;
+    return ChCoordsys<>(base.GetPos(), B.Get_A_quaternion());
+}
+
 // =============================================================================
 
-RoboSimian::RoboSimian(ChMaterialSurface::ContactMethod contact_method, bool fixed) : m_owns_system(true) {
+RoboSimian::RoboSimian(ChMaterialSurface::ContactMethod contact_method, bool fixed)
+    : m_owns_system(true), m_mode(ActuationMode::ANGLE) {
     m_system = (contact_method == ChMaterialSurface::NSC) ? static_cast<ChSystem*>(new ChSystemNSC)
                                                           : static_cast<ChSystem*>(new ChSystemSMC);
     m_system->Set_G_acc(ChVector<>(0, 0, -9.81));
@@ -213,7 +235,8 @@ RoboSimian::RoboSimian(ChMaterialSurface::ContactMethod contact_method, bool fix
     Create(fixed);
 }
 
-RoboSimian::RoboSimian(ChSystem* system, bool fixed) : m_owns_system(false), m_system(system) {
+RoboSimian::RoboSimian(ChSystem* system, bool fixed)
+    : m_owns_system(false), m_system(system), m_mode(ActuationMode::ANGLE) {
     Create(fixed);
 }
 
@@ -225,8 +248,9 @@ void RoboSimian::Create(bool fixed) {
     m_limbs.push_back(std::make_shared<Limb>("limb3", RL, rear_links, m_system));
     m_limbs.push_back(std::make_shared<Limb>("limb4", FL, front_links, m_system));
 
-    m_wheel_left = std::make_shared<WheelDD>("dd_wheel_left", m_system);
-    m_wheel_right = std::make_shared<WheelDD>("dd_wheel_right", m_system);
+    // The differential-drive wheels will be removed from robosimian
+    ////m_wheel_left = std::make_shared<WheelDD>("dd_wheel_left", m_system);
+    ////m_wheel_right = std::make_shared<WheelDD>("dd_wheel_right", m_system);
 
     // Default visualization: PRIMITIVES
     SetVisualizationTypeChassis(VisualizationType::PRIMITIVES);
@@ -238,18 +262,18 @@ void RoboSimian::Initialize(const ChCoordsys<>& pos) {
     m_chassis->Initialize(pos);
 
     m_limbs[FR]->Initialize(m_chassis->m_body, ChVector<>(+0.29326, +0.20940, 0.03650),
-                            ChVector<>(0.00000, -1.57080, -0.26180));
+                            ChVector<>(0.00000, -1.57080, -0.26180), m_mode);
     m_limbs[RR]->Initialize(m_chassis->m_body, ChVector<>(-0.29326, +0.20940, 0.03650),
-                            ChVector<>(0.00000, -1.57080, +0.26180));
+                            ChVector<>(0.00000, -1.57080, +0.26180), m_mode);
     m_limbs[RL]->Initialize(m_chassis->m_body, ChVector<>(-0.29326, -0.20940, 0.03650),
-                            ChVector<>(0.00000, -1.57080, 2.87979));
+                            ChVector<>(0.00000, -1.57080, 2.87979), m_mode);
     m_limbs[FL]->Initialize(m_chassis->m_body, ChVector<>(+0.29326, -0.20940, 0.03650),
-                            ChVector<>(0.00000, -1.57080, 3.40339));
+                            ChVector<>(0.00000, -1.57080, 3.40339), m_mode);
 
-    m_wheel_left->Initialize(m_chassis->m_body, ChVector<>(-0.42943, -0.19252, 0.06380),
-                             ChVector<>(0.00000, +1.57080, -1.57080));
-    m_wheel_right->Initialize(m_chassis->m_body, ChVector<>(-0.42943, +0.19252, 0.06380),
-                              ChVector<>(0.00000, -1.57080, -1.57080));
+    ////m_wheel_left->Initialize(m_chassis->m_body, ChVector<>(-0.42943, -0.19252, 0.06380),
+    ////                         ChVector<>(0.00000, +1.57080, -1.57080));
+    ////m_wheel_right->Initialize(m_chassis->m_body, ChVector<>(-0.42943, +0.19252, 0.06380),
+    ////                          ChVector<>(0.00000, -1.57080, -1.57080));
 }
 
 void RoboSimian::SetVisualizationTypeChassis(VisualizationType vis) {
@@ -266,8 +290,8 @@ void RoboSimian::SetVisualizationTypeLimbs(VisualizationType vis) {
 }
 
 void RoboSimian::SetVisualizationTypeWheels(VisualizationType vis) {
-    m_wheel_left->SetVisualizationType(vis);
-    m_wheel_right->SetVisualizationType(vis);
+    ////m_wheel_left->SetVisualizationType(vis);
+    ////m_wheel_right->SetVisualizationType(vis);
 }
 
 RoboSimian::~RoboSimian() {}
@@ -282,10 +306,6 @@ Part::Part(const std::string& name, ChSystem* system) : m_name(name) {
 void Part::SetVisualizationType(VisualizationType vis) {
     m_body->GetAssets().clear();
     AddVisualizationAssets(vis);
-}
-
-void Part::SetCollide(bool val) {
-    m_body->SetCollide(val);
 }
 
 void Part::AddVisualizationAssets(VisualizationType vis) {
@@ -336,10 +356,8 @@ void Part::AddVisualizationAssets(VisualizationType vis) {
     }
 }
 
-void Part::AddCollisionShapes() {
+void Part::AddCollisionShapes(int collision_family) {
     m_body->GetCollisionModel()->ClearModel();
-
-    ////m_body->GetCollisionModel()->SetFamily(collision_family);
 
     for (auto sphere : m_spheres) {
         m_body->GetCollisionModel()->AddSphere(sphere.m_radius, sphere.m_pos);
@@ -353,6 +371,11 @@ void Part::AddCollisionShapes() {
     }
 
     m_body->GetCollisionModel()->BuildModel();
+
+    // Note: collision_family is either 0 or 1
+    m_body->SetCollide(true);
+    m_body->GetCollisionModel()->SetFamily(collision_family);
+    m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(1 - collision_family);
 }
 
 // =============================================================================
@@ -406,9 +429,8 @@ Chassis::Chassis(const std::string& name, ChSystem* system, bool fixed) : Part(n
 
 void Chassis::Initialize(const ChCoordsys<>& pos) {
     m_body->SetFrame_REF_to_abs(ChFrame<>(pos));
-    ////m_body->SetPos_dt(fwd_vel * pos.TransformDirectionLocalToParent(ChVector<>(1, 0, 0)));
 
-    AddCollisionShapes();
+    AddCollisionShapes(0);
 }
 
 // =============================================================================
@@ -436,20 +458,24 @@ WheelDD::WheelDD(const std::string& name, chrono::ChSystem* system) : Part(name,
 }
 
 void WheelDD::Initialize(std::shared_ptr<ChBodyAuxRef> chassis, const ChVector<>& xyz, const ChVector<>& rpy) {
-    const ChFrame<>& parent_frame = chassis->GetFrame_REF_to_abs();
-    ChFrame<> joint_frame(xyz, rpy2quat(rpy));
-    m_body->SetFrame_REF_to_abs(parent_frame * joint_frame);
+    const ChFrame<>& X_GP = chassis->GetFrame_REF_to_abs();  // global -> parent
+    ChFrame<> X_PC(xyz, rpy2quat(rpy));                      // parent -> child
+    ChFrame<> X_GC = X_GP * X_PC;                            // global -> child
+    m_body->SetFrame_REF_to_abs(X_GC);
 
-    AddCollisionShapes();
+    AddCollisionShapes(1);
 
-    //// TODO: add joint
+    // Add joint
+    auto joint = std::make_shared<ChLinkLockRevolute>();
+    joint->Initialize(chassis, m_body, calcJointFrame(X_GC, ChVector<>(0, 0, 1)));
+    chassis->GetSystem()->AddLink(joint);
 }
 
 // =============================================================================
 
-Limb::Limb(const std::string& name, LimbID id, const LinkData data[], ChSystem* system) : m_id(id) {
+Limb::Limb(const std::string& name, LimbID id, const LinkData data[], ChSystem* system) : m_name(name), m_id(id) {
     for (int i = 0; i < num_links; i++) {
-        auto link = std::make_shared<Part>(name + "_" + data[i].name, system);
+        auto link = std::make_shared<Part>(m_name + "_" + data[i].name, system);
 
         link->m_body->SetIdentifier(4 * id + i);
         link->m_body->SetMass(data[i].link.m_mass);
@@ -474,28 +500,65 @@ Limb::Limb(const std::string& name, LimbID id, const LinkData data[], ChSystem* 
     }
 }
 
-void Limb::Initialize(std::shared_ptr<ChBodyAuxRef> chassis, const ChVector<>& xyz, const ChVector<>& rpy) {
-    // Set absolute position of link0.
-    auto parent_body = chassis;
-    auto child_body = m_links.find("link0")->second->m_body;
-    const ChFrame<>& parent_frame = parent_body->GetFrame_REF_to_abs();
-    ChFrame<> joint_frame(xyz, rpy2quat(rpy));
-    child_body->SetFrame_REF_to_abs(parent_frame * joint_frame);
+void Limb::Initialize(std::shared_ptr<ChBodyAuxRef> chassis, const ChVector<>& xyz, const ChVector<>& rpy, ActuationMode mode) {
+    // Set absolute position of link0
+    auto parent_body = chassis;                                  // parent body
+    auto child_body = m_links.find("link0")->second->m_body;     // child body
+    const ChFrame<>& X_GP = parent_body->GetFrame_REF_to_abs();  // global -> parent
+    ChFrame<> X_PC(xyz, rpy2quat(rpy));                          // parent -> child
+    ChFrame<> X_GC = X_GP * X_PC;                                // global -> child
+    child_body->SetFrame_REF_to_abs(X_GC);
 
-    // Traverse chain (base-to-tip) and set absolute position of the child body
+    // Traverse chain (base-to-tip)
+    //   set absolute position of the child body
+    //   add collision shapes on child body
+    //   create joint between parent and child
     for (int i = 0; i < num_joints; i++) {
-        auto parent = m_links.find(joints[i].linkA)->second;
-        auto child = m_links.find(joints[i].linkB)->second;
-        auto parent_body = parent->m_body;
-        auto child_body = child->m_body;
-        const ChFrame<>& parent_frame = parent_body->GetFrame_REF_to_abs();
-        ChFrame<> joint_frame(joints[i].xyz, rpy2quat(joints[i].rpy));
-        child_body->SetFrame_REF_to_abs(parent_frame * joint_frame);
+        auto parent = m_links.find(joints[i].linkA)->second;         // parent Part
+        auto child = m_links.find(joints[i].linkB)->second;          // child Part
+        auto parent_body = parent->m_body;                           // parent body
+        auto child_body = child->m_body;                             // child body
+        const ChFrame<>& X_GP = parent_body->GetFrame_REF_to_abs();  // global -> parent
+        ChFrame<> X_PC(joints[i].xyz, rpy2quat(joints[i].rpy));      // parent -> child
+        ChFrame<> X_GC = X_GP * X_PC;                                // global -> child
+        child_body->SetFrame_REF_to_abs(X_GC);
 
-        child->AddCollisionShapes();
+        // First joint connects directly to chassis
+        if (i == 0)
+            parent_body = chassis;
+
+        // Place parent and child bodies in different collision families
+        int family = (i + 1) % 2;
+        child->AddCollisionShapes(family);
+
+        // If the current joint is fixed, create a lock-lock joint
+        if (joints[i].fixed) {
+            auto joint = std::make_shared<ChLinkLockLock>();
+            joint->SetNameString(m_name + "_" + joints[i].name);
+            joint->Initialize(parent_body, child_body, calcJointFrame(X_GC, joints[i].axis));
+            chassis->GetSystem()->AddLink(joint);
+            m_joints.insert(std::make_pair(joints[i].name, joint));        
+            continue;
+        }
+        
+        ////auto joint = std::make_shared<ChLinkLockRevolute>();
+        ////joint->SetNameString(m_name + "_" + joints[i].name);
+        ////joint->Initialize(parent_body, child_body, calcJointFrame(X_GC, joints[i].axis));
+        ////chassis->GetSystem()->AddLink(joint);
+        ////m_joints.insert(std::make_pair(joints[i].name, joint));
+        ////continue;
+
+        // Create a motor (for now, ignore 'mode')
+        auto joint = std::make_shared<ChLinkMotorRotationAngle>();
+        joint->SetNameString(m_name + "_" + joints[i].name);
+        joint->Initialize(parent_body, child_body, ChFrame<>(calcJointFrame(X_GC, joints[i].axis)));
+        auto motor_fun = std::make_shared<ChFunction_Const>();
+        joint->SetAngleFunction(motor_fun);
+
+        chassis->GetSystem()->AddLink(joint);
+        m_joints.insert(std::make_pair(joints[i].name, joint));
+        m_motors.insert(std::make_pair(joints[i].name, joint));
     }
-
-    //// TODO: add joints
 }
 
 void Limb::SetVisualizationType(VisualizationType vis) {

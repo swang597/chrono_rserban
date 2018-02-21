@@ -53,18 +53,22 @@ int main(int argc, char* argv[]) {
     // Create system
     ////ChSystemSMC my_sys;
     ChSystemNSC my_sys;
-    ////my_sys.Set_G_acc(ChVector<double>(0, 0, -9.8));
-    my_sys.Set_G_acc(ChVector<double>(0, 0, 0));
+    my_sys.Set_G_acc(ChVector<double>(0, 0, -9.8));
+    ////my_sys.Set_G_acc(ChVector<double>(0, 0, 0));
+
+    my_sys.SetMaxItersSolverSpeed(200);
+    my_sys.SetMaxItersSolverStab(200);
+    my_sys.SetSolverType(ChSolver::Type::BARZILAIBORWEIN);
 
     robosimian::RoboSimian robot(&my_sys, true);
     ////robot.Initialize(ChCoordsys<>(ChVector<>(0, 0, 0), QUNIT));
     robot.Initialize(ChCoordsys<>(ChVector<>(0, 0, 0), Q_from_AngX(CH_C_PI)));
 
     robot.SetVisualizationTypeChassis(robosimian::VisualizationType::PRIMITIVES);
-    robot.SetVisualizationTypeLimb(robosimian::FL, robosimian::VisualizationType::PRIMITIVES);
-    robot.SetVisualizationTypeLimb(robosimian::FR, robosimian::VisualizationType::PRIMITIVES);
-    robot.SetVisualizationTypeLimb(robosimian::RL, robosimian::VisualizationType::PRIMITIVES);
-    robot.SetVisualizationTypeLimb(robosimian::RR, robosimian::VisualizationType::PRIMITIVES);
+    ////robot.SetVisualizationTypeLimb(robosimian::FL, robosimian::VisualizationType::PRIMITIVES);
+    ////robot.SetVisualizationTypeLimb(robosimian::FR, robosimian::VisualizationType::PRIMITIVES);
+    ////robot.SetVisualizationTypeLimb(robosimian::RL, robosimian::VisualizationType::PRIMITIVES);
+    ////robot.SetVisualizationTypeLimb(robosimian::RR, robosimian::VisualizationType::PRIMITIVES);
     ////robot.SetVisualizationTypeLimbs(robosimian::VisualizationType::MESH);
     robot.SetVisualizationTypeWheels(robosimian::VisualizationType::PRIMITIVES);
 
