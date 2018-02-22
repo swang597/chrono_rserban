@@ -28,6 +28,8 @@
 //			  - The parameter estimation routines have changed, know you have the
 //				option to use either the load index or the load force as input.
 //
+// 2018-02-22 - Tire Relaxation is considered now. No user input is needed.
+//              The tire step_size should be the same as for the MBS.
 // =============================================================================
 
 #ifndef CH_TMEASYTIRE
@@ -109,18 +111,12 @@ class CH_VEHICLE_API ChTMeasyTire : public ChTire {
     virtual double GetVisualizationWidth() const { return m_width; }
 
     /// Get the tire slip angle.
-    virtual double GetSlipAngle() const override { return m_states.cp_side_slip; }
+    virtual double GetSlipAngle() const override { return atan(m_states.sy); }
 
     /// Get the tire longitudinal slip.
-    virtual double GetLongitudinalSlip() const override { return m_states.cp_long_slip; }
+    virtual double GetLongitudinalSlip() const override { return m_states.sx; }
 
-    /// Get the longitudinal slip used in the TMeasy model (expressed as a percentage).
-    double GetKappa() const { return m_kappa; }
-
-    /// Get the slip angle used in Pac89 (expressed in degrees).
-    double GetAlpha() const { return m_alpha; }
-
-    /// Get the camber angle used in the TMeasy model (expressed in degrees).
+    /// Get the camber angle used in the TMeasy model (expressed in radian).
     double GetGamma() { return m_gamma; }
 
     /// Get Max. Tire Load from Load Index (LI) in N [0:279]
@@ -173,7 +169,20 @@ class CH_VEHICLE_API ChTMeasyTire : public ChTire {
 
 	/// Get the tire deflection
 	virtual double GetDeflection() const override { return m_data.depth; }
-	
+    
+    /// Using tire relaxation, we have three tire deflections
+	ChVector<> GetDeflection() { return ChVector<>(m_states.xe,m_states.ye,m_data.depth); } 
+    
+    /// Steady State Tire Forces (always available)
+    double GetSteadyStateLongitudinalForce() { return m_states.Fx; }
+    double GetSteadyStateLateralForce()      { return m_states.Fy; }
+    double GetSteadyStateBoreTorque()        { return m_states.Mb; }
+    
+    /// Dynamic Tire Forces (available with relaxation activated)
+    double GetDynamicLongitudinalForce() { return m_states.Fx_dyn; }
+    double GetDynamicLateralForce()      { return m_states.Fy_dyn; }
+    double GetDynamicBoreTorque()        { return m_states.Mb_dyn; }
+   
 	/// Simple parameter consistency test
 	bool CheckParameters();
 	
@@ -208,11 +217,15 @@ class CH_VEHICLE_API ChTMeasyTire : public ChTire {
     /// Set the parameters in the TMeasy model.
     virtual void SetTMeasyParams() = 0;
 
-    double m_kappa;  ///< longitudinal slip (percentage)
-    double m_alpha;  ///< slip angle (degrees)
-    double m_gamma;  ///< camber angle (degrees)
+    bool   m_consider_relaxation;
+    
+    unsigned int m_integration_method;
+    
+    double m_vnum;
+    
+    double m_gamma;  ///< actual camber angle 
 
-    double m_gamma_limit;  ///< limit camber angle (degrees)
+    double m_gamma_limit;  ///< limit camber angle (degrees!)
 
     /// TMeasy tire model parameters
     double m_unloaded_radius;
@@ -222,6 +235,13 @@ class CH_VEHICLE_API ChTMeasyTire : public ChTire {
 
 	double m_a1;				  // polynomial coefficient a1 in cz = a1 + 2.0*a2 * deflection
 	double m_a2;				  // polynomial coefficient a2 in cz = a1 + 2.0*a2 * deflection
+    
+    double m_tau_x;             // Longitudinal relaxation delay time 
+    double m_tau_y;             // Lateral relaxation delay time
+    
+    double m_relaxation_lenght_x;   // Longitudinal relaxation length   
+    double m_relaxation_lenght_y;   // Lateral relaxation length  
+    double m_relaxation_lenght_phi; // Relaxation length for bore movement  
 	
     VehicleSide m_measured_side;
 
@@ -229,8 +249,12 @@ class CH_VEHICLE_API ChTMeasyTire : public ChTire {
         double pn;
 
         double mu_0;     // local friction coefficient of the road for given parameters
+        double cx;       // linear stiffness x
+        double dx;       // linear damping coefficient x
+        double cy;       // linear stiffness y
+        double dy;       // linear damping coefficient y
         double cz;       // stiffness, may vary with the vertical force
-        double dz;       // linear damping coefficient
+        double dz;       // linear damping coefficient z
 
         double dfx0_pn, dfx0_p2n;
         double fxm_pn, fxm_p2n;
@@ -279,13 +303,21 @@ class CH_VEHICLE_API ChTMeasyTire : public ChTire {
     };
 
     struct TireStates {
-        double cp_long_slip;     // Contact Path - Longitudinal Slip State (Kappa)
-        double cp_side_slip;     // Contact Path - Side Slip State (Alpha)
-        double vx;               // Longitudinal speed
+        double sx;     // Contact Path - Longitudinal Slip State (Kappa)
+        double sy;     // Contact Path - Side Slip State (Alpha)
+        double vta;              // absolut transport velocity
         double vsx;              // Longitudinal slip velocity
         double vsy;              // Lateral slip velocity = Lateral velocity
         double omega;            // Wheel angular velocity about its spin axis
-        double R_eff;            // Effective Radius
+        double R_eff;            // Effective Rolling Radius
+        double Fx_dyn;           // Dynamic longitudinal fire force
+        double Fy_dyn;           // Dynamic lateral tire force
+        double Mb_dyn;           // Dynamic bore torque
+        double xe;               // Longitudinal tire deflection
+        double ye;               // Lateral tire deflection
+        double Fx;               // Steady state longitudinal tire force
+        double Fy;               // Steady state lateral tire force
+        double Mb;               // Steady state bore torque
         ChVector<> disc_normal;  //(temporary for debug)
     };
 

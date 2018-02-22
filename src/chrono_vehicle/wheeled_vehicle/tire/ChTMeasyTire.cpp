@@ -42,7 +42,7 @@ namespace vehicle {
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 ChTMeasyTire::ChTMeasyTire(const std::string& name)
-    : ChTire(name), m_kappa(0), m_alpha(0), m_gamma(0), m_gamma_limit(3), m_stepsize(1e-6) {
+    : ChTire(name), m_vnum(0.01), m_gamma(0), m_gamma_limit(5), m_stepsize(1e-6) {
     m_tireforce.force = ChVector<>(0, 0, 0);
     m_tireforce.point = ChVector<>(0, 0, 0);
     m_tireforce.moment = ChVector<>(0, 0, 0);
@@ -58,8 +58,16 @@ void ChTMeasyTire::Initialize(std::shared_ptr<ChBody> wheel, VehicleSide side) {
     SetTMeasyParams();
 
     // Initialize contact patch state variables to 0;
-    m_states.cp_long_slip = 0;
-    m_states.cp_side_slip = 0;
+    m_states.sx = 0;
+    m_states.sy = 0;
+    m_states.vta = m_vnum;
+    m_states.xe = 0;
+    m_states.ye = 0;
+    m_states.Fx_dyn = 0;
+    m_states.Fy_dyn = 0;
+    m_states.Mb_dyn = 0;
+    m_consider_relaxation = true;
+    m_integration_method = 2;
     
 }
 
@@ -145,23 +153,34 @@ void ChTMeasyTire::Synchronize(double time, const WheelState& wheel_state, const
             m_data.in_contact = false;  // Skip Force and moment calculations when the normal force = 0
         }
 
-        m_data.normal_force = Fn_mag;
-        m_states.R_eff = m_unloaded_radius - m_data.depth;
-        m_states.vx = std::abs(m_data.vel.x());
-        m_states.vsx = m_data.vel.x() - wheel_state.omega * m_states.R_eff;
-        m_states.vsy = m_data.vel.y();
-        m_states.omega = wheel_state.omega;
+        m_data.normal_force  = Fn_mag;
+        double r_stat        = m_unloaded_radius - m_data.depth;
+        m_states.omega       = wheel_state.omega;
+        m_states.R_eff       = (2.0 * m_unloaded_radius + r_stat) / 3.0;
+        m_states.vta         = m_states.R_eff * std::abs(m_states.omega) + m_vnum;
+        m_states.vsx         = m_data.vel.x() - m_states.omega * m_states.R_eff;
+        m_states.vsy         = m_data.vel.y();
+        m_states.sx          = -m_states.vsx / m_states.vta;
+        m_states.sy          = -m_states.vsy / m_states.vta;
         m_states.disc_normal = disc_normal;
     } else {
         // Reset all states if the tire comes off the ground.
         m_data.normal_force = 0;
         m_states.R_eff = m_unloaded_radius;
-        m_states.cp_long_slip = 0;
-        m_states.cp_side_slip = 0;
-        m_states.vx = 0;
+        m_states.sx = 0;
+        m_states.sy = 0;
+        m_states.vta = m_vnum;
         m_states.vsx = 0;
         m_states.vsy = 0;
         m_states.omega = 0;
+        m_states.Fx_dyn = 0;
+        m_states.Fy_dyn = 0;
+        m_states.Mb_dyn = 0;
+        m_states.xe = 0;
+        m_states.ye = 0;
+        m_states.Fx = 0;
+        m_states.Fy = 0;
+        m_states.Mb = 0;
         m_states.disc_normal = ChVector<>(0, 0, 0);
     }
 }
@@ -173,54 +192,15 @@ void ChTMeasyTire::Advance(double step) {
     if (!m_data.in_contact)
         return;
 
-    double vnum = 0.01;  // numerical value to prevent singularities
-    double v;            // vector sum of slip velocities
-    double vu;           // long. slip velocity
-    double vt;           // transport velocity
-    double vx;           // x velocity
-    double vy;           // y velocity
-
-    double sx;              // longitudinal slip
-    double sy;              // lateral slip
     double sc;              // combined slip
     double calpha, salpha;  // cos(alpha) rsp. sin(alpha), alpha = slip angle
     double muscale;         // factor for considering local friction
 
     muscale = m_mu / m_TMeasyCoeff.mu_0;
 
-    vx = m_data.vel.x();
-    vy = m_data.vel.y();
-    vt = m_states.omega * m_states.R_eff;
-    vu = vx - vt;
-    v = hypot(vu, vy);
-
-    sx = -vu / (std::abs(vt) + vnum);
-    sy = -vy / (std::abs(vt) + vnum);
-    m_states.cp_long_slip = sx;
-    m_states.cp_side_slip = atan(sy);
-
-    // Ensure that cp_lon_slip stays between -1 & 1
-    ChClampValue(m_states.cp_long_slip, -1.0, 1.0);
-
-    // Ensure that cp_side_slip stays between -pi()/2 & pi()/2 (a little less to prevent tan from going to infinity)
-    ChClampValue(m_states.cp_side_slip, -CH_C_PI_2 + 0.001, CH_C_PI_2 - 0.001);
-
-    // Express alpha and gamma in degrees. Express kappa as percentage.
-    // m_gamma = 90.0 - std::acos(m_states.disc_normal.z()) * CH_C_RAD_TO_DEG; from Pac89
-    // calculation of gamma in disc_terrain_contact_3d() now!
-    // m_gamma = GetCamberAngle() * CH_C_RAD_TO_DEG;
-    m_alpha = m_states.cp_side_slip * CH_C_RAD_TO_DEG;
-    m_kappa = m_states.cp_long_slip * 100.0;
-
     // Clamp |gamma| to specified value: Limit due to tire testing, avoids erratic extrapolation.
     double gamma = ChClamp(GetCamberAngle(), -m_gamma_limit * CH_C_DEG_TO_RAD, m_gamma_limit * CH_C_DEG_TO_RAD);
 
-    // Calculate the new force and moment values (normal force and moment have already been accounted for in
-    // Synchronize()).
-    // Express Fz in kN (note that all other forces and moments are in N and Nm).
-    // See reference for details on the calculations.
-    double Fx = 0;
-    double Fy = 0;
     double Fz = m_data.normal_force;
     double Mx = 0;
     double My = 0;
@@ -246,8 +226,8 @@ void ChTMeasyTire::Advance(double step) {
     double hsxn = sxm / (sxm + sym) + (fxm / dfx0) / (fxm / dfx0 + fym / dfy0);
     double hsyn = sym / (sxm + sym) + (fym / dfy0) / (fxm / dfx0 + fym / dfy0);
 
-    double sxn = sx / hsxn;
-    double syn = sy / hsyn;
+    double sxn = m_states.sx / hsxn;
+    double syn = m_states.sy / hsyn;
 
     sc = hypot(sxn, syn);
 
@@ -259,17 +239,17 @@ void ChTMeasyTire::Advance(double step) {
         salpha = sqrt(2.0) / 2.0;
     }
 
-    double nto0 = InterpL(Fz, m_TMeasyCoeff.nto0_pn, m_TMeasyCoeff.nto0_p2n);
+    double nto0   = InterpL(Fz, m_TMeasyCoeff.nto0_pn, m_TMeasyCoeff.nto0_p2n);
     double synto0 = muscale * InterpL(Fz, m_TMeasyCoeff.synto0_pn, m_TMeasyCoeff.synto0_p2n);
     double syntoE = muscale * InterpL(Fz, m_TMeasyCoeff.syntoE_pn, m_TMeasyCoeff.syntoE_p2n);
 
     // Calculate resultant Curve Parameters
     double df0 = hypot(dfx0 * calpha * hsxn, dfy0 * salpha * hsyn);
-    double fm = hypot(fxm * calpha, fym * salpha);
-    double sm = hypot(sxm * calpha / hsxn, sym * salpha / hsyn);
-    double fs = hypot(fxs * calpha, fys * salpha);
-    double ss = hypot(sxs * calpha / hsxn, sys * salpha / hsyn);
-    double f = 0.0;
+    double fm  = hypot(fxm * calpha,         fym * salpha);
+    double sm  = hypot(sxm * calpha / hsxn,  sym * salpha / hsyn);
+    double fs  = hypot(fxs * calpha,         fys * salpha);
+    double ss  = hypot(sxs * calpha / hsxn,  sys * salpha / hsyn);
+    double f   = 0.0;
     double fos = 0.0;
 
     // consider camber effects
@@ -280,40 +260,34 @@ void ChTMeasyTire::Advance(double step) {
     double rb = 2.0 / 3.0 * 0.5 * ((plen / 2.0) + (m_width / 2.0));
 
     // bore slip due to camber
-    double sb = -rb * m_states.omega * sin(gamma) / (std::abs(vt) + vnum);
+    double sb = -rb * m_states.omega * sin(gamma) / m_states.vta;
 
     // generalzed slip
     double sg = hypot(sc, sb);
 
     tmxy_combined(f, fos, sg, df0, sm, fm, ss, fs);
     if (sg > 0.0) {
-        Fx = f * sx / sg;
-        Fy = f * sy / sg;
+        m_states.Fx = f * m_states.sx / sg;
+        m_states.Fy = f * m_states.sy / sg;
     } else {
-        Fx = 0.0;
-        Fy = 0.0;
+        m_states.Fx = 0.0;
+        m_states.Fy = 0.0;
     }
     // Calculate dimensionless lever arm
-    double levN = tmy_tireoff(sy, nto0, synto0, syntoE);
-
-    // Self Alignment Torque
-    double Ms = -plen * levN * Fy;
+    double levN = tmy_tireoff(m_states.sy, nto0, synto0, syntoE);
 
     // Bore Torque
-    double Mb;
     if (sg > 0.0) {
-        Mb = rb * f * sb / sg;
+        m_states.Mb = rb * f * sb / sg;
     } else {
-        Mb = 0.0;
+        m_states.Mb = 0.0;
     }
-    // Calculate result of alignment torque and bore torque
-    Mz = Ms + Mb;
 
     //   camber slip and force
-    double sy_c = -0.5 * plen * m_states.omega * sin(gamma) / (std::abs(vt) + vnum);
+    double sy_c = -0.5 * plen * m_states.omega * sin(gamma) / m_states.vta;
     double fy_c = fos / 3.0 * sy_c;
 
-    Fy += fy_c;
+    m_states.Fy += fy_c;
 
     // Overturning Torque
     {
@@ -327,26 +301,62 @@ void ChTMeasyTire::Advance(double step) {
         My = -m_rolling_resistance * m_data.normal_force * Lrad * RampSignum(m_states.omega);
     }
 
-    // std::cout << "Fx:" << Fx
-    //    << " Fy:" << Fy
-    //    << " Fz:" << Fz
-    //    << " Mx:" << Mx
-    //    << " My:" << My
-    //    << " Mz:" << Mz
-    //    << std::endl
-    //    << " G:" << gamma
-    //    << " A:" << alpha
-    //    << " K:" << kappa
-    //    << " O:" << m_states.omega
-    //    << std::endl;
+    double Ms = 0.0;
+    
+    if(m_consider_relaxation) {
+        double vtxs = m_states.vta * hsxn;
+        double vtys = m_states.vta * hsyn;
+        double relax = 0.66 * CH_C_2PI * m_states.R_eff;
+        //-------------------
+         // Self Alignment Torque        
+        Ms = -plen * levN * m_states.Fy_dyn;
+        Mz = Ms + m_states.Mb_dyn;
+       // Ensure we integrate exactly to 'step'
+        double h = step;
+        switch(m_integration_method) {
+            case 1:
+                // explicit Euler
+                m_states.xe = m_states.xe + h * (-vtxs * m_TMeasyCoeff.cx * m_states.xe - fos * m_states.vsx) / (vtxs * m_TMeasyCoeff.dx + fos);
+                m_states.ye = m_states.ye + h * (-vtys * m_TMeasyCoeff.cy * m_states.ye - fos * m_states.vsy) / (vtys * m_TMeasyCoeff.dy + fos);
+                m_states.Mb_dyn = m_states.Mb_dyn + h * (m_states.Mb - m_states.Mb_dyn) * m_states.vta / relax;
+                break;
+            case 2:
+                // semi-implicit Euler 
+                double dFx = -vtxs * m_TMeasyCoeff.cx / (vtxs * m_TMeasyCoeff.dx + fos);
+                m_states.xe = m_states.xe + h / (1.0 - h * dFx) * (-vtxs * m_TMeasyCoeff.cx * m_states.xe - fos * m_states.vsx) / (vtxs * m_TMeasyCoeff.dx + fos);
+                double dFy = -vtys * m_TMeasyCoeff.cy / (vtys * m_TMeasyCoeff.dy + fos);
+                m_states.ye = m_states.ye + h / (1.0 - h * dFy) * (-vtys * m_TMeasyCoeff.cy * m_states.ye - fos * m_states.vsy) / (vtys * m_TMeasyCoeff.dy + fos);
+                double dMb = -m_states.vta / relax;
+                m_states.Mb_dyn = m_states.Mb_dyn + h / (1.0 - h * dMb) * (m_states.Mb - m_states.Mb_dyn) * m_states.vta / relax;
+                break;
+        }
 
-    // Compile the force and moment vectors so that they can be
-    // transformed into the global coordinate system.
-    m_tireforce.force = ChVector<>(Fx, Fy, m_data.normal_force);
-    m_tireforce.moment = ChVector<>(Mx, My, Mz);
-
+        m_states.Fx_dyn = m_TMeasyCoeff.dx * (-vtxs * m_TMeasyCoeff.cx * m_states.xe - fos * m_states.vsx) / (vtxs * m_TMeasyCoeff.dx + fos) + m_TMeasyCoeff.cx * m_states.xe;
+        m_states.Fy_dyn = m_TMeasyCoeff.dy * (-vtys * m_TMeasyCoeff.cy * m_states.ye - fos * m_states.vsy) / (vtys * m_TMeasyCoeff.dy + fos) + m_TMeasyCoeff.cy * m_states.ye;
+        // Calculate result of alignment torque and bore torque
+        // Compile the force and moment vectors so that they can be
+        // transformed into the global coordinate system.
+        m_tireforce.force  = ChVector<>(m_states.Fx_dyn, m_states.Fy_dyn, m_data.normal_force);
+        m_tireforce.moment = ChVector<>(Mx, My, Mz);
+        // Info data (not used in the algorithm)
+        m_tau_x = m_TMeasyCoeff.dx/m_TMeasyCoeff.cx + fos/(vtxs * m_TMeasyCoeff.cx);
+        m_tau_y = m_TMeasyCoeff.dy/m_TMeasyCoeff.cy + fos/(vtys * m_TMeasyCoeff.cy);
+        m_relaxation_lenght_x = m_states.R_eff * std::abs(m_states.omega) * m_tau_x;
+        m_relaxation_lenght_y = m_states.R_eff * std::abs(m_states.omega) * m_tau_y;
+    } else {
+        // Self Alignment Torque
+        m_tau_x = m_tau_y = 0;
+        m_relaxation_lenght_x = m_relaxation_lenght_y = 0;
+        Ms = -plen * levN * m_states.Fy;
+        // Calculate result of alignment torque and bore torque
+        Mz = Ms + m_states.Mb;
+        // Compile the force and moment vectors so that they can be
+        // transformed into the global coordinate system.
+        m_tireforce.force  = ChVector<>(m_states.Fx, m_states.Fy, m_data.normal_force);
+        m_tireforce.moment = ChVector<>(Mx, My, Mz);
+    }
     // Rotate into global coordinates
-    m_tireforce.force = m_data.frame.TransformDirectionLocalToParent(m_tireforce.force);
+    m_tireforce.force  = m_data.frame.TransformDirectionLocalToParent(m_tireforce.force);
     m_tireforce.moment = m_data.frame.TransformDirectionLocalToParent(m_tireforce.moment);
 
     // Move the tire forces from the contact patch to the wheel center
@@ -418,8 +428,8 @@ bool ChTMeasyTire::disc_terrain_contact_3d(
     if (da >= m_unloaded_radius)
         return false;
 
-    // Calculate an improved value for the camber angle, for consistency reasons in [deg]
-    m_gamma = std::asin(Vdot(disc_normal, terrain_normal)) * CH_C_RAD_TO_DEG;
+    // Calculate an improved value for the camber angle
+    m_gamma = std::asin(Vdot(disc_normal, terrain_normal));
 
     ChMatrix33<> rot;
     rot.Set_A_axis(longitudinal, lateral, terrain_normal);
@@ -525,7 +535,7 @@ void ChTMeasyTire::SetVerticalStiffness(double Cz1, double Cz2) {
 	}
 	
 	m_a1 = sqrt(2.0 * pow(cz1,2) - pow(cz2,2));
-	m_a2 = (pow(cz2,2) - pow(cz1,2))/(4.0 * N2kN * m_TMeasyCoeff.pn);
+	m_a2 = (pow(cz2,2) - pow(cz1,2))/(4.0 * N2kN * m_TMeasyCoeff.pn);    
 }
 
 void ChTMeasyTire::SetVerticalStiffness(std::vector<double>& defl, std::vector<double>& frc) {

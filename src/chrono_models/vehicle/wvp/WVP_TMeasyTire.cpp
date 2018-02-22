@@ -77,7 +77,11 @@ void WVP_TMeasyTire::SetTMeasyParams() {
 	double CZM = (C1 + C2) / 2.0;
 	
 	m_TMeasyCoeff.dz 		 =  2.0 * xi * sqrt(CZM * WVP_TMeasyTire::m_mass);
-
+    m_TMeasyCoeff.cx        =  0.9 * CZM;
+	m_TMeasyCoeff.dx 		 =  2.0 * xi * sqrt(m_TMeasyCoeff.cx * WVP_TMeasyTire::m_mass);
+    m_TMeasyCoeff.cy        =  0.8 * CZM;
+	m_TMeasyCoeff.dy 		  =  2.0 * xi * sqrt(m_TMeasyCoeff.cy * WVP_TMeasyTire::m_mass);
+    
 	m_TMeasyCoeff.dfx0_pn    =  215.013101;
 	m_TMeasyCoeff.sxm_pn     =  0.139216;
 	m_TMeasyCoeff.fxm_pn     =  13.832671;
