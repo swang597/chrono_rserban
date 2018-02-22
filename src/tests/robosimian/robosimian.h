@@ -107,7 +107,7 @@ class Chassis : public Part {
 
 class WheelDD : public Part {
   public:
-    WheelDD(const std::string& name, chrono::ChSystem* system);
+    WheelDD(const std::string& name, int id, chrono::ChSystem* system);
     ~WheelDD() {}
 
     void Initialize(std::shared_ptr<chrono::ChBodyAuxRef> chassis,  ///< chassis body
@@ -177,6 +177,8 @@ class Limb {
 
     void SetVisualizationType(VisualizationType vis);
 
+    void Activate(const std::string& motor_name, double time, double val);
+
   private:
     LimbID m_id;
     std::string m_name;
@@ -185,20 +187,28 @@ class Limb {
     std::unordered_map<std::string, std::shared_ptr<chrono::ChLinkMotorRotation>> m_motors;
 };
 
+class ContactManager;
+
 class RoboSimian {
   public:
     RoboSimian(chrono::ChMaterialSurface::ContactMethod contact_method, bool fixed = false);
     RoboSimian(chrono::ChSystem* system, bool fixed = false);
     ~RoboSimian();
 
+    chrono::ChSystem* GetSystem() { return m_system; }
+
     void SetActuationMode(ActuationMode mode) { m_mode = mode; }
 
     void SetVisualizationTypeChassis(VisualizationType vis);
     void SetVisualizationTypeLimbs(VisualizationType vis);
-    void SetVisualizationTypeLimb(LimbID which, VisualizationType vis);
+    void SetVisualizationTypeLimb(LimbID id, VisualizationType vis);
     void SetVisualizationTypeWheels(VisualizationType vis);
 
     void Initialize(const chrono::ChCoordsys<>& pos);
+
+    void Activate(LimbID id, const std::string& motor_name, double time, double val);
+
+    void ReportContacts();
 
   private:
     void Create(bool fixed);
@@ -212,6 +222,8 @@ class RoboSimian {
     std::vector<std::shared_ptr<Limb>> m_limbs;  ///< robot limbs
     ////std::shared_ptr<WheelDD> m_wheel_left;       ///< left DD wheel
     ////std::shared_ptr<WheelDD> m_wheel_right;      ///< right DD wheel
+
+    ContactManager* m_contacts;
 };
 
 }  // end namespace robosimian

@@ -22,7 +22,7 @@
 
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/physics/ChSystemSMC.h"
-#include "chrono/motion_functions/ChFunction_Const.h"
+#include "chrono/motion_functions/ChFunction_Setpoint.h"
 
 #include "robosimian.h"
 
@@ -220,8 +220,69 @@ ChCoordsys<> calcJointFrame(const ChFrame<>& base, const ChVector<>& axis) {
 
 // =============================================================================
 
+class ContactManager : public ChContactContainer::ReportContactCallback {
+  public:
+    ContactManager();
+    void Process(RoboSimian* robot);
+
+  private:
+    /// Callback, used to report contact points already added to the container.
+    /// If it returns false, the contact scanning will be stopped.
+    virtual bool OnReportContact(const ChVector<>& pA,
+                                 const ChVector<>& pB,
+                                 const ChMatrix33<>& plane_coord,
+                                 const double& distance,
+                                 const ChVector<>& react_forces,
+                                 const ChVector<>& react_torques,
+                                 ChContactable* modA,
+                                 ChContactable* modB) override;
+
+    int m_num_contacts;
+};
+
+ContactManager::ContactManager() {}
+
+void ContactManager::Process(RoboSimian* robot) {
+    std::cout << "Report contacts" << std::endl;
+    m_num_contacts = 0;
+    robot->GetSystem()->GetContactContainer()->ReportAllContacts(this);
+    std::cout << "  total actual contacts: " << m_num_contacts << std::endl << std::endl;
+}
+
+bool ContactManager::OnReportContact(const ChVector<>& pA,
+                                     const ChVector<>& pB,
+                                     const ChMatrix33<>& plane_coord,
+                                     const double& distance,
+                                     const ChVector<>& react_forces,
+                                     const ChVector<>& react_torques,
+                                     ChContactable* modA,
+                                     ChContactable* modB) {
+    // Only report contacts with negative penetration (i.e. actual contacts).
+    if (distance >= 0)
+        return true;
+
+    auto bodyA = dynamic_cast<ChBodyAuxRef*>(modA);
+    auto bodyB = dynamic_cast<ChBodyAuxRef*>(modB);
+
+    // Filter robot bodies based on their IDs.
+    bool a = (bodyA && bodyA->GetId() < 100);
+    bool b = (bodyB && bodyB->GetId() < 100);
+
+    if (!a && !b)
+        return true;
+
+    std::cout << "   " << (a ? bodyA->GetNameString() : "other") << " - " << (b ? bodyB->GetNameString() : "other")
+              << std::endl;
+
+    m_num_contacts++;
+
+    return true;
+}
+
+// =============================================================================
+
 RoboSimian::RoboSimian(ChMaterialSurface::ContactMethod contact_method, bool fixed)
-    : m_owns_system(true), m_mode(ActuationMode::ANGLE) {
+    : m_owns_system(true), m_mode(ActuationMode::ANGLE), m_contacts(new ContactManager) {
     m_system = (contact_method == ChMaterialSurface::NSC) ? static_cast<ChSystem*>(new ChSystemNSC)
                                                           : static_cast<ChSystem*>(new ChSystemSMC);
     m_system->Set_G_acc(ChVector<>(0, 0, -9.81));
@@ -236,11 +297,22 @@ RoboSimian::RoboSimian(ChMaterialSurface::ContactMethod contact_method, bool fix
 }
 
 RoboSimian::RoboSimian(ChSystem* system, bool fixed)
-    : m_owns_system(false), m_system(system), m_mode(ActuationMode::ANGLE) {
+    : m_owns_system(false), m_system(system), m_mode(ActuationMode::ANGLE), m_contacts(new ContactManager) {
     Create(fixed);
 }
 
+RoboSimian::~RoboSimian() {
+    delete m_contacts;
+}
+
 void RoboSimian::Create(bool fixed) {
+    // Set default collision model envelope commensurate with model dimensions.
+    // Note that an SMC system automatically sets envelope to 0.
+    if (m_system->GetContactMethod() == ChMaterialSurface::NSC) {
+        collision::ChCollisionModel::SetDefaultSuggestedEnvelope(0.01);
+        collision::ChCollisionModel::SetDefaultSuggestedMargin(0.005);
+    }
+
     m_chassis = std::make_shared<Chassis>("chassis", m_system, fixed);
 
     m_limbs.push_back(std::make_shared<Limb>("limb1", FR, front_links, m_system));
@@ -249,8 +321,8 @@ void RoboSimian::Create(bool fixed) {
     m_limbs.push_back(std::make_shared<Limb>("limb4", FL, front_links, m_system));
 
     // The differential-drive wheels will be removed from robosimian
-    ////m_wheel_left = std::make_shared<WheelDD>("dd_wheel_left", m_system);
-    ////m_wheel_right = std::make_shared<WheelDD>("dd_wheel_right", m_system);
+    ////m_wheel_left = std::make_shared<WheelDD>("dd_wheel_left", 1, m_system);
+    ////m_wheel_right = std::make_shared<WheelDD>("dd_wheel_right", 2, m_system);
 
     // Default visualization: PRIMITIVES
     SetVisualizationTypeChassis(VisualizationType::PRIMITIVES);
@@ -280,8 +352,8 @@ void RoboSimian::SetVisualizationTypeChassis(VisualizationType vis) {
     m_chassis->SetVisualizationType(vis);
 }
 
-void RoboSimian::SetVisualizationTypeLimb(LimbID which, VisualizationType vis) {
-    m_limbs[which]->SetVisualizationType(vis);
+void RoboSimian::SetVisualizationTypeLimb(LimbID id, VisualizationType vis) {
+    m_limbs[id]->SetVisualizationType(vis);
 }
 
 void RoboSimian::SetVisualizationTypeLimbs(VisualizationType vis) {
@@ -294,7 +366,13 @@ void RoboSimian::SetVisualizationTypeWheels(VisualizationType vis) {
     ////m_wheel_right->SetVisualizationType(vis);
 }
 
-RoboSimian::~RoboSimian() {}
+void RoboSimian::Activate(LimbID id, const std::string& motor_name, double time, double val) {
+    m_limbs[id]->Activate(motor_name, time, val);
+}
+
+void RoboSimian::ReportContacts() {
+    m_contacts->Process(this);
+}
 
 // =============================================================================
 
@@ -320,7 +398,7 @@ void Part::AddVisualizationAssets(VisualizationType vis) {
         std::string vis_mesh_file = "robosimian/obj/" + m_mesh_name + ".obj";
         geometry::ChTriangleMeshConnected trimesh;
         trimesh.LoadWavefrontMesh(GetChronoDataFile(vis_mesh_file), false, false);
-        //// HACK: a trimesh visual asset ignores transforms!!!
+        //// HACK: a trimesh visual asset ignores transforms! Explicitly offset vertices.
         trimesh.Transform(m_offset, ChMatrix33<>(1));
         auto trimesh_shape = std::make_shared<ChTriangleMeshShape>();
         trimesh_shape->SetMesh(trimesh);
@@ -339,12 +417,14 @@ void Part::AddVisualizationAssets(VisualizationType vis) {
     }
 
     for (auto cyl : m_cylinders) {
+        //// HACK: Chrono::OpenGL does not properly account for Pos & Rot
+        ChCoordsys<> csys(cyl.m_pos, cyl.m_rot);
+        ChVector<> p1 = csys * ChVector<>(0, cyl.m_length / 2, 0);
+        ChVector<> p2 = csys * ChVector<>(0, -cyl.m_length / 2, 0);
         auto cyl_shape = std::make_shared<ChCylinderShape>();
         cyl_shape->GetCylinderGeometry().rad = cyl.m_radius;
-        cyl_shape->GetCylinderGeometry().p1 = ChVector<>(0, cyl.m_length / 2, 0);
-        cyl_shape->GetCylinderGeometry().p2 = ChVector<>(0, -cyl.m_length / 2, 0);
-        cyl_shape->Pos = cyl.m_pos;
-        cyl_shape->Rot = cyl.m_rot;
+        cyl_shape->GetCylinderGeometry().p1 = p1;
+        cyl_shape->GetCylinderGeometry().p2 = p2;
         m_body->AddAsset(cyl_shape);
     }
 
@@ -373,9 +453,11 @@ void Part::AddCollisionShapes(int collision_family) {
     m_body->GetCollisionModel()->BuildModel();
 
     // Note: collision_family is either 0 or 1
-    m_body->SetCollide(true);
     m_body->GetCollisionModel()->SetFamily(collision_family);
     m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(1 - collision_family);
+
+    // Note: call this AFTER setting the collision family (required for Chrono::Parallel)
+    m_body->SetCollide(true);
 }
 
 // =============================================================================
@@ -435,13 +517,13 @@ void Chassis::Initialize(const ChCoordsys<>& pos) {
 
 // =============================================================================
 
-WheelDD::WheelDD(const std::string& name, chrono::ChSystem* system) : Part(name, system) {
+WheelDD::WheelDD(const std::string& name, int id, chrono::ChSystem* system) : Part(name, system) {
     double mass = 3.492500;
     ChVector<> com(0, 0, 0);
     ChVector<> inertia_xx(0.01, 0.01, 0.02);
     ChVector<> inertia_xy(0, 0, 0);
 
-    m_body->SetIdentifier(0);
+    m_body->SetIdentifier(id);
     m_body->SetMass(mass);
     m_body->SetFrame_COG_to_REF(ChFrame<>(com, ChQuaternion<>(1, 0, 0, 0)));
     m_body->SetInertiaXX(inertia_xx);
@@ -477,7 +559,7 @@ Limb::Limb(const std::string& name, LimbID id, const LinkData data[], ChSystem* 
     for (int i = 0; i < num_links; i++) {
         auto link = std::make_shared<Part>(m_name + "_" + data[i].name, system);
 
-        link->m_body->SetIdentifier(4 * id + i);
+        link->m_body->SetIdentifier(3 + 4 * id + i);
         link->m_body->SetMass(data[i].link.m_mass);
         link->m_body->SetFrame_COG_to_REF(ChFrame<>(data[i].link.m_com, ChQuaternion<>(1, 0, 0, 0)));
         link->m_body->SetInertiaXX(data[i].link.m_inertia_xx);
@@ -549,12 +631,12 @@ void Limb::Initialize(std::shared_ptr<ChBodyAuxRef> chassis, const ChVector<>& x
         ////continue;
 
         // Create a motor (for now, ignore 'mode')
+        auto motor_fun = std::make_shared<ChFunction_Setpoint>();
+
         auto joint = std::make_shared<ChLinkMotorRotationAngle>();
         joint->SetNameString(m_name + "_" + joints[i].name);
         joint->Initialize(parent_body, child_body, ChFrame<>(calcJointFrame(X_GC, joints[i].axis)));
-        auto motor_fun = std::make_shared<ChFunction_Const>();
         joint->SetAngleFunction(motor_fun);
-
         chassis->GetSystem()->AddLink(joint);
         m_joints.insert(std::make_pair(joints[i].name, joint));
         m_motors.insert(std::make_pair(joints[i].name, joint));
@@ -564,6 +646,17 @@ void Limb::Initialize(std::shared_ptr<ChBodyAuxRef> chassis, const ChVector<>& x
 void Limb::SetVisualizationType(VisualizationType vis) {
     for (auto link : m_links)
         link.second->SetVisualizationType(vis);
+}
+
+void Limb::Activate(const std::string& motor_name, double time, double val) {
+    auto itr = m_motors.find(motor_name);
+    if (itr == m_motors.end())
+        return;
+
+    // Note: currently hard-coded for angle motor
+    auto motor = std::static_pointer_cast<ChLinkMotorRotationAngle>(itr->second);
+    auto fun = std::static_pointer_cast<ChFunction_Setpoint>(motor->GetAngleFunction());
+    fun->SetSetpoint(val, time);
 }
 
 }  // end namespace robosimian
