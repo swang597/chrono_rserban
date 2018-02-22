@@ -23,6 +23,7 @@
 
 #include "chrono/assets/ChColor.h"
 #include "chrono/physics/ChSystem.h"
+#include "chrono/physics/ChLinkMotorRotationAngle.h"
 
 namespace robosimian {
 
@@ -37,6 +38,12 @@ enum class VisualizationType {
     NONE,        ///< no visualization
     PRIMITIVES,  ///< use primitve shapes
     MESH         ///< use meshes
+};
+
+enum class ActuationMode {
+    ANGLE,  ///< prescribe time-series for joint angle
+    SPEED,  ///< prescribe time-series for joint angular speed
+    TORQUE  ///< prescribe time-series for joint torque
 };
 
 struct BoxShape {
@@ -70,12 +77,10 @@ class Part {
     const std::string& GetName() const { return m_name; }
     void SetName(const std::string& name) { m_name = name; }
     void SetVisualizationType(VisualizationType vis);
-    void SetCollide(bool val);
 
   protected:
-
     void AddVisualizationAssets(VisualizationType vis);
-    void AddCollisionShapes();
+    void AddCollisionShapes(int collision_family);
 
     std::string m_name;                            ///< subsystem name
     std::shared_ptr<chrono::ChBodyAuxRef> m_body;  ///< rigid body
@@ -83,6 +88,7 @@ class Part {
     std::vector<SphereShape> m_spheres;            ///< set of primitive spheres (collision and visualization)
     std::vector<CylinderShape> m_cylinders;        ///< set of primitive cylinders (collision and visualization)
     std::string m_mesh_name;                       ///< visualization mesh name
+    chrono::ChVector<> m_offset;                   ///< offset for visualization mesh
     chrono::ChColor m_color;                       ///< visualization asset color
 
     friend class RoboSimian;
@@ -99,15 +105,30 @@ class Chassis : public Part {
   private:
 };
 
+class WheelDD : public Part {
+  public:
+    WheelDD(const std::string& name, int id, chrono::ChSystem* system);
+    ~WheelDD() {}
+
+    void Initialize(std::shared_ptr<chrono::ChBodyAuxRef> chassis,  ///< chassis body
+                    const chrono::ChVector<>& xyz,                  ///< location (relative to chassis)
+                    const chrono::ChVector<>& rpy                   ///< roll-pitch-yaw (relative to chassis)
+    );
+};
+
 class Link {
   public:
     Link(const std::string& mesh_name,
+         const chrono::ChVector<>& offset,
+         const chrono::ChColor& color,
          double mass,
          const chrono::ChVector<>& com,
          const chrono::ChVector<>& inertia_xx,
          const chrono::ChVector<>& inertia_xy,
          const std::vector<CylinderShape>& shapes)
         : m_mesh_name(mesh_name),
+          m_offset(offset),
+          m_color(color),
           m_mass(mass),
           m_com(com),
           m_inertia_xx(inertia_xx),
@@ -116,6 +137,8 @@ class Link {
 
   private:
     std::string m_mesh_name;
+    chrono::ChVector<> m_offset;
+    chrono::ChColor m_color;
     double m_mass;
     chrono::ChVector<> m_com;
     chrono::ChVector<> m_inertia_xx;
@@ -136,7 +159,6 @@ struct JointData {
     std::string linkA;
     std::string linkB;
     bool fixed;
-    bool actuated;
     chrono::ChVector<> xyz;
     chrono::ChVector<> rpy;
     chrono::ChVector<> axis;
@@ -149,16 +171,23 @@ class Limb {
 
     void Initialize(std::shared_ptr<chrono::ChBodyAuxRef> chassis,  ///< chassis body
                     const chrono::ChVector<>& xyz,                  ///< location (relative to chassis)
-                    const chrono::ChVector<>& rpy                   ///< roll-pitch-yaw (relative to chassis)
+                    const chrono::ChVector<>& rpy,                  ///< roll-pitch-yaw (relative to chassis)
+                    ActuationMode mode                              ///< actuation mode (angle, speed, or torque)
     );
 
     void SetVisualizationType(VisualizationType vis);
 
+    void Activate(const std::string& motor_name, double time, double val);
+
   private:
     LimbID m_id;
+    std::string m_name;
     std::unordered_map<std::string, std::shared_ptr<Part>> m_links;
     std::unordered_map<std::string, std::shared_ptr<chrono::ChLink>> m_joints;
+    std::unordered_map<std::string, std::shared_ptr<chrono::ChLinkMotorRotation>> m_motors;
 };
+
+class ContactManager;
 
 class RoboSimian {
   public:
@@ -166,10 +195,20 @@ class RoboSimian {
     RoboSimian(chrono::ChSystem* system, bool fixed = false);
     ~RoboSimian();
 
-    void Initialize(const chrono::ChCoordsys<>& pos);
+    chrono::ChSystem* GetSystem() { return m_system; }
+
+    void SetActuationMode(ActuationMode mode) { m_mode = mode; }
 
     void SetVisualizationTypeChassis(VisualizationType vis);
     void SetVisualizationTypeLimbs(VisualizationType vis);
+    void SetVisualizationTypeLimb(LimbID id, VisualizationType vis);
+    void SetVisualizationTypeWheels(VisualizationType vis);
+
+    void Initialize(const chrono::ChCoordsys<>& pos);
+
+    void Activate(LimbID id, const std::string& motor_name, double time, double val);
+
+    void ReportContacts();
 
   private:
     void Create(bool fixed);
@@ -177,8 +216,14 @@ class RoboSimian {
     chrono::ChSystem* m_system;  ///< pointer to the Chrono system
     bool m_owns_system;          ///< true if system created at construction
 
+    ActuationMode m_mode;
+
     std::shared_ptr<Chassis> m_chassis;          ///< robot chassis
     std::vector<std::shared_ptr<Limb>> m_limbs;  ///< robot limbs
+    ////std::shared_ptr<WheelDD> m_wheel_left;       ///< left DD wheel
+    ////std::shared_ptr<WheelDD> m_wheel_right;      ///< right DD wheel
+
+    ContactManager* m_contacts;
 };
 
 }  // end namespace robosimian
