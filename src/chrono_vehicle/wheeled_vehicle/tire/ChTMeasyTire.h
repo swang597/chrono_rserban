@@ -18,8 +18,10 @@
 //          @2012 CRC Press, ISBN 978-1-4398-3898-3
 //      Georg Rill, "An Engineer's Guess On Tyre Model Parameter Made Possible With TMeasy",
 //          https://hps.hs-regensburg.de/rig39165/Rill_Tyre_Coll_2015.pdf
+//      Georg Rill, "Simulation von Kraftfahrzeugen",
+//          @1994 Vieweg-Verlag, ISBN: 978-3-52808-931-3
+//          https://hps.hs-regensburg.de/rig39165/Simulation_von_Kraftfahrzeugen.pdf
 //
-// This implementation does not include transient slip state modifications.
 // No parking slip calculations.
 //
 // Changes:
@@ -30,6 +32,9 @@
 //
 // 2018-02-22 - Tire Relaxation is considered now. No user input is needed.
 //              The tire step_size should be the same as for the MBS.
+//
+// 2018-02-24 - Calculation of tire rolling radius with user parameters
+//            - Export of tire parameters into a parameter file now possible 
 // =============================================================================
 
 #ifndef CH_TMEASYTIRE
@@ -173,16 +178,9 @@ class CH_VEHICLE_API ChTMeasyTire : public ChTire {
     /// Using tire relaxation, we have three tire deflections
 	ChVector<> GetDeflection() { return ChVector<>(m_states.xe,m_states.ye,m_data.depth); } 
     
-    /// Steady State Tire Forces (always available)
-    double GetSteadyStateLongitudinalForce() { return m_states.Fx; }
-    double GetSteadyStateLateralForce()      { return m_states.Fy; }
-    double GetSteadyStateBoreTorque()        { return m_states.Mb; }
+    /// Export a TMeasy Tire Parameter File
+    void ExportParameterFile(std::string fileName);
     
-    /// Dynamic Tire Forces (available with relaxation activated)
-    double GetDynamicLongitudinalForce() { return m_states.Fx_dyn; }
-    double GetDynamicLateralForce()      { return m_states.Fy_dyn; }
-    double GetDynamicBoreTorque()        { return m_states.Mb_dyn; }
-   
 	/// Simple parameter consistency test
 	bool CheckParameters();
 	
@@ -208,6 +206,9 @@ class CH_VEHICLE_API ChTMeasyTire : public ChTire {
         double& depth                   ///< [out] penetration depth (positive if contact occurred)
     );
 
+    /// Sine Step Function
+    double SinStep(double x, double x1, double h1, double x2, double h2);
+    
     /// Return the vertical tire stiffness contribution to the normal force.
     double GetNormalStiffnessForce(double depth);
 
@@ -219,7 +220,13 @@ class CH_VEHICLE_API ChTMeasyTire : public ChTire {
 
     bool   m_consider_relaxation;
     
+    bool   m_use_Reff_fallback_calculation;
+    
     unsigned int m_integration_method;
+    
+    double m_time;
+    double m_begin_start_transition;
+    double m_end_start_transition;
     
     double m_vnum;
     
@@ -230,7 +237,9 @@ class CH_VEHICLE_API ChTMeasyTire : public ChTire {
     /// TMeasy tire model parameters
     double m_unloaded_radius;
     double m_width;
-    double m_rolling_resistance;  // double m_lateral_stiffness (actually unused)
+    double m_rim_radius;          // actually unused
+    double m_roundness;           // actually unused
+    double m_rolling_resistance;  // actual rolling friction coeff
     double m_mu;                  // local friction coefficient of the road
 
 	double m_a1;				  // polynomial coefficient a1 in cz = a1 + 2.0*a2 * deflection
@@ -242,6 +251,10 @@ class CH_VEHICLE_API ChTMeasyTire : public ChTire {
     double m_relaxation_lenght_x;   // Longitudinal relaxation length   
     double m_relaxation_lenght_y;   // Lateral relaxation length  
     double m_relaxation_lenght_phi; // Relaxation length for bore movement  
+    
+    double m_rdynco;            // actual value of dynamic rolling radius weighting coefficient
+    double m_rdynco_crit;       // max. considered value of m_rdynco (local minimum of dynamic rolling radius)
+    double m_fz_rdynco_crit;    // Fz value r_dyn = r_dyn(m_fz_rdynco,m_rdynco_crit)
 	
     VehicleSide m_measured_side;
 
@@ -271,6 +284,10 @@ class CH_VEHICLE_API ChTMeasyTire : public ChTire {
         double nto0_pn, nto0_p2n;
         double synto0_pn, synto0_p2n;
         double syntoE_pn, syntoE_p2n;
+        
+        double rrcoeff_pn, rrcoeff_p2n;
+        double rdynco_pn, rdynco_p2n;
+        
     } TMeasyCoeff;
 
     TMeasyCoeff m_TMeasyCoeff;

@@ -67,8 +67,16 @@ void WVP_TMeasyTire::SetTMeasyParams() {
     
     m_width 		  	 = 0.372;
     m_unloaded_radius 	 = 1.096 / 2.0;
-    m_rolling_resistance = 0.015;
+    m_rim_radius        = 20.0 * 0.5 * 25.4 / 1000.0;
+    m_roundness         = 0.1;
+    
+    m_TMeasyCoeff.rrcoeff_pn  = 0.015;
+    m_TMeasyCoeff.rrcoeff_p2n = 0.015;
+    
     m_TMeasyCoeff.mu_0 	 = 0.8;
+    
+    m_TMeasyCoeff.rdynco_pn = 0.375;
+    m_TMeasyCoeff.rdynco_p2n = 0.75;
     
  	// Simple damping model from single mass oscilator
     double xi = 0.05; // tire damping ratio

@@ -12,20 +12,15 @@
 // Authors: Rainer Gericke
 // =============================================================================
 //
-// Template for the "Tire Model made Easy"
+// Template for the "Tire Model Made Easy"
 //
 // Ref: Georg Rill, "Road Vehicle Dynamics - Fundamentals and Modelling",
 //          @2012 CRC Press, ISBN 978-1-4398-3898-3
 //      Georg Rill, "An Engineer's Guess On Tyre Model Parameter Mmade Possible With TMeasy",
 //          https://hps.hs-regensburg.de/rig39165/Rill_Tyre_Coll_2015.pdf
 //
-// This implementation does not include transient slip state modifications.
 // No parking slip calculations.
 //
-// =============================================================================
-// =============================================================================
-// STILL UNDERDEVELOPMENT
-//  - Still need to check F&M Outputs
 // =============================================================================
 // =============================================================================
 
@@ -42,7 +37,7 @@ namespace vehicle {
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 ChTMeasyTire::ChTMeasyTire(const std::string& name)
-    : ChTire(name), m_vnum(0.01), m_gamma(0), m_gamma_limit(5), m_stepsize(1e-6) {
+    : ChTire(name), m_vnum(0.01), m_gamma(0), m_gamma_limit(5), m_stepsize(1e-6), m_begin_start_transition(0.5), m_end_start_transition(1.0) {
     m_tireforce.force = ChVector<>(0, 0, 0);
     m_tireforce.point = ChVector<>(0, 0, 0);
     m_tireforce.moment = ChVector<>(0, 0, 0);
@@ -67,11 +62,34 @@ void ChTMeasyTire::Initialize(std::shared_ptr<ChBody> wheel, VehicleSide side) {
     m_states.Fy_dyn = 0;
     m_states.Mb_dyn = 0;
     m_consider_relaxation = true;
+    m_use_Reff_fallback_calculation = false;
     m_integration_method = 2;
+    
+    if(!m_use_Reff_fallback_calculation) {
+        // calculate critical values
+        m_fz_rdynco_crit = (m_TMeasyCoeff.pn * (m_TMeasyCoeff.rdynco_p2n - 2.0*m_TMeasyCoeff.rdynco_pn + 1.0))/(2.0*(m_TMeasyCoeff.rdynco_p2n - m_TMeasyCoeff.rdynco_pn));
+        m_rdynco_crit = InterpL(m_fz_rdynco_crit,m_TMeasyCoeff.rdynco_pn,m_TMeasyCoeff.rdynco_p2n);
+    }
     
 }
 
 // -----------------------------------------------------------------------------
+double ChTMeasyTire::SinStep(double x, double x1, double h1, double x2, double h2) {
+    // Smooth Step Function
+    double h;
+    
+    if(x < x1) {
+        h = h1;
+    } else if(x > x2) {
+        h = h2;
+    } else {
+        double dh = h2-h1;
+        double dx = x2-x1;
+        h = h1+dh/dx*(x-x1)-(dh/CH_C_2PI)*sin(CH_C_2PI/dx*(x-x1));
+    }
+    return h;
+}
+
 // -----------------------------------------------------------------------------
 void ChTMeasyTire::AddVisualizationAssets(VisualizationType vis) {
     if (vis == VisualizationType::NONE)
@@ -118,6 +136,8 @@ void ChTMeasyTire::Synchronize(double time, const WheelState& wheel_state, const
     // Invoke the base class function.
     ChTire::Synchronize(time, wheel_state, terrain);
 
+    m_time = time;
+    
     ChCoordsys<> contact_frame;
     // Clear the force accumulators and set the application point to the wheel
     // center.
@@ -156,7 +176,17 @@ void ChTMeasyTire::Synchronize(double time, const WheelState& wheel_state, const
         m_data.normal_force  = Fn_mag;
         double r_stat        = m_unloaded_radius - m_data.depth;
         m_states.omega       = wheel_state.omega;
-        m_states.R_eff       = (2.0 * m_unloaded_radius + r_stat) / 3.0;
+        if(m_use_Reff_fallback_calculation) {
+            m_states.R_eff       = (2.0 * m_unloaded_radius + r_stat) / 3.0;
+        } else {    
+            if(Fn_mag <= m_fz_rdynco_crit) {
+                m_rdynco       = InterpL(Fn_mag,m_TMeasyCoeff.rdynco_pn,m_TMeasyCoeff.rdynco_p2n);
+                m_states.R_eff = m_rdynco * m_unloaded_radius + (1.0 - m_rdynco)*(r_stat);
+            } else {
+                m_rdynco       = m_rdynco_crit;
+                m_states.R_eff = m_rdynco * m_unloaded_radius + (1.0 - m_rdynco)*(r_stat);
+            }
+        }
         m_states.vta         = m_states.R_eff * std::abs(m_states.omega) + m_vnum;
         m_states.vsx         = m_data.vel.x() - m_states.omega * m_states.R_eff;
         m_states.vsy         = m_data.vel.y();
@@ -298,15 +328,19 @@ void ChTMeasyTire::Advance(double step) {
     // Rolling Resistance, Ramp Like Signum inhibits 'switching' of My
     {
         double Lrad = (m_unloaded_radius - m_data.depth);
+        m_rolling_resistance = InterpL(Fz,m_TMeasyCoeff.rrcoeff_pn,m_TMeasyCoeff.rrcoeff_p2n);
         My = -m_rolling_resistance * m_data.normal_force * Lrad * RampSignum(m_states.omega);
     }
 
     double Ms = 0.0;
     
+    double startup = SinStep(m_time,m_begin_start_transition,0.0,m_end_start_transition,1.0);
+    
     if(m_consider_relaxation) {
         double vtxs = m_states.vta * hsxn;
         double vtys = m_states.vta * hsyn;
         double relax = 0.66 * CH_C_2PI * m_states.R_eff;
+        
         //-------------------
          // Self Alignment Torque        
         Ms = -plen * levN * m_states.Fy_dyn;
@@ -315,17 +349,21 @@ void ChTMeasyTire::Advance(double step) {
         double h = step;
         switch(m_integration_method) {
             case 1:
-                // explicit Euler
+                // explicit Euler, may be instable
+                // 1. oder tire dynamics
                 m_states.xe = m_states.xe + h * (-vtxs * m_TMeasyCoeff.cx * m_states.xe - fos * m_states.vsx) / (vtxs * m_TMeasyCoeff.dx + fos);
                 m_states.ye = m_states.ye + h * (-vtys * m_TMeasyCoeff.cy * m_states.ye - fos * m_states.vsy) / (vtys * m_TMeasyCoeff.dy + fos);
+                // 0. order tire dynamics
                 m_states.Mb_dyn = m_states.Mb_dyn + h * (m_states.Mb - m_states.Mb_dyn) * m_states.vta / relax;
                 break;
             case 2:
-                // semi-implicit Euler 
+                // semi-implicit Euler, absolutely stable
+                // 1. oder tire dynamics
                 double dFx = -vtxs * m_TMeasyCoeff.cx / (vtxs * m_TMeasyCoeff.dx + fos);
                 m_states.xe = m_states.xe + h / (1.0 - h * dFx) * (-vtxs * m_TMeasyCoeff.cx * m_states.xe - fos * m_states.vsx) / (vtxs * m_TMeasyCoeff.dx + fos);
                 double dFy = -vtys * m_TMeasyCoeff.cy / (vtys * m_TMeasyCoeff.dy + fos);
                 m_states.ye = m_states.ye + h / (1.0 - h * dFy) * (-vtys * m_TMeasyCoeff.cy * m_states.ye - fos * m_states.vsy) / (vtys * m_TMeasyCoeff.dy + fos);
+                // 0. order tire dynamics
                 double dMb = -m_states.vta / relax;
                 m_states.Mb_dyn = m_states.Mb_dyn + h / (1.0 - h * dMb) * (m_states.Mb - m_states.Mb_dyn) * m_states.vta / relax;
                 break;
@@ -336,14 +374,16 @@ void ChTMeasyTire::Advance(double step) {
         // Calculate result of alignment torque and bore torque
         // Compile the force and moment vectors so that they can be
         // transformed into the global coordinate system.
-        m_tireforce.force  = ChVector<>(m_states.Fx_dyn, m_states.Fy_dyn, m_data.normal_force);
-        m_tireforce.moment = ChVector<>(Mx, My, Mz);
+        m_tireforce.force  = ChVector<>(startup*m_states.Fx_dyn, startup*m_states.Fy_dyn, m_data.normal_force);
+        m_tireforce.moment = startup * ChVector<>(Mx, My, Mz);
         // Info data (not used in the algorithm)
         m_tau_x = m_TMeasyCoeff.dx/m_TMeasyCoeff.cx + fos/(vtxs * m_TMeasyCoeff.cx);
         m_tau_y = m_TMeasyCoeff.dy/m_TMeasyCoeff.cy + fos/(vtys * m_TMeasyCoeff.cy);
         m_relaxation_lenght_x = m_states.R_eff * std::abs(m_states.omega) * m_tau_x;
         m_relaxation_lenght_y = m_states.R_eff * std::abs(m_states.omega) * m_tau_y;
-    } else {
+        // could be changed to user input, if needed
+        m_relaxation_lenght_phi = relax; 
+     } else {
         // Self Alignment Torque
         m_tau_x = m_tau_y = 0;
         m_relaxation_lenght_x = m_relaxation_lenght_y = 0;
@@ -352,8 +392,8 @@ void ChTMeasyTire::Advance(double step) {
         Mz = Ms + m_states.Mb;
         // Compile the force and moment vectors so that they can be
         // transformed into the global coordinate system.
-        m_tireforce.force  = ChVector<>(m_states.Fx, m_states.Fy, m_data.normal_force);
-        m_tireforce.moment = ChVector<>(Mx, My, Mz);
+        m_tireforce.force  = ChVector<>(startup*m_states.Fx, startup*m_states.Fy, m_data.normal_force);
+        m_tireforce.moment = startup*ChVector<>(Mx, My, Mz);
     }
     // Rotate into global coordinates
     m_tireforce.force  = m_data.frame.TransformDirectionLocalToParent(m_tireforce.force);
@@ -819,7 +859,22 @@ void ChTMeasyTire::GuessTruck80Par(double tireLoad,   // tire load force [N]
 	double DZ = xi * sqrt(CZ * GetMass());
 	
 	SetVerticalStiffness(CZ);
-	
+    
+    m_TMeasyCoeff.dz = DZ;
+	m_TMeasyCoeff.cx = 0.9 * CZ;
+    m_TMeasyCoeff.dx = xi * sqrt(m_TMeasyCoeff.cx * GetMass());
+	m_TMeasyCoeff.cy = 0.8 * CZ;
+    m_TMeasyCoeff.dy = xi * sqrt(m_TMeasyCoeff.cy * GetMass());
+    
+    m_rim_radius = 0.5 * rimDia;
+    m_roundness  = 0.1;
+
+    m_TMeasyCoeff.rrcoeff_pn  = 0.015;
+    m_TMeasyCoeff.rrcoeff_p2n = 0.015;
+    
+    m_TMeasyCoeff.rdynco_pn   = 0.375;
+    m_TMeasyCoeff.rdynco_p2n  = 0.75;
+    
     m_width = tireWidth;
     m_unloaded_radius = secth + rimDia / 2.0;
     m_rolling_resistance = 0.015;
@@ -892,7 +947,22 @@ void ChTMeasyTire::GuessPassCar70Par(double tireLoad,   // tire load force [N]
 	double DZ = xi * sqrt(CZ * GetMass());
 	
 	SetVerticalStiffness(CZ);
+    
+    m_TMeasyCoeff.dz = DZ;
+	m_TMeasyCoeff.cx = 0.9 * CZ;
+    m_TMeasyCoeff.dx = xi * sqrt(m_TMeasyCoeff.cx * GetMass());
+	m_TMeasyCoeff.cy = 0.8 * CZ;
+    m_TMeasyCoeff.dy = xi * sqrt(m_TMeasyCoeff.cy * GetMass());
+    
+    m_rim_radius = 0.5 * rimDia;
+    m_roundness  = 0.1;
 
+    m_TMeasyCoeff.rrcoeff_pn  = 0.015;
+    m_TMeasyCoeff.rrcoeff_p2n = 0.015;
+    
+    m_TMeasyCoeff.rdynco_pn   = 0.375;
+    m_TMeasyCoeff.rdynco_p2n  = 0.75;
+    
     m_TMeasyCoeff.dfx0_pn = 18.6758 * m_TMeasyCoeff.pn * N2kN;
     m_TMeasyCoeff.sxm_pn = 0.17;
     m_TMeasyCoeff.fxm_pn = 1.1205 * m_TMeasyCoeff.pn * N2kN;
@@ -1034,6 +1104,93 @@ bool ChTMeasyTire::CheckParameters() {
 	isOk = true;
 	
 	return isOk;
+}
+
+void ChTMeasyTire::ExportParameterFile(std::string fileName) {
+        // Generate a tire parameter file from programmatical setup
+        const double N2kN = 0.001;
+        const double kN2N = 1000.0;
+        std::ofstream tpf(fileName);
+        if(!tpf.good()) {
+            std::cout << GetName() << ": ChTMeasyTire::ExportParameterFile() no export possible!" << std::endl;
+            return;
+        }
+        double cz1 = kN2N * sqrt(pow(m_a1,2) + 4.0 * m_a2 * N2kN * m_TMeasyCoeff.pn);
+        double cz2 = kN2N * sqrt(pow(m_a1,2) + 8.0 * m_a2 * N2kN * m_TMeasyCoeff.pn);
+
+        tpf << "[FRICTION]" << std::endl;
+        tpf << "MU_0            = " << std::setprecision(4) << std::setw(12) << m_TMeasyCoeff.mu_0 << "   $ coeff of friction at test conditions []" << std::endl;
+        tpf << "[DIMENSION]" << std::endl;
+        tpf << "MASS            = " << std::setprecision(4) << std::setw(12) << 71.1              << "   $ mass of tire, wheel/rim not included [kg]" << std::endl;
+        tpf << "THETA_XZ        = " << std::setprecision(4) << std::setw(12) << 9.62              << "   $ inertia of tire around X and Z axis, wheel/rim not included [kg*m^2]" << std::endl;
+        tpf << "THETA_Y         = " << std::setprecision(4) << std::setw(12) << 16.84             << "   $ inertia of tire around Y axis, wheel/rim not included [kg*m^2]" << std::endl;
+        tpf << "UNLOADED_RADIUS = " << std::setprecision(4) << std::setw(12) << m_unloaded_radius << "   $ unloaded radius [m]" << std::endl;
+        tpf << "WIDTH           = " << std::setprecision(4) << std::setw(12) << m_width           << "   $ width [m]" << std::endl;
+        tpf << "RIM_RADIUS      = " << std::setprecision(4) << std::setw(12) << m_rim_radius      << "   $ rim radius [m]" << std::endl; // unused
+        tpf << "ROUNDNESS       = " << std::setprecision(4) << std::setw(12) << m_roundness       << "   $ roundness of tire cross-section [-]" << std::endl; // unused
+        tpf << "$--------------------------------------------------------------------load" << std::endl;
+        tpf << "[TYRE_LOAD]" << std::endl;
+        tpf << "FZ_NOM          = " << std::setprecision(8) << std::setw(12) << m_TMeasyCoeff.pn         << "   $ nominal or payload [N]" << std::endl;
+        tpf << "FZ_MAX          = " << std::setprecision(8) << std::setw(12) << (3.5 * m_TMeasyCoeff.pn) << "   $ max extrapolation load [N]" << std::endl;
+        tpf << "$---------------------------------------------------------------stiffness" << std::endl;
+        tpf << "[STIFFNESS]" << std::endl;
+        tpf << "CLONG           = " << std::setprecision(8) << std::setw(12) << m_TMeasyCoeff.cx        << "   $ longitudinal [N/m]" << std::endl;
+        tpf << "CLAT            = " << std::setprecision(8) << std::setw(12) << m_TMeasyCoeff.cy        << "   $ lateral [N/m]" << std::endl;
+        tpf << "CVERT_1         = " << std::setprecision(8) << std::setw(12) << cz1 <<                     "   $ vertical @ Fz=Fz_nom [N/m]" << std::endl;
+        tpf << "CVERT_2         = " << std::setprecision(8) << std::setw(12) << cz2 <<                     "   $ vertical @ Fz=2*Fz_nom [N/m]" << std::endl;
+        tpf << "$-----------------------------------------------------------------damping" << std::endl;
+        tpf << "[DAMPING]" << std::endl;
+        tpf << "DLONG           = " << std::setprecision(5) << std::setw(12) <<  m_TMeasyCoeff.dx << "   $ longitudinal [N/(m/s)]" << std::endl;
+        tpf << "DLAT            = " << std::setprecision(5) << std::setw(12) <<  m_TMeasyCoeff.dy << "   $ lateral [N/(m/s)]" << std::endl;
+        tpf << "DVERT           = " << std::setprecision(5) << std::setw(12) <<  m_TMeasyCoeff.dz << "   $ vertical [N/(m/s)]" << std::endl;
+        tpf << "$------------------------------------------------------rolling resistance" << std::endl;
+        tpf << "[ROLLING_RESISTANCE]" << std::endl;
+        tpf << "RRCOEFF_1       = " << std::setprecision(4) << std::setw(12)  << m_TMeasyCoeff.rrcoeff_pn  << "   $ roll. rest. coefficient @ Fz=Fz_nom [-]" << std::endl;
+        tpf << "RRCOEFF_2       = " << std::setprecision(4) << std::setw(12)  << m_TMeasyCoeff.rrcoeff_p2n << "   $ roll. rest. coefficient @ Fz=2*Fz_nom [-]" << std::endl;
+        tpf << "$----------------------------------------------------------dynamic radius" << std::endl;
+        tpf << "[DYNAMIC_RADIUS]" << std::endl;
+        tpf << "RDYNCO_1       = " << std::setprecision(4) << std::setw(12)  << m_TMeasyCoeff.rdynco_pn  << "   $ rdyn weighting coefficient @ Fz=Fz_nom [-]" << std::endl;
+        tpf << "RDYNCO_2       = " << std::setprecision(4) << std::setw(12)  << m_TMeasyCoeff.rdynco_p2n << "   $ rdyn weighting coefficient @ Fz=2*Fz_nom [-]" << std::endl;
+        
+        tpf << "$------------------------------------------------------longitudinal force" << std::endl;
+        tpf << "[LONGITUDINAL_PARAMETERS]" << std::endl;
+        tpf << "DFX0_1         = " << std::setprecision(8) << std::setw(12) << kN2N*m_TMeasyCoeff.dfx0_pn << "   $ initial slope @ Fz=Fz_nom [N/-]" << std::endl;
+        tpf << "FXMAX_1        = " << std::setprecision(8) << std::setw(12) << kN2N*m_TMeasyCoeff.fxm_pn <<  "   $ maximum force @ Fz=Fz_nom [N]" << std::endl;
+        tpf << "SXMAX_1        = " << std::setprecision(5) << std::setw(12) << m_TMeasyCoeff.sxm_pn <<  "   $ slip sx where Fx=Fxmax_1 [-]" << std::endl;
+        tpf << "FXSLD_1        = " << std::setprecision(8) << std::setw(12) << kN2N*m_TMeasyCoeff.fxs_pn <<  "   $ sliding force @ Fz=Fz_nom [N]" << std::endl;
+        tpf << "SXSLD_1        = " << std::setprecision(5) << std::setw(12) << m_TMeasyCoeff.sxs_pn <<  "   $ slip sx where Fx=Fxsld_1 [-]" << std::endl;
+        tpf << "$------------------------------------------------------------------------" << std::endl;
+        tpf << "DFX0_2         = " << std::setprecision(8) << std::setw(12) << kN2N*m_TMeasyCoeff.dfx0_p2n <<  "   $ initial slope @ Fz=2*Fz_nom [N/-]" << std::endl;
+        tpf << "FXMAX_2        = " << std::setprecision(8) << std::setw(12) << kN2N*m_TMeasyCoeff.fxm_p2n  <<  "   $ maximum force @ Fz=2*Fz_nom [N]" << std::endl;
+        tpf << "SXMAX_2        = " << std::setprecision(5) << std::setw(12) << m_TMeasyCoeff.sxm_p2n  <<  "   $ slip sx where Fx=Fxmax_2 [-]" << std::endl;
+        tpf << "FXSLD_2        = " << std::setprecision(8) << std::setw(12) << kN2N*m_TMeasyCoeff.fxs_p2n  <<  "   $ sliding force @ Fz=2*Fz_nom [N]" << std::endl;
+        tpf << "SXSLD_2        = " << std::setprecision(5) << std::setw(12) << m_TMeasyCoeff.sxs_p2n  <<  "   $ slip sx where Fx=Fxsld_2 [-]" << std::endl;
+        
+        tpf << "$-----------------------------------------------------------lateral force" << std::endl;
+        tpf << "[LATERAL_PARAMETERS]" << std::endl;
+        tpf << "DFY0_1         = " << std::setprecision(8) << std::setw(12) << kN2N*m_TMeasyCoeff.dfy0_pn << "   $ initial slope @ Fz=Fz_nom [N/-]" << std::endl;
+        tpf << "FYMAX_1        = " << std::setprecision(8) << std::setw(12) << kN2N*m_TMeasyCoeff.fym_pn <<  "   $ maximum force @ Fz=Fz_nom [N]" << std::endl;
+        tpf << "SYMAX_1        = " << std::setprecision(5) << std::setw(12) << m_TMeasyCoeff.sym_pn <<  "   $ slip sy where Fy=Fymax_1 [-]" << std::endl;
+        tpf << "FYSLD_1        = " << std::setprecision(8) << std::setw(12) << kN2N*m_TMeasyCoeff.fys_pn <<  "   $ sliding force @ Fz=Fz_nom [N]" << std::endl;
+        tpf << "SYSLD_1        = " << std::setprecision(5) << std::setw(12) << m_TMeasyCoeff.sys_pn <<  "   $ slip sy where Fy=Fysld_1 [-]" << std::endl;
+        tpf << "$------------------------------------------------------------------------" << std::endl;
+        tpf << "DFY0_2         = " << std::setprecision(8) << std::setw(12) << kN2N*m_TMeasyCoeff.dfy0_p2n << "   $ initial slope @ Fz=2*Fz_nom [N/-]" << std::endl;
+        tpf << "FYMAX_2        = " << std::setprecision(8) << std::setw(12) << kN2N*m_TMeasyCoeff.fym_p2n <<  "   $ maximum force @ Fz=2*Fz_nom [N]" << std::endl;
+        tpf << "SYMAX_2        = " << std::setprecision(5) << std::setw(12) << m_TMeasyCoeff.sym_p2n <<  "   $ slip sy where Fy=Fymax_2 [-]" << std::endl;
+        tpf << "FYSLD_2        = " << std::setprecision(8) << std::setw(12) << kN2N*m_TMeasyCoeff.fys_p2n <<  "   $ sliding force @ Fz=2*Fz_nom [N]" << std::endl;
+        tpf << "SYSLD_2        = " << std::setprecision(5) << std::setw(12) << m_TMeasyCoeff.sys_p2n <<  "   $ slip sy where Fy=Fysld_2 [-]" << std::endl;
+      
+        tpf << "$-----------------------------------------------------------pneumatic trail" << std::endl;
+        tpf << "[ALIGNING_PARAMETERS]" << std::endl;
+        tpf << "PT_NORM_1     = " << std::setprecision(5) << std::setw(12) << m_TMeasyCoeff.nto0_pn   << "   $ norm. pneumatic trail @ sy=0 & Fz=Fz_nom [-]" << std::endl;
+        tpf << "SY_CHSI_1     = " << std::setprecision(5) << std::setw(12) << m_TMeasyCoeff.synto0_pn << "   $ sy where trail changes sign @ Fz=Fz_nom [-]" << std::endl;
+        tpf << "SY_ZERO_1     = " << std::setprecision(5) << std::setw(12) << m_TMeasyCoeff.syntoE_pn << "   $ sy where trail tends to zero @ Fz=Fz_nom [-]" << std::endl;
+        tpf << "$------------------------------------------------------------------------" << std::endl;
+        tpf << "PT_NORM_2     = " << std::setprecision(5) << std::setw(12) << m_TMeasyCoeff.nto0_p2n   << "   $ norm. pneumatic trail @ sy=0 & Fz=2*Fz_nom [-]" << std::endl;
+        tpf << "SY_CHSI_2     = " << std::setprecision(5) << std::setw(12) << m_TMeasyCoeff.synto0_p2n << "   $ sy where trail changes sign @ Fz=2*Fz_nom [-]" << std::endl;
+        tpf << "SY_ZERO_2     = " << std::setprecision(5) << std::setw(12) << m_TMeasyCoeff.syntoE_p2n << "   $ sy where trail tends to zero @ Fz=2*Fz_nom [-]" << std::endl;  
+        
+        tpf.close();
 }
 
 }  // end namespace vehicle
