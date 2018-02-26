@@ -167,7 +167,7 @@ void output_frame_hdf5(ChSystemParallelNSC& sys, int frame, H5::H5File& file) {
 
         // Write mass information
         {
-            auto blist = *sys.Get_bodylist();
+            auto& blist = sys.Get_bodylist();
             std::vector<double> mass(nbodies);
             for (uint i = 0; i < nbodies; i++) {
                 mass[i] = blist[i]->GetMass();

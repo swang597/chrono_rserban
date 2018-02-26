@@ -143,14 +143,14 @@ void output_frame_hdf5(ChSystemNSC& sys, int frame, H5::H5File& file) {
     quat_type.insertMember("e3", HOFFSET(quat, z), H5::PredType::NATIVE_DOUBLE);
 
     // Populate body group
-    auto nbodies = sys.Get_bodylist()->size();
+    auto nbodies = sys.Get_bodylist().size();
     if (nbodies > 0) {
         H5::Group b_group(f_group.createGroup("Bodies"));
         hsize_t dim[] = { nbodies };
         H5::DataSpace dataspace(1, dim);
 
         // Write positions and velocities
-        auto bodies = *sys.Get_bodylist();
+        auto& bodies = sys.Get_bodylist();
         std::vector<vec> pos(nbodies);
         std::vector<quat> rot(nbodies);
         std::vector<vec> lin_vel(nbodies);
@@ -182,7 +182,7 @@ void output_frame_hdf5(ChSystemNSC& sys, int frame, H5::H5File& file) {
     }
 
     // Populate link group
-    auto nlinks = sys.Get_linklist()->size();
+    auto nlinks = sys.Get_linklist().size();
     if (nlinks > 0) {
         H5::Group l_group(f_group.createGroup("Links"));
     }
@@ -199,10 +199,10 @@ std::ostream& operator<<(std::ostream& out, const quat& a) {
 void output_frame_ascii(ChSystemNSC& sys, int frame, std::ofstream& file) {
     file << frame << " " << sys.GetChTime() << std::endl;
 
-    auto nbodies = sys.Get_bodylist()->size();
+    auto nbodies = sys.Get_bodylist().size();
     if (nbodies > 0) {
         // Write positions and velocities
-        auto bodies = *sys.Get_bodylist();
+        auto& bodies = sys.Get_bodylist();
         std::vector<vec> pos(nbodies);
         std::vector<quat> rot(nbodies);
         std::vector<vec> lin_vel(nbodies);

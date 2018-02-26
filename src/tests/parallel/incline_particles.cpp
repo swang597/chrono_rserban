@@ -308,8 +308,7 @@ ChVector<> CalculateCOM(ChSystem* system) {
             com += ChVector<>(pos.x, pos.y, pos.z);
         }
     } else {
-        for (size_t i = 0; i < system->Get_bodylist()->size(); ++i) {
-            auto body = (*system->Get_bodylist())[i];
+        for (auto body : system->Get_bodylist()) {
             if (body->GetIdentifier()) {
                 com += body->GetPos();
                 count++;
