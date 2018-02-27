@@ -31,6 +31,10 @@
 
 #include "chrono_vehicle/wheeled_vehicle/tire/ChTMeasyTire.h"
 
+#include "chrono_thirdparty/rapidjson/document.h"
+#include "chrono_thirdparty/rapidjson/writer.h"
+#include "chrono_thirdparty/rapidjson/stringbuffer.h"
+
 namespace chrono {
 namespace vehicle {
 
@@ -849,9 +853,9 @@ void ChTMeasyTire::GuessTruck80Par(double tireLoad,   // tire load force [N]
                                    double pinfl_use   // inflation pressure in this configuration
 ) {
 	const double N2kN = 0.001;
-    double secth = tireWidth * ratio;  // tire section height
-    double defl_max = 0.16 * secth;    // deflection at tire payload
-    double xi = 0.05;                  // damping ration
+    double secth      = tireWidth * ratio;      // tire section height
+    double defl_max   = 0.16 * secth;           // deflection at tire payload
+    double xi         = 0.05;                  // damping ratio
 
     m_TMeasyCoeff.pn = 0.5 * tireLoad * pow(pinfl_use / pinfl_li, 0.8);
 
@@ -859,7 +863,11 @@ void ChTMeasyTire::GuessTruck80Par(double tireLoad,   // tire load force [N]
 	double DZ = xi * sqrt(CZ * GetMass());
 	
 	SetVerticalStiffness(CZ);
+            
+    SetRollingResistanceCoefficients(0.015,0.015);
     
+    SetDynamicRadiusCoefficients(0.375,0.75);
+
     m_TMeasyCoeff.dz = DZ;
 	m_TMeasyCoeff.cx = 0.9 * CZ;
     m_TMeasyCoeff.dx = xi * sqrt(m_TMeasyCoeff.cx * GetMass());
@@ -868,16 +876,9 @@ void ChTMeasyTire::GuessTruck80Par(double tireLoad,   // tire load force [N]
     
     m_rim_radius = 0.5 * rimDia;
     m_roundness  = 0.1;
-
-    m_TMeasyCoeff.rrcoeff_pn  = 0.015;
-    m_TMeasyCoeff.rrcoeff_p2n = 0.015;
     
-    m_TMeasyCoeff.rdynco_pn   = 0.375;
-    m_TMeasyCoeff.rdynco_p2n  = 0.75;
-    
-    m_width = tireWidth;
-    m_unloaded_radius = secth + rimDia / 2.0;
-    m_rolling_resistance = 0.015;
+    m_width            = tireWidth;
+    m_unloaded_radius  = secth + rimDia / 2.0;
     m_TMeasyCoeff.mu_0 = 0.8;
 
     m_TMeasyCoeff.dfx0_pn = 17.6866 * m_TMeasyCoeff.pn * N2kN;
@@ -931,22 +932,25 @@ void ChTMeasyTire::GuessPassCar70Par(double tireLoad,   // tire load force [N]
                                      double pinfl_li,   // inflation pressure at load index
                                      double pinfl_use   // inflation pressure in this configuration
 ) {
-	const double N2kN = 0.001;
-    double secth = tireWidth * ratio;  // tire section height
-    double defl_max = 0.16 * secth;    // deflection at tire payload
-    double xi = 0.05;                  // damping ration
+	const double N2kN  = 0.001;
+    double secth       = tireWidth * ratio;  // tire section height
+    double defl_max    = 0.16 * secth;    // deflection at tire payload
+    double xi          = 0.05;                  // damping ration
 
-    m_TMeasyCoeff.pn = 0.5 * tireLoad * pow(pinfl_use / pinfl_li, 0.8);
+    m_TMeasyCoeff.pn   = 0.5 * tireLoad * pow(pinfl_use / pinfl_li, 0.8);
 
-    m_width = tireWidth;
-    m_unloaded_radius = secth + rimDia / 2.0;
-    m_rolling_resistance = 0.015;
+    m_width            = tireWidth;
+    m_unloaded_radius  = secth + rimDia / 2.0;
     m_TMeasyCoeff.mu_0 = 0.8;
 
 	double CZ = m_TMeasyCoeff.pn / defl_max;
 	double DZ = xi * sqrt(CZ * GetMass());
 	
 	SetVerticalStiffness(CZ);
+    
+    SetRollingResistanceCoefficients(0.015,0.015);
+    
+    SetDynamicRadiusCoefficients(0.375,0.75);
     
     m_TMeasyCoeff.dz = DZ;
 	m_TMeasyCoeff.cx = 0.9 * CZ;
@@ -956,13 +960,7 @@ void ChTMeasyTire::GuessPassCar70Par(double tireLoad,   // tire load force [N]
     
     m_rim_radius = 0.5 * rimDia;
     m_roundness  = 0.1;
-
-    m_TMeasyCoeff.rrcoeff_pn  = 0.015;
-    m_TMeasyCoeff.rrcoeff_p2n = 0.015;
-    
-    m_TMeasyCoeff.rdynco_pn   = 0.375;
-    m_TMeasyCoeff.rdynco_p2n  = 0.75;
-    
+        
     m_TMeasyCoeff.dfx0_pn = 18.6758 * m_TMeasyCoeff.pn * N2kN;
     m_TMeasyCoeff.sxm_pn = 0.17;
     m_TMeasyCoeff.fxm_pn = 1.1205 * m_TMeasyCoeff.pn * N2kN;
@@ -1106,6 +1104,18 @@ bool ChTMeasyTire::CheckParameters() {
 	return isOk;
 }
 
+// Set Rolling Resistance Coefficients
+void ChTMeasyTire::SetRollingResistanceCoefficients(double rr_coeff_1, double rr_coeff_2) {
+    m_TMeasyCoeff.rrcoeff_pn  = rr_coeff_1;
+    m_TMeasyCoeff.rrcoeff_p2n = rr_coeff_2;
+}
+    
+// Set Dynamic Radius Coefficients
+void ChTMeasyTire::SetDynamicRadiusCoefficients(double rdyn_coeff_1, double rdyn_coeff_2) {
+    m_TMeasyCoeff.rdynco_pn  = rdyn_coeff_1;
+    m_TMeasyCoeff.rdynco_p2n = rdyn_coeff_2;
+}
+
 void ChTMeasyTire::ExportParameterFile(std::string fileName) {
         // Generate a tire parameter file from programmatical setup
         const double N2kN = 0.001;
@@ -1191,6 +1201,40 @@ void ChTMeasyTire::ExportParameterFile(std::string fileName) {
         tpf << "SY_ZERO_2     = " << std::setprecision(5) << std::setw(12) << m_TMeasyCoeff.syntoE_p2n << "   $ sy where trail tends to zero @ Fz=2*Fz_nom [-]" << std::endl;  
         
         tpf.close();
+}
+
+using namespace rapidjson;
+
+void ChTMeasyTire::ExportJSONFile(std::string jsonFileName) {
+     const char* json = "{"
+                        "\"Name\":\"Truck Tire\"," 
+                        "\"Type\":\"Tire\","
+                        "\"Template\":\"TMeasyTire\","
+                        "\"Unloaded Radius\":0.0,"
+                        "\"Tire Width\":0.0,"
+                        "\"Tire Mass\":0.0,"
+                        "\"Tire Inertia\":[0.0, 0.0, 0.0],"
+
+                        "\"mu_0\":0"
+                        "}";
+    Document d;
+    d.Parse(json);
+    // 2. Modify it by DOM.
+    {
+    Value& s = d["mu_0"];
+    s.SetDouble(m_TMeasyCoeff.mu_0);
+    }
+    {
+    Value& s = d["Unloaded Radius"];
+    s.SetDouble(m_unloaded_radius);
+    }
+    // 3. Stringify the DOM
+    StringBuffer buffer;
+    Writer<StringBuffer> writer(buffer);
+    d.Accept(writer);
+    // Output {"project":"rapidjson","stars":11}
+    std::cout << buffer.GetString() << std::endl;
+    
 }
 
 }  // end namespace vehicle

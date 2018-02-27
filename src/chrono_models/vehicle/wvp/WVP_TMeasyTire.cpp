@@ -65,21 +65,18 @@ void WVP_TMeasyTire::SetTMeasyParams() {
     
     SetVerticalStiffness(disp,force);
     
+    SetRollingResistanceCoefficients(0.015,0.015);
+    
+    SetDynamicRadiusCoefficients(0.375,0.75);
+    
     m_width 		  	 = 0.372;
     m_unloaded_radius 	 = 1.096 / 2.0;
     m_rim_radius        = 20.0 * 0.5 * 25.4 / 1000.0;
     m_roundness         = 0.1;
-    
-    m_TMeasyCoeff.rrcoeff_pn  = 0.015;
-    m_TMeasyCoeff.rrcoeff_p2n = 0.015;
-    
-    m_TMeasyCoeff.mu_0 	 = 0.8;
-    
-    m_TMeasyCoeff.rdynco_pn = 0.375;
-    m_TMeasyCoeff.rdynco_p2n = 0.75;
-    
+            
  	// Simple damping model from single mass oscilator
     double xi = 0.05; // tire damping ratio
+    
 	double C1 = 1000.0*sqrt(pow(m_a1,2)+4.0*m_a2*m_TMeasyCoeff.pn/1000);
 	double C2 = 1000.0*sqrt(pow(m_a1,2)+8.0*m_a2*m_TMeasyCoeff.pn/1000);
 	double CZM = (C1 + C2) / 2.0;

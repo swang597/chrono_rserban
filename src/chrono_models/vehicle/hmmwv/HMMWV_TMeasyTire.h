@@ -42,8 +42,8 @@ class CH_MODELS_API HMMWV_TMeasyTire : public ChTMeasyTire {
     virtual double GetVisualizationWidth() const override { return m_width; }
 
     virtual void SetTMeasyParams() override;
-    virtual double GetMass() const override { return m_mass; }
-    virtual ChVector<> GetInertia() const override { return m_inertia; }
+    virtual double GetMass() const override { return this->m_mass; }
+    virtual ChVector<> GetInertia() const override { return this->m_inertia; }
 
     virtual void AddVisualizationAssets(VisualizationType vis) override;
     virtual void RemoveVisualizationAssets() override final;
