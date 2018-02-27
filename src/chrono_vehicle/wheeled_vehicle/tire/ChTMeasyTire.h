@@ -168,6 +168,12 @@ class CH_VEHICLE_API ChTMeasyTire : public ChTire {
 	// Set vertical tire stiffness as nonlinear function by calculation from tire test data (least squares)
     void SetVerticalStiffness(std::vector<double>& defl, std::vector<double>& frc);
 
+    // Set Rolling Resistance Coefficients
+    void SetRollingResistanceCoefficients(double rr_coeff_1, double rr_coeff_2);
+    
+    // Set Dynamic Radius Coefficients
+    void SetDynamicRadiusCoefficients(double rdyn_coeff_1, double rdyn_coeff_2);
+    
     /// Generate basic tire plots.
     /// This function creates a Gnuplot script file with the specified name.
     void WritePlots(const std::string& plFileName, const std::string& plTireFormat);
@@ -180,6 +186,9 @@ class CH_VEHICLE_API ChTMeasyTire : public ChTire {
     
     /// Export a TMeasy Tire Parameter File
     void ExportParameterFile(std::string fileName);
+
+    /// Export a TMeasy Tire Parameter File in JSON format
+    void ExportJSONFile(std::string jsonFileName);
     
 	/// Simple parameter consistency test
 	bool CheckParameters();
