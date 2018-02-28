@@ -1,0 +1,90 @@
+{
+  "Name": "WVP TMeasy Tire",
+  "Type": "Tire",
+  "Template": "TMeasyTire",
+
+  // ------------------------------------------------
+  // Tire design (REQUIRED)
+
+  "Design": {
+    "Unloaded Radius [m]": 0.548,
+    "Mass [kg]": 71.1,
+    "Inertia [kg.m2]": [ 9.62, 16.84, 9.62 ],
+    "Width [m]": 0.372,
+    "Rim Radius [m]": 0.254,
+    "Roundness of Cross Section": 0.1
+  },
+
+  "Coefficient of Friction": 0.8,
+
+  "Rolling Resistance Coefficients": [ 0.015, 0.015 ],
+
+  // ------------------------------------------------
+  // Vehicle type.
+  // Required only if tire specified with "load index" or "bearing capacity".
+  // Must be one of "Truck" or "Passenger"
+
+  "Vehicle Type": "Truck",
+
+  // ------------------------------------------------
+  // Load index specification.
+  // Takes priority over "bearing capacity" (used only if a full parameterization not provided)
+
+  "Load Index": 152,
+
+  // ------------------------------------------------
+  // Bearing capacity specification.
+  // Lowest priority (used only if no other specification provided)
+
+  "Maximum Bearing Capacity [N]": 34825.5,
+
+  // ------------------------------------------------
+  // Full parameter specification.
+  // Takes priority over both "Load Index" and "bearing capacity".
+
+  "Parameters": {
+    "Tire Load": {
+      "Nominal Vertical Force [N]": 17412.75,
+      "Maximum Vertical Force [N]": 60944.625
+    },
+    "Tire Stiffness": {
+      "Longitudinal [N/m]": 395747.11,
+      "Lateral [N/m]": 351775.2,
+      "Vertical [N/m]": [ 404444.82, 474993.19 ]
+    },
+    "Tire Damping": {
+      "Longitudinal [Ns/m]": 530.45,
+      "Lateral [Ns/m]": 500.11,
+      "Vertical [Ns/m]": 559.14
+    },
+    "Dynamic Radius Weighting Coefficients": [ 0.375, 0.75 ],
+    "Longitudinal": {
+      "Initial Slopes dFx/dsx [N]": [ 215013.1, 615071.22 ],
+      "Maximum Fx Load [N]": [ 13832.671, 24576.28 ],
+      "Sliding Fx Load [N]": [ 12387.002, 22079.064 ],
+      "Slip sx at Maximum Fx": [ 0.13922, 0.11254 ],
+      "Slip sx where sliding begins": [ 0.5, 0.8 ]
+    },
+    "Lateral": {
+      "Initial Slopes dFy/dsy [N]": [ 168715.74, 320100.59 ],
+      "Maximum Fy Load [N]": [ 13038.949, 23241.121 ],
+      "Sliding Fy Load [N]": [ 12387.002, 22079.064 ],
+      "Slip sy at Maximum Fy": [ 0.25841, 0.23883 ],
+      "Slip sy where sliding begins": [ 0.8, 1.0 ]
+    },
+    "Aligning": {
+      "Normalized Trail at Zero Slip sy": [ 0.16, 0.17 ],
+      "Slip sy where Trail Changes Sign": [ 0.18, 0.16 ],
+      "Slip sy where Trail Tends to Zero": [ 0.48, 0.5 ]
+    }
+  },
+
+  // ------------------------------------------------
+  // Visualization mesh (OPTIONAL)
+
+  "Visualization": {
+    "Mesh Filename": "hmmwv/hmmwv_tire.obj",
+    "Mesh Name": "hmmwv_tire_POV_geom"
+  }
+
+}
