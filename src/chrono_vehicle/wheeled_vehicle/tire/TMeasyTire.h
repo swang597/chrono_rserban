@@ -9,60 +9,57 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Rainer Gericke
+// Authors: Radu Serban
 // =============================================================================
 //
-// HMMWV TMeasy tire subsystem
+// TMeasyTire tire constructed with data from file (JSON format).
 //
-// Updated: 2018-02-24
 // =============================================================================
 
-#ifndef HMMWV_TMEASY_TIRE_H
-#define HMMWV_TMEASY_TIRE_H
+#ifndef TMEASY_TIRE_H
+#define TMEASY_TIRE_H
 
 #include "chrono/assets/ChTriangleMeshShape.h"
 
+#include "chrono_vehicle/ChApiVehicle.h"
 #include "chrono_vehicle/wheeled_vehicle/tire/ChTMeasyTire.h"
 
-#include "chrono_models/ChApiModels.h"
+#include "chrono_thirdparty/rapidjson/document.h"
 
 namespace chrono {
 namespace vehicle {
-namespace hmmwv {
 
-/// @addtogroup vehicle_models_hmmwv
+/// @addtogroup vehicle_wheeled_tire
 /// @{
 
-/// TMeasy tire model for the HMMWV.
-class CH_MODELS_API HMMWV_TMeasyTire : public ChTMeasyTire {
+/// TMeasy tire constructed with data from file (JSON format).
+class CH_VEHICLE_API TMeasyTire : public ChTMeasyTire {
   public:
-    HMMWV_TMeasyTire(const std::string& name);
-    ~HMMWV_TMeasyTire() {}
+    TMeasyTire(const std::string& filename);
+    TMeasyTire(const rapidjson::Document& d);
+    ~TMeasyTire() {}
 
-    virtual double GetVisualizationWidth() const override { return m_width; }
-
-    virtual void SetTMeasyParams() override;
+    virtual void SetTMeasyParams() override {}
     virtual double GetMass() const override { return m_mass; }
     virtual ChVector<> GetInertia() const override { return m_inertia; }
 
     virtual void AddVisualizationAssets(VisualizationType vis) override;
     virtual void RemoveVisualizationAssets() override final;
 
-    void GenerateCharacteristicPlots(const std::string& dirname);
-
   private:
-    static const std::string m_meshName;
-    static const std::string m_meshFile;
-    static const double m_mass;
-    static const ChVector<> m_inertia;
+    virtual void Create(const rapidjson::Document& d) override;
 
+    double m_mass;
+    ChVector<> m_inertia;
+
+    bool m_has_mesh;
+    std::string m_meshName;
+    std::string m_meshFile;
     std::shared_ptr<ChTriangleMeshShape> m_trimesh_shape;
-    ChFunction_Recorder m_stiffnessMap;
 };
 
-/// @} vehicle_models_hmmwv
+/// @} vehicle_wheeled_tire
 
-}  // end namespace hmmwv
 }  // end namespace vehicle
 }  // end namespace chrono
 
