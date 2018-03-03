@@ -31,6 +31,7 @@ class EventReceiver : public irr::IEventReceiver {
                                                                           : robosimian::VisualizationType::MESH);
 
                     m_robot.SetVisualizationTypeChassis(m_vis);
+                    m_robot.SetVisualizationTypeSled(m_vis);
                     m_robot.SetVisualizationTypeLimbs(m_vis);
                     m_robot.SetVisualizationTypeWheels(m_vis);
 
@@ -60,7 +61,7 @@ int main(int argc, char* argv[]) {
     my_sys.SetMaxItersSolverStab(200);
     my_sys.SetSolverType(ChSolver::Type::BARZILAIBORWEIN);
 
-    robosimian::RoboSimian robot(&my_sys, true);
+    robosimian::RoboSimian robot(&my_sys, true, true);
     ////robot.Initialize(ChCoordsys<>(ChVector<>(0, 0, 0), QUNIT));
     robot.Initialize(ChCoordsys<>(ChVector<>(0, 0, 0), Q_from_AngX(CH_C_PI)));
 

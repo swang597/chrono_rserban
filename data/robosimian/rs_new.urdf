@@ -6,7 +6,7 @@
   <joint name="base_to_torso" type="fixed">
     <parent link="base_link"/>
     <child link="torso"/>
-    <origin xyz="0 0.0 0.0" rpy="0.0 0.0 0.0"/>
+    <origin xyz="0 0.0 0.0" rpy="3.14159 0.0 0.0"/>
   </joint>
 
    <link name="torso">
@@ -67,6 +67,32 @@
         </geometry>
       </collision>
    </link>
+
+   <link name="sled">
+      <inertial>
+        <mass value="2.769" />
+        <origin xyz="0.000000 0.000000 0.146762" rpy="0 0 0" />
+        <inertia ixx="0.0944943" ixy="0.000000" ixz="0.000000" iyy="0.142064" iyz="0.000000" izz="0.105853" />
+      </inertial>
+      <visual>
+        <origin xyz="0.000000 0 0" rpy="0 0 0" />
+        <geometry>
+           <mesh filename="./stl/robosim_sled_new.stl" scale="1 1 1" />
+        </geometry>
+      </visual>
+      <collision group="other">
+        <origin rpy="0 0 0" xyz="-.025 0 0"/>
+        <geometry>
+          <cylinder length="0.145" radius="0.05"/>
+        </geometry>
+      </collision>
+   </link>
+
+   <joint name="sled_joint" type="fixed">
+      <origin xyz="0.0 0.0 0.21"  rpy="1.570796 0.00 0.00" />
+      <parent link="torso" />
+      <child link="sled" />
+   </joint>
 
    <link name="limb1_link0">
       <inertial>
@@ -228,9 +254,9 @@
   
    <link name="limb1_ftadapter_link">
       <inertial>
-        <mass value="3.975000" />
-        <origin xyz="0.067354 -0.096472 0.000262" rpy="0 0 0" />
-        <inertia ixx="0.044712" ixy="-0.030354" ixz="0.000012" iyy="0.033445" iyz="-0.000141" izz="0.074293" />
+        <mass value="0.2242" />
+        <origin xyz="-0.00531 -0.00060 -0.00045" rpy="0 0 0" />
+        <inertia ixx="0.00042" ixy="0.00000" ixz="0.0000" iyy="0.00024" iyz="0.00000" izz="0.00023" />
       </inertial>
       <visual>
          <origin xyz="0 0 0" rpy="0 0 0" />
@@ -242,9 +268,9 @@
 
    <link name="limb1_ft_link">
       <inertial>
-        <mass value="3.975000" />
-        <origin xyz="0.067354 -0.096472 0.000262" rpy="0 0 0" />
-        <inertia ixx="0.044712" ixy="-0.030354" ixz="0.000012" iyy="0.033445" iyz="-0.000141" izz="0.074293" />
+        <mass value="0.1492" />
+        <origin xyz="-0.00037 0.000102 0.000168" rpy="0 0 0" />
+        <inertia ixx="0.000065" ixy="0.000" ixz="0.0000" iyy="0.000039" iyz="0.000000" izz="0.000038" />
       </inertial>
       <visual>
          <origin xyz="0 0 0" rpy="0 0 0" />
@@ -256,9 +282,9 @@
 
    <link name="limb1_link7">
       <inertial>
-        <mass value="1.760000" />
-        <origin xyz="0.112290 -0.000164 0.000000" rpy="0 0 0" />
-        <inertia ixx="0.001913" ixy="-0.000007" ixz="0.000000" iyy="0.006680" iyz="0.000000" izz="0.006125" />
+        <mass value="3.1775" />
+        <origin xyz="0.029692 0.005260 -0.000088" rpy="0 0 0" />
+        <inertia ixx="0.005418" ixy="0.001198" ixz="-0.000036" iyy="0.013779" iyz="0.000025" izz="0.014295" />
       </inertial>
       <visual>
         <origin xyz="0.12024 0 0" rpy="0 0 0" />
@@ -276,10 +302,10 @@
 
   <link name="limb1_link8">
     <inertial>
-      <mass value="1.760000" />
-      <origin xyz="0.112290 -0.000164 0.000000" rpy="0 0 0" />
-      <inertia ixx="0.001913" ixy="-0.000007" ixz="0.000000" iyy="0.006680" iyz="0.000000" izz="0.006125" />
-    </inertial>
+      <mass value="1.2" />
+      <origin xyz="0.0 0.0 -0.000025" rpy="0 0 0" />
+      <inertia ixx="0.005822" ixy="0.000000" ixz="0.000000" iyy="0.005822" iyz="0.000000" izz="0.008805" />
+     </inertial>
     <visual>
       <origin xyz="0.0 0 0" rpy="0 0 0" />
       <geometry>
@@ -555,9 +581,9 @@
    
    <link name="limb2_ftadapter_link">
       <inertial>
-        <mass value="3.975000" />
-        <origin xyz="0.067354 -0.096472 0.000262" rpy="0 0 0" />
-        <inertia ixx="0.044712" ixy="-0.030354" ixz="0.000012" iyy="0.033445" iyz="-0.000141" izz="0.074293" />
+        <mass value="0.2242" />
+        <origin xyz="-0.00531 -0.00060 -0.00045" rpy="0 0 0" />
+        <inertia ixx="0.00042" ixy="0.00000" ixz="0.0000" iyy="0.00024" iyz="0.00000" izz="0.00023" />
       </inertial>
       <visual>
          <origin xyz="0 0 0" rpy="0 0 0" />
@@ -569,9 +595,9 @@
 
    <link name="limb2_ft_link">
       <inertial>
-        <mass value="3.975000" />
-        <origin xyz="0.067354 -0.096472 0.000262" rpy="0 0 0" />
-        <inertia ixx="0.044712" ixy="-0.030354" ixz="0.000012" iyy="0.033445" iyz="-0.000141" izz="0.074293" />
+        <mass value="0.1492" />
+        <origin xyz="-0.00037 0.000102 0.000168" rpy="0 0 0" />
+        <inertia ixx="0.000065" ixy="0.000" ixz="0.0000" iyy="0.000039" iyz="0.000000" izz="0.000038" />
       </inertial>
       <visual>
          <origin xyz="0 0 0" rpy="0 0 0" />
@@ -583,9 +609,9 @@
    
    <link name="limb2_link7">
       <inertial>
-        <mass value="1.760000" />
-        <origin xyz="0.112290 -0.000164 0.000000" rpy="0 0 0" />
-        <inertia ixx="0.001913" ixy="-0.000007" ixz="0.000000" iyy="0.006680" iyz="0.000000" izz="0.006125" />
+        <mass value="3.1775" />
+        <origin xyz="0.029692 0.005260 -0.000088" rpy="0 0 0" />
+        <inertia ixx="0.005418" ixy="0.001198" ixz="-0.000036" iyy="0.013779" iyz="0.000025" izz="0.014295" />
       </inertial>
       <visual>
         <origin xyz="0.12024 0 0" rpy="0 0 0" />
@@ -603,10 +629,10 @@
 
   <link name="limb2_link8">
     <inertial>
-      <mass value="1.760000" />
-      <origin xyz="0.112290 -0.000164 0.000000" rpy="0 0 0" />
-      <inertia ixx="0.001913" ixy="-0.000007" ixz="0.000000" iyy="0.006680" iyz="0.000000" izz="0.006125" />
-    </inertial>
+      <mass value="1.2" />
+      <origin xyz="0.0 0.0 -0.000025" rpy="0 0 0" />
+      <inertia ixx="0.005822" ixy="0.000000" ixz="0.000000" iyy="0.005822" iyz="0.000000" izz="0.008805" />
+     </inertial>
     <visual>
       <origin xyz="0.0 0 0" rpy="0 0 0" />
       <geometry>
@@ -883,9 +909,9 @@
    
    <link name="limb3_ftadapter_link">
       <inertial>
-        <mass value="3.975000" />
-        <origin xyz="0.067354 -0.096472 0.000262" rpy="0 0 0" />
-        <inertia ixx="0.044712" ixy="-0.030354" ixz="0.000012" iyy="0.033445" iyz="-0.000141" izz="0.074293" />
+        <mass value="0.2242" />
+        <origin xyz="-0.00531 -0.00060 -0.00045" rpy="0 0 0" />
+        <inertia ixx="0.00042" ixy="0.00000" ixz="0.0000" iyy="0.00024" iyz="0.00000" izz="0.00023" />
       </inertial>
       <visual>
          <origin xyz="0 0 0" rpy="0 0 0" />
@@ -897,9 +923,9 @@
 
    <link name="limb3_ft_link">
       <inertial>
-        <mass value="3.975000" />
-        <origin xyz="0.067354 -0.096472 0.000262" rpy="0 0 0" />
-        <inertia ixx="0.044712" ixy="-0.030354" ixz="0.000012" iyy="0.033445" iyz="-0.000141" izz="0.074293" />
+        <mass value="0.1492" />
+        <origin xyz="-0.00037 0.000102 0.000168" rpy="0 0 0" />
+        <inertia ixx="0.000065" ixy="0.000" ixz="0.0000" iyy="0.000039" iyz="0.000000" izz="0.000038" />
       </inertial>
       <visual>
          <origin xyz="0 0 0" rpy="0 0 0" />
@@ -911,9 +937,9 @@
 
    <link name="limb3_link7">
       <inertial>
-        <mass value="1.760000" />
-        <origin xyz="0.112290 -0.000164 0.000000" rpy="0 0 0" />
-        <inertia ixx="0.001913" ixy="-0.000007" ixz="0.000000" iyy="0.006680" iyz="0.000000" izz="0.006125" />
+        <mass value="3.1775" />
+        <origin xyz="0.029692 0.005260 -0.000088" rpy="0 0 0" />
+        <inertia ixx="0.005418" ixy="0.001198" ixz="-0.000036" iyy="0.013779" iyz="0.000025" izz="0.014295" />
       </inertial>
       <visual>
         <origin xyz="0.12024 0 0" rpy="0 0 0" />
@@ -931,10 +957,10 @@
 
   <link name="limb3_link8">
     <inertial>
-      <mass value="1.760000" />
-      <origin xyz="0.112290 -0.000164 0.000000" rpy="0 0 0" />
-      <inertia ixx="0.001913" ixy="-0.000007" ixz="0.000000" iyy="0.006680" iyz="0.000000" izz="0.006125" />
-    </inertial>
+      <mass value="1.2" />
+      <origin xyz="0.0 0.0 -0.000025" rpy="0 0 0" />
+      <inertia ixx="0.005822" ixy="0.000000" ixz="0.000000" iyy="0.005822" iyz="0.000000" izz="0.008805" />
+     </inertial>
     <visual>
       <origin xyz="0.0 0 0" rpy="0 0 0" />
       <geometry>
@@ -1204,9 +1230,9 @@
 
    <link name="limb4_ftadapter_link">
       <inertial>
-        <mass value="3.975000" />
-        <origin xyz="0.067354 -0.096472 0.000262" rpy="0 0 0" />
-        <inertia ixx="0.044712" ixy="-0.030354" ixz="0.000012" iyy="0.033445" iyz="-0.000141" izz="0.074293" />
+        <mass value="0.2242" />
+        <origin xyz="-0.00531 -0.00060 -0.00045" rpy="0 0 0" />
+        <inertia ixx="0.00042" ixy="0.00000" ixz="0.0000" iyy="0.00024" iyz="0.00000" izz="0.00023" />
       </inertial>
       <visual>
          <origin xyz="0 0 0" rpy="0 0 0" />
@@ -1218,9 +1244,9 @@
    
    <link name="limb4_ft_link">
       <inertial>
-        <mass value="3.975000" />
-        <origin xyz="0.067354 -0.096472 0.000262" rpy="0 0 0" />
-        <inertia ixx="0.044712" ixy="-0.030354" ixz="0.000012" iyy="0.033445" iyz="-0.000141" izz="0.074293" />
+        <mass value="0.1492" />
+        <origin xyz="-0.00037 0.000102 0.000168" rpy="0 0 0" />
+        <inertia ixx="0.000065" ixy="0.000" ixz="0.0000" iyy="0.000039" iyz="0.000000" izz="0.000038" />
       </inertial>
       <visual>
          <origin xyz="0.0 0.0 0.0" rpy="0.00000 0.00000 0.00000" />
@@ -1232,9 +1258,9 @@
 
    <link name="limb4_link7">
       <inertial>
-        <mass value="1.760000" />
-        <origin xyz="0.112290 -0.000164 0.000000" rpy="0 0 0" />
-        <inertia ixx="0.001913" ixy="-0.000007" ixz="0.000000" iyy="0.006680" iyz="0.000000" izz="0.006125" />
+        <mass value="3.1775" />
+        <origin xyz="0.029692 0.005260 -0.000088" rpy="0 0 0" />
+        <inertia ixx="0.005418" ixy="0.001198" ixz="-0.000036" iyy="0.013779" iyz="0.000025" izz="0.014295" />
       </inertial>
       <visual>
         <origin xyz="0.12024 0 0" rpy="0 0 0" />
@@ -1252,10 +1278,10 @@
 
   <link name="limb4_link8">
     <inertial>
-      <mass value="1.760000" />
-      <origin xyz="0.112290 -0.000164 0.000000" rpy="0 0 0" />
-      <inertia ixx="0.001913" ixy="-0.000007" ixz="0.000000" iyy="0.006680" iyz="0.000000" izz="0.006125" />
-    </inertial>
+      <mass value="1.2" />
+      <origin xyz="0.0 0.0 -0.000025" rpy="0 0 0" />
+      <inertia ixx="0.005822" ixy="0.000000" ixz="0.000000" iyy="0.005822" iyz="0.000000" izz="0.008805" />
+     </inertial>
     <visual>
       <origin xyz="0.0 0 0" rpy="0 0 0" />
       <geometry>
@@ -1362,422 +1388,6 @@
       <parent link="limb4_link7" />
       <child link="limb4_link8" />
       <limit effort="1000.0" lower="-2e19" upper="2e19" velocity="0.5"/>
-      <dynamics damping="1.000000" friction="10.000000"/>
-   </joint>
-   
-  <link name="dd_wheel_left">
-      <visual>
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry>
-           <mesh filename="./stl/robosim_dd_wheel.stl" scale="1 1 1" />
-        </geometry>
-      </visual>
-      <inertial>
-        <mass value="3.492500" />
-        <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
-        <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
-      </inertial>
-      <collision group="other">
-        <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-        <geometry>
-          <cylinder length="0.038000" radius="0.074000"/>
-        </geometry>
-      </collision>
-   </link>
-
-   <link name="dd_wheel_right">
-      <visual>
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <geometry>
-           <mesh filename="./stl/robosim_dd_wheel.stl" scale="1 1 1" />
-        </geometry>
-      </visual>
-      <inertial>
-        <mass value="3.492500" />
-        <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
-        <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
-      </inertial>
-      <collision group="other">
-        <origin rpy="0.0 0.0 0.0" xyz="0.0 0.0 0.0"/>
-        <geometry>
-          <cylinder length="0.038000" radius="0.074000"/>
-        </geometry>
-      </collision>
-   </link>
-
-   <joint name="dd_left" type="continuous">
-      <origin xyz="-0.42943 -0.19252 0.06380"  rpy="0.00000 1.57080 -1.57080" />
-      <parent link="torso" />
-      <child link="dd_wheel_left" />
-      <axis xyz="0 0 1" />
-      <dynamics damping="0" friction="0"/>
-   </joint>
-
-   <joint name="dd_right" type="continuous">
-      <origin xyz="-0.42943 0.19252 0.06380"  rpy="0.00000 -1.57080 -1.57080" />
-      <parent link="torso" />
-      <child link="dd_wheel_right" />
-      <axis xyz="0 0 -1" />
-      <dynamics damping="0" friction="0"/>
-   </joint>
-
-   <link name="limb1_finger0_link_actuator">
-      <inertial>
-        <mass value="0" />
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
-      </inertial>
-   </link>
-
-   <link name="limb1_finger0_link0">
-      <inertial>
-        <mass value="0.185370" />
-        <origin xyz="0.000000 -0.008876 -0.009678" rpy="0 0 0" />
-        <inertia ixx="0.000258" ixy="-0.000000" ixz="-0.000000" iyy="0.000153" iyz="0.000053" izz="0.000108" />
-      </inertial>
-    </link>
-
-   <link name="limb1_finger1_link_actuator">
-      <inertial>
-        <mass value="0" />
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
-      </inertial>
-   </link>
-
-   <link name="limb1_finger1_link0">
-      <inertial>
-        <mass value="0.185370" />
-        <origin xyz="0.000000 -0.008876 -0.009678" rpy="0 0 0" />
-        <inertia ixx="0.000258" ixy="-0.000000" ixz="-0.000000" iyy="0.000153" iyz="0.000053" izz="0.000108" />
-      </inertial>
-    </link>
-
-   <link name="limb1_finger2_link_actuator">
-      <inertial>
-        <mass value="0" />
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
-      </inertial>
-   </link>
-
-   <link name="limb1_finger2_link0">
-      <inertial>
-        <mass value="0.370730" />
-        <origin xyz="0.000000 0.009678 -0.008876" rpy="0 0 0" />
-        <inertia ixx="0.000516" ixy="0.000000" ixz="-0.000000" iyy="0.000942" iyz="-0.000106" izz="0.001033" />
-      </inertial>
-  </link>
-
-   <joint name="limb1_finger0_actuator" type="continuous">
-      <parent link="limb1_link7" />
-      <child link="limb1_finger0_link_actuator" />
-   </joint>
-
-   <joint name="limb1_finger1_actuator" type="continuous">
-      <parent link="limb1_link7" />
-      <child link="limb1_finger1_link_actuator" />
-   </joint>
-
-   <joint name="limb1_finger2_actuator" type="continuous">
-      <parent link="limb1_link7" />
-      <child link="limb1_finger2_link_actuator" />
-   </joint>
-
-   <joint name="limb1_finger0_joint0" type="revolute">
-      <origin xyz="0.18485 0.03449 -0.00248"  rpy="0.43807 -0.00000 -1.57080" />
-      <axis xyz="-1 0 0" />
-      <parent link="limb1_link7" />
-      <child link="limb1_finger0_link0" />
-      <limit effort="1000.0" lower="-3.141593" upper="3.141593" velocity="0.5"/>
-      <dynamics damping="1.000000" friction="10.000000"/>
-   </joint>
-
-   <joint name="limb1_finger1_joint0" type="revolute">
-      <origin xyz="0.18485 -0.03449 -0.00248"  rpy="0.43807 -0.00000 -1.57080" />
-      <axis xyz="-1 0 0" />
-      <parent link="limb1_link7" />
-      <child link="limb1_finger1_link0" />
-      <limit effort="1000.0" lower="-3.141593" upper="3.141593" velocity="0.5"/>
-      <dynamics damping="1.000000" friction="10.000000"/>
-   </joint>
-
-   <joint name="limb1_finger2_joint0" type="revolute">
-      <origin xyz="0.18485 -0.00022 -0.00248"  rpy="2.00890 0.00000 1.57080" />
-      <axis xyz="-1 0 0" />
-      <parent link="limb1_link7" />
-      <child link="limb1_finger2_link0" />
-      <limit effort="1000.0" lower="-3.141593" upper="3.141593" velocity="0.5"/>
-      <dynamics damping="1.000000" friction="10.000000"/>
-   </joint>
-
-   <link name="limb2_finger0_link_actuator">
-      <inertial>
-        <mass value="0" />
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
-      </inertial>
-   </link>
-
-   <link name="limb2_finger0_link0">
-      <inertial>
-        <mass value="0.185370" />
-        <origin xyz="0.000000 -0.008876 -0.009678" rpy="0 0 0" />
-        <inertia ixx="0.000258" ixy="-0.000000" ixz="-0.000000" iyy="0.000153" iyz="0.000053" izz="0.000108" />
-      </inertial>
-    </link>
-
-   <link name="limb2_finger1_link_actuator">
-      <inertial>
-        <mass value="0" />
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
-      </inertial>
-   </link>
-
-   <link name="limb2_finger1_link0">
-      <inertial>
-        <mass value="0.185370" />
-        <origin xyz="0.000000 -0.008876 -0.009678" rpy="0 0 0" />
-        <inertia ixx="0.000258" ixy="-0.000000" ixz="-0.000000" iyy="0.000153" iyz="0.000053" izz="0.000108" />
-      </inertial>
-  </link>
-
-   <link name="limb2_finger2_link_actuator">
-      <inertial>
-        <mass value="0" />
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
-      </inertial>
-   </link>
-
-   <link name="limb2_finger2_link0">
-      <inertial>
-        <mass value="0.370730" />
-        <origin xyz="0.000000 0.009678 -0.008876" rpy="0 0 0" />
-        <inertia ixx="0.000516" ixy="0.000000" ixz="-0.000000" iyy="0.000942" iyz="-0.000106" izz="0.001033" />
-      </inertial>
-   </link>
-
-   <joint name="limb2_finger0_actuator" type="continuous">
-      <parent link="limb2_link7" />
-      <child link="limb2_finger0_link_actuator" />
-   </joint>
-
-   <joint name="limb2_finger1_actuator" type="continuous">
-      <parent link="limb2_link7" />
-      <child link="limb2_finger1_link_actuator" />
-   </joint>
-
-   <joint name="limb2_finger2_actuator" type="continuous">
-      <parent link="limb2_link7" />
-      <child link="limb2_finger2_link_actuator" />
-   </joint>
-
-   <joint name="limb2_finger0_joint0" type="revolute">
-      <origin xyz="0.18485 0.03449 -0.00248"  rpy="0.43807 -0.00000 -1.57080" />
-      <axis xyz="-1 0 0" />
-      <parent link="limb2_link7" />
-      <child link="limb2_finger0_link0" />
-      <limit effort="1000.0" lower="-3.141593" upper="3.141593" velocity="0.5"/>
-      <dynamics damping="1.000000" friction="10.000000"/>
-   </joint>
-
-   <joint name="limb2_finger1_joint0" type="revolute">
-      <origin xyz="0.18485 -0.03449 -0.00248"  rpy="0.43807 -0.00000 -1.57080" />
-      <axis xyz="-1 0 0" />
-      <parent link="limb2_link7" />
-      <child link="limb2_finger1_link0" />
-      <limit effort="1000.0" lower="-3.141593" upper="3.141593" velocity="0.5"/>
-      <dynamics damping="1.000000" friction="10.000000"/>
-   </joint>
-
-   <joint name="limb2_finger2_joint0" type="revolute">
-      <origin xyz="0.18485 -0.00022 -0.00248"  rpy="2.00890 0.00000 1.57080" />
-      <axis xyz="-1 0 0" />
-      <parent link="limb2_link7" />
-      <child link="limb2_finger2_link0" />
-      <limit effort="1000.0" lower="-3.141593" upper="3.141593" velocity="0.5"/>
-      <dynamics damping="1.000000" friction="10.000000"/>
-   </joint>
-
-   <link name="limb3_finger0_link_actuator">
-      <inertial>
-        <mass value="0" />
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
-      </inertial>
-   </link>
-
-   <link name="limb3_finger0_link0">
-      <inertial>
-        <mass value="0.185370" />
-        <origin xyz="0.000000 -0.008876 -0.009678" rpy="0 0 0" />
-        <inertia ixx="0.000258" ixy="-0.000000" ixz="-0.000000" iyy="0.000153" iyz="0.000053" izz="0.000108" />
-      </inertial>
-  </link>
-
-   <link name="limb3_finger1_link_actuator">
-      <inertial>
-        <mass value="0" />
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
-      </inertial>
-   </link>
-
-   <link name="limb3_finger1_link0">
-      <inertial>
-        <mass value="0.185370" />
-        <origin xyz="0.000000 -0.008876 -0.009678" rpy="0 0 0" />
-        <inertia ixx="0.000258" ixy="-0.000000" ixz="-0.000000" iyy="0.000153" iyz="0.000053" izz="0.000108" />
-      </inertial>
-    </link>
-
-   <link name="limb3_finger2_link_actuator">
-      <inertial>
-        <mass value="0" />
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
-      </inertial>
-   </link>
-
-   <link name="limb3_finger2_link0">
-      <inertial>
-        <mass value="0.370730" />
-        <origin xyz="0.000000 0.009678 -0.008876" rpy="0 0 0" />
-        <inertia ixx="0.000516" ixy="0.000000" ixz="-0.000000" iyy="0.000942" iyz="-0.000106" izz="0.001033" />
-      </inertial>
-  </link>
-
-   <joint name="limb3_finger0_actuator" type="continuous">
-      <parent link="limb3_link7" />
-      <child link="limb3_finger0_link_actuator" />
-   </joint>
-
-   <joint name="limb3_finger1_actuator" type="continuous">
-      <parent link="limb3_link7" />
-      <child link="limb3_finger1_link_actuator" />
-   </joint>
-
-   <joint name="limb3_finger2_actuator" type="continuous">
-      <parent link="limb3_link7" />
-      <child link="limb3_finger2_link_actuator" />
-   </joint>
-
-   <joint name="limb3_finger0_joint0" type="revolute">
-      <origin xyz="0.18485 0.03449 -0.00248"  rpy="0.43807 -0.00000 -1.57080" />
-      <axis xyz="-1 0 0" />
-      <parent link="limb3_link7" />
-      <child link="limb3_finger0_link0" />
-      <limit effort="1000.0" lower="-3.141593" upper="3.141593" velocity="0.5"/>
-      <dynamics damping="1.000000" friction="10.000000"/>
-   </joint>
-
-   <joint name="limb3_finger1_joint0" type="revolute">
-      <origin xyz="0.18485 -0.03449 -0.00248"  rpy="0.43807 -0.00000 -1.57080" />
-      <axis xyz="-1 0 0" />
-      <parent link="limb3_link7" />
-      <child link="limb3_finger1_link0" />
-      <limit effort="1000.0" lower="-3.141593" upper="3.141593" velocity="0.5"/>
-      <dynamics damping="1.000000" friction="10.000000"/>
-   </joint>
-
-   <joint name="limb3_finger2_joint0" type="revolute">
-      <origin xyz="0.18485 -0.00022 -0.00248"  rpy="2.00890 0.00000 1.57080" />
-      <axis xyz="-1 0 0" />
-      <parent link="limb3_link7" />
-      <child link="limb3_finger2_link0" />
-      <limit effort="1000.0" lower="-3.141593" upper="3.141593" velocity="0.5"/>
-      <dynamics damping="1.000000" friction="10.000000"/>
-   </joint>
-
-   <link name="limb4_finger0_link_actuator">
-      <inertial>
-        <mass value="0" />
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
-      </inertial>
-   </link>
-
-   <link name="limb4_finger0_link0">
-      <inertial>
-        <mass value="0.185370" />
-        <origin xyz="0.000000 -0.008876 -0.009678" rpy="0 0 0" />
-        <inertia ixx="0.000258" ixy="-0.000000" ixz="-0.000000" iyy="0.000153" iyz="0.000053" izz="0.000108" />
-      </inertial>
-  </link>
-
-   <link name="limb4_finger1_link_actuator">
-      <inertial>
-        <mass value="0" />
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
-      </inertial>
-   </link>
-
-   <link name="limb4_finger1_link0">
-      <inertial>
-        <mass value="0.185370" />
-        <origin xyz="0.000000 -0.008876 -0.009678" rpy="0 0 0" />
-        <inertia ixx="0.000258" ixy="-0.000000" ixz="-0.000000" iyy="0.000153" iyz="0.000053" izz="0.000108" />
-      </inertial>
-  </link>
-
-   <link name="limb4_finger2_link_actuator">
-      <inertial>
-        <mass value="0" />
-        <origin xyz="0 0 0" rpy="0 0 0" />
-        <inertia ixx="0" ixy="0" ixz="0" iyy="0" iyz="0" izz="0" />
-      </inertial>
-   </link>
-
-   <link name="limb4_finger2_link0">
-      <inertial>
-        <mass value="0.370730" />
-        <origin xyz="0.000000 0.009678 -0.008876" rpy="0 0 0" />
-        <inertia ixx="0.000516" ixy="0.000000" ixz="-0.000000" iyy="0.000942" iyz="-0.000106" izz="0.001033" />
-      </inertial>
-  </link>
-
-   <joint name="limb4_finger0_actuator" type="continuous">
-      <parent link="limb4_link7" />
-      <child link="limb4_finger0_link_actuator" />
-   </joint>
-
-   <joint name="limb4_finger1_actuator" type="continuous">
-      <parent link="limb4_link7" />
-      <child link="limb4_finger1_link_actuator" />
-   </joint>
-
-   <joint name="limb4_finger2_actuator" type="continuous">
-      <parent link="limb4_link7" />
-      <child link="limb4_finger2_link_actuator" />
-   </joint>
-
-   <joint name="limb4_finger0_joint0" type="revolute">
-      <origin xyz="0.18485 0.03449 -0.00248"  rpy="0.43807 -0.00000 -1.57080" />
-      <axis xyz="-1 0 0" />
-      <parent link="limb4_link7" />
-      <child link="limb4_finger0_link0" />
-      <limit effort="1000.0" lower="-3.141593" upper="3.141593" velocity="0.5"/>
-      <dynamics damping="1.000000" friction="10.000000"/>
-   </joint>
-
-   <joint name="limb4_finger1_joint0" type="revolute">
-      <origin xyz="0.18485 -0.03449 -0.00248"  rpy="0.43807 -0.00000 -1.57080" />
-      <axis xyz="-1 0 0" />
-      <parent link="limb4_link7" />
-      <child link="limb4_finger1_link0" />
-      <limit effort="1000.0" lower="-3.141593" upper="3.141593" velocity="0.5"/>
-      <dynamics damping="1.000000" friction="10.000000"/>
-   </joint>
-
-   <joint name="limb4_finger2_joint0" type="revolute">
-      <origin xyz="0.18485 -0.00022 -0.00248"  rpy="2.00890 0.00000 1.57080" />
-      <axis xyz="-1 0 0" />
-      <parent link="limb4_link7" />
-      <child link="limb4_finger2_link0" />
-      <limit effort="1000.0" lower="-3.141593" upper="3.141593" velocity="0.5"/>
       <dynamics damping="1.000000" friction="10.000000"/>
    </joint>
 

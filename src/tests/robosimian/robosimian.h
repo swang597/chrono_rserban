@@ -101,8 +101,17 @@ class Chassis : public Part {
     ~Chassis() {}
 
     void Initialize(const chrono::ChCoordsys<>& pos);
+};
 
-  private:
+class Sled : public Part {
+  public:
+    Sled(const std::string& name, chrono::ChSystem* system);
+    ~Sled() {}
+
+    void Initialize(std::shared_ptr<chrono::ChBodyAuxRef> chassis,  ///< chassis body
+                    const chrono::ChVector<>& xyz,                  ///< location (relative to chassis)
+                    const chrono::ChVector<>& rpy                   ///< roll-pitch-yaw (relative to chassis)
+    );
 };
 
 class WheelDD : public Part {
@@ -191,8 +200,8 @@ class ContactManager;
 
 class RoboSimian {
   public:
-    RoboSimian(chrono::ChMaterialSurface::ContactMethod contact_method, bool fixed = false);
-    RoboSimian(chrono::ChSystem* system, bool fixed = false);
+    RoboSimian(chrono::ChMaterialSurface::ContactMethod contact_method, bool has_sled = false, bool fixed = false);
+    RoboSimian(chrono::ChSystem* system, bool has_sled = false, bool fixed = false);
     ~RoboSimian();
 
     chrono::ChSystem* GetSystem() { return m_system; }
@@ -200,6 +209,7 @@ class RoboSimian {
     void SetActuationMode(ActuationMode mode) { m_mode = mode; }
 
     void SetVisualizationTypeChassis(VisualizationType vis);
+    void SetVisualizationTypeSled(VisualizationType vis);
     void SetVisualizationTypeLimbs(VisualizationType vis);
     void SetVisualizationTypeLimb(LimbID id, VisualizationType vis);
     void SetVisualizationTypeWheels(VisualizationType vis);
@@ -211,7 +221,7 @@ class RoboSimian {
     void ReportContacts();
 
   private:
-    void Create(bool fixed);
+    void Create(bool has_sled, bool fixed);
 
     chrono::ChSystem* m_system;  ///< pointer to the Chrono system
     bool m_owns_system;          ///< true if system created at construction
@@ -219,6 +229,7 @@ class RoboSimian {
     ActuationMode m_mode;
 
     std::shared_ptr<Chassis> m_chassis;          ///< robot chassis
+    std::shared_ptr<Sled> m_sled;                ///< optional sled attached to chassis
     std::vector<std::shared_ptr<Limb>> m_limbs;  ///< robot limbs
     ////std::shared_ptr<WheelDD> m_wheel_left;       ///< left DD wheel
     ////std::shared_ptr<WheelDD> m_wheel_right;      ///< right DD wheel

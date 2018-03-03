@@ -48,12 +48,13 @@ int main(int argc, char* argv[]) {
     my_sys.ChangeSolverType(SolverType::BB);
 
     // Create the robot
-    robosimian::RoboSimian robot(&my_sys, true);
+    robosimian::RoboSimian robot(&my_sys, true, true);
 
     ////robot.Initialize(ChCoordsys<>(ChVector<>(0, 0, 0), QUNIT));
     robot.Initialize(ChCoordsys<>(ChVector<>(0, 0, 0), Q_from_AngX(CH_C_PI)));
 
     robot.SetVisualizationTypeChassis(robosimian::VisualizationType::MESH);
+    robot.SetVisualizationTypeSled(robosimian::VisualizationType::MESH);
     robot.SetVisualizationTypeLimbs(robosimian::VisualizationType::MESH);
 
     // Initialize OpenGL
