@@ -1,4 +1,3 @@
-#include <omp.h>
 #include <cmath>
 #include <cstdio>
 #include <vector>
@@ -50,6 +49,63 @@ class EventReceiver : public irr::IEventReceiver {
     irrlicht::ChIrrApp m_app;
 };
 
+class RayCaster {
+  public:
+    RayCaster(ChSystem* sys, const ChFrame<>& origin, const ChVector2<>& dims, double spacing);
+
+    const std::vector<ChVector<>>& GetPoints() const { return m_points; }
+
+    void Update();
+
+  private:
+    ChSystem* m_sys;
+    ChFrame<> m_origin;
+    ChVector2<> m_dims;
+    double m_spacing;
+    std::shared_ptr<ChBody> m_body;
+    std::shared_ptr<ChGlyphs> m_glyphs;
+    std::vector<ChVector<>> m_points;
+};
+
+RayCaster::RayCaster(ChSystem* sys, const ChFrame<>& origin, const ChVector2<>& dims, double spacing)
+    : m_sys(sys), m_origin(origin), m_dims(dims), m_spacing(spacing) {
+    m_body = std::shared_ptr<ChBody>(sys->NewBody());
+    m_body->SetBodyFixed(true);
+    m_body->SetCollide(false);
+    sys->AddBody(m_body);
+
+    m_glyphs = std::make_shared<ChGlyphs>();
+    m_glyphs->SetGlyphsSize(0.01);
+    m_glyphs->SetZbufferHide(true);
+    m_glyphs->SetDrawMode(ChGlyphs::GLYPH_POINT);
+    m_body->AddAsset(m_glyphs);
+}
+
+void RayCaster::Update() {
+    m_points.clear();
+
+    ChVector<> dir = m_origin.GetA().Get_A_Zaxis();
+    int nx = static_cast<int>(std::round(m_dims.x() / m_spacing));
+    int ny = static_cast<int>(std::round(m_dims.y() / m_spacing));
+    for (int ix = 0; ix < nx; ix++) {
+        for (int iy = 0; iy < ny; iy++) {
+            double x_local = -0.5 * m_dims.x() + ix * m_spacing;
+            double y_local = -0.5 * m_dims.y() + iy * m_spacing;
+            ChVector<> from = m_origin.TransformPointLocalToParent(ChVector<>(x_local, y_local, 0.0));
+            ChVector<> to = from + dir * 100;
+            collision::ChCollisionSystem::ChRayhitResult result;
+            m_sys->GetCollisionSystem()->RayHit(from, to, result);
+            if (result.hit)
+                m_points.push_back(result.abs_hitPoint);
+        }
+    }
+
+    m_glyphs->Reserve(0);
+    for (unsigned int id = 0; id < m_points.size(); id++) {
+        m_glyphs->SetGlyphPoint(id, m_points[id], ChColor(1, 1, 0));
+    }
+}
+
 int main(int argc, char* argv[]) {
     // Create system
     ////ChSystemSMC my_sys;
@@ -73,6 +129,10 @@ int main(int argc, char* argv[]) {
     ////robot.SetVisualizationTypeLimbs(robosimian::VisualizationType::NONE);
     ////robot.SetVisualizationTypeWheels(robosimian::VisualizationType::PRIMITIVES);
 
+    // Cast rays into collision models
+    ////RayCaster caster(&my_sys, ChFrame<>(ChVector<>(2, 0, -1), Q_from_AngY(-CH_C_PI_2)), ChVector2<>(2.5, 2.5), 0.02);
+    ////RayCaster caster(&my_sys, ChFrame<>(ChVector<>(0, -2, -1), Q_from_AngX(-CH_C_PI_2)), ChVector2<>(2.5, 2.5), 0.02);
+
     // Create the visualization window
     irrlicht::ChIrrApp application(&my_sys, L"RoboSimian", irr::core::dimension2d<irr::u32>(800, 600), false, true);
     irrlicht::ChIrrWizard::add_typical_Logo(application.GetDevice());
@@ -90,6 +150,8 @@ int main(int argc, char* argv[]) {
     int sim_frame = 0;
 
     while (application.GetDevice()->run()) {
+        ////caster.Update();
+
         application.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
         application.DrawAll();
         ////irrlicht::ChIrrTools::drawAllCOGs(my_sys, application.GetVideoDriver(), 1);
