@@ -15,10 +15,12 @@ using namespace chrono::collision;
 
 double time_step = 1e-3;
 
+// =============================================================================
+
 class EventReceiver : public irr::IEventReceiver {
   public:
     EventReceiver(robosimian::RoboSimian& robot, irrlicht::ChIrrApp& app)
-        : m_robot(robot), m_app(app), m_vis(robosimian::VisualizationType::PRIMITIVES) {}
+        : m_robot(robot), m_app(app), m_vis(robosimian::VisualizationType::COLLISION) {}
 
     virtual bool OnEvent(const irr::SEvent& event) {
         if (event.EventType != irr::EET_KEY_INPUT_EVENT)
@@ -26,7 +28,7 @@ class EventReceiver : public irr::IEventReceiver {
         if (!event.KeyInput.PressedDown) {
             switch (event.KeyInput.Key) {
                 case irr::KEY_KEY_C:
-                    m_vis = (m_vis == robosimian::VisualizationType::MESH ? robosimian::VisualizationType::PRIMITIVES
+                    m_vis = (m_vis == robosimian::VisualizationType::MESH ? robosimian::VisualizationType::COLLISION
                                                                           : robosimian::VisualizationType::MESH);
 
                     m_robot.SetVisualizationTypeChassis(m_vis);
@@ -48,6 +50,8 @@ class EventReceiver : public irr::IEventReceiver {
     robosimian::VisualizationType m_vis;
     irrlicht::ChIrrApp m_app;
 };
+
+// =============================================================================
 
 class RayCaster {
   public:
@@ -106,16 +110,22 @@ void RayCaster::Update() {
     }
 }
 
+// =============================================================================
+
 int main(int argc, char* argv[]) {
     // Create system
-    ////ChSystemSMC my_sys;
-    ChSystemNSC my_sys;
+
+    ChSystemSMC my_sys;
+    ////ChSystemNSC my_sys;
+
+    my_sys.SetMaxItersSolverSpeed(200);
+    if (my_sys.GetContactMethod() == ChMaterialSurface::NSC)
+        my_sys.SetSolverType(ChSolver::Type::BARZILAIBORWEIN);
+
     my_sys.Set_G_acc(ChVector<double>(0, 0, -9.8));
     ////my_sys.Set_G_acc(ChVector<double>(0, 0, 0));
 
-    my_sys.SetMaxItersSolverSpeed(200);
-    my_sys.SetMaxItersSolverStab(200);
-    my_sys.SetSolverType(ChSolver::Type::BARZILAIBORWEIN);
+    // Create RoboSimian robot
 
     robosimian::RoboSimian robot(&my_sys, true, true);
     ////robot.Initialize(ChCoordsys<>(ChVector<>(0, 0, 0), QUNIT));
@@ -130,10 +140,12 @@ int main(int argc, char* argv[]) {
     ////robot.SetVisualizationTypeWheels(robosimian::VisualizationType::PRIMITIVES);
 
     // Cast rays into collision models
+    
     ////RayCaster caster(&my_sys, ChFrame<>(ChVector<>(2, 0, -1), Q_from_AngY(-CH_C_PI_2)), ChVector2<>(2.5, 2.5), 0.02);
     ////RayCaster caster(&my_sys, ChFrame<>(ChVector<>(0, -2, -1), Q_from_AngX(-CH_C_PI_2)), ChVector2<>(2.5, 2.5), 0.02);
 
     // Create the visualization window
+    
     irrlicht::ChIrrApp application(&my_sys, L"RoboSimian", irr::core::dimension2d<irr::u32>(800, 600), false, true);
     irrlicht::ChIrrWizard::add_typical_Logo(application.GetDevice());
     irrlicht::ChIrrWizard::add_typical_Sky(application.GetDevice());
@@ -147,6 +159,7 @@ int main(int argc, char* argv[]) {
     application.AssetUpdateAll();
 
     // Run simulation for specified time
+    
     int sim_frame = 0;
 
     while (application.GetDevice()->run()) {

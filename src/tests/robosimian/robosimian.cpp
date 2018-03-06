@@ -372,11 +372,11 @@ void RoboSimian::Create(bool has_sled, bool fixed) {
     ////m_wheel_left = std::make_shared<WheelDD>("dd_wheel_left", 2, m_system);
     ////m_wheel_right = std::make_shared<WheelDD>("dd_wheel_right", 3, m_system);
 
-    // Default visualization: PRIMITIVES
-    SetVisualizationTypeChassis(VisualizationType::PRIMITIVES);
-    SetVisualizationTypeSled(VisualizationType::PRIMITIVES);
-    SetVisualizationTypeLimbs(VisualizationType::PRIMITIVES);
-    SetVisualizationTypeWheels(VisualizationType::PRIMITIVES);
+    // Default visualization: COLLISION shapes
+    SetVisualizationTypeChassis(VisualizationType::COLLISION);
+    SetVisualizationTypeSled(VisualizationType::COLLISION);
+    SetVisualizationTypeLimbs(VisualizationType::COLLISION);
+    SetVisualizationTypeWheels(VisualizationType::COLLISION);
 }
 
 void RoboSimian::Initialize(const ChCoordsys<>& pos) {
@@ -386,13 +386,13 @@ void RoboSimian::Initialize(const ChCoordsys<>& pos) {
         m_sled->Initialize(m_chassis->m_body, ChVector<>(0.0, 0.0, 0.21), ChVector<>(1.570796, 0, 0));
 
     m_limbs[FR]->Initialize(m_chassis->m_body, ChVector<>(+0.29326, +0.20940, 0.03650),
-                            ChVector<>(0.00000, -1.57080, -0.26180), m_mode);
+                            ChVector<>(0.00000, -1.57080, -0.26180), CollisionFamily::LIMB_FR, m_mode);
     m_limbs[RR]->Initialize(m_chassis->m_body, ChVector<>(-0.29326, +0.20940, 0.03650),
-                            ChVector<>(0.00000, -1.57080, +0.26180), m_mode);
+                            ChVector<>(0.00000, -1.57080, +0.26180), CollisionFamily::LIMB_RR, m_mode);
     m_limbs[RL]->Initialize(m_chassis->m_body, ChVector<>(-0.29326, -0.20940, 0.03650),
-                            ChVector<>(0.00000, -1.57080, 2.87979), m_mode);
+                            ChVector<>(0.00000, -1.57080, 2.87979), CollisionFamily::LIMB_RL, m_mode);
     m_limbs[FL]->Initialize(m_chassis->m_body, ChVector<>(+0.29326, -0.20940, 0.03650),
-                            ChVector<>(0.00000, -1.57080, 3.40339), m_mode);
+                            ChVector<>(0.00000, -1.57080, 3.40339), CollisionFamily::LIMB_FL, m_mode);
 
     ////m_wheel_left->Initialize(m_chassis->m_body, ChVector<>(-0.42943, -0.19252, 0.06380),
     ////                         ChVector<>(0.00000, +1.57080, -1.57080));
@@ -454,7 +454,7 @@ void Part::AddVisualizationAssets(VisualizationType vis) {
     if (vis == VisualizationType::MESH) {
         std::string vis_mesh_file = "robosimian/obj/" + m_mesh_name + ".obj";
         geometry::ChTriangleMeshConnected trimesh;
-        trimesh.LoadWavefrontMesh(GetChronoDataFile(vis_mesh_file), false, false);
+        trimesh.LoadWavefrontMesh(GetChronoDataFile(vis_mesh_file), true, false);
         //// HACK: a trimesh visual asset ignores transforms! Explicitly offset vertices.
         trimesh.Transform(m_offset, ChMatrix33<>(1));
         auto trimesh_shape = std::make_shared<ChTriangleMeshShape>();
@@ -493,9 +493,23 @@ void Part::AddVisualizationAssets(VisualizationType vis) {
         sphere_shape->Pos = sphere.m_pos;
         m_body->AddAsset(sphere_shape);
     }
+
+    for (auto mesh : m_meshes) {
+        std::string vis_mesh_file = "robosimian/obj/" + mesh.m_name + ".obj";
+        geometry::ChTriangleMeshConnected trimesh;
+        trimesh.LoadWavefrontMesh(GetChronoDataFile(vis_mesh_file), true, false);
+        //// HACK: a trimesh visual asset ignores transforms! Explicitly offset vertices.
+        trimesh.Transform(mesh.m_pos, ChMatrix33<>(mesh.m_rot));
+        auto trimesh_shape = std::make_shared<ChTriangleMeshShape>();
+        trimesh_shape->SetMesh(trimesh);
+        trimesh_shape->SetName(mesh.m_name);
+        ////trimesh_shape->Pos = m_offset;
+        trimesh_shape->SetStatic(true);
+        m_body->AddAsset(trimesh_shape);
+    }
 }
 
-void Part::AddCollisionShapes(int collision_family) {
+void Part::AddCollisionShapes(CollisionFamily collision_family) {
     m_body->GetCollisionModel()->ClearModel();
 
     for (auto sphere : m_spheres) {
@@ -508,12 +522,20 @@ void Part::AddCollisionShapes(int collision_family) {
     for (auto cyl : m_cylinders) {
         m_body->GetCollisionModel()->AddCylinder(cyl.m_radius, cyl.m_radius, cyl.m_length / 2, cyl.m_pos, cyl.m_rot);
     }
+    for (auto mesh : m_meshes) {
+        std::string vis_mesh_file = "robosimian/obj/" + mesh.m_name + ".obj";
+        geometry::ChTriangleMeshConnected trimesh;
+        trimesh.LoadWavefrontMesh(GetChronoDataFile(vis_mesh_file), false, false);
+        if (mesh.m_convex) {
+            m_body->GetCollisionModel()->AddConvexHull(trimesh.getCoordsVertices(), mesh.m_pos, mesh.m_rot);
+        } else {
+            m_body->GetCollisionModel()->AddTriangleMesh(trimesh, false, false, mesh.m_pos, mesh.m_rot, 0.01);
+        }
+    }
 
     m_body->GetCollisionModel()->BuildModel();
 
-    // Note: collision_family is either 0 or 1
     m_body->GetCollisionModel()->SetFamily(collision_family);
-    m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(1 - collision_family);
 
     // Note: call this AFTER setting the collision family (required for Chrono::Parallel)
     m_body->SetCollide(true);
@@ -571,7 +593,12 @@ Chassis::Chassis(const std::string& name, ChSystem* system, bool fixed) : Part(n
 void Chassis::Initialize(const ChCoordsys<>& pos) {
     m_body->SetFrame_REF_to_abs(ChFrame<>(pos));
 
-    AddCollisionShapes(0);
+    AddCollisionShapes(CollisionFamily::CHASSIS);
+    m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(CollisionFamily::LIMB_FR);
+    m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(CollisionFamily::LIMB_RR);
+    m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(CollisionFamily::LIMB_RL);
+    m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(CollisionFamily::LIMB_FL);
+    m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(CollisionFamily::SLED);
 }
 
 // =============================================================================
@@ -589,9 +616,10 @@ Sled::Sled(const std::string& name, chrono::ChSystem* system) : Part(name, syste
     m_body->SetInertiaXY(inertia_xy);
     system->Add(m_body);
 
-    m_cylinders.push_back(CylinderShape(ChVector<>(-0.025, 0, 0), Q_from_AngX(CH_C_PI_2), 0.05, 0.145));
+    //// TODO: create a convex collision mesh for the sled
+    m_meshes.push_back(MeshShape(ChVector<>(0, 0, 0), QUNIT, "robosim_sled", true));
 
-    m_mesh_name = "robosim_sled";
+    m_mesh_name = "robosim_sled_new";
     m_offset = ChVector<>(0, 0, 0);
     m_color = ChColor(0.7f, 0.7f, 0.7f);
 
@@ -604,7 +632,11 @@ void Sled::Initialize(std::shared_ptr<ChBodyAuxRef> chassis, const ChVector<>& x
     ChFrame<> X_GC = X_GP * X_PC;                            // global -> child
     m_body->SetFrame_REF_to_abs(X_GC);
 
-    AddCollisionShapes(1);
+    AddCollisionShapes(CollisionFamily::SLED);
+    m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(CollisionFamily::LIMB_FR);
+    m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(CollisionFamily::LIMB_RR);
+    m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(CollisionFamily::LIMB_RL);
+    m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(CollisionFamily::LIMB_FL);
 
     // Add joint (weld)
     auto joint = std::make_shared<ChLinkLockLock>();
@@ -642,7 +674,9 @@ void WheelDD::Initialize(std::shared_ptr<ChBodyAuxRef> chassis, const ChVector<>
     ChFrame<> X_GC = X_GP * X_PC;                            // global -> child
     m_body->SetFrame_REF_to_abs(X_GC);
 
-    AddCollisionShapes(1);
+    AddCollisionShapes(CollisionFamily::WHEEL_DD);
+    m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(CollisionFamily::CHASSIS);
+    m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(CollisionFamily::SLED);
 
     // Add joint
     auto joint = std::make_shared<ChLinkLockRevolute>();
@@ -687,6 +721,7 @@ Limb::Limb(const std::string& name, LimbID id, const LinkData data[], ChSystem* 
 void Limb::Initialize(std::shared_ptr<ChBodyAuxRef> chassis,
                       const ChVector<>& xyz,
                       const ChVector<>& rpy,
+                      CollisionFamily collision_family,
                       ActuationMode mode) {
     // Set absolute position of link0
     auto parent_body = chassis;                                  // parent body
@@ -714,9 +749,9 @@ void Limb::Initialize(std::shared_ptr<ChBodyAuxRef> chassis,
         if (i == 0)
             parent_body = chassis;
 
-        // Place parent and child bodies in different collision families
-        int family = (i + 1) % 2;
-        child->AddCollisionShapes(family);
+        // Place all links in the same collision family
+        child->AddCollisionShapes(collision_family);
+        child_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(collision_family);
 
         // If the current joint is fixed, create a lock-lock joint
         if (joints[i].fixed) {

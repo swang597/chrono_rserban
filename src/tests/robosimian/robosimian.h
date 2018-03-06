@@ -35,9 +35,19 @@ enum LimbID {
 };
 
 enum class VisualizationType {
-    NONE,        ///< no visualization
-    PRIMITIVES,  ///< use primitve shapes
-    MESH         ///< use meshes
+    NONE,       ///< no visualization
+    COLLISION,  ///< render primitive collision shapes
+    MESH        ///< render meshes
+};
+
+enum CollisionFamily {
+    LIMB_FR = 1,  ///< front-right limb
+    LIMB_RR = 2,  ///< rear-right limb
+    LIMB_RL = 3,  ///< rear-left limb
+    LIMB_FL = 4,  ///< front-left limb
+    CHASSIS = 5,  ///< chassis (torso)
+    SLED = 6,     ///< sled
+    WHEEL_DD = 7  ///< direct-drive wheels
 };
 
 enum class ActuationMode {
@@ -69,6 +79,15 @@ struct CylinderShape {
     double m_length;
 };
 
+struct MeshShape {
+    MeshShape(const chrono::ChVector<>& pos, const chrono::ChQuaternion<>& rot, const std::string& name, bool convex)
+        : m_pos(pos), m_rot(rot), m_name(name), m_convex(convex) {}
+    chrono::ChVector<> m_pos;
+    chrono::ChQuaternion<> m_rot;
+    std::string m_name;
+    bool m_convex;
+};
+
 class Part {
   public:
     Part(const std::string& name, chrono::ChSystem* system);
@@ -80,13 +99,14 @@ class Part {
 
   protected:
     void AddVisualizationAssets(VisualizationType vis);
-    void AddCollisionShapes(int collision_family);
+    void AddCollisionShapes(CollisionFamily collision_family);
 
     std::string m_name;                            ///< subsystem name
     std::shared_ptr<chrono::ChBodyAuxRef> m_body;  ///< rigid body
-    std::vector<BoxShape> m_boxes;                 ///< set of primitive boxes (collision and visualization)
-    std::vector<SphereShape> m_spheres;            ///< set of primitive spheres (collision and visualization)
-    std::vector<CylinderShape> m_cylinders;        ///< set of primitive cylinders (collision and visualization)
+    std::vector<BoxShape> m_boxes;                 ///< set of collision boxes
+    std::vector<SphereShape> m_spheres;            ///< set of collision spheres
+    std::vector<CylinderShape> m_cylinders;        ///< set of collision cylinders
+    std::vector<MeshShape> m_meshes;               ///< set of collision meshes
     std::string m_mesh_name;                       ///< visualization mesh name
     chrono::ChVector<> m_offset;                   ///< offset for visualization mesh
     chrono::ChColor m_color;                       ///< visualization asset color
@@ -181,6 +201,7 @@ class Limb {
     void Initialize(std::shared_ptr<chrono::ChBodyAuxRef> chassis,  ///< chassis body
                     const chrono::ChVector<>& xyz,                  ///< location (relative to chassis)
                     const chrono::ChVector<>& rpy,                  ///< roll-pitch-yaw (relative to chassis)
+                    CollisionFamily collision_family,               ///< collision family
                     ActuationMode mode                              ///< actuation mode (angle, speed, or torque)
     );
 
