@@ -47,39 +47,39 @@ const Link FtsLink("robosim_fts",
 const Link PitchLink("robosim_pitch_link",
                      ChVector<>(0, 0, 0),
                      ChColor(0.4f, 0.7f, 0.4f),
-                     0.429,
+                     0.428770,
                      ChVector<>(-0.050402, 0.012816, 0.000000),
-                     ChVector<>(0.000741, 0.002044, 0.001885),
-                     ChVector<>(-0.000215, 0.000000, 0.000000),
+                     ChVector<>(0.000670, 0.000955, 0.000726),
+                     ChVector<>(0.000062, 0.000000, 0.000000),
                      {CylinderShape(ChVector<>(-0.07, 0, 0), Q_from_AngZ(CH_C_PI_2), 0.055, 0.07)});
 
 const Link RollLink("robosim_roll_link",
                     ChVector<>(0, 0, 0),
                     ChColor(0.7f, 0.4f, 0.4f),
-                    3.975000,
-                    ChVector<>(0.067354, -0.096472, 0.000262),
-                    ChVector<>(0.044712, 0.033445, 0.074293),
-                    ChVector<>(-0.030354, 0.000012, -0.000141),
+                    4.078540,
+                    ChVector<>(0.066970, -0.090099, -0.000084),
+                    ChVector<>(0.010580, 0.025014, 0.031182),
+                    ChVector<>(-0.008765, -0.000002, 0.000007),
                     {CylinderShape(ChVector<>(0.065, -0.12, 0), Q_from_AngZ(CH_C_PI_2), 0.055, 0.24),
                      CylinderShape(ChVector<>(0.0, -0.035, 0), QUNIT, 0.055, 0.075)});
 
 const Link RollLinkLast("robosim_roll_link",
                         ChVector<>(0, 0, 0),
                         ChColor(0.7f, 0.4f, 0.4f),
-                        3.975000,
-                        ChVector<>(0.067354, -0.096472, 0.000262),
-                        ChVector<>(0.044712, 0.033445, 0.074293),
-                        ChVector<>(-0.030354, 0.000012, -0.000141),
+                        4.078540,
+                        ChVector<>(0.066970, -0.090099, -0.000084),
+                        ChVector<>(0.010580, 0.025014, 0.031182),
+                        ChVector<>(-0.008765, -0.000002, 0.000007),
                         {CylinderShape(ChVector<>(0.105, -0.12, 0), Q_from_AngZ(CH_C_PI_2), 0.055, 0.32),
                          CylinderShape(ChVector<>(0.0, -0.035, 0), QUNIT, 0.055, 0.075)});
 
 const Link RollLinkLastWheel("robosim_roll_link_w_wheel",
                              ChVector<>(0, 0, 0),
                              ChColor(0.7f, 0.4f, 0.4f),
-                             3.975000,
-                             ChVector<>(0.067354, -0.096472, 0.000262),
-                             ChVector<>(0.044712, 0.033445, 0.074293),
-                             ChVector<>(-0.030354, 0.000012, -0.000141),
+                             4.078540,
+                             ChVector<>(0.066970, -0.090099, -0.000084),
+                             ChVector<>(0.010580, 0.025014, 0.031182),
+                             ChVector<>(-0.008765, -0.000002, 0.000007),
                              {CylinderShape(ChVector<>(0.105, -0.12, 0), Q_from_AngZ(CH_C_PI_2), 0.055, 0.32),
                               CylinderShape(ChVector<>(0.0, -0.035, 0), QUNIT, 0.055, 0.075),
                               CylinderShape(ChVector<>(0.0, -0.19, 0), QUNIT, 0.080, 0.0375)});
@@ -87,8 +87,8 @@ const Link RollLinkLastWheel("robosim_roll_link_w_wheel",
 const Link FtAdapterLink("robosim_ft_adapter",
                          ChVector<>(0, 0, 0),
                          ChColor(0.4f, 0.4f, 0.4f),
-                         0.2242,
-                         ChVector<>(-0.00531, -0.00060, -0.00045),
+                         0.253735,
+                         ChVector<>(-0.00531, -0.00060, -0.001873),
                          ChVector<>(0.00042, 0.00024, 0.00023),
                          ChVector<>(0, 0, 0),
                          {});
@@ -96,9 +96,9 @@ const Link FtAdapterLink("robosim_ft_adapter",
 const Link FtLink("robosim_force_torque_sensor",
                   ChVector<>(0, 0, 0),
                   ChColor(0.4f, 0.4f, 0.4f),
-                  0.1492,
-                  ChVector<>(-0.00037, 0.000102, 0.000168),
-                  ChVector<>(0.000065, 0.000039, 0.000038),
+                  0.195418,
+                  ChVector<>(-0.000135, 0.000118, 0.000084),
+                  ChVector<>(0.000086, 0.000056, 0.000057),
                   ChVector<>(0, 0, 0),
                   {});
 
@@ -106,17 +106,17 @@ const Link WheelMountLink("robosim_wheel_mount",
                           ChVector<>(0.12024, 0, 0),
                           ChColor(0.4f, 0.7f, 0.4f),
                           3.1775,
-                          ChVector<>(0.029692, 0.005260, -0.000088),
-                          ChVector<>(0.005418, 0.013779, 0.014295),
-                          ChVector<>(0.001198, -0.000036, 0.000025),
+                          ChVector<>(-0.005260, 0.042308, 0.000088),
+                          ChVector<>(0.010977, 0.005330, 0.011405),
+                          ChVector<>(0.000702, 0.000026, -0.000028),
                           {CylinderShape(ChVector<>(0.12024, 0.02, 0), QUNIT, 0.0545, 0.175)});
 
 const Link WheelLink("robosim_wheel",
                      ChVector<>(0, 0, 0),
                      ChColor(0.3f, 0.3f, 0.3f),
-                     1.2,
-                     ChVector<>(0.0, 0.0, -0.000025),
-                     ChVector<>(0.005822, 0.005822, 0.008805),
+                     1.499326,
+                     ChVector<>(0.0, 0.0, -0.000229),
+                     ChVector<>(0.006378, 0.006377, 0.009155),
                      ChVector<>(0, 0, 0),
                      {CylinderShape(ChVector<>(0, 0, 0), Q_from_AngX(CH_C_PI_2), 0.12, 0.123)});
 
@@ -199,6 +199,8 @@ ChQuaternion<> rpy2quat(const ChVector<>& rpy) {
     return Q_from_AngZ(rpy.z()) * Q_from_AngY(rpy.y()) * Q_from_AngX(rpy.x());
 }
 
+// =============================================================================
+
 // Calculate a coordinate system with the Z direction along 'axis' (given in 'base').
 // Implicit assumption: 'axis' is always along X, Y, or Z.
 ChCoordsys<> calcJointFrame(const ChFrame<>& base, const ChVector<>& axis) {
@@ -248,17 +250,13 @@ class InertiaConverter {
         m_inertia_xy.y() = Jc.Get33Element(0, 2);
         m_inertia_xy.z() = Jc.Get33Element(1, 2);
 
-        std::cout << mass <<                                                            // mass
-            " " << com.x() << "  " << com.y() << " " << com.z() <<                      // COM offset
-            " " << inertia_xx.x() << " " << inertia_xx.y() << " " << inertia_xx.z() <<  // moments (reference frame)
-            " " << inertia_xy.x() << " " << inertia_xy.y() << " " << inertia_xy.z() <<  // products (reference frame)
-            " " << m_inertia_xx.x() << " " << m_inertia_xx.y() << " " << m_inertia_xx.z() <<  // moments (centroidal)
-            " " << m_inertia_xy.x() << " " << m_inertia_xy.y() << " " << m_inertia_xy.z() <<  // products (centroidal)
-            std::endl;
-
-        //// TODO: remove this once all inertias are fixed in URDF specification
-        m_inertia_xx = inertia_xx;
-        m_inertia_xy = inertia_xy;
+        ////std::cout << mass <<                                                            // mass
+        ////    " " << com.x() << "  " << com.y() << " " << com.z() <<                      // COM offset
+        ////    " " << inertia_xx.x() << " " << inertia_xx.y() << " " << inertia_xx.z() <<  // moments (reference frame)
+        ////    " " << inertia_xy.x() << " " << inertia_xy.y() << " " << inertia_xy.z() <<  // products (reference frame)
+        ////    " " << m_inertia_xx.x() << " " << m_inertia_xx.y() << " " << m_inertia_xx.z() <<  // moments (centroidal)
+        ////    " " << m_inertia_xy.x() << " " << m_inertia_xy.y() << " " << m_inertia_xy.z() <<  // products (centroidal)
+        ////    std::endl;
     }
 
     ChVector<> m_inertia_xx;  ///< moments of inertia (centroidal)
@@ -273,8 +271,6 @@ class ContactManager : public ChContactContainer::ReportContactCallback {
     void Process(RoboSimian* robot);
 
   private:
-    /// Callback, used to report contact points already added to the container.
-    /// If it returns false, the contact scanning will be stopped.
     virtual bool OnReportContact(const ChVector<>& pA,
                                  const ChVector<>& pB,
                                  const ChMatrix33<>& plane_coord,
@@ -526,17 +522,16 @@ void Part::AddCollisionShapes(int collision_family) {
 // =============================================================================
 
 Chassis::Chassis(const std::string& name, ChSystem* system, bool fixed) : Part(name, system) {
-    double mass = 40.0;
-    ChVector<> com(-0.000820, -0.002060, -0.021800);
-    ChVector<> inertia_xx(0.248970, 0.703230, 0.772560);
-    ChVector<> inertia_xy(0, 0, 0.001820);
-    InertiaConverter ic(mass, com, inertia_xx, inertia_xy);
+    double mass = 46.658335;
+    ChVector<> com(0.040288, -0.001937, -0.073574);
+    ChVector<> inertia_xx(1.272134, 2.568776, 3.086984);
+    ChVector<> inertia_xy(0.008890, -0.13942, 0.000325);
 
     m_body->SetIdentifier(0);
     m_body->SetMass(mass);
     m_body->SetFrame_COG_to_REF(ChFrame<>(com, ChQuaternion<>(1, 0, 0, 0)));
-    m_body->SetInertiaXX(ic.m_inertia_xx);
-    m_body->SetInertiaXY(ic.m_inertia_xy);
+    m_body->SetInertiaXX(inertia_xx);
+    m_body->SetInertiaXY(inertia_xy);
     m_body->SetBodyFixed(fixed);
     system->Add(m_body);
 
@@ -582,22 +577,21 @@ void Chassis::Initialize(const ChCoordsys<>& pos) {
 // =============================================================================
 
 Sled::Sled(const std::string& name, chrono::ChSystem* system) : Part(name, system) {
-    double mass = 2.769;
+    double mass = 2.768775;
     ChVector<> com(0.000000, 0.000000, 0.146762);
-    ChVector<> inertia_xx(0.0944943, 0.142064, 0.105853);
-    ChVector<> inertia_xy(0, 0, 0);
-    InertiaConverter ic(mass, com, inertia_xx, inertia_xy);
+    ChVector<> inertia_xx(0.034856, 0.082427, 0.105853);
+    ChVector<> inertia_xy(0.000007, -0.000002, 0);
 
     m_body->SetIdentifier(1);
     m_body->SetMass(mass);
     m_body->SetFrame_COG_to_REF(ChFrame<>(com, ChQuaternion<>(1, 0, 0, 0)));
-    m_body->SetInertiaXX(ic.m_inertia_xx);
-    m_body->SetInertiaXY(ic.m_inertia_xy);
+    m_body->SetInertiaXX(inertia_xx);
+    m_body->SetInertiaXY(inertia_xy);
     system->Add(m_body);
 
     m_cylinders.push_back(CylinderShape(ChVector<>(-0.025, 0, 0), Q_from_AngX(CH_C_PI_2), 0.05, 0.145));
 
-    m_mesh_name = "robosim_sled_new";
+    m_mesh_name = "robosim_sled";
     m_offset = ChVector<>(0, 0, 0);
     m_color = ChColor(0.7f, 0.7f, 0.7f);
 
@@ -625,13 +619,12 @@ WheelDD::WheelDD(const std::string& name, int id, chrono::ChSystem* system) : Pa
     ChVector<> com(0, 0, 0);
     ChVector<> inertia_xx(0.01, 0.01, 0.02);
     ChVector<> inertia_xy(0, 0, 0);
-    InertiaConverter ic(mass, com, inertia_xx, inertia_xy);
 
     m_body->SetIdentifier(id);
     m_body->SetMass(mass);
     m_body->SetFrame_COG_to_REF(ChFrame<>(com, ChQuaternion<>(1, 0, 0, 0)));
-    m_body->SetInertiaXX(ic.m_inertia_xx);
-    m_body->SetInertiaXY(ic.m_inertia_xy);
+    m_body->SetInertiaXX(inertia_xx);
+    m_body->SetInertiaXY(inertia_xy);
     system->Add(m_body);
 
     m_cylinders.push_back(CylinderShape(ChVector<>(0, 0, 0), Q_from_AngX(CH_C_PI_2), 0.074, 0.038));
@@ -667,13 +660,12 @@ Limb::Limb(const std::string& name, LimbID id, const LinkData data[], ChSystem* 
         ChVector<> com = data[i].link.m_com;
         ChVector<> inertia_xx = data[i].link.m_inertia_xx;
         ChVector<> inertia_xy = data[i].link.m_inertia_xy;
-        InertiaConverter ic(mass, com, inertia_xx, inertia_xy);
 
         link->m_body->SetIdentifier(4 + 4 * id + i);
         link->m_body->SetMass(mass);
         link->m_body->SetFrame_COG_to_REF(ChFrame<>(com, ChQuaternion<>(1, 0, 0, 0)));
-        link->m_body->SetInertiaXX(ic.m_inertia_xx);
-        link->m_body->SetInertiaXY(ic.m_inertia_xy);
+        link->m_body->SetInertiaXX(inertia_xx);
+        link->m_body->SetInertiaXY(inertia_xy);
 
         link->m_mesh_name = data[i].link.m_mesh_name;
         link->m_offset = data[i].link.m_offset;
