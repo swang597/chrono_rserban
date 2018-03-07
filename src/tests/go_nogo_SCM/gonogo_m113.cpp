@@ -62,7 +62,7 @@ using std::endl;
 // -----------------------------------------------------------------------------
 
 // Patch half-dimensions
-double hdimX = 20;//// 250;
+double hdimX = 100;//// 250;
 double hdimY = 2.5;
 
 // Initial number of divisions per unit (m)
@@ -73,7 +73,7 @@ double horizontal_offset = 5;
 double horizontal_pos = hdimX - horizontal_offset;
 
 // Initial vehicle position, orientation, and forward velocity
-ChVector<> initLoc(-horizontal_pos, 0, 0.6);
+ChVector<> initLoc(-horizontal_pos, 0, 0.7);
 ChQuaternion<> initRot(1, 0, 0, 0);
 double initSpeed = 0;
 
@@ -416,6 +416,14 @@ int main(int argc, char* argv[]) {
             break;
         }
 
+#ifdef CHRONO_IRRLICHT
+        if (!app.GetDevice()->run())
+            break;
+
+        app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
+        app.DrawAll();
+#endif
+
         // Extract chassis state
         ChVector<> pv = m113.GetChassisBody()->GetFrame_REF_to_abs().GetPos();
         ChVector<> vv = m113.GetChassisBody()->GetFrame_REF_to_abs().GetPos_dt();
@@ -496,29 +504,29 @@ int main(int argc, char* argv[]) {
         driver.Synchronize(time);
         powertrain.Synchronize(time, throttle_input, driveshaft_speed);
         m113.Synchronize(time, steering_input, braking_input, powertrain_torque, shoe_forces_left, shoe_forces_right);
+#ifdef CHRONO_IRRLICHT
+        app.Synchronize("", steering_input, throttle_input, braking_input);
+#endif
 
         // Advance systems
         driver.Advance(time_step);
         powertrain.Advance(time_step);
         terrain.Advance(time_step);
         m113.Advance(time_step);
+#ifdef CHRONO_IRRLICHT
+        app.Advance(time_step);
+#endif
 
         ////terrain.PrintStepStatistics(cout);
-
-#ifdef CHRONO_IRRLICHT
-        // Render scene
-        app.Advance(time_step);
-        if (sim_frame % 10 == 0) {
-            app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-            app.DrawAll();
-            app.EndScene();
-        }
-#endif
 
         // Update counters.
         time += time_step;
         sim_frame++;
         exec_time += system->GetTimerStep();
+
+#ifdef CHRONO_IRRLICHT
+        app.EndScene();
+#endif
     }
 
     // Final stats
