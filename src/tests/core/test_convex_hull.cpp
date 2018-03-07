@@ -114,7 +114,6 @@ int main(int argc, char* argv[]) {
     ////    ChVector2<>(0.22499999999999998, -0.22916666666666663)       //
     ////};
 
-    // Jarvis: issue when crt=0
     ////std::vector<ChVector2<>> points = {
     ////    ChVector2<>(-0.18750000000000000, 2.5000000000000000),   //
     ////    ChVector2<>(0.18749999999999994, 2.5000000000000000),    //
@@ -145,9 +144,26 @@ int main(int argc, char* argv[]) {
     ////    ChVector2<>(0.11249999999999993, 2.4791666666666665)     //
     ////};
 
-    ////std::vector<ChVector2<>> points = { ChVector2<>(0.18749999999999994, -0.41666666666666652),
-    ////    ChVector2<>(0.20624999999999996, -0.39583333333333315),
-    ////    ChVector2<>(0.16874999999999993, -0.43749999999999989) };
+    ////std::vector<ChVector2<>> points = { 
+    ////    ChVector2<>(0.18749999999999994, -0.41666666666666652), //
+    ////    ChVector2<>(0.20624999999999996, -0.39583333333333315), //
+    ////    ChVector2<>(0.16874999999999993, -0.43749999999999989)  //
+    ////};
+
+    ////std::vector<ChVector2<>> points = {
+    ////    ChVector2<>(0.3, 1.1), //
+    ////    ChVector2<>(0.8, 1.1), //
+    ////    ChVector2<>(0.8, 2.1), //
+    ////    ChVector2<>(0.3, 2.1) //
+    ////};
+
+    ////std::vector<ChVector2<>> points = {
+    ////    ChVector2<>(-15.666666666666682, -1.0000000000000004),   //
+    ////    ChVector2<>(-15.666666666666682, -1.1666666666666670),   //
+    ////    ChVector2<>(-15.666666666666682, -1.0833333333333337),   //
+    ////    ChVector2<>(-15.666666666666682, -0.91666666666666696),  //
+    ////    ChVector2<>(-15.666666666666682, -1.2500000000000002)    //
+    ////};
 
     std::string out_dir = "../TEST_convex_hull";
     bool out_dir_exists = path(out_dir).exists();
@@ -159,18 +175,29 @@ int main(int argc, char* argv[]) {
         cout << "Error creating output directory" << endl;
         return 1;
     }
-    utils::CSV_writer csv("\t");
-    csv.stream().setf(std::ios::scientific | std::ios::showpos);
-    csv.stream().precision(6);
+
+    utils::CSV_writer csvP("\t");
+    csvP.stream().setf(std::ios::scientific | std::ios::showpos);
+    csvP.stream().precision(18);
+
+    for (auto p : points) {
+        csvP << p.x() << p.y() << std::endl;
+    }
+    csvP.write_to_file(out_dir + "/points.txt");
+
+    utils::CSV_writer csvH("\t");
+    csvH.stream().setf(std::ios::scientific | std::ios::showpos);
+    csvH.stream().precision(18);
 
     utils::ChConvexHull2D ch(points);
     auto hull = ch.GetHull();
     for (auto p : hull) {
         std::cout << p.x() << " " << p.y() << std::endl;
-        csv << p.x() << p.y() << std::endl;
+        csvH << p.x() << p.y() << std::endl;
     }
-
-    csv.write_to_file(out_dir + "/hull.txt");
+    std::cout << "\nNumber points in hull: " << hull.size() << std::endl;
+    std::cout << "Area: " << ch.GetArea() << "   Perimeter: " << ch.GetPerimeter() << std::endl;
+    csvH.write_to_file(out_dir + "/hull.txt");
 
     return 0;
 }
