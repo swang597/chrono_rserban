@@ -509,7 +509,7 @@ void Part::AddVisualizationAssets(VisualizationType vis) {
     }
 }
 
-void Part::AddCollisionShapes(CollisionFamily collision_family) {
+void Part::AddCollisionShapes() {
     m_body->GetCollisionModel()->ClearModel();
 
     for (auto sphere : m_spheres) {
@@ -534,11 +534,6 @@ void Part::AddCollisionShapes(CollisionFamily collision_family) {
     }
 
     m_body->GetCollisionModel()->BuildModel();
-
-    m_body->GetCollisionModel()->SetFamily(collision_family);
-
-    // Note: call this AFTER setting the collision family (required for Chrono::Parallel)
-    m_body->SetCollide(true);
 }
 
 // =============================================================================
@@ -593,12 +588,17 @@ Chassis::Chassis(const std::string& name, ChSystem* system, bool fixed) : Part(n
 void Chassis::Initialize(const ChCoordsys<>& pos) {
     m_body->SetFrame_REF_to_abs(ChFrame<>(pos));
 
-    AddCollisionShapes(CollisionFamily::CHASSIS);
+    AddCollisionShapes();
+
+    m_body->GetCollisionModel()->SetFamily(CollisionFamily::CHASSIS);
     m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(CollisionFamily::LIMB_FR);
     m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(CollisionFamily::LIMB_RR);
     m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(CollisionFamily::LIMB_RL);
     m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(CollisionFamily::LIMB_FL);
     m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(CollisionFamily::SLED);
+
+    // Note: call this AFTER setting the collision family (required for Chrono::Parallel)
+    m_body->SetCollide(true);
 }
 
 // =============================================================================
@@ -616,10 +616,9 @@ Sled::Sled(const std::string& name, chrono::ChSystem* system) : Part(name, syste
     m_body->SetInertiaXY(inertia_xy);
     system->Add(m_body);
 
-    //// TODO: create a convex collision mesh for the sled
-    m_meshes.push_back(MeshShape(ChVector<>(0, 0, 0), QUNIT, "robosim_sled", true));
+    m_meshes.push_back(MeshShape(ChVector<>(0, 0, 0), QUNIT, "robosim_sled_coll", true));
 
-    m_mesh_name = "robosim_sled_new";
+    m_mesh_name = "robosim_sled";
     m_offset = ChVector<>(0, 0, 0);
     m_color = ChColor(0.7f, 0.7f, 0.7f);
 
@@ -632,11 +631,16 @@ void Sled::Initialize(std::shared_ptr<ChBodyAuxRef> chassis, const ChVector<>& x
     ChFrame<> X_GC = X_GP * X_PC;                            // global -> child
     m_body->SetFrame_REF_to_abs(X_GC);
 
-    AddCollisionShapes(CollisionFamily::SLED);
+    AddCollisionShapes();
+
+    m_body->GetCollisionModel()->SetFamily(CollisionFamily::SLED);
     m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(CollisionFamily::LIMB_FR);
     m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(CollisionFamily::LIMB_RR);
     m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(CollisionFamily::LIMB_RL);
     m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(CollisionFamily::LIMB_FL);
+
+    // Note: call this AFTER setting the collision family (required for Chrono::Parallel)
+    m_body->SetCollide(true);
 
     // Add joint (weld)
     auto joint = std::make_shared<ChLinkLockLock>();
@@ -674,9 +678,14 @@ void WheelDD::Initialize(std::shared_ptr<ChBodyAuxRef> chassis, const ChVector<>
     ChFrame<> X_GC = X_GP * X_PC;                            // global -> child
     m_body->SetFrame_REF_to_abs(X_GC);
 
-    AddCollisionShapes(CollisionFamily::WHEEL_DD);
+    AddCollisionShapes();
+
+    m_body->GetCollisionModel()->SetFamily(CollisionFamily::WHEEL_DD);
     m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(CollisionFamily::CHASSIS);
     m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(CollisionFamily::SLED);
+
+    // Note: call this AFTER setting the collision family (required for Chrono::Parallel)
+    m_body->SetCollide(true);
 
     // Add joint
     auto joint = std::make_shared<ChLinkLockRevolute>();
@@ -749,9 +758,15 @@ void Limb::Initialize(std::shared_ptr<ChBodyAuxRef> chassis,
         if (i == 0)
             parent_body = chassis;
 
-        // Place all links in the same collision family
-        child->AddCollisionShapes(collision_family);
+        // Add contact geometry to child body
+        child->AddCollisionShapes();
+
+        // Place all links from this limb in the same collision family
+        child_body->GetCollisionModel()->SetFamily(collision_family);
         child_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(collision_family);
+
+        // Note: call this AFTER setting the collision family (required for Chrono::Parallel)
+        child_body->SetCollide(true);
 
         // If the current joint is fixed, create a lock-lock joint
         if (joints[i].fixed) {

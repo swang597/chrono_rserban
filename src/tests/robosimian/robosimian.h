@@ -99,7 +99,7 @@ class Part {
 
   protected:
     void AddVisualizationAssets(VisualizationType vis);
-    void AddCollisionShapes(CollisionFamily collision_family);
+    void AddCollisionShapes();
 
     std::string m_name;                            ///< subsystem name
     std::shared_ptr<chrono::ChBodyAuxRef> m_body;  ///< rigid body

@@ -79,7 +79,7 @@ RayCaster::RayCaster(ChSystem* sys, const ChFrame<>& origin, const ChVector2<>& 
     sys->AddBody(m_body);
 
     m_glyphs = std::make_shared<ChGlyphs>();
-    m_glyphs->SetGlyphsSize(0.01);
+    m_glyphs->SetGlyphsSize(0.004);
     m_glyphs->SetZbufferHide(true);
     m_glyphs->SetDrawMode(ChGlyphs::GLYPH_POINT);
     m_body->AddAsset(m_glyphs);
@@ -142,7 +142,7 @@ int main(int argc, char* argv[]) {
     // Cast rays into collision models
     
     ////RayCaster caster(&my_sys, ChFrame<>(ChVector<>(2, 0, -1), Q_from_AngY(-CH_C_PI_2)), ChVector2<>(2.5, 2.5), 0.02);
-    ////RayCaster caster(&my_sys, ChFrame<>(ChVector<>(0, -2, -1), Q_from_AngX(-CH_C_PI_2)), ChVector2<>(2.5, 2.5), 0.02);
+    RayCaster caster(&my_sys, ChFrame<>(ChVector<>(0, -2, -1), Q_from_AngX(-CH_C_PI_2)), ChVector2<>(2.5, 2.5), 0.02);
 
     // Create the visualization window
     
@@ -168,7 +168,6 @@ int main(int argc, char* argv[]) {
         application.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
         application.DrawAll();
         ////irrlicht::ChIrrTools::drawAllCOGs(my_sys, application.GetVideoDriver(), 1);
-        application.EndScene();
 
         double time = my_sys.GetChTime();
         double A = CH_C_PI / 6;
@@ -184,6 +183,8 @@ int main(int argc, char* argv[]) {
         }
 
         sim_frame++;
+
+        application.EndScene();
     }
 
     return 0;
