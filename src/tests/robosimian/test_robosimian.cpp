@@ -128,16 +128,29 @@ int main(int argc, char* argv[]) {
     // Create RoboSimian robot
 
     robosimian::RoboSimian robot(&my_sys, true, true);
+
+    // Control collisions (default: true for sled and wheels only)
+
+    ////robot.SetCollide(robosimian::CollisionFlags::NONE);
+    ////robot.SetCollide(robosimian::CollisionFlags::ALL);
+    ////robot.SetCollide(robosimian::CollisionFlags::LIMBS);
+    ////robot.SetCollide(robosimian::CollisionFlags::CHASSIS | robosimian::CollisionFlags::WHEELS);
+
+    // Set visualization modes (default: all COLLISION)
+
+    ////robot.SetVisualizationTypeChassis(robosimian::VisualizationType::MESH);
+    ////robot.SetVisualizationTypeLimb(robosimian::FL, robosimian::VisualizationType::COLLISION);
+    ////robot.SetVisualizationTypeLimb(robosimian::FR, robosimian::VisualizationType::COLLISION);
+    ////robot.SetVisualizationTypeLimb(robosimian::RL, robosimian::VisualizationType::COLLISION);
+    ////robot.SetVisualizationTypeLimb(robosimian::RR, robosimian::VisualizationType::COLLISION);
+    ////robot.SetVisualizationTypeLimbs(robosimian::VisualizationType::NONE);
+    ////robot.SetVisualizationTypeLimbs(robosimian::VisualizationType::MESH);
+    ////robot.SetVisualizationTypeWheels(robosimian::VisualizationType::COLLISION);
+
+    // Initialize Robosimian robot
+
     ////robot.Initialize(ChCoordsys<>(ChVector<>(0, 0, 0), QUNIT));
     robot.Initialize(ChCoordsys<>(ChVector<>(0, 0, 0), Q_from_AngX(CH_C_PI)));
-
-    ////robot.SetVisualizationTypeChassis(robosimian::VisualizationType::PRIMITIVES);
-    ////robot.SetVisualizationTypeLimb(robosimian::FL, robosimian::VisualizationType::PRIMITIVES);
-    ////robot.SetVisualizationTypeLimb(robosimian::FR, robosimian::VisualizationType::PRIMITIVES);
-    ////robot.SetVisualizationTypeLimb(robosimian::RL, robosimian::VisualizationType::PRIMITIVES);
-    ////robot.SetVisualizationTypeLimb(robosimian::RR, robosimian::VisualizationType::PRIMITIVES);
-    ////robot.SetVisualizationTypeLimbs(robosimian::VisualizationType::NONE);
-    ////robot.SetVisualizationTypeWheels(robosimian::VisualizationType::PRIMITIVES);
 
     // Cast rays into collision models
     

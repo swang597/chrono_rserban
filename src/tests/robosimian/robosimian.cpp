@@ -400,6 +400,18 @@ void RoboSimian::Initialize(const ChCoordsys<>& pos) {
     ////                          ChVector<>(0.00000, -1.57080, -1.57080));
 }
 
+void RoboSimian::SetCollide(int flags) {
+    m_chassis->SetCollide((flags & static_cast<int>(CollisionFlags::CHASSIS)) != 0);
+
+    if (m_sled)
+        m_sled->SetCollide((flags & static_cast<int>(CollisionFlags::SLED)) != 0);
+
+    for (auto limb : m_limbs) {
+        limb->SetCollideLinks((flags & static_cast<int>(CollisionFlags::LIMBS)) != 0);
+        limb->SetCollideWheel((flags & static_cast<int>(CollisionFlags::WHEELS)) != 0);
+    }
+}
+
 void RoboSimian::SetVisualizationTypeChassis(VisualizationType vis) {
     m_chassis->SetVisualizationType(vis);
 }
@@ -538,7 +550,7 @@ void Part::AddCollisionShapes() {
 
 // =============================================================================
 
-Chassis::Chassis(const std::string& name, ChSystem* system, bool fixed) : Part(name, system) {
+Chassis::Chassis(const std::string& name, ChSystem* system, bool fixed) : Part(name, system), m_collide(false) {
     double mass = 46.658335;
     ChVector<> com(0.040288, -0.001937, -0.073574);
     ChVector<> inertia_xx(1.272134, 2.568776, 3.086984);
@@ -598,12 +610,17 @@ void Chassis::Initialize(const ChCoordsys<>& pos) {
     m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(CollisionFamily::SLED);
 
     // Note: call this AFTER setting the collision family (required for Chrono::Parallel)
-    m_body->SetCollide(true);
+    m_body->SetCollide(m_collide);
+}
+
+void Chassis::SetCollide(bool state) {
+    m_collide = state;
+    m_body->SetCollide(state);
 }
 
 // =============================================================================
 
-Sled::Sled(const std::string& name, chrono::ChSystem* system) : Part(name, system) {
+Sled::Sled(const std::string& name, chrono::ChSystem* system) : Part(name, system), m_collide(true) {
     double mass = 2.768775;
     ChVector<> com(0.000000, 0.000000, 0.146762);
     ChVector<> inertia_xx(0.034856, 0.082427, 0.105853);
@@ -640,12 +657,17 @@ void Sled::Initialize(std::shared_ptr<ChBodyAuxRef> chassis, const ChVector<>& x
     m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(CollisionFamily::LIMB_FL);
 
     // Note: call this AFTER setting the collision family (required for Chrono::Parallel)
-    m_body->SetCollide(true);
+    m_body->SetCollide(m_collide);
 
     // Add joint (weld)
     auto joint = std::make_shared<ChLinkLockLock>();
     joint->Initialize(chassis, m_body, calcJointFrame(X_GC, ChVector<>(1, 0, 0)));
     chassis->GetSystem()->AddLink(joint);
+}
+
+void Sled::SetCollide(bool state) {
+    m_collide = state;
+    m_body->SetCollide(state);
 }
 
 // =============================================================================
@@ -695,7 +717,7 @@ void WheelDD::Initialize(std::shared_ptr<ChBodyAuxRef> chassis, const ChVector<>
 
 // =============================================================================
 
-Limb::Limb(const std::string& name, LimbID id, const LinkData data[], ChSystem* system) : m_name(name), m_id(id) {
+Limb::Limb(const std::string& name, LimbID id, const LinkData data[], ChSystem* system) : m_name(name), m_id(id), m_collide_links(false), m_collide_wheel(true) {
     for (int i = 0; i < num_links; i++) {
         auto link = std::make_shared<Part>(m_name + "_" + data[i].name, system);
 
@@ -724,13 +746,15 @@ Limb::Limb(const std::string& name, LimbID id, const LinkData data[], ChSystem* 
         //// TODO: set contact material properties
 
         m_links.insert(std::make_pair(data[i].name, link));
+        if (data[i].name.compare("link8") == 0)
+            m_wheel = link;
     }
 }
 
 void Limb::Initialize(std::shared_ptr<ChBodyAuxRef> chassis,
                       const ChVector<>& xyz,
                       const ChVector<>& rpy,
-                      CollisionFamily collision_family,
+                      CollisionFamily::Enum collision_family,
                       ActuationMode mode) {
     // Set absolute position of link0
     auto parent_body = chassis;                                  // parent body
@@ -766,7 +790,10 @@ void Limb::Initialize(std::shared_ptr<ChBodyAuxRef> chassis,
         child_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(collision_family);
 
         // Note: call this AFTER setting the collision family (required for Chrono::Parallel)
-        child_body->SetCollide(true);
+        if (child == m_wheel)
+            child_body->SetCollide(m_collide_wheel);
+        else
+            child_body->SetCollide(m_collide_links);
 
         // If the current joint is fixed, create a lock-lock joint
         if (joints[i].fixed) {
@@ -812,6 +839,19 @@ void Limb::Activate(const std::string& motor_name, double time, double val) {
     auto motor = std::static_pointer_cast<ChLinkMotorRotationAngle>(itr->second);
     auto fun = std::static_pointer_cast<ChFunction_Setpoint>(motor->GetAngleFunction());
     fun->SetSetpoint(val, time);
+}
+
+void Limb::SetCollideLinks(bool state) {
+    m_collide_links = state;
+    for (auto link : m_links) {
+        if (link.second != m_wheel)
+            link.second->m_body->SetCollide(state);
+    }
+}
+
+void Limb::SetCollideWheel(bool state) {
+    m_collide_wheel = state;
+    m_wheel->m_body->SetCollide(state);
 }
 
 }  // end namespace robosimian

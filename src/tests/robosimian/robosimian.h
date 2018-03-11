@@ -40,7 +40,8 @@ enum class VisualizationType {
     MESH        ///< render meshes
 };
 
-enum CollisionFamily {
+namespace CollisionFamily {
+enum Enum {
     LIMB_FR = 1,  ///< front-right limb
     LIMB_RR = 2,  ///< rear-right limb
     LIMB_RL = 3,  ///< rear-left limb
@@ -49,6 +50,18 @@ enum CollisionFamily {
     SLED = 6,     ///< sled
     WHEEL_DD = 7  ///< direct-drive wheels
 };
+}
+
+namespace CollisionFlags {
+enum Enum {
+    NONE = 0,          ///< no collision shapes on any body
+    CHASSIS = 1 << 0,  ///< chassis (torso)
+    SLED = 1 << 1,     ///< sled
+    LIMBS = 1 << 2,    ///< all limb bodies (Excluding final wheels)
+    WHEELS = 1 << 3,   ///< all wheels
+    ALL = 0xFFFF       ///< collision enabled on all bodies
+};
+}
 
 enum class ActuationMode {
     ANGLE,  ///< prescribe time-series for joint angle
@@ -120,7 +133,14 @@ class Chassis : public Part {
     Chassis(const std::string& name, chrono::ChSystem* system, bool fixed);
     ~Chassis() {}
 
+    /// Initialize the chassis at the specified (absolute) position.
     void Initialize(const chrono::ChCoordsys<>& pos);
+
+    /// Enable/disable collision for the sled (Default: false).
+    void SetCollide(bool state);
+
+  private:
+    bool m_collide;
 };
 
 class Sled : public Part {
@@ -128,10 +148,17 @@ class Sled : public Part {
     Sled(const std::string& name, chrono::ChSystem* system);
     ~Sled() {}
 
+    /// Initialize the sled at the specified position (relative to the chassis).
     void Initialize(std::shared_ptr<chrono::ChBodyAuxRef> chassis,  ///< chassis body
                     const chrono::ChVector<>& xyz,                  ///< location (relative to chassis)
                     const chrono::ChVector<>& rpy                   ///< roll-pitch-yaw (relative to chassis)
     );
+
+    /// Enable/disable collision for the sled (default: true).
+    void SetCollide(bool state);
+
+  private:
+    bool m_collide;
 };
 
 class WheelDD : public Part {
@@ -198,15 +225,24 @@ class Limb {
     Limb(const std::string& name, LimbID id, const LinkData data[], chrono::ChSystem* system);
     ~Limb() {}
 
+    /// Initialize the link at the specified position (relative to the chassis).
     void Initialize(std::shared_ptr<chrono::ChBodyAuxRef> chassis,  ///< chassis body
                     const chrono::ChVector<>& xyz,                  ///< location (relative to chassis)
                     const chrono::ChVector<>& rpy,                  ///< roll-pitch-yaw (relative to chassis)
-                    CollisionFamily collision_family,               ///< collision family
+                    CollisionFamily::Enum collision_family,         ///< collision family
                     ActuationMode mode                              ///< actuation mode (angle, speed, or torque)
     );
 
+    /// Set visualization type for all limb links.
     void SetVisualizationType(VisualizationType vis);
 
+    /// Enable/disable collision on all links, except final wheel (default: false).
+    void SetCollideLinks(bool state);
+
+    /// Enable/disable collision for final wheel (default: true).
+    void SetCollideWheel(bool state);
+
+    /// Set activation for given motor at current time.
     void Activate(const std::string& motor_name, double time, double val);
 
   private:
@@ -215,6 +251,10 @@ class Limb {
     std::unordered_map<std::string, std::shared_ptr<Part>> m_links;
     std::unordered_map<std::string, std::shared_ptr<chrono::ChLink>> m_joints;
     std::unordered_map<std::string, std::shared_ptr<chrono::ChLinkMotorRotation>> m_motors;
+    std::shared_ptr<Part> m_wheel;
+
+    bool m_collide_links;  ///< collide flag for all links (except final wheel)
+    bool m_collide_wheel;  ///< collide flag for the final wheel
 };
 
 class ContactManager;
@@ -226,6 +266,11 @@ class RoboSimian {
     ~RoboSimian();
 
     chrono::ChSystem* GetSystem() { return m_system; }
+
+    /// Set collision flags for the various subsystems.
+    /// By default, collision is enabled for the sled and wheels only.
+    /// The 'flags' argument can be any of the CollisionFlag enums, or a combination thereof (using bit-wise operators).
+    void SetCollide(int flags);
 
     void SetActuationMode(ActuationMode mode) { m_mode = mode; }
 
