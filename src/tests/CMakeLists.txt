@@ -68,3 +68,7 @@ endif()
 if(ENABLE_MODULE_PARALLEL AND ENABLE_MODULE_IRRLICHT AND ENABLE_MODULE_OPENGL)
     add_subdirectory(robosimian)
 endif()
+
+if(ENABLE_MODULE_PARALLEL AND ENABLE_MODULE_IRRLICHT)
+   add_subdirectory(parallel_irrlicht)
+endif()
