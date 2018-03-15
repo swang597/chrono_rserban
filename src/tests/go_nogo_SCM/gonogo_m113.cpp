@@ -61,6 +61,9 @@ using std::endl;
 // Specification of terrain
 // -----------------------------------------------------------------------------
 
+// Slope scaling factor (in degrees)
+double max_slope = 40;
+
 // Patch half-dimensions
 double hdimX = 100;//// 250;
 double hdimY = 2.5;
@@ -69,11 +72,11 @@ double hdimY = 2.5;
 double factor = 6;
 
 // Vehicle horizontal offset
-double horizontal_offset = 5;
+double horizontal_offset = 6;
 double horizontal_pos = hdimX - horizontal_offset;
 
 // Initial vehicle position, orientation, and forward velocity
-ChVector<> initLoc(-horizontal_pos, 0, 0.7);
+ChVector<> initLoc(-horizontal_pos, 0, 0.8);
 ChQuaternion<> initRot(1, 0, 0, 0);
 double initSpeed = 0;
 
@@ -205,13 +208,22 @@ int main(int argc, char* argv[]) {
     ifile.seekg(0);
 
     // Extract input data
+    int model_index;
+    double slope_val, saturation_val;
+    double Bekker_n, Bekker_Kphi, Bekker_Kc, Mohr_coh, Mohr_phi, Janosi_k;
     std::istringstream iss(line);
-    double slope_deg, Bekker_Kphi, Bekker_Kc, Bekker_n, Mohr_phi, Mohr_coh, Janosi_k;
-    iss >> slope_deg >> Bekker_Kphi >> Bekker_Kc >> Bekker_n >> Mohr_phi >> Mohr_coh >> Janosi_k;
+    iss >> model_index >> slope_val >> saturation_val >> Bekker_n >> Bekker_Kphi >> Bekker_Kc >> Mohr_coh >> Mohr_phi >> Janosi_k;
+    
+    double slope_deg = slope_val * max_slope;
     double slope = slope_deg * (CH_C_PI / 180);
+    Bekker_Kphi *= 1000;
+    Bekker_Kc *= 1000;
+    Mohr_coh *= 1000;
+    Janosi_k *= 1e-2;
 
     cout << "Set up" << endl;
     cout << "  File:          " << input_file << "  Line: " << line_number << endl;
+    cout << "  Parameters:    " << model_index << " " << slope_val << " " << saturation_val << endl;
     cout << "  Slope:         " << slope_deg << endl;
     cout << "  Bekker Kphi:   " << Bekker_Kphi << endl;
     cout << "  Bekker Kc:     " << Bekker_Kc << endl;
@@ -336,7 +348,7 @@ int main(int argc, char* argv[]) {
     terrain.SetAutomaticRefinementResolution(0.02);
 
     // Enable moving patch feature
-    terrain.EnableMovingPatch(m113.GetChassisBody(), ChVector<>(-2.25, 0, 0), 6, 3);
+    terrain.EnableMovingPatch(m113.GetChassisBody(), ChVector<>(-2, 0, 0), 6.5, 3.5);
 
 #ifdef CHRONO_IRRLICHT
 
@@ -361,13 +373,16 @@ int main(int argc, char* argv[]) {
         ofile << "# " << endl;
         ofile << "# " << line << endl;
         ofile << "# " << endl;
-        ofile << "# Slope (deg):     " << slope_deg << endl;
-        ofile << "# Bekker Kphi:     " << Bekker_Kphi << endl;
-        ofile << "# Bekker Kc:       " << Bekker_Kc << endl;
-        ofile << "# Bekker n:        " << Bekker_n << endl;
-        ofile << "# Mohr cohesion:   " << Mohr_coh << endl;
-        ofile << "# Mohr phi:        " << Mohr_phi << endl;
-        ofile << "# Janosi k:        " << Janosi_k << endl;
+        ofile << "# Model index:      " << model_index << endl;
+        ofile << "# Slope level:      " << slope_val << endl;
+        ofile << "# Saturation level: " << saturation_val << endl;
+        ofile << "# Slope (deg):      " << slope_deg << endl;
+        ofile << "# Bekker Kphi:      " << Bekker_Kphi << endl;
+        ofile << "# Bekker Kc:        " << Bekker_Kc << endl;
+        ofile << "# Bekker n:         " << Bekker_n << endl;
+        ofile << "# Mohr cohesion:    " << Mohr_coh << endl;
+        ofile << "# Mohr phi:         " << Mohr_phi << endl;
+        ofile << "# Janosi k:         " << Janosi_k << endl;
         ofile << "# " << endl;
 
         ofile.precision(7);
@@ -445,7 +460,7 @@ int main(int argc, char* argv[]) {
         double fwd_acc_std = fwd_acc_filter.GetStdDev();
 
         // Check if vehicle is sliding backward
-        if (pv.x() <= -hdimX) {
+        if (pv.x() <= -horizontal_pos - 1) {
             if (output) {
                 ofile << "# " << endl;
                 ofile << "# Vehicle sliding backward" << endl;
