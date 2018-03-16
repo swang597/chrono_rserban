@@ -17,6 +17,7 @@
 // =============================================================================
 
 #include <cstdlib>
+#include <cstdio>
 #include <string>
 #include <iostream>
 #include <cmath>
@@ -99,8 +100,8 @@ double time_max_throttle = time_start_engine + delay_max_throttle;
 
 // Delays before checking for slow-down and steady-state
 double filter_interval = 3.0;
-double delay_start_check_slow = 15.0;
-double delay_start_check_steady = 30.0;
+double delay_start_check_slow = 5.0;
+double delay_start_check_steady = 5.0;
 double time_start_check_slow = time_max_throttle + delay_start_check_slow;
 double time_start_check_steady = time_max_throttle + delay_start_check_steady;
 
@@ -259,7 +260,9 @@ int main(int argc, char* argv[]) {
         }
 
         // Open the output file stream
-        ofile.open(out_dir + "/results_" + std::to_string(line_number) + ".out", std::ios::out);
+        char buf[10];
+        std::sprintf(buf, "%03d", line_number);
+        ofile.open(out_dir + "/results_" + std::string(buf) + ".out", std::ios::out);
     }
 
     // -------------
