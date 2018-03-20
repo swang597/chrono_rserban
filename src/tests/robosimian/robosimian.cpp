@@ -33,7 +33,7 @@ namespace robosimian {
 // =============================================================================
 
 // Concrete Link types
-//     mesh_name, mass, com, inertia_xx, inertia_xy, shapes
+//     mesh_name, offset, color, mass, com, inertia_xx, inertia_xy, shapes
 
 const Link FtsLink("robosim_fts",
                    ChVector<>(0, 0, 0),

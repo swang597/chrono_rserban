@@ -2,6 +2,9 @@
 #include <cstdio>
 #include <vector>
 
+#include "chrono/core/ChFileutils.h"
+#include "chrono/utils/ChUtilsInputOutput.h"
+
 #include "chrono_parallel/physics/ChSystemParallel.h"
 
 #include "chrono_opengl/ChOpenGLWindow.h"
@@ -11,7 +14,18 @@
 using namespace chrono;
 using namespace chrono::collision;
 
-double time_step = 1e-3;
+// Integration step size
+double step_size = 1e-3;
+
+// Time interval between two render frames
+double render_step_size = 1.0 / 50;  // FPS = 50
+
+// Output directories
+const std::string out_dir = GetChronoOutputPath() + "ROBOSIMIAN";
+const std::string pov_dir = out_dir + "/POVRAY";
+
+// POV-Ray output
+bool povray_output = true;
 
 int main(int argc, char* argv[]) {
     // Create system
@@ -56,6 +70,18 @@ int main(int argc, char* argv[]) {
     robot.SetVisualizationTypeSled(robosimian::VisualizationType::MESH);
     robot.SetVisualizationTypeLimbs(robosimian::VisualizationType::MESH);
 
+    // Initialize output
+    if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
+        std::cout << "Error creating directory " << out_dir << std::endl;
+        return 1;
+    }
+    if (povray_output) {
+        if (ChFileutils::MakeDirectory(pov_dir.c_str()) < 0) {
+            std::cout << "Error creating directory " << pov_dir << std::endl;
+            return 1;
+        }
+    }
+
     // Initialize OpenGL
     opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
     gl_window.Initialize(1280, 720, "RoboSimian", &my_sys);
@@ -63,10 +89,20 @@ int main(int argc, char* argv[]) {
     gl_window.SetRenderMode(opengl::WIREFRAME);
 
     // Run simulation for specified time
+    int render_steps = (int)std::ceil(render_step_size / step_size);
     int sim_frame = 0;
+    int render_frame = 0;
 
     while (gl_window.Active()) {
         gl_window.Render();
+
+        // Output POV-Ray data
+        if (povray_output && sim_frame % render_steps == 0) {
+            char filename[100];
+            sprintf(filename, "%s/data_%03d.dat", pov_dir.c_str(), render_frame + 1);
+            utils::WriteShapesPovray(&my_sys, filename);
+            render_frame++;
+        }
 
         double time = my_sys.GetChTime();
         double A = CH_C_PI / 6;
@@ -75,7 +111,7 @@ int main(int argc, char* argv[]) {
         robot.Activate(robosimian::FR, "joint2", time, val);
         robot.Activate(robosimian::RL, "joint5", time, val);
 
-        my_sys.DoStepDynamics(time_step);
+        my_sys.DoStepDynamics(step_size);
         
         if (my_sys.GetNcontacts() > 0) {
             robot.ReportContacts();
