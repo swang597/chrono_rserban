@@ -16,18 +16,16 @@
 //
 // =============================================================================
 
-#include "chrono_parallel/physics/ChSystemParallel.h"
-
-#include "chrono/ChConfig.h"
 #include "chrono/utils/ChUtilsCreators.h"
-#include "chrono/utils/ChUtilsGenerators.h"
-#include "chrono/utils/ChUtilsInputOutput.h"
-
 #include "chrono_irrlicht/ChIrrApp.h"
+#include "chrono_parallel/physics/ChSystemParallel.h"
 
 using namespace chrono;
 using namespace chrono::irrlicht;
 
+// -----------------------------------------------------------------------------
+// Create the container (fixed to ground).
+// -----------------------------------------------------------------------------
 void AddContainer(ChSystemParallelNSC* sys) {
     // Create a common material
     auto mat = std::make_shared<ChMaterialSurfaceNSC>();
@@ -61,7 +59,7 @@ void AddContainer(ChSystemParallelNSC* sys) {
 }
 
 // -----------------------------------------------------------------------------
-// Create the falling spherical objects in a uniform rectangular grid.
+// Create the falling spherical objects in a rectangular grid.
 // -----------------------------------------------------------------------------
 void AddFallingBalls(ChSystemParallel* sys) {
     // Common material
@@ -154,15 +152,12 @@ int main(int argc, char* argv[]) {
     // Perform the simulation
     // ----------------------
 
-    double time_step = 1e-3;
+    application.SetTimestep(5e-3);
 
     while (application.GetDevice()->run()) {
         application.BeginScene();
         application.DrawAll();
-
-        // Explicitly advance system state
-        msystem.DoStepDynamics(time_step);
-
+        application.DoStep();
         application.EndScene();
     }
 
