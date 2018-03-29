@@ -25,7 +25,7 @@ const std::string out_dir = GetChronoOutputPath() + "ROBOSIMIAN";
 const std::string pov_dir = out_dir + "/POVRAY";
 
 // POV-Ray output
-bool povray_output = true;
+bool povray_output = false;
 
 int main(int argc, char* argv[]) {
     // Create system
@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
     my_sys.GetSettings()->solver.tolerance = 1e-3;
     my_sys.GetSettings()->solver.solver_mode = SolverMode::SLIDING;
     my_sys.GetSettings()->solver.max_iteration_normal = 0;
-    my_sys.GetSettings()->solver.max_iteration_sliding = 200;
+    my_sys.GetSettings()->solver.max_iteration_sliding = 100;
     my_sys.GetSettings()->solver.max_iteration_spinning = 0;
     my_sys.GetSettings()->solver.max_iteration_bilateral = 100;
     my_sys.GetSettings()->solver.compute_N = false;
@@ -69,6 +69,8 @@ int main(int argc, char* argv[]) {
     robot.SetVisualizationTypeChassis(robosimian::VisualizationType::MESH);
     robot.SetVisualizationTypeSled(robosimian::VisualizationType::MESH);
     robot.SetVisualizationTypeLimbs(robosimian::VisualizationType::MESH);
+
+    robot.SetActuationData(GetChronoDataFile("robosimian/inchworm.txt"));
 
     // Initialize output
     if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
@@ -104,14 +106,14 @@ int main(int argc, char* argv[]) {
             render_frame++;
         }
 
-        double time = my_sys.GetChTime();
-        double A = CH_C_PI / 6;
-        double freq = 2;
-        double val = 0.5 * A * (1 - std::cos(CH_C_2PI * freq * time));
-        robot.Activate(robosimian::FR, "joint2", time, val);
-        robot.Activate(robosimian::RL, "joint5", time, val);
+        ////double time = my_sys.GetChTime();
+        ////double A = CH_C_PI / 6;
+        ////double freq = 2;
+        ////double val = 0.5 * A * (1 - std::cos(CH_C_2PI * freq * time));
+        ////robot.Activate(robosimian::FR, "joint2", time, val);
+        ////robot.Activate(robosimian::RL, "joint5", time, val);
 
-        my_sys.DoStepDynamics(step_size);
+        robot.DoStepDynamics(step_size);
         
         if (my_sys.GetNcontacts() > 0) {
             robot.ReportContacts();

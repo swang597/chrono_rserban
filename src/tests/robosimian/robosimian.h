@@ -20,6 +20,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <array>
 
 #include "chrono/assets/ChColor.h"
 #include "chrono/physics/ChSystem.h"
@@ -66,7 +67,7 @@ enum Enum {
 enum class ActuationMode {
     ANGLE,  ///< prescribe time-series for joint angle
     SPEED,  ///< prescribe time-series for joint angular speed
-    TORQUE  ///< prescribe time-series for joint torque
+    FIXED   ///< weld joint
 };
 
 struct BoxShape {
@@ -214,7 +215,7 @@ struct JointData {
     std::string name;
     std::string linkA;
     std::string linkB;
-    bool fixed;
+    ActuationMode mode;
     chrono::ChVector<> xyz;
     chrono::ChVector<> rpy;
     chrono::ChVector<> axis;
@@ -229,8 +230,7 @@ class Limb {
     void Initialize(std::shared_ptr<chrono::ChBodyAuxRef> chassis,  ///< chassis body
                     const chrono::ChVector<>& xyz,                  ///< location (relative to chassis)
                     const chrono::ChVector<>& rpy,                  ///< roll-pitch-yaw (relative to chassis)
-                    CollisionFamily::Enum collision_family,         ///< collision family
-                    ActuationMode mode                              ///< actuation mode (angle, speed, or torque)
+                    CollisionFamily::Enum collision_family          ///< collision family
     );
 
     /// Set visualization type for all limb links.
@@ -244,6 +244,9 @@ class Limb {
 
     /// Set activation for given motor at current time.
     void Activate(const std::string& motor_name, double time, double val);
+
+    /// Set activations for all motors at current time.
+    void Activate(double time, const std::array<double, 8>& vals);
 
   private:
     LimbID m_id;
@@ -272,7 +275,7 @@ class RoboSimian {
     /// The 'flags' argument can be any of the CollisionFlag enums, or a combination thereof (using bit-wise operators).
     void SetCollide(int flags);
 
-    void SetActuationMode(ActuationMode mode) { m_mode = mode; }
+    void SetActuationData(const std::string& filename);
 
     void SetVisualizationTypeChassis(VisualizationType vis);
     void SetVisualizationTypeSled(VisualizationType vis);
@@ -284,15 +287,26 @@ class RoboSimian {
 
     void Activate(LimbID id, const std::string& motor_name, double time, double val);
 
+    void Activate(double time);
+
+    void DoStepDynamics(double step);
+
     void ReportContacts();
 
   private:
     void Create(bool has_sled, bool fixed);
 
+    void LoadDataLine();
+
     chrono::ChSystem* m_system;  ///< pointer to the Chrono system
     bool m_owns_system;          ///< true if system created at construction
 
-    ActuationMode m_mode;
+    bool m_has_data;                                       ///< true if an input actuation file was provided
+    std::ifstream m_ifstream;                              ///< input file stream
+    double m_time_1;                                       ///< time for cached activations
+    double m_time_2;                                       ///< time for cached activations
+    std::array<std::array<double, 8>, 4> m_activations_1;  ///< cached activations
+    std::array<std::array<double, 8>, 4> m_activations_2;  ///< cached activations
 
     std::shared_ptr<Chassis> m_chassis;          ///< robot chassis
     std::shared_ptr<Sled> m_sled;                ///< optional sled attached to chassis
