@@ -24,7 +24,7 @@
 
 #include "chrono/assets/ChColor.h"
 #include "chrono/physics/ChSystem.h"
-#include "chrono/physics/ChLinkMotorRotationAngle.h"
+#include "chrono/physics/ChLinkMotorRotation.h"
 
 namespace robosimian {
 
@@ -289,7 +289,7 @@ class RoboSimian {
 
     void Activate(double time);
 
-    void DoStepDynamics(double step);
+    bool DoStepDynamics(double step);
 
     void ReportContacts();
 

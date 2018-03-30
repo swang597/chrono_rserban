@@ -19,10 +19,14 @@
 #include "chrono/assets/ChCylinderShape.h"
 #include "chrono/assets/ChSphereShape.h"
 #include "chrono/assets/ChTriangleMeshShape.h"
+#include "chrono/assets/ChTexture.h"
 
 #include "chrono/motion_functions/ChFunction_Setpoint.h"
+
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/physics/ChSystemSMC.h"
+#include "chrono/physics/ChLinkMotorRotationAngle.h"
+#include "chrono/physics/ChLinkMotorRotationSpeed.h"
 
 #include "robosimian.h"
 
@@ -113,7 +117,7 @@ const Link WheelMountLink("robosim_wheel_mount",
 
 const Link WheelLink("robosim_wheel",
                      ChVector<>(0, 0, 0),
-                     ChColor(0.3f, 0.3f, 0.3f),
+                     ChColor(0.6f, 0.6f, 0.6f),
                      1.499326,
                      ChVector<>(0.0, 0.0, -0.000229),
                      ChVector<>(0.006378, 0.006377, 0.009155),
@@ -491,9 +495,13 @@ void RoboSimian::Activate(double time) {
     }
 }
 
-void RoboSimian::DoStepDynamics(double step) {
-    Activate(m_system->GetChTime());
+bool RoboSimian::DoStepDynamics(double step) {
+    double time = m_system->GetChTime();
+    Activate(time);
     m_system->DoStepDynamics(step);
+    if (time > 45)
+        return true;
+    return false;
 }
 
 void RoboSimian::ReportContacts() {
@@ -874,10 +882,10 @@ void Limb::Initialize(std::shared_ptr<ChBodyAuxRef> chassis,
             }
             case ActuationMode::SPEED: {
                 auto motor_fun = std::make_shared<ChFunction_Setpoint>();
-                auto joint = std::make_shared<ChLinkMotorRotationAngle>();
+                auto joint = std::make_shared<ChLinkMotorRotationSpeed>();
                 joint->SetNameString(m_name + "_" + joints[i].name);
                 joint->Initialize(parent_body, child_body, ChFrame<>(calcJointFrame(X_GC, joints[i].axis)));
-                joint->SetAngleFunction(motor_fun);
+                joint->SetSpeedFunction(motor_fun);
                 chassis->GetSystem()->AddLink(joint);
                 m_joints.insert(std::make_pair(joints[i].name, joint));
                 m_motors.insert(std::make_pair(joints[i].name, joint));
@@ -890,6 +898,10 @@ void Limb::Initialize(std::shared_ptr<ChBodyAuxRef> chassis,
 void Limb::SetVisualizationType(VisualizationType vis) {
     for (auto link : m_links)
         link.second->SetVisualizationType(vis);
+
+    auto texture = std::make_shared<ChTexture>();
+    texture->SetTextureFilename(GetChronoDataFile("greenwhite.png"));
+    m_wheel->m_body->AddAsset(texture);
 }
 
 void Limb::Activate(const std::string& motor_name, double time, double val) {
@@ -898,8 +910,7 @@ void Limb::Activate(const std::string& motor_name, double time, double val) {
         return;
 
     // Note: currently hard-coded for angle motor
-    auto motor = std::static_pointer_cast<ChLinkMotorRotationAngle>(itr->second);
-    auto fun = std::static_pointer_cast<ChFunction_Setpoint>(motor->GetAngleFunction());
+    auto fun = std::static_pointer_cast<ChFunction_Setpoint>(itr->second->GetMotorFunction());
     fun->SetSetpoint(-val, time);
 }
 
@@ -908,8 +919,7 @@ static std::string motor_names[] = {"joint1", "joint2", "joint3", "joint4", "joi
 void Limb::Activate(double time, const std::array<double, 8>& vals) {
     //// TODO: Not a terribly satisfying solution...
     for (int i = 0; i < 8; i++) {
-        auto motor = std::static_pointer_cast<ChLinkMotorRotationAngle>(m_motors[motor_names[i]]);
-        auto fun = std::static_pointer_cast<ChFunction_Setpoint>(motor->GetAngleFunction());
+        auto fun = std::static_pointer_cast<ChFunction_Setpoint>(m_motors[motor_names[i]]->GetMotorFunction());
         fun->SetSetpoint(-vals[i], time);
     }  
 }

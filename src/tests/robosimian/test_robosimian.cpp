@@ -150,6 +150,7 @@ int main(int argc, char* argv[]) {
     robot.SetActuationData(GetChronoDataFile("robosimian/inchworm.txt"));
     ////robot.SetActuationData(GetChronoDataFile("robosimian/scull.txt"));
     ////robot.SetActuationData(GetChronoDataFile("robosimian/walk.txt"));
+    ////robot.SetActuationData(GetChronoDataFile("robosimian/drive.txt"));
 
     // Initialize Robosimian robot
 
@@ -193,8 +194,10 @@ int main(int argc, char* argv[]) {
         ////robot.Activate(robosimian::FR, "joint2", time, val);
         ////robot.Activate(robosimian::RL, "joint5", time, val);
 
-        robot.DoStepDynamics(time_step);
-        
+        bool done = robot.DoStepDynamics(time_step);
+        if (done)
+            break;
+
         if (my_sys.GetNcontacts() > 0) {
             robot.ReportContacts();
         }
