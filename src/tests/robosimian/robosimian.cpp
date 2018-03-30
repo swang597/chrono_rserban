@@ -451,12 +451,11 @@ void RoboSimian::Activate(LimbID id, const std::string& motor_name, double time,
     m_limbs[id]->Activate(motor_name, time, val);
 }
 
-bool RoboSimian::DoStepDynamics(double step) {
+void RoboSimian::DoStepDynamics(double step) {
     if (m_driver) {
-        // Update driver and check if done
+        // Update driver
         double time = m_system->GetChTime();
-        if (m_driver->Update(time))
-            return true;
+        m_driver->Update(time);
 
         // Get driver activations and apply to limbs
         Actuation actuation = m_driver->GetActuation();
@@ -466,8 +465,6 @@ bool RoboSimian::DoStepDynamics(double step) {
 
     // Advance system state
     m_system->DoStepDynamics(step);
-
-    return false;
 }
 
 void RoboSimian::ReportContacts() {
@@ -483,7 +480,7 @@ class axpby {
     double a2;
 };
 
-DriverFile::DriverFile(const std::string& filename, double duration) : m_duration(duration) {
+DriverFile::DriverFile(const std::string& filename) {
     m_ifstream.open(filename.c_str());
     LoadDataLine();
     m_time_1 = m_time_2;
@@ -504,23 +501,23 @@ void DriverFile::LoadDataLine() {
     }
 }
 
-bool DriverFile::Update(double time) {
+void DriverFile::Update(double time) {
     // In the ease-in interval, return first data entry
     if (time < m_offset) {
         m_activations = m_activations_1;
-        return false;
+        return;
     }
 
     // Offset time
     double t = time - m_offset;
 
-    if (t > m_duration)
-        return true;
-
-    // Check if moving to new interval
+    // Check if moving to new interval.
+    // Return as soon as reaching the end of the input file to stop updates.
     while (t > m_time_2) {
         m_time_1 = m_time_2;
         m_activations_1 = m_activations_2;
+        if (m_ifstream.eof())
+            return;
         LoadDataLine();
     }
 
@@ -532,9 +529,6 @@ bool DriverFile::Update(double time) {
         std::transform(m_activations_1[i].begin(), m_activations_1[i].end(), m_activations_2[i].begin(),
                        m_activations[i].begin(), op);
     }
-
-    // Continue generating actuations
-    return false;
 }
 
 // =============================================================================

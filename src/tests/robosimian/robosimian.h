@@ -322,8 +322,7 @@ class RoboSimian {
 
     /// Advance dynamics of underlying system.
     /// If a driver system is specified, apply motor actuations at current time.
-    /// Returns true if actuation data ended (in which case simulation shuld be stopped).
-    bool DoStepDynamics(double step);
+    void DoStepDynamics(double step);
 
     void ReportContacts();
 
@@ -358,7 +357,7 @@ class Driver {
     void SetOffset(double offset) { m_offset = offset; }
 
     /// Update the state of the driver system at the specified time.
-    virtual bool Update(double time) { return false; }
+    virtual void Update(double time) {}
 
     /// Return the current limb motor actuations.
     virtual Actuation GetActuation() = 0;
@@ -369,17 +368,16 @@ class Driver {
 
 class DriverFile : public Driver {
   public:
-    DriverFile(const std::string& filename, double duration);
+    DriverFile(const std::string& filename);
     ~DriverFile();
 
-    virtual bool Update(double time) override;
+    virtual void Update(double time) override;
     virtual Actuation GetActuation() override { return m_activations; }
 
   private:
     void LoadDataLine();
 
     std::ifstream m_ifstream;   ///< input file stream
-    double m_duration;          ///< time interval for producing actuations
     double m_time_1;            ///< time for cached activations
     double m_time_2;            ///< time for cached activations
     Actuation m_activations;    ///< cached activations (current time)

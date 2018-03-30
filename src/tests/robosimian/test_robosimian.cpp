@@ -112,6 +112,22 @@ void RayCaster::Update() {
 
 // =============================================================================
 
+void CreateCamera(irrlicht::ChIrrApp& application,
+                  const irr::core::vector3df& position,
+                  const irr::core::vector3df& target) {
+    irrlicht::RTSCamera* camera =
+        new irrlicht::RTSCamera(application.GetDevice(), application.GetSceneManager()->getRootSceneNode(),
+                                application.GetSceneManager(), -1, -160.0f, 1.0f, 0.003f);
+
+    camera->setPosition(position);
+    camera->setTarget(target);
+    camera->setUpVector(irr::core::vector3df(0, 0, 1));
+    camera->setNearValue(0.1f);
+    camera->setMinZoom(0.6f);
+}
+
+// =============================================================================
+
 int main(int argc, char* argv[]) {
     // Create system
 
@@ -154,7 +170,7 @@ int main(int argc, char* argv[]) {
 
     // Create a driver and attach to robot
 
-    auto driver = std::make_shared<robosimian::DriverFile>(GetChronoDataFile("robosimian/inchworm.txt"), 45);
+    auto driver = std::make_shared<robosimian::DriverFile>(GetChronoDataFile("robosimian/inchworm.txt"));
     driver->SetOffset(0);
     robot.SetDriver(driver);
 
@@ -172,6 +188,7 @@ int main(int argc, char* argv[]) {
                                               irr::core::vector3df(100.f, -100.f, 80.f));
     irrlicht::ChIrrWizard::add_typical_Camera(application.GetDevice(), irr::core::vector3df(0, -2.5f, 0.2f),
                                               irr::core::vector3df(0, 0, 0));
+    ////CreateCamera(application, irr::core::vector3df(0, 2.5f, 0), irr::core::vector3df(0, 0, 0));
 
     application.SetUserEventReceiver(new EventReceiver(robot, application));
 
@@ -187,7 +204,6 @@ int main(int argc, char* argv[]) {
 
         application.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
         application.DrawAll();
-        ////irrlicht::ChIrrTools::drawAllCOGs(my_sys, application.GetVideoDriver(), 1);
 
         ////double time = my_sys.GetChTime();
         ////double A = CH_C_PI / 6;
@@ -196,9 +212,7 @@ int main(int argc, char* argv[]) {
         ////robot.Activate(robosimian::FR, "joint2", time, val);
         ////robot.Activate(robosimian::RL, "joint5", time, val);
 
-        bool done = robot.DoStepDynamics(time_step);
-        if (done)
-            break;
+        robot.DoStepDynamics(time_step);
 
         if (my_sys.GetNcontacts() > 0) {
             robot.ReportContacts();
