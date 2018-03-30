@@ -147,29 +147,31 @@ int main(int argc, char* argv[]) {
     ////robot.SetVisualizationTypeLimbs(robosimian::VisualizationType::MESH);
     ////robot.SetVisualizationTypeWheels(robosimian::VisualizationType::COLLISION);
 
-    robot.SetActuationData(GetChronoDataFile("robosimian/inchworm.txt"));
-    ////robot.SetActuationData(GetChronoDataFile("robosimian/scull.txt"));
-    ////robot.SetActuationData(GetChronoDataFile("robosimian/walk.txt"));
-    ////robot.SetActuationData(GetChronoDataFile("robosimian/drive.txt"));
-
     // Initialize Robosimian robot
 
     ////robot.Initialize(ChCoordsys<>(ChVector<>(0, 0, 0), QUNIT));
     robot.Initialize(ChCoordsys<>(ChVector<>(0, 0, 0), Q_from_AngX(CH_C_PI)));
 
+    // Create a driver and attach to robot
+
+    auto driver = std::make_shared<robosimian::DriverFile>(GetChronoDataFile("robosimian/inchworm.txt"), 45);
+    driver->SetOffset(0);
+    robot.SetDriver(driver);
+
     // Cast rays into collision models
-    
+
     ////RayCaster caster(&my_sys, ChFrame<>(ChVector<>(2, 0, -1), Q_from_AngY(-CH_C_PI_2)), ChVector2<>(2.5, 2.5), 0.02);
     RayCaster caster(&my_sys, ChFrame<>(ChVector<>(0, -2, -1), Q_from_AngX(-CH_C_PI_2)), ChVector2<>(2.5, 2.5), 0.02);
 
     // Create the visualization window
-    
+
     irrlicht::ChIrrApp application(&my_sys, L"RoboSimian", irr::core::dimension2d<irr::u32>(800, 600), false, true);
     irrlicht::ChIrrWizard::add_typical_Logo(application.GetDevice());
     irrlicht::ChIrrWizard::add_typical_Sky(application.GetDevice());
     irrlicht::ChIrrWizard::add_typical_Lights(application.GetDevice(), irr::core::vector3df(100.f, 100.f, 100.f),
                                               irr::core::vector3df(100.f, -100.f, 80.f));
-    irrlicht::ChIrrWizard::add_typical_Camera(application.GetDevice(), irr::core::vector3df(0, -2.5, 0.2), irr::core::vector3df(0, 0, 0));
+    irrlicht::ChIrrWizard::add_typical_Camera(application.GetDevice(), irr::core::vector3df(0, -2.5f, 0.2f),
+                                              irr::core::vector3df(0, 0, 0));
 
     application.SetUserEventReceiver(new EventReceiver(robot, application));
 
@@ -177,7 +179,7 @@ int main(int argc, char* argv[]) {
     application.AssetUpdateAll();
 
     // Run simulation for specified time
-    
+
     int sim_frame = 0;
 
     while (application.GetDevice()->run()) {

@@ -18,15 +18,15 @@
 #include "chrono/assets/ChColorAsset.h"
 #include "chrono/assets/ChCylinderShape.h"
 #include "chrono/assets/ChSphereShape.h"
-#include "chrono/assets/ChTriangleMeshShape.h"
 #include "chrono/assets/ChTexture.h"
+#include "chrono/assets/ChTriangleMeshShape.h"
 
 #include "chrono/motion_functions/ChFunction_Setpoint.h"
 
-#include "chrono/physics/ChSystemNSC.h"
-#include "chrono/physics/ChSystemSMC.h"
 #include "chrono/physics/ChLinkMotorRotationAngle.h"
 #include "chrono/physics/ChLinkMotorRotationSpeed.h"
+#include "chrono/physics/ChSystemNSC.h"
+#include "chrono/physics/ChSystemSMC.h"
 
 #include "robosimian.h"
 
@@ -254,13 +254,15 @@ class InertiaConverter {
         m_inertia_xy.y() = Jc.Get33Element(0, 2);
         m_inertia_xy.z() = Jc.Get33Element(1, 2);
 
-        ////std::cout << mass <<                                                            // mass
-        ////    " " << com.x() << "  " << com.y() << " " << com.z() <<                      // COM offset
-        ////    " " << inertia_xx.x() << " " << inertia_xx.y() << " " << inertia_xx.z() <<  // moments (reference frame)
-        ////    " " << inertia_xy.x() << " " << inertia_xy.y() << " " << inertia_xy.z() <<  // products (reference frame)
-        ////    " " << m_inertia_xx.x() << " " << m_inertia_xx.y() << " " << m_inertia_xx.z() <<  // moments (centroidal)
-        ////    " " << m_inertia_xy.x() << " " << m_inertia_xy.y() << " " << m_inertia_xy.z() <<  // products (centroidal)
-        ////    std::endl;
+        /*
+        std::cout << mass <<                                                            // mass
+            " " << com.x() << "  " << com.y() << " " << com.z() <<                      // COM offset
+            " " << inertia_xx.x() << " " << inertia_xx.y() << " " << inertia_xx.z() <<  // moments (reference frame)
+            " " << inertia_xy.x() << " " << inertia_xy.y() << " " << inertia_xy.z() <<  // products (reference frame)
+            " " << m_inertia_xx.x() << " " << m_inertia_xx.y() << " " << m_inertia_xx.z() <<  // moments (centroidal)
+            " " << m_inertia_xy.x() << " " << m_inertia_xy.y() << " " << m_inertia_xy.z() <<  // products (centroidal)
+            std::endl;
+        */
     }
 
     ChVector<> m_inertia_xx;  ///< moments of inertia (centroidal)
@@ -331,7 +333,7 @@ bool ContactManager::OnReportContact(const ChVector<>& pA,
 // =============================================================================
 
 RoboSimian::RoboSimian(ChMaterialSurface::ContactMethod contact_method, bool has_sled, bool fixed)
-    : m_owns_system(true), m_has_data(false), m_contacts(new ContactManager) {
+    : m_owns_system(true), m_contacts(new ContactManager) {
     m_system = (contact_method == ChMaterialSurface::NSC) ? static_cast<ChSystem*>(new ChSystemNSC)
                                                           : static_cast<ChSystem*>(new ChSystemSMC);
     m_system->Set_G_acc(ChVector<>(0, 0, -9.81));
@@ -351,8 +353,6 @@ RoboSimian::RoboSimian(ChSystem* system, bool has_sled, bool fixed)
 }
 
 RoboSimian::~RoboSimian() {
-    if (m_ifstream.is_open())
-        m_ifstream.close();
     if (m_owns_system)
         delete m_system;
     delete m_contacts;
@@ -443,27 +443,38 @@ void RoboSimian::SetVisualizationTypeWheels(VisualizationType vis) {
     ////m_wheel_right->SetVisualizationType(vis);
 }
 
-void RoboSimian::LoadDataLine() {
-    m_ifstream >> m_time_2;
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 8; j++) {
-            m_ifstream >> m_activations_2[i][j];
-        }
-    }
-}
-
-void RoboSimian::SetActuationData(const std::string& filename) {
-    m_ifstream.open(filename.c_str());
-    m_has_data = true;
-    LoadDataLine();
-    m_time_1 = m_time_2;
-    m_activations_1 = m_activations_2;
-    LoadDataLine();
+void RoboSimian::SetDriver(std::shared_ptr<Driver> driver) {
+    m_driver = driver;
 }
 
 void RoboSimian::Activate(LimbID id, const std::string& motor_name, double time, double val) {
     m_limbs[id]->Activate(motor_name, time, val);
 }
+
+bool RoboSimian::DoStepDynamics(double step) {
+    if (m_driver) {
+        // Update driver and check if done
+        double time = m_system->GetChTime();
+        if (m_driver->Update(time))
+            return true;
+
+        // Get driver activations and apply to limbs
+        Actuation actuation = m_driver->GetActuation();
+        for (int i = 0; i < 4; i++)
+            m_limbs[i]->Activate(time, actuation[i]);
+    }
+
+    // Advance system state
+    m_system->DoStepDynamics(step);
+
+    return false;
+}
+
+void RoboSimian::ReportContacts() {
+    m_contacts->Process(this);
+}
+
+// =============================================================================
 
 class axpby {
   public:
@@ -472,12 +483,42 @@ class axpby {
     double a2;
 };
 
-void RoboSimian::Activate(double time) {
-    if (!m_has_data)
-        return;
+DriverFile::DriverFile(const std::string& filename, double duration) : m_duration(duration) {
+    m_ifstream.open(filename.c_str());
+    LoadDataLine();
+    m_time_1 = m_time_2;
+    m_activations_1 = m_activations_2;
+    LoadDataLine();
+}
+
+DriverFile::~DriverFile() {
+    m_ifstream.close();
+}
+
+void DriverFile::LoadDataLine() {
+    m_ifstream >> m_time_2;
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 8; j++) {
+            m_ifstream >> m_activations_2[i][j];
+        }
+    }
+}
+
+bool DriverFile::Update(double time) {
+    // In the ease-in interval, return first data entry
+    if (time < m_offset) {
+        m_activations = m_activations_1;
+        return false;
+    }
+
+    // Offset time
+    double t = time - m_offset;
+
+    if (t > m_duration)
+        return true;
 
     // Check if moving to new interval
-    while (time > m_time_2) {
+    while (t > m_time_2) {
         m_time_1 = m_time_2;
         m_activations_1 = m_activations_2;
         LoadDataLine();
@@ -485,27 +526,15 @@ void RoboSimian::Activate(double time) {
 
     // Interpolate  v = alpha_1 * v_1 + alpha_2 * v_2
     axpby op;
-    op.a1 = (time - m_time_2) / (m_time_1 - m_time_2);
-    op.a2 = (time - m_time_1) / (m_time_2 - m_time_1);
+    op.a1 = (t - m_time_2) / (m_time_1 - m_time_2);
+    op.a2 = (t - m_time_1) / (m_time_2 - m_time_1);
     for (int i = 0; i < 4; i++) {
-        std::array<double, 8> activations;
         std::transform(m_activations_1[i].begin(), m_activations_1[i].end(), m_activations_2[i].begin(),
-                       activations.begin(), op);
-        m_limbs[i]->Activate(time, activations);
+                       m_activations[i].begin(), op);
     }
-}
 
-bool RoboSimian::DoStepDynamics(double step) {
-    double time = m_system->GetChTime();
-    Activate(time);
-    m_system->DoStepDynamics(step);
-    if (time > 45)
-        return true;
+    // Continue generating actuations
     return false;
-}
-
-void RoboSimian::ReportContacts() {
-    m_contacts->Process(this);
 }
 
 // =============================================================================
@@ -782,7 +811,8 @@ void WheelDD::Initialize(std::shared_ptr<ChBodyAuxRef> chassis, const ChVector<>
 
 // =============================================================================
 
-Limb::Limb(const std::string& name, LimbID id, const LinkData data[], ChSystem* system) : m_name(name), m_id(id), m_collide_links(false), m_collide_wheel(true) {
+Limb::Limb(const std::string& name, LimbID id, const LinkData data[], ChSystem* system)
+    : m_name(name), m_id(id), m_collide_links(false), m_collide_wheel(true) {
     for (int i = 0; i < num_links; i++) {
         auto link = std::make_shared<Part>(m_name + "_" + data[i].name, system);
 
@@ -921,7 +951,7 @@ void Limb::Activate(double time, const std::array<double, 8>& vals) {
     for (int i = 0; i < 8; i++) {
         auto fun = std::static_pointer_cast<ChFunction_Setpoint>(m_motors[motor_names[i]]->GetMotorFunction());
         fun->SetSetpoint(-vals[i], time);
-    }  
+    }
 }
 
 void Limb::SetCollideLinks(bool state) {

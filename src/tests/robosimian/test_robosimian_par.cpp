@@ -70,8 +70,6 @@ int main(int argc, char* argv[]) {
     robot.SetVisualizationTypeSled(robosimian::VisualizationType::MESH);
     robot.SetVisualizationTypeLimbs(robosimian::VisualizationType::MESH);
 
-    robot.SetActuationData(GetChronoDataFile("robosimian/inchworm.txt"));
-
     // Initialize output
     if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
         std::cout << "Error creating directory " << out_dir << std::endl;
@@ -106,12 +104,12 @@ int main(int argc, char* argv[]) {
             render_frame++;
         }
 
-        ////double time = my_sys.GetChTime();
-        ////double A = CH_C_PI / 6;
-        ////double freq = 2;
-        ////double val = 0.5 * A * (1 - std::cos(CH_C_2PI * freq * time));
-        ////robot.Activate(robosimian::FR, "joint2", time, val);
-        ////robot.Activate(robosimian::RL, "joint5", time, val);
+        double time = my_sys.GetChTime();
+        double A = CH_C_PI / 6;
+        double freq = 2;
+        double val = 0.5 * A * (1 - std::cos(CH_C_2PI * freq * time));
+        robot.Activate(robosimian::FR, "joint2", time, val);
+        robot.Activate(robosimian::RL, "joint5", time, val);
 
         robot.DoStepDynamics(step_size);
         

@@ -17,16 +17,20 @@
 #ifndef ROBO_SIMIAN_H
 #define ROBO_SIMIAN_H
 
+#include <array>
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <array>
 
 #include "chrono/assets/ChColor.h"
-#include "chrono/physics/ChSystem.h"
 #include "chrono/physics/ChLinkMotorRotation.h"
+#include "chrono/physics/ChSystem.h"
 
 namespace robosimian {
+
+// -----------------------------------------------------------------------------
+// Various definitions
+// -----------------------------------------------------------------------------
 
 enum LimbID {
     FR = 0,  ///< front right
@@ -69,6 +73,10 @@ enum class ActuationMode {
     SPEED,  ///< prescribe time-series for joint angular speed
     FIXED   ///< weld joint
 };
+
+// -----------------------------------------------------------------------------
+// Definition of a part (body + collision shapes + visualization assets)
+// -----------------------------------------------------------------------------
 
 struct BoxShape {
     BoxShape(const chrono::ChVector<>& pos, const chrono::ChQuaternion<>& rot, const chrono::ChVector<>& dims)
@@ -129,6 +137,10 @@ class Part {
     friend class Limb;
 };
 
+// -----------------------------------------------------------------------------
+// Robot chassis (torso)
+// -----------------------------------------------------------------------------
+
 class Chassis : public Part {
   public:
     Chassis(const std::string& name, chrono::ChSystem* system, bool fixed);
@@ -143,6 +155,10 @@ class Chassis : public Part {
   private:
     bool m_collide;
 };
+
+// -----------------------------------------------------------------------------
+// Robot sled (fixed to chassis)
+// -----------------------------------------------------------------------------
 
 class Sled : public Part {
   public:
@@ -162,16 +178,25 @@ class Sled : public Part {
     bool m_collide;
 };
 
+// -----------------------------------------------------------------------------
+// Direct-drive robot wheels (not used in current model)
+// -----------------------------------------------------------------------------
+
 class WheelDD : public Part {
   public:
     WheelDD(const std::string& name, int id, chrono::ChSystem* system);
     ~WheelDD() {}
 
+    /// Initialize the direct-drive wheel at the specified position (relative to the chassis).
     void Initialize(std::shared_ptr<chrono::ChBodyAuxRef> chassis,  ///< chassis body
                     const chrono::ChVector<>& xyz,                  ///< location (relative to chassis)
                     const chrono::ChVector<>& rpy                   ///< roll-pitch-yaw (relative to chassis)
     );
 };
+
+// -----------------------------------------------------------------------------
+// Robot limb components
+// -----------------------------------------------------------------------------
 
 class Link {
   public:
@@ -226,7 +251,7 @@ class Limb {
     Limb(const std::string& name, LimbID id, const LinkData data[], chrono::ChSystem* system);
     ~Limb() {}
 
-    /// Initialize the link at the specified position (relative to the chassis).
+    /// Initialize the limb at the specified position (relative to the chassis).
     void Initialize(std::shared_ptr<chrono::ChBodyAuxRef> chassis,  ///< chassis body
                     const chrono::ChVector<>& xyz,                  ///< location (relative to chassis)
                     const chrono::ChVector<>& rpy,                  ///< roll-pitch-yaw (relative to chassis)
@@ -260,7 +285,12 @@ class Limb {
     bool m_collide_wheel;  ///< collide flag for the final wheel
 };
 
+// -----------------------------------------------------------------------------
+// Definition of the RoboSimian robot
+// -----------------------------------------------------------------------------
+
 class ContactManager;
+class Driver;
 
 class RoboSimian {
   public:
@@ -275,7 +305,8 @@ class RoboSimian {
     /// The 'flags' argument can be any of the CollisionFlag enums, or a combination thereof (using bit-wise operators).
     void SetCollide(int flags);
 
-    void SetActuationData(const std::string& filename);
+    /// Attach a driver system.
+    void SetDriver(std::shared_ptr<Driver> driver);
 
     void SetVisualizationTypeChassis(VisualizationType vis);
     void SetVisualizationTypeSled(VisualizationType vis);
@@ -283,12 +314,15 @@ class RoboSimian {
     void SetVisualizationTypeLimb(LimbID id, VisualizationType vis);
     void SetVisualizationTypeWheels(VisualizationType vis);
 
+    /// Initialize the robot at the specified chassis position and orientation.
     void Initialize(const chrono::ChCoordsys<>& pos);
 
+    /// Directly activate the specified motor on the specified limb.
     void Activate(LimbID id, const std::string& motor_name, double time, double val);
 
-    void Activate(double time);
-
+    /// Advance dynamics of underlying system.
+    /// If a driver system is specified, apply motor actuations at current time.
+    /// Returns true if actuation data ended (in which case simulation shuld be stopped).
     bool DoStepDynamics(double step);
 
     void ReportContacts();
@@ -296,17 +330,8 @@ class RoboSimian {
   private:
     void Create(bool has_sled, bool fixed);
 
-    void LoadDataLine();
-
     chrono::ChSystem* m_system;  ///< pointer to the Chrono system
     bool m_owns_system;          ///< true if system created at construction
-
-    bool m_has_data;                                       ///< true if an input actuation file was provided
-    std::ifstream m_ifstream;                              ///< input file stream
-    double m_time_1;                                       ///< time for cached activations
-    double m_time_2;                                       ///< time for cached activations
-    std::array<std::array<double, 8>, 4> m_activations_1;  ///< cached activations
-    std::array<std::array<double, 8>, 4> m_activations_2;  ///< cached activations
 
     std::shared_ptr<Chassis> m_chassis;          ///< robot chassis
     std::shared_ptr<Sled> m_sled;                ///< optional sled attached to chassis
@@ -314,7 +339,52 @@ class RoboSimian {
     ////std::shared_ptr<WheelDD> m_wheel_left;       ///< left DD wheel
     ////std::shared_ptr<WheelDD> m_wheel_right;      ///< right DD wheel
 
+    std::shared_ptr<Driver> m_driver;
     ContactManager* m_contacts;
+};
+
+// -----------------------------------------------------------------------------
+// RoboSimian driver classes
+// -----------------------------------------------------------------------------
+
+typedef std::array<std::array<double, 8>, 4> Actuation;
+
+class Driver {
+  public:
+    Driver() : m_offset(0) {}
+    virtual ~Driver() {}
+
+    /// Specify a time interval over which the robot is allowed to assume the initial pose.
+    void SetOffset(double offset) { m_offset = offset; }
+
+    /// Update the state of the driver system at the specified time.
+    virtual bool Update(double time) { return false; }
+
+    /// Return the current limb motor actuations.
+    virtual Actuation GetActuation() = 0;
+
+  protected:
+    double m_offset;  ///< ease-in duration to reach initial pose
+};
+
+class DriverFile : public Driver {
+  public:
+    DriverFile(const std::string& filename, double duration);
+    ~DriverFile();
+
+    virtual bool Update(double time) override;
+    virtual Actuation GetActuation() override { return m_activations; }
+
+  private:
+    void LoadDataLine();
+
+    std::ifstream m_ifstream;   ///< input file stream
+    double m_duration;          ///< time interval for producing actuations
+    double m_time_1;            ///< time for cached activations
+    double m_time_2;            ///< time for cached activations
+    Actuation m_activations;    ///< cached activations (current time)
+    Actuation m_activations_1;  ///< cached activations (before)
+    Actuation m_activations_2;  ///< cached activations (after)
 };
 
 }  // end namespace robosimian
