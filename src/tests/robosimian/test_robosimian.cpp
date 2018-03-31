@@ -170,8 +170,9 @@ int main(int argc, char* argv[]) {
 
     // Create a driver and attach to robot
 
-    auto driver = std::make_shared<robosimian::DriverFile>(GetChronoDataFile("robosimian/inchworm.txt"));
-    driver->SetOffset(0);
+    ////auto driver = std::make_shared<robosimian::DriverFile>(GetChronoDataFile("robosimian/inchworm.txt"));
+    auto driver = std::make_shared<robosimian::DriverFile>(GetChronoDataFile("robosimian/walk_cycle.txt"), true);
+    driver->SetOffset(1);
     robot.SetDriver(driver);
 
     // Cast rays into collision models

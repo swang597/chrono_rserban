@@ -350,39 +350,40 @@ typedef std::array<std::array<double, 8>, 4> Actuation;
 
 class Driver {
   public:
-    Driver() : m_offset(0) {}
+    Driver() {}
     virtual ~Driver() {}
 
-    /// Specify a time interval over which the robot is allowed to assume the initial pose.
-    void SetOffset(double offset) { m_offset = offset; }
+    /// Return the current limb motor actuations.
+    Actuation GetActuation() { return m_actuations; }
 
+  protected:
     /// Update the state of the driver system at the specified time.
     virtual void Update(double time) {}
 
-    /// Return the current limb motor actuations.
-    virtual Actuation GetActuation() = 0;
+    Actuation m_actuations;  ///< current actuations
 
-  protected:
-    double m_offset;  ///< ease-in duration to reach initial pose
+    friend class RoboSimian;
 };
 
 class DriverFile : public Driver {
   public:
-    DriverFile(const std::string& filename);
+    DriverFile(const std::string& filename, bool repeat = false);
     ~DriverFile();
 
-    virtual void Update(double time) override;
-    virtual Actuation GetActuation() override { return m_activations; }
+    /// Specify a time interval over which the robot is allowed to assume the initial pose.
+    void SetOffset(double offset) { m_offset = offset; }
 
   private:
-    void LoadDataLine();
+    virtual void Update(double time) override;
+    void LoadDataLine(double& time, Actuation& activations);
 
-    std::ifstream m_ifstream;   ///< input file stream
-    double m_time_1;            ///< time for cached activations
-    double m_time_2;            ///< time for cached activations
-    Actuation m_activations;    ///< cached activations (current time)
-    Actuation m_activations_1;  ///< cached activations (before)
-    Actuation m_activations_2;  ///< cached activations (after)
+    std::ifstream m_ifstream;  ///< input file stream
+    double m_offset;           ///< ease-in duration to reach initial pose
+    bool m_repeat;             ///< repeat cycle
+    double m_time_1;           ///< time for cached actuations
+    double m_time_2;           ///< time for cached actuations
+    Actuation m_actuations_1;  ///< cached actuations (before)
+    Actuation m_actuations_2;  ///< cached actuations (after)
 };
 
 }  // end namespace robosimian

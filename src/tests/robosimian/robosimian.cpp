@@ -480,23 +480,21 @@ class axpby {
     double a2;
 };
 
-DriverFile::DriverFile(const std::string& filename) {
+DriverFile::DriverFile(const std::string& filename, bool repeat) : m_repeat(repeat), m_offset(0) {
     m_ifstream.open(filename.c_str());
-    LoadDataLine();
-    m_time_1 = m_time_2;
-    m_activations_1 = m_activations_2;
-    LoadDataLine();
+    LoadDataLine(m_time_1, m_actuations_1);
+    LoadDataLine(m_time_2, m_actuations_2);
 }
 
 DriverFile::~DriverFile() {
     m_ifstream.close();
 }
 
-void DriverFile::LoadDataLine() {
-    m_ifstream >> m_time_2;
+void DriverFile::LoadDataLine(double& time, Actuation& activations) {
+    m_ifstream >> time;
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 8; j++) {
-            m_ifstream >> m_activations_2[i][j];
+            m_ifstream >> activations[i][j];
         }
     }
 }
@@ -504,21 +502,30 @@ void DriverFile::LoadDataLine() {
 void DriverFile::Update(double time) {
     // In the ease-in interval, return first data entry
     if (time < m_offset) {
-        m_activations = m_activations_1;
+        m_actuations = m_actuations_1;
         return;
     }
 
     // Offset time
     double t = time - m_offset;
 
-    // Check if moving to new interval.
-    // Return as soon as reaching the end of the input file to stop updates.
+    // Check if moving to new interval while checking for eof.
+    // If reaching the end of file and we are in cycle mode, rewind input stream and update offset.
+    // Otherwise, return to stop updates.
     while (t > m_time_2) {
         m_time_1 = m_time_2;
-        m_activations_1 = m_activations_2;
-        if (m_ifstream.eof())
+        m_actuations_1 = m_actuations_2;
+        if (m_ifstream.eof()) {
+            if (m_repeat) {
+                m_ifstream.clear();
+                m_ifstream.seekg(0);
+                LoadDataLine(m_time_1, m_actuations_1);
+                LoadDataLine(m_time_2, m_actuations_2);
+                m_offset = time;
+            }
             return;
-        LoadDataLine();
+        }
+        LoadDataLine(m_time_2, m_actuations_2);
     }
 
     // Interpolate  v = alpha_1 * v_1 + alpha_2 * v_2
@@ -526,8 +533,8 @@ void DriverFile::Update(double time) {
     op.a1 = (t - m_time_2) / (m_time_1 - m_time_2);
     op.a2 = (t - m_time_1) / (m_time_2 - m_time_1);
     for (int i = 0; i < 4; i++) {
-        std::transform(m_activations_1[i].begin(), m_activations_1[i].end(), m_activations_2[i].begin(),
-                       m_activations[i].begin(), op);
+        std::transform(m_actuations_1[i].begin(), m_actuations_1[i].end(), m_actuations_2[i].begin(),
+                       m_actuations[i].begin(), op);
     }
 }
 
