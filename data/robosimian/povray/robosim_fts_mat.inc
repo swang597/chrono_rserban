@@ -8,10 +8,10 @@
 //Web: https://sites.google.com/site/poseray/
 //==================================================
 //Files needed to run the POV-Ray scene:
-//robosim_sled_POV_main.ini (initialization file - open this to render)
-//robosim_sled_POV_scene.pov (scene setup of cameras, lights and geometry)
-//robosim_sled_POV_geom.inc (geometry)
-//robosim_sled_POV_mat.inc (materials)
+//robosim_fts_POV_main.ini (initialization file - open this to render)
+//robosim_fts_POV_scene.pov (scene setup of cameras, lights and geometry)
+//robosim_fts_POV_geom.inc (geometry)
+//robosim_fts_POV_mat.inc (materials)
 // 
  
 //Macros used by PoseRay to manipulate pigments
@@ -182,16 +182,16 @@ average pigment_map{
 //==================================================
 //Material definitions
 #declare unnamed_material_=
-#declare PR_DIFFUSE=pigment {color srgb <0.78,0.78,0.78> transmit 0/100 }
+#declare PR_DIFFUSE=pigment {color srgb <0.16,0.31,0.47> transmit 0/100 }
 
 
 #declare F1=finish{specular albedo 1 //Max highlight intensity: 0 -> 1
-                   roughness 0.1083053 //surface roughness: 0.0005 -> 1
+                   roughness 0.09632328 //surface roughness: 0.0005 -> 1
                    phong albedo 0 phong_size 0 //Phong specular disabled
-                    metallic
-                   ambient <0,0,0> emission srgb <0.39,0.39,0.39> //ambient RGB color: 0->1 for each component
+                   
+                   ambient <0,0,0> emission srgb <0.00,0.00,0.00> //ambient RGB color: 0->1 for each component
                    diffuse albedo 0.6 
-                   reflection{0 metallic } conserve_energy //reflection amount: 0 -> 1
+                   reflection{0 } conserve_energy //reflection amount: 0 -> 1
                    }
 
 
