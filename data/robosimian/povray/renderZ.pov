@@ -626,6 +626,7 @@ camera {
     #else
         orthographic
     #end
+    right x*image_width/image_height
     location cloc
     look_at  clookat  
     angle 60
@@ -711,7 +712,7 @@ camera {
 #else
 
   // Set a color of the background (sky)
-  background { color rgb <0.6, 0.6, 0.6> }
+  background { color rgb <0.13, 0.19, 0.38> }
    
    // Create a regular point light source behind the camera
   #if (draw_shadows)
