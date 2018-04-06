@@ -82,7 +82,7 @@ ChQuaternion<> initRot(1, 0, 0, 0);
 double initSpeed = 0;
 
 // Point on chassis tracked by the camera (Irrlicht only)
-ChVector<> trackPoint(0.0, 0.0, 0.0);
+ChVector<> trackPoint(-1.0, 0.0, 0.0);
 
 // -----------------------------------------------------------------------------
 // Timed events
@@ -131,6 +131,7 @@ class GONOGO_Driver : public chrono::vehicle::ChDriver {
   public:
     GONOGO_Driver(chrono::vehicle::ChVehicle& vehicle,          // associated vehicle
                   std::shared_ptr<chrono::ChBezierCurve> path,  // target path
+                  bool render_path,                             // add curve visualization asset?
                   double time_start,                            // time throttle start
                   double time_max                               // time throttle max
     );
@@ -294,11 +295,11 @@ int main(int argc, char* argv[]) {
 
     // Set visualization type for subsystems
     m113.SetChassisVisualizationType(VisualizationType::NONE);
-    m113.SetSprocketVisualizationType(VisualizationType::PRIMITIVES);
-    m113.SetIdlerVisualizationType(VisualizationType::PRIMITIVES);
-    m113.SetRoadWheelAssemblyVisualizationType(VisualizationType::PRIMITIVES);
-    m113.SetRoadWheelVisualizationType(VisualizationType::PRIMITIVES);
-    m113.SetTrackShoeVisualizationType(VisualizationType::PRIMITIVES);
+    m113.SetSprocketVisualizationType(VisualizationType::MESH);
+    m113.SetIdlerVisualizationType(VisualizationType::MESH);
+    m113.SetRoadWheelAssemblyVisualizationType(VisualizationType::MESH);
+    m113.SetRoadWheelVisualizationType(VisualizationType::MESH);
+    m113.SetTrackShoeVisualizationType(VisualizationType::MESH);
 
     // Control steering type (enable crossdrive capability).
     m113.GetDriveline()->SetGyrationMode(true);
@@ -314,7 +315,7 @@ int main(int argc, char* argv[]) {
     double height = initLoc.z();
     auto path = StraightLinePath(ChVector<>(-2 * hdimX, 0, height), ChVector<>(200 * hdimX, 0, height));
 
-    GONOGO_Driver driver(m113, path, time_start_engine, time_max_throttle);
+    GONOGO_Driver driver(m113, path, false, time_start_engine, time_max_throttle);
     double look_ahead_dist = 5;
     double Kp_steering = 0.5;
     double Ki_steering = 0;
@@ -359,14 +360,17 @@ int main(int argc, char* argv[]) {
     // Create the vehicle Irrlicht application
     // ---------------------------------------
 
-    ChTrackedVehicleIrrApp app(&m113, &powertrain, L"M113 side slope stability");
+    ChTrackedVehicleIrrApp app(&m113, &powertrain, L"M113 go/no-go");
     app.SetSkyBox();
-    app.AddTypicalLights(irr::core::vector3df(-70.f, -150.f, 100.f), irr::core::vector3df(-70.f, -50.f, 100.f), 250,
-                         130);
-    app.SetChaseCamera(trackPoint, 6.0, 0.5);
+    app.AddLight(irr::core::vector3df(-100.f, -150.f, 150.f), 150, irr::video::SColorf(0.65f, 0.65f, 0.7f));
+    app.AddLight(irr::core::vector3df(-100.f, +150.f, 150.f), 150, irr::video::SColorf(0.65f, 0.65f, 0.7f));
+    app.AddTypicalLogo();
+    app.SetChaseCamera(trackPoint, 5.0, 0.25);
     app.AssetBindAll();
     app.AssetUpdateAll();
 
+    ////app.SetChaseCameraAngle(CH_C_PI / 5);
+    ////app.EnableStats(false);
 #endif
 
     // Save parameters and problem setup to output file
@@ -564,20 +568,23 @@ int main(int argc, char* argv[]) {
 
 GONOGO_Driver::GONOGO_Driver(chrono::vehicle::ChVehicle& vehicle,
                              std::shared_ptr<chrono::ChBezierCurve> path,
+                             bool render_path,
                              double time_start,
                              double time_max)
     : chrono::vehicle::ChDriver(vehicle), m_steeringPID(path, false), m_start(time_start), m_end(time_max) {
     m_steeringPID.Reset(m_vehicle);
 
-    auto road = std::shared_ptr<chrono::ChBody>(m_vehicle.GetSystem()->NewBody());
-    road->SetBodyFixed(true);
-    m_vehicle.GetSystem()->AddBody(road);
+    if (render_path) {
+        auto road = std::shared_ptr<chrono::ChBody>(m_vehicle.GetSystem()->NewBody());
+        road->SetBodyFixed(true);
+        m_vehicle.GetSystem()->AddBody(road);
 
-    auto path_asset = std::make_shared<chrono::ChLineShape>();
-    path_asset->SetLineGeometry(std::make_shared<chrono::geometry::ChLineBezier>(m_steeringPID.GetPath()));
-    path_asset->SetColor(chrono::ChColor(0.0f, 0.8f, 0.0f));
-    path_asset->SetName("straight_path");
-    road->AddAsset(path_asset);
+        auto path_asset = std::make_shared<chrono::ChLineShape>();
+        path_asset->SetLineGeometry(std::make_shared<chrono::geometry::ChLineBezier>(m_steeringPID.GetPath()));
+        path_asset->SetColor(chrono::ChColor(0.0f, 0.8f, 0.0f));
+        path_asset->SetName("straight_path");
+        road->AddAsset(path_asset);
+    }
 }
 
 void GONOGO_Driver::Synchronize(double time) {
