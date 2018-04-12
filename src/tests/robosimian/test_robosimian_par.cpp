@@ -21,7 +21,7 @@ double step_size = 1e-3;
 double render_step_size = 1.0 / 50;  // FPS = 50
 
 // Output directories
-const std::string out_dir = GetChronoOutputPath() + "ROBOSIMIAN";
+const std::string out_dir = GetChronoOutputPath() + "ROBOSIMIAN_PAR";
 const std::string pov_dir = out_dir + "/POVRAY";
 
 // POV-Ray output
@@ -70,6 +70,18 @@ int main(int argc, char* argv[]) {
     robot.SetVisualizationTypeSled(robosimian::VisualizationType::MESH);
     robot.SetVisualizationTypeLimbs(robosimian::VisualizationType::MESH);
 
+    // Create a driver and attach to robot
+    ////auto driver = std::make_shared<robosimian::DriverFile>(GetChronoDataFile("robosimian/inchworm.txt"));
+    auto driver = std::make_shared<robosimian::DriverFile>(GetChronoDataFile("robosimian/walk_cycle.txt"), true);
+    driver->SetOffset(1);
+    robot.SetDriver(driver);
+
+    // Initialize OpenGL
+    opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
+    gl_window.Initialize(1280, 720, "RoboSimian", &my_sys);
+    gl_window.SetCamera(ChVector<>(2, 2, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1));
+    gl_window.SetRenderMode(opengl::WIREFRAME);
+
     // Initialize output
     if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
         std::cout << "Error creating directory " << out_dir << std::endl;
@@ -81,12 +93,6 @@ int main(int argc, char* argv[]) {
             return 1;
         }
     }
-
-    // Initialize OpenGL
-    opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-    gl_window.Initialize(1280, 720, "RoboSimian", &my_sys);
-    gl_window.SetCamera(ChVector<>(2, 2, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1));
-    gl_window.SetRenderMode(opengl::WIREFRAME);
 
     // Run simulation for specified time
     int render_steps = (int)std::ceil(render_step_size / step_size);
@@ -104,12 +110,12 @@ int main(int argc, char* argv[]) {
             render_frame++;
         }
 
-        double time = my_sys.GetChTime();
-        double A = CH_C_PI / 6;
-        double freq = 2;
-        double val = 0.5 * A * (1 - std::cos(CH_C_2PI * freq * time));
-        robot.Activate(robosimian::FR, "joint2", time, val);
-        robot.Activate(robosimian::RL, "joint5", time, val);
+        ////double time = my_sys.GetChTime();
+        ////double A = CH_C_PI / 6;
+        ////double freq = 2;
+        ////double val = 0.5 * A * (1 - std::cos(CH_C_2PI * freq * time));
+        ////robot.Activate(robosimian::FR, "joint2", time, val);
+        ////robot.Activate(robosimian::RL, "joint5", time, val);
 
         robot.DoStepDynamics(step_size);
         

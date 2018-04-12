@@ -2,6 +2,9 @@
 #include <cstdio>
 #include <vector>
 
+#include "chrono/core/ChFileutils.h"
+#include "chrono/utils/ChUtilsInputOutput.h"
+
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/physics/ChSystemSMC.h"
 
@@ -14,6 +17,18 @@ using namespace chrono;
 using namespace chrono::collision;
 
 double time_step = 2e-3;
+
+// Time interval between two render frames
+double render_step_size = 1.0 / 30;  // FPS = 50
+
+// Output directories
+const std::string out_dir = GetChronoOutputPath() + "ROBOSIMIAN";
+const std::string pov_dir = out_dir + "/POVRAY";
+const std::string img_dir = out_dir + "/IMG";
+
+// POV-Ray amd/or IMG output
+bool povray_output = false;
+bool image_output = false;
 
 // =============================================================================
 
@@ -160,8 +175,10 @@ int main(int argc, char* argv[]) {
     ////robot.SetVisualizationTypeLimb(robosimian::RL, robosimian::VisualizationType::COLLISION);
     ////robot.SetVisualizationTypeLimb(robosimian::RR, robosimian::VisualizationType::COLLISION);
     ////robot.SetVisualizationTypeLimbs(robosimian::VisualizationType::NONE);
-    ////robot.SetVisualizationTypeLimbs(robosimian::VisualizationType::MESH);
-    ////robot.SetVisualizationTypeWheels(robosimian::VisualizationType::COLLISION);
+    robot.SetVisualizationTypeChassis(robosimian::VisualizationType::MESH);
+    robot.SetVisualizationTypeSled(robosimian::VisualizationType::MESH);
+    robot.SetVisualizationTypeLimbs(robosimian::VisualizationType::MESH);
+    robot.SetVisualizationTypeWheels(robosimian::VisualizationType::COLLISION);
 
     // Initialize Robosimian robot
 
@@ -170,8 +187,8 @@ int main(int argc, char* argv[]) {
 
     // Create a driver and attach to robot
 
-    ////auto driver = std::make_shared<robosimian::DriverFile>(GetChronoDataFile("robosimian/inchworm.txt"));
-    auto driver = std::make_shared<robosimian::DriverFile>(GetChronoDataFile("robosimian/walk_cycle.txt"), true);
+    auto driver = std::make_shared<robosimian::DriverFile>(GetChronoDataFile("robosimian/inchworm.txt"));
+    ////auto driver = std::make_shared<robosimian::DriverFile>(GetChronoDataFile("robosimian/walk_cycle.txt"), true);
     driver->SetOffset(1);
     robot.SetDriver(driver);
 
@@ -196,15 +213,55 @@ int main(int argc, char* argv[]) {
     application.AssetBindAll();
     application.AssetUpdateAll();
 
-    // Run simulation for specified time
+    // Initialize output directories
 
+    if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
+        std::cout << "Error creating directory " << out_dir << std::endl;
+        return 1;
+    }
+    if (povray_output) {
+        if (ChFileutils::MakeDirectory(pov_dir.c_str()) < 0) {
+            std::cout << "Error creating directory " << pov_dir << std::endl;
+            return 1;
+        }
+    }
+    if (image_output) {
+        if (ChFileutils::MakeDirectory(img_dir.c_str()) < 0) {
+            std::cout << "Error creating directory " << img_dir << std::endl;
+            return 1;
+        }
+    }
+
+    // Run simulation for specified time
+    int render_steps = (int)std::ceil(render_step_size / time_step);
     int sim_frame = 0;
+    int render_frame = 0;
 
     while (application.GetDevice()->run()) {
         ////caster.Update();
 
         application.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
         application.DrawAll();
+
+        // Output POV-Ray date and/or snapshot images
+        if (sim_frame % render_steps == 0) {
+            if (povray_output) {
+                char filename[100];
+                sprintf(filename, "%s/data_%03d.dat", pov_dir.c_str(), render_frame + 1);
+                utils::WriteShapesPovray(&my_sys, filename);
+            }
+            if (image_output) {
+                char filename[100];
+                sprintf(filename, "%s/img_%03d.jpg", img_dir.c_str(), render_frame + 1);
+                irr::video::IImage* image = application.GetVideoDriver()->createScreenShot();
+                if (image) {
+                    application.GetVideoDriver()->writeImageToFile(image, filename);
+                    image->drop();
+                }
+            }
+
+            render_frame++;
+        }
 
         ////double time = my_sys.GetChTime();
         ////double A = CH_C_PI / 6;
