@@ -48,6 +48,8 @@ void WVP_TMeasyTire::SetTMeasyParams() {
 	// Set Handling Charecteristics as close as possible to Pacejka89 model data
     
     m_TMeasyCoeff.pn = GetTireMaxLoad(152)/2.0;
+    m_TMeasyCoeff.pn_max = 3.5 * m_TMeasyCoeff.pn;
+
     m_TMeasyCoeff.mu_0 = 0.8;
     
     // Set nonlinear vertical stiffness
