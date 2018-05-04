@@ -102,12 +102,13 @@ struct CylinderShape {
 };
 
 struct MeshShape {
-    MeshShape(const chrono::ChVector<>& pos, const chrono::ChQuaternion<>& rot, const std::string& name, bool convex)
-        : m_pos(pos), m_rot(rot), m_name(name), m_convex(convex) {}
+    enum Type { CONVEX_HULL, TRIANGLE_SOUP, NODE_CLOUD };
+    MeshShape(const chrono::ChVector<>& pos, const chrono::ChQuaternion<>& rot, const std::string& name, Type type)
+        : m_pos(pos), m_rot(rot), m_name(name), m_type(type) {}
     chrono::ChVector<> m_pos;
     chrono::ChQuaternion<> m_rot;
     std::string m_name;
-    bool m_convex;
+    Type m_type;
 };
 
 class Part {
