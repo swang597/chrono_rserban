@@ -539,7 +539,7 @@ void DriverFile::Update(double time) {
 
 // ---------------
 
-const std::string DriverFiles::m_phase_names[] = { "Pose", "Start", "Cycle", "Stop" };
+const std::string DriverFiles::m_phase_names[] = { "POSE", "START", "CYCLE", "STOP" };
 
 DriverFiles::DriverFiles(const std::string& filename_start,
                          const std::string& filename_cycle,

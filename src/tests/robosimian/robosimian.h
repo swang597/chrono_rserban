@@ -376,6 +376,9 @@ class Driver {
     /// Return the current limb motor actuations.
     Actuation GetActuation() { return m_actuations; }
 
+    /// Return current phase
+    virtual std::string GetCurrentPhase() const { return ""; }
+
   protected:
     /// Update the state of the driver system at the specified time.
     virtual void Update(double time) {}
@@ -418,7 +421,7 @@ class DriverFiles : public Driver {
     void SetOffset(double offset) { m_offset = offset; }
 
     /// Return the current phase
-    const std::string& GetCurrentPhase() const { return m_phase_names[m_phase]; }
+    virtual std::string GetCurrentPhase() const override { return m_phase_names[m_phase]; }
 
   private:
     enum Phase { POSE, START, CYCLE, STOP };
