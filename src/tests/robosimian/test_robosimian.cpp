@@ -16,10 +16,14 @@
 using namespace chrono;
 using namespace chrono::collision;
 
-double time_step = 2e-3;
+////double time_step = 1e-3;
+double time_step = 5e-4;
 
 // Time interval between two render frames
 double render_step_size = 1.0 / 30;  // FPS = 50
+
+// Time interval for assuming initial pose
+double time_offset = 3;
 
 // Output directories
 const std::string out_dir = GetChronoOutputPath() + "ROBOSIMIAN";
@@ -143,11 +147,32 @@ void CreateCamera(irrlicht::ChIrrApp& application,
 
 // =============================================================================
 
+std::shared_ptr<ChBody> CreateTerrain(ChSystem& sys, const ChVector<>& hdim, const ChVector<>& loc) {
+    auto ground = std::shared_ptr<ChBody>(sys.NewBody());
+    ground->SetBodyFixed(true);
+    ground->SetCollide(true);
+
+    ground->GetCollisionModel()->ClearModel();
+    ground->GetCollisionModel()->AddBox(hdim.x(), hdim.y(), hdim.z(), loc);
+    ground->GetCollisionModel()->BuildModel();
+
+    auto box = std::make_shared<ChBoxShape>();
+    box->GetBoxGeometry().Size = hdim;
+    box->GetBoxGeometry().Pos = loc;
+    ground->AddAsset(box);
+
+    sys.AddBody(ground);
+
+    return ground;
+}
+
+// =============================================================================
+
 int main(int argc, char* argv[]) {
     // Create system
 
-    ChSystemSMC my_sys;
-    ////ChSystemNSC my_sys;
+    ////ChSystemSMC my_sys;
+    ChSystemNSC my_sys;
 
     my_sys.SetMaxItersSolverSpeed(200);
     if (my_sys.GetContactMethod() == ChMaterialSurface::NSC)
@@ -175,10 +200,9 @@ int main(int argc, char* argv[]) {
     ////robot.SetVisualizationTypeLimb(robosimian::RL, robosimian::VisualizationType::COLLISION);
     ////robot.SetVisualizationTypeLimb(robosimian::RR, robosimian::VisualizationType::COLLISION);
     ////robot.SetVisualizationTypeLimbs(robosimian::VisualizationType::NONE);
-    robot.SetVisualizationTypeChassis(robosimian::VisualizationType::MESH);
-    robot.SetVisualizationTypeSled(robosimian::VisualizationType::MESH);
-    robot.SetVisualizationTypeLimbs(robosimian::VisualizationType::MESH);
-    robot.SetVisualizationTypeWheels(robosimian::VisualizationType::COLLISION);
+    ////robot.SetVisualizationTypeChassis(robosimian::VisualizationType::MESH);
+    ////robot.SetVisualizationTypeSled(robosimian::VisualizationType::MESH);
+    ////robot.SetVisualizationTypeLimbs(robosimian::VisualizationType::MESH);
 
     // Initialize Robosimian robot
 
@@ -187,27 +211,23 @@ int main(int argc, char* argv[]) {
 
     // Create a driver and attach to robot
 
-    ////auto driver = std::make_shared<robosimian::DriverFile>(GetChronoDataFile("robosimian/inchworming_cycle.txt"), true);
-    ////auto driver = std::make_shared<robosimian::DriverFile>(GetChronoDataFile("robosimian/walking_cycle.txt"), true);
-    ////auto driver = std::make_shared<robosimian::DriverFile>(GetChronoDataFile("robosimian/sculling_cycle.txt"), true);
-
     ////auto driver = std::make_shared<robosimian::DriverFiles>(
     ////    "",                                                 // start input file
-    ////    GetChronoDataFile("robosimian/walking_cycle.txt"),  // cycle input file
+    ////    GetChronoDataFile("robosimian/actuation/walking_cycle.txt"),  // cycle input file
     ////    "",                                                 // stop input file
     ////    true);
     ////auto driver = std::make_shared<robosimian::DriverFiles>(
-    ////    GetChronoDataFile("robosimian/sculling_start.txt"),  // start input file
-    ////    GetChronoDataFile("robosimian/sculling_cycle.txt"),  // cycle input file
-    ////    GetChronoDataFile("robosimian/sculling_stop.txt"),   // stop input file
+    ////    GetChronoDataFile("robosimian/actuation/sculling_start.txt"),  // start input file
+    ////    GetChronoDataFile("robosimian/actuation/sculling_cycle.txt"),  // cycle input file
+    ////    GetChronoDataFile("robosimian/actuation/sculling_stop.txt"),   // stop input file
     ////    true);
     auto driver = std::make_shared<robosimian::DriverFiles>(
-        GetChronoDataFile("robosimian/inchworming_start.txt"),  // start input file
-        GetChronoDataFile("robosimian/inchworming_cycle.txt"),  // cycle input file
-        GetChronoDataFile("robosimian/inchworming_stop.txt"),   // stop input file
+        GetChronoDataFile("robosimian/actuation/inchworming_start.txt"),  // start input file
+        GetChronoDataFile("robosimian/actuation/inchworming_cycle.txt"),  // cycle input file
+        GetChronoDataFile("robosimian/actuation/inchworming_stop.txt"),   // stop input file
         true);
 
-    driver->SetOffset(2);
+    driver->SetOffset(time_offset);
     robot.SetDriver(driver);
 
     // Cast rays into collision models
@@ -222,8 +242,8 @@ int main(int argc, char* argv[]) {
     irrlicht::ChIrrWizard::add_typical_Sky(application.GetDevice());
     irrlicht::ChIrrWizard::add_typical_Lights(application.GetDevice(), irr::core::vector3df(100.f, 100.f, 100.f),
                                               irr::core::vector3df(100.f, -100.f, 80.f));
-    irrlicht::ChIrrWizard::add_typical_Camera(application.GetDevice(), irr::core::vector3df(0, -2.5f, 0.2f),
-                                              irr::core::vector3df(0, 0, 0));
+    irrlicht::ChIrrWizard::add_typical_Camera(application.GetDevice(), irr::core::vector3df(1, -2.5f, 0.2f),
+                                              irr::core::vector3df(1, 0, 0));
     ////CreateCamera(application, irr::core::vector3df(0, 2.5f, 0), irr::core::vector3df(0, 0, 0));
 
     application.SetUserEventReceiver(new EventReceiver(robot, application));
@@ -250,16 +270,52 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    // Rigid terrain parameters
+    double length = 8;
+    double width = 2;
+    ChCoordsys<> gridCsys;
+    int gridNu;
+    int gridNv;
+    bool renderGrid = false;
+
     // Run simulation for specified time
     int render_steps = (int)std::ceil(render_step_size / time_step);
     int sim_frame = 0;
     int render_frame = 0;
 
+    bool released = false;
+
     while (application.GetDevice()->run()) {
         ////caster.Update();
 
+        if (!released && my_sys.GetChTime() > time_offset / 2) {
+            // Set terrain height
+            double z = robot.GetWheelPos(robosimian::FR).z() - 0.15;
+
+            // Create terrain
+            ChVector<> hdim(length / 2, width / 2, 0.1);
+            ChVector<> loc(length / 4, 0, z - 0.1);
+            auto ground = CreateTerrain(my_sys, hdim, loc);
+            application.AssetBind(ground);
+            application.AssetUpdate(ground);
+
+            // Coordinate system for grid
+            gridCsys = ChCoordsys<>(ChVector<>(length / 4, 0, z + 0.01), chrono::Q_from_AngAxis(-CH_C_PI_2, VECT_Z));
+            gridNu = static_cast<int>(width / 0.1);
+            gridNv = static_cast<int>(length / 0.1);
+
+            // Release robot
+            robot.GetChassis()->GetBody()->SetBodyFixed(false);
+            released = true;
+            renderGrid = true;
+        }
+
         application.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
         application.DrawAll();
+
+        if (renderGrid) {
+            irrlicht::ChIrrTools::drawGrid(application.GetVideoDriver(), 0.1, 0.1, gridNu, gridNv, gridCsys, irr::video::SColor(255, 255, 130, 80), true);
+        }
 
         // Output POV-Ray date and/or snapshot images
         if (sim_frame % render_steps == 0) {
@@ -270,7 +326,7 @@ int main(int argc, char* argv[]) {
             }
             if (image_output) {
                 char filename[100];
-                sprintf(filename, "%s/img_%03d.jpg", img_dir.c_str(), render_frame + 1);
+                sprintf(filename, "%s/img_%03d.png", img_dir.c_str(), render_frame + 1);
                 irr::video::IImage* image = application.GetVideoDriver()->createScreenShot();
                 if (image) {
                     application.GetVideoDriver()->writeImageToFile(image, filename);
@@ -290,9 +346,9 @@ int main(int argc, char* argv[]) {
 
         robot.DoStepDynamics(time_step);
 
-        if (my_sys.GetNcontacts() > 0) {
-            robot.ReportContacts();
-        }
+        ////if (my_sys.GetNcontacts() > 0) {
+        ////    robot.ReportContacts();
+        ////}
 
         sim_frame++;
 

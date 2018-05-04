@@ -119,6 +119,10 @@ class Part {
     void SetName(const std::string& name) { m_name = name; }
     void SetVisualizationType(VisualizationType vis);
 
+    std::shared_ptr<chrono::ChBodyAuxRef> GetBody() const { return m_body; }
+    const chrono::ChVector<>& GetPos() const { return m_body->GetFrame_REF_to_abs().GetPos(); }
+    const chrono::ChQuaternion<>& GetRot() const { return m_body->GetFrame_REF_to_abs().GetRot(); }
+
   protected:
     void AddVisualizationAssets(VisualizationType vis);
     void AddCollisionShapes();
@@ -267,6 +271,9 @@ class Limb {
     /// Enable/disable collision for final wheel (default: true).
     void SetCollideWheel(bool state);
 
+    /// Get location of the wheel body.
+    const chrono::ChVector<>& GetWheelPos() const { return m_wheel->GetPos(); }
+
     /// Set activation for given motor at current time.
     void Activate(const std::string& motor_name, double time, double val);
 
@@ -313,6 +320,18 @@ class RoboSimian {
     void SetVisualizationTypeLimbs(VisualizationType vis);
     void SetVisualizationTypeLimb(LimbID id, VisualizationType vis);
     void SetVisualizationTypeWheels(VisualizationType vis);
+
+    /// Get a handle to the robot's chassis subsystem.
+    std::shared_ptr<Chassis> GetChassis() const { return m_chassis; }
+
+    /// Get location of the chassis body.
+    const chrono::ChVector<>& GetChassisPos() const { return m_chassis->GetPos(); }
+
+    /// Get orientation of the chassis body.
+    const chrono::ChQuaternion<>& GetChassisRot() const { return m_chassis->GetRot(); }
+
+    /// Get location of the wheel body for the specified limb.
+    const chrono::ChVector<>& GetWheelPos(LimbID id) const { return m_limbs[id]->GetWheelPos(); }
 
     /// Initialize the robot at the specified chassis position and orientation.
     void Initialize(const chrono::ChCoordsys<>& pos);
