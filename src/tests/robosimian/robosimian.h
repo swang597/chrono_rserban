@@ -386,6 +386,41 @@ class DriverFile : public Driver {
     Actuation m_actuations_2;  ///< cached actuations (after)
 };
 
+class DriverFiles : public Driver {
+  public:
+    DriverFiles(const std::string& filename_start,
+                const std::string& filename_cycle,
+                const std::string& filename_stop,
+                bool repeat = false);
+    ~DriverFiles();
+
+    /// Specify a time interval over which the robot is allowed to assume the initial pose.
+    void SetOffset(double offset) { m_offset = offset; }
+
+    /// Return the current phase
+    const std::string& GetCurrentPhase() const { return m_phase_names[m_phase]; }
+
+  private:
+    enum Phase { POSE, START, CYCLE, STOP };
+
+    virtual void Update(double time) override;
+    void LoadDataLine(double& time, Actuation& activations);
+
+    std::ifstream m_ifs_start;  ///< input file stream for start phase
+    std::ifstream m_ifs_cycle;  ///< input file stream for cycle phase
+    std::ifstream m_ifs_stop;   ///< input file stream for stop phase
+    std::ifstream* m_ifs;       ///< active input file stream
+    double m_offset;            ///< ease-in duration to reach initial pose
+    bool m_repeat;              ///< repeat cycle
+    Phase m_phase;              ///< current phase
+    double m_time_1;            ///< time for cached actuations
+    double m_time_2;            ///< time for cached actuations
+    Actuation m_actuations_1;   ///< cached actuations (before)
+    Actuation m_actuations_2;   ///< cached actuations (after)
+
+    static const std::string m_phase_names[4];
+};
+
 }  // end namespace robosimian
 
 #endif

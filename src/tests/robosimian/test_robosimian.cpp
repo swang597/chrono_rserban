@@ -187,9 +187,27 @@ int main(int argc, char* argv[]) {
 
     // Create a driver and attach to robot
 
-    auto driver = std::make_shared<robosimian::DriverFile>(GetChronoDataFile("robosimian/inchworm.txt"));
-    ////auto driver = std::make_shared<robosimian::DriverFile>(GetChronoDataFile("robosimian/walk_cycle.txt"), true);
-    driver->SetOffset(1);
+    ////auto driver = std::make_shared<robosimian::DriverFile>(GetChronoDataFile("robosimian/inchworming_cycle.txt"), true);
+    ////auto driver = std::make_shared<robosimian::DriverFile>(GetChronoDataFile("robosimian/walking_cycle.txt"), true);
+    ////auto driver = std::make_shared<robosimian::DriverFile>(GetChronoDataFile("robosimian/sculling_cycle.txt"), true);
+
+    ////auto driver = std::make_shared<robosimian::DriverFiles>(
+    ////    "",                                                 // start input file
+    ////    GetChronoDataFile("robosimian/walking_cycle.txt"),  // cycle input file
+    ////    "",                                                 // stop input file
+    ////    true);
+    ////auto driver = std::make_shared<robosimian::DriverFiles>(
+    ////    GetChronoDataFile("robosimian/sculling_start.txt"),  // start input file
+    ////    GetChronoDataFile("robosimian/sculling_cycle.txt"),  // cycle input file
+    ////    GetChronoDataFile("robosimian/sculling_stop.txt"),   // stop input file
+    ////    true);
+    auto driver = std::make_shared<robosimian::DriverFiles>(
+        GetChronoDataFile("robosimian/inchworming_start.txt"),  // start input file
+        GetChronoDataFile("robosimian/inchworming_cycle.txt"),  // cycle input file
+        GetChronoDataFile("robosimian/inchworming_stop.txt"),   // stop input file
+        true);
+
+    driver->SetOffset(2);
     robot.SetDriver(driver);
 
     // Cast rays into collision models

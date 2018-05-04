@@ -487,7 +487,6 @@ DriverFile::DriverFile(const std::string& filename, bool repeat) : m_repeat(repe
 }
 
 DriverFile::~DriverFile() {
-    m_ifstream.close();
 }
 
 void DriverFile::LoadDataLine(double& time, Actuation& activations) {
@@ -535,6 +534,117 @@ void DriverFile::Update(double time) {
     for (int i = 0; i < 4; i++) {
         std::transform(m_actuations_1[i].begin(), m_actuations_1[i].end(), m_actuations_2[i].begin(),
                        m_actuations[i].begin(), op);
+    }
+}
+
+// ---------------
+
+const std::string DriverFiles::m_phase_names[] = { "Pose", "Start", "Cycle", "Stop" };
+
+DriverFiles::DriverFiles(const std::string& filename_start,
+                         const std::string& filename_cycle,
+                         const std::string& filename_stop,
+                         bool repeat)
+    : m_repeat(repeat), m_offset(0), m_phase(POSE) {
+    assert(!filename_cycle.empty());
+    m_ifs_cycle.open(filename_cycle.c_str());
+
+    if (!filename_start.empty()) {
+        m_ifs_start.open(filename_start.c_str());
+        m_ifs = &m_ifs_start;
+    } else {
+        m_ifs = &m_ifs_cycle;
+    }
+
+    if (!filename_stop.empty()) {
+        m_ifs_stop.open(filename_stop.c_str());
+    }
+
+    LoadDataLine(m_time_1, m_actuations_1);
+    LoadDataLine(m_time_2, m_actuations_2);
+}
+
+DriverFiles::~DriverFiles() {
+}
+
+void DriverFiles::LoadDataLine(double& time, Actuation& activations) {
+    *m_ifs >> time;
+    for (int i = 0; i < 4; i++) {
+        for (int j = 0; j < 8; j++) {
+            *m_ifs >> activations[i][j];
+        }
+    }
+}
+
+void DriverFiles::Update(double time) {
+    // In the POSE phase, always return the first data entry
+    if (m_phase == POSE) {
+        m_actuations = m_actuations_1;
+        if (time >= m_offset) {
+            if (m_ifs_start.is_open())
+                m_phase = START;
+            else
+                m_phase = CYCLE;
+            std::cout << "time = " << time << "  Switch to phase: " << GetCurrentPhase() << std::endl;
+        }
+        return;
+    }
+
+    // Offset time
+    double t = time - m_offset;
+
+    switch (m_phase) {
+        case START:
+            while (t > m_time_2) {
+                m_time_1 = m_time_2;
+                m_actuations_1 = m_actuations_2;
+                if (!m_ifs->eof()) {
+                    LoadDataLine(m_time_2, m_actuations_2);
+                } else {
+                    m_phase = CYCLE;
+                    m_ifs = &m_ifs_cycle;
+                    LoadDataLine(m_time_1, m_actuations_1);
+                    LoadDataLine(m_time_2, m_actuations_2);
+                    m_offset = time;
+                    std::cout << "time = " << time << "  Switch to phase: " << GetCurrentPhase() << std::endl;
+                    return;
+                }
+            }
+
+            break;
+
+        case CYCLE:
+            while (t > m_time_2) {
+                m_time_1 = m_time_2;
+                m_actuations_1 = m_actuations_2;
+                if (m_ifs->eof()) {
+                    if (m_repeat) {
+                        m_ifs->clear();
+                        m_ifs->seekg(0);
+                        LoadDataLine(m_time_1, m_actuations_1);
+                        LoadDataLine(m_time_2, m_actuations_2);
+                        m_offset = time;
+                        std::cout << "time = " << time << " New cycle" << std::endl;
+                    }
+                    return;
+                }
+                LoadDataLine(m_time_2, m_actuations_2);
+            }
+
+            break;
+
+        case STOP:
+            //// TODO
+            break;
+    }
+
+    // Interpolate  v = alpha_1 * v_1 + alpha_2 * v_2
+    axpby op;
+    op.a1 = (t - m_time_2) / (m_time_1 - m_time_2);
+    op.a2 = (t - m_time_1) / (m_time_2 - m_time_1);
+    for (int i = 0; i < 4; i++) {
+        std::transform(m_actuations_1[i].begin(), m_actuations_1[i].end(), m_actuations_2[i].begin(),
+            m_actuations[i].begin(), op);
     }
 }
 
