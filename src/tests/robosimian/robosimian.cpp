@@ -480,71 +480,12 @@ class axpby {
     double a2;
 };
 
-DriverFile::DriverFile(const std::string& filename, bool repeat) : m_repeat(repeat), m_offset(0) {
-    m_ifstream.open(filename.c_str());
-    LoadDataLine(m_time_1, m_actuations_1);
-    LoadDataLine(m_time_2, m_actuations_2);
-}
+const std::string Driver::m_phase_names[] = {"POSE", "START", "CYCLE", "STOP"};
 
-DriverFile::~DriverFile() {
-}
-
-void DriverFile::LoadDataLine(double& time, Actuation& activations) {
-    m_ifstream >> time;
-    for (int i = 0; i < 4; i++) {
-        for (int j = 0; j < 8; j++) {
-            m_ifstream >> activations[i][j];
-        }
-    }
-}
-
-void DriverFile::Update(double time) {
-    // In the ease-in interval, return first data entry
-    if (time < m_offset) {
-        m_actuations = m_actuations_1;
-        return;
-    }
-
-    // Offset time
-    double t = time - m_offset;
-
-    // Check if moving to new interval while checking for eof.
-    // If reaching the end of file and we are in cycle mode, rewind input stream and update offset.
-    // Otherwise, return to stop updates.
-    while (t > m_time_2) {
-        m_time_1 = m_time_2;
-        m_actuations_1 = m_actuations_2;
-        if (m_ifstream.eof()) {
-            if (m_repeat) {
-                m_ifstream.clear();
-                m_ifstream.seekg(0);
-                LoadDataLine(m_time_1, m_actuations_1);
-                LoadDataLine(m_time_2, m_actuations_2);
-                m_offset = time;
-            }
-            return;
-        }
-        LoadDataLine(m_time_2, m_actuations_2);
-    }
-
-    // Interpolate  v = alpha_1 * v_1 + alpha_2 * v_2
-    axpby op;
-    op.a1 = (t - m_time_2) / (m_time_1 - m_time_2);
-    op.a2 = (t - m_time_1) / (m_time_2 - m_time_1);
-    for (int i = 0; i < 4; i++) {
-        std::transform(m_actuations_1[i].begin(), m_actuations_1[i].end(), m_actuations_2[i].begin(),
-                       m_actuations[i].begin(), op);
-    }
-}
-
-// ---------------
-
-const std::string DriverFiles::m_phase_names[] = { "POSE", "START", "CYCLE", "STOP" };
-
-DriverFiles::DriverFiles(const std::string& filename_start,
-                         const std::string& filename_cycle,
-                         const std::string& filename_stop,
-                         bool repeat)
+Driver::Driver(const std::string& filename_start,
+               const std::string& filename_cycle,
+               const std::string& filename_stop,
+               bool repeat)
     : m_repeat(repeat), m_offset(0), m_phase(POSE) {
     assert(!filename_cycle.empty());
     m_ifs_cycle.open(filename_cycle.c_str());
@@ -564,10 +505,9 @@ DriverFiles::DriverFiles(const std::string& filename_start,
     LoadDataLine(m_time_2, m_actuations_2);
 }
 
-DriverFiles::~DriverFiles() {
-}
+Driver::~Driver() {}
 
-void DriverFiles::LoadDataLine(double& time, Actuation& activations) {
+void Driver::LoadDataLine(double& time, Actuation& activations) {
     *m_ifs >> time;
     for (int i = 0; i < 4; i++) {
         for (int j = 0; j < 8; j++) {
@@ -576,7 +516,7 @@ void DriverFiles::LoadDataLine(double& time, Actuation& activations) {
     }
 }
 
-void DriverFiles::Update(double time) {
+void Driver::Update(double time) {
     // In the POSE phase, always return the first data entry
     if (m_phase == POSE) {
         m_actuations = m_actuations_1;

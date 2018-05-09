@@ -1,3 +1,21 @@
+// =============================================================================
+// PROJECT CHRONO - http://projectchrono.org
+//
+// Copyright (c) 2014 projectchrono.org
+// All rights reserved.
+//
+// Use of this source code is governed by a BSD-style license that can be found
+// in the LICENSE file at the top level of the distribution and at
+// http://projectchrono.org/license-chrono.txt.
+//
+// =============================================================================
+// Authors: Radu Serban
+// =============================================================================
+//
+// RoboSimian on rigid terrain
+//
+// =============================================================================
+
 #include <cmath>
 #include <cstdio>
 #include <vector>
@@ -24,6 +42,9 @@ double render_step_size = 1.0 / 30;  // FPS = 50
 
 // Time interval for assuming initial pose
 double time_offset = 3;
+
+// Drop the robot on rigid terrain
+bool drop = true;
 
 // Output directories
 const std::string out_dir = GetChronoOutputPath() + "ROBOSIMIAN";
@@ -313,20 +334,25 @@ int main(int argc, char* argv[]) {
     // Create a driver and attach to robot
     // -----------------------------------
 
-    ////auto driver = std::make_shared<robosimian::DriverFiles>(
+    ////auto driver = std::make_shared<robosimian::Driver>(
     ////    "",                                                           // start input file
     ////    GetChronoDataFile("robosimian/actuation/walking_cycle.txt"),  // cycle input file
     ////    "",                                                           // stop input file
     ////    true);
-    ////auto driver = std::make_shared<robosimian::DriverFiles>(
+    ////auto driver = std::make_shared<robosimian::Driver>(
     ////    GetChronoDataFile("robosimian/actuation/sculling_start.txt"),  // start input file
     ////    GetChronoDataFile("robosimian/actuation/sculling_cycle.txt"),  // cycle input file
     ////    GetChronoDataFile("robosimian/actuation/sculling_stop.txt"),   // stop input file
     ////    true);
-    auto driver = std::make_shared<robosimian::DriverFiles>(
-        GetChronoDataFile("robosimian/actuation/inchworming_start.txt"),  // start input file
-        GetChronoDataFile("robosimian/actuation/inchworming_cycle.txt"),  // cycle input file
-        GetChronoDataFile("robosimian/actuation/inchworming_stop.txt"),   // stop input file
+    ////auto driver = std::make_shared<robosimian::Driver>(
+    ////    GetChronoDataFile("robosimian/actuation/inchworming_start.txt"),  // start input file
+    ////    GetChronoDataFile("robosimian/actuation/inchworming_cycle.txt"),  // cycle input file
+    ////    GetChronoDataFile("robosimian/actuation/inchworming_stop.txt"),   // stop input file
+    ////    true);
+    auto driver = std::make_shared<robosimian::Driver>(
+        GetChronoDataFile("robosimian/actuation/driving_start.txt"),  // start input file
+        GetChronoDataFile("robosimian/actuation/driving_cycle.txt"),  // cycle input file
+        GetChronoDataFile("robosimian/actuation/driving_stop.txt"),   // stop input file
         true);
 
     driver->SetOffset(time_offset);
@@ -388,7 +414,7 @@ int main(int argc, char* argv[]) {
     while (application.GetDevice()->run()) {
         ////caster.Update();
 
-        if (!released && my_sys.GetChTime() > time_offset / 2) {
+        if (drop && !released && my_sys.GetChTime() > time_offset / 2) {
             // Set terrain height
             double z = robot.GetWheelPos(robosimian::FR).z() - 0.15;
 

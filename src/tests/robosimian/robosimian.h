@@ -370,63 +370,25 @@ typedef std::array<std::array<double, 8>, 4> Actuation;
 
 class Driver {
   public:
-    Driver() {}
-    virtual ~Driver() {}
+    Driver(const std::string& filename_start,
+                const std::string& filename_cycle,
+                const std::string& filename_stop,
+                bool repeat = false);
+    ~Driver();
+
+    /// Specify a time interval over which the robot is allowed to assume the initial pose.
+    void SetOffset(double offset) { m_offset = offset; }
 
     /// Return the current limb motor actuations.
     Actuation GetActuation() { return m_actuations; }
 
-    /// Return current phase
-    virtual std::string GetCurrentPhase() const { return ""; }
-
-  protected:
-    /// Update the state of the driver system at the specified time.
-    virtual void Update(double time) {}
-
-    Actuation m_actuations;  ///< current actuations
-
-    friend class RoboSimian;
-};
-
-class DriverFile : public Driver {
-  public:
-    DriverFile(const std::string& filename, bool repeat = false);
-    ~DriverFile();
-
-    /// Specify a time interval over which the robot is allowed to assume the initial pose.
-    void SetOffset(double offset) { m_offset = offset; }
-
-  private:
-    virtual void Update(double time) override;
-    void LoadDataLine(double& time, Actuation& activations);
-
-    std::ifstream m_ifstream;  ///< input file stream
-    double m_offset;           ///< ease-in duration to reach initial pose
-    bool m_repeat;             ///< repeat cycle
-    double m_time_1;           ///< time for cached actuations
-    double m_time_2;           ///< time for cached actuations
-    Actuation m_actuations_1;  ///< cached actuations (before)
-    Actuation m_actuations_2;  ///< cached actuations (after)
-};
-
-class DriverFiles : public Driver {
-  public:
-    DriverFiles(const std::string& filename_start,
-                const std::string& filename_cycle,
-                const std::string& filename_stop,
-                bool repeat = false);
-    ~DriverFiles();
-
-    /// Specify a time interval over which the robot is allowed to assume the initial pose.
-    void SetOffset(double offset) { m_offset = offset; }
-
     /// Return the current phase
-    virtual std::string GetCurrentPhase() const override { return m_phase_names[m_phase]; }
+    std::string GetCurrentPhase() const { return m_phase_names[m_phase]; }
 
   private:
     enum Phase { POSE, START, CYCLE, STOP };
 
-    virtual void Update(double time) override;
+    void Update(double time);
     void LoadDataLine(double& time, Actuation& activations);
 
     std::ifstream m_ifs_start;  ///< input file stream for start phase
@@ -440,8 +402,11 @@ class DriverFiles : public Driver {
     double m_time_2;            ///< time for cached actuations
     Actuation m_actuations_1;   ///< cached actuations (before)
     Actuation m_actuations_2;   ///< cached actuations (after)
+    Actuation m_actuations;  ///< current actuations
 
     static const std::string m_phase_names[4];
+
+    friend class RoboSimian;
 };
 
 }  // end namespace robosimian

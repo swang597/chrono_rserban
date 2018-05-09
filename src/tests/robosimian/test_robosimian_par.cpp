@@ -1,3 +1,21 @@
+// =============================================================================
+// PROJECT CHRONO - http://projectchrono.org
+//
+// Copyright (c) 2014 projectchrono.org
+// All rights reserved.
+//
+// Use of this source code is governed by a BSD-style license that can be found
+// in the LICENSE file at the top level of the distribution and at
+// http://projectchrono.org/license-chrono.txt.
+//
+// =============================================================================
+// Authors: Radu Serban
+// =============================================================================
+//
+// RoboSimian on granular terrain
+//
+// =============================================================================
+
 #include <cmath>
 #include <cstdio>
 #include <vector>
@@ -27,8 +45,13 @@ const std::string pov_dir = out_dir + "/POVRAY";
 // POV-Ray output
 bool povray_output = false;
 
+// =============================================================================
+
 int main(int argc, char* argv[]) {
+    // -------------
     // Create system
+    // -------------
+
     ////ChSystemParallelSMC my_sys;
     ChSystemParallelNSC my_sys;
     my_sys.Set_G_acc(ChVector<double>(0, 0, -9.8));
@@ -60,7 +83,10 @@ int main(int argc, char* argv[]) {
 
     my_sys.ChangeSolverType(SolverType::BB);
 
-    // Create the robot
+    // -----------------------
+    // Create RoboSimian robot
+    // -----------------------
+
     robosimian::RoboSimian robot(&my_sys, true, true);
 
     ////robot.Initialize(ChCoordsys<>(ChVector<>(0, 0, 0), QUNIT));
@@ -70,19 +96,47 @@ int main(int argc, char* argv[]) {
     robot.SetVisualizationTypeSled(robosimian::VisualizationType::MESH);
     robot.SetVisualizationTypeLimbs(robosimian::VisualizationType::MESH);
 
+    // -----------------------------------
     // Create a driver and attach to robot
-    ////auto driver = std::make_shared<robosimian::DriverFile>(GetChronoDataFile("robosimian/inchworm.txt"));
-    auto driver = std::make_shared<robosimian::DriverFile>(GetChronoDataFile("robosimian/walk_cycle.txt"), true);
+    // -----------------------------------
+
+    ////auto driver = std::make_shared<robosimian::Driver>(
+    ////    "",                                                           // start input file
+    ////    GetChronoDataFile("robosimian/actuation/walking_cycle.txt"),  // cycle input file
+    ////    "",                                                           // stop input file
+    ////    true);
+    ////auto driver = std::make_shared<robosimian::Driver>(
+    ////    GetChronoDataFile("robosimian/actuation/sculling_start.txt"),  // start input file
+    ////    GetChronoDataFile("robosimian/actuation/sculling_cycle.txt"),  // cycle input file
+    ////    GetChronoDataFile("robosimian/actuation/sculling_stop.txt"),   // stop input file
+    ////    true);
+    ////auto driver = std::make_shared<robosimian::Driver>(
+    ////    GetChronoDataFile("robosimian/actuation/inchworming_start.txt"),  // start input file
+    ////    GetChronoDataFile("robosimian/actuation/inchworming_cycle.txt"),  // cycle input file
+    ////    GetChronoDataFile("robosimian/actuation/inchworming_stop.txt"),   // stop input file
+    ////    true);
+    auto driver = std::make_shared<robosimian::Driver>(
+        GetChronoDataFile("robosimian/actuation/driving_start.txt"),  // start input file
+        GetChronoDataFile("robosimian/actuation/driving_cycle.txt"),  // cycle input file
+        GetChronoDataFile("robosimian/actuation/driving_stop.txt"),   // stop input file
+        true);
+
     driver->SetOffset(1);
     robot.SetDriver(driver);
 
+    // -----------------
     // Initialize OpenGL
+    // -----------------
+
     opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
     gl_window.Initialize(1280, 720, "RoboSimian", &my_sys);
     gl_window.SetCamera(ChVector<>(2, 2, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1));
     gl_window.SetRenderMode(opengl::WIREFRAME);
 
-    // Initialize output
+    // -----------------------------
+    // Initialize output directories
+    // -----------------------------
+
     if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
         std::cout << "Error creating directory " << out_dir << std::endl;
         return 1;
@@ -94,7 +148,10 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    // ---------------------------------
     // Run simulation for specified time
+    // ---------------------------------
+
     int render_steps = (int)std::ceil(render_step_size / step_size);
     int sim_frame = 0;
     int render_frame = 0;
