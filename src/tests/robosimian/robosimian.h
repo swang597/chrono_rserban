@@ -275,6 +275,15 @@ class Limb {
     /// Get location of the wheel body.
     const chrono::ChVector<>& GetWheelPos() const { return m_wheel->GetPos(); }
 
+    /// Get angular velocity of the wheel body (expressed in local coordinates).
+    chrono::ChVector<> GetWheelAngVelocity() const { return m_wheel->GetBody()->GetWvel_loc(); }
+
+    /// Get wheel angle.
+    double GetWheelAngle() const { return m_wheel_motor->GetMotorRot(); }
+
+    /// Get wheel angular speed.
+    double GetWheelOmega() const { return m_wheel_motor->GetMotorRot_dt(); }
+
     /// Set activation for given motor at current time.
     void Activate(const std::string& motor_name, double time, double val);
 
@@ -288,6 +297,7 @@ class Limb {
     std::unordered_map<std::string, std::shared_ptr<chrono::ChLink>> m_joints;
     std::unordered_map<std::string, std::shared_ptr<chrono::ChLinkMotorRotation>> m_motors;
     std::shared_ptr<Part> m_wheel;
+    std::shared_ptr<chrono::ChLinkMotorRotation> m_wheel_motor;
 
     bool m_collide_links;  ///< collide flag for all links (except final wheel)
     bool m_collide_wheel;  ///< collide flag for the final wheel
@@ -334,6 +344,15 @@ class RoboSimian {
     /// Get location of the wheel body for the specified limb.
     const chrono::ChVector<>& GetWheelPos(LimbID id) const { return m_limbs[id]->GetWheelPos(); }
 
+    /// Get angular velocity of the wheel body for the specified limb (expressed in local coordinates).
+    chrono::ChVector<> GetWheelAngVelocity(LimbID id) const { return m_limbs[id]->GetWheelAngVelocity(); }
+
+    /// Get wheel angle for the specified limb.
+    double GetWheelAngle(LimbID id) const { return m_limbs[id]->GetWheelAngle(); }
+
+    /// Get wheel angular speed for the specified limb.
+    double GetWheelOmega(LimbID id) const { return m_limbs[id]->GetWheelOmega(); }
+
     /// Initialize the robot at the specified chassis position and orientation.
     void Initialize(const chrono::ChCoordsys<>& pos);
 
@@ -370,10 +389,12 @@ typedef std::array<std::array<double, 8>, 4> Actuation;
 
 class Driver {
   public:
+    enum Phase { POSE, START, CYCLE, STOP };
+
     Driver(const std::string& filename_start,
-                const std::string& filename_cycle,
-                const std::string& filename_stop,
-                bool repeat = false);
+           const std::string& filename_cycle,
+           const std::string& filename_stop,
+           bool repeat = false);
     ~Driver();
 
     /// Specify a time interval over which the robot is allowed to assume the initial pose.
@@ -385,24 +406,33 @@ class Driver {
     /// Return the current phase
     std::string GetCurrentPhase() const { return m_phase_names[m_phase]; }
 
-  private:
-    enum Phase { POSE, START, CYCLE, STOP };
+    /// Class to be used as callback interface for user-defined actions at phase changes.
+    class PhaseChangeCallback {
+      public:
+        virtual ~PhaseChangeCallback() {}
+        virtual void OnPhaseChange(Driver::Phase old_phase, Driver::Phase new_phase) = 0;
+    };
 
+    /// Register a phase-change callback object.
+    void RegisterPhaseChangeCallback(PhaseChangeCallback* callback) { m_callback = callback; }
+
+  private:
     void Update(double time);
     void LoadDataLine(double& time, Actuation& activations);
 
-    std::ifstream m_ifs_start;  ///< input file stream for start phase
-    std::ifstream m_ifs_cycle;  ///< input file stream for cycle phase
-    std::ifstream m_ifs_stop;   ///< input file stream for stop phase
-    std::ifstream* m_ifs;       ///< active input file stream
-    double m_offset;            ///< ease-in duration to reach initial pose
-    bool m_repeat;              ///< repeat cycle
-    Phase m_phase;              ///< current phase
-    double m_time_1;            ///< time for cached actuations
-    double m_time_2;            ///< time for cached actuations
-    Actuation m_actuations_1;   ///< cached actuations (before)
-    Actuation m_actuations_2;   ///< cached actuations (after)
-    Actuation m_actuations;  ///< current actuations
+    std::ifstream m_ifs_start;        ///< input file stream for start phase
+    std::ifstream m_ifs_cycle;        ///< input file stream for cycle phase
+    std::ifstream m_ifs_stop;         ///< input file stream for stop phase
+    std::ifstream* m_ifs;             ///< active input file stream
+    double m_offset;                  ///< ease-in duration to reach initial pose
+    bool m_repeat;                    ///< repeat cycle
+    Phase m_phase;                    ///< current phase
+    double m_time_1;                  ///< time for cached actuations
+    double m_time_2;                  ///< time for cached actuations
+    Actuation m_actuations_1;         ///< cached actuations (before)
+    Actuation m_actuations_2;         ///< cached actuations (after)
+    Actuation m_actuations;           ///< current actuations
+    PhaseChangeCallback* m_callback;  ///< user callback for phase change
 
     static const std::string m_phase_names[4];
 

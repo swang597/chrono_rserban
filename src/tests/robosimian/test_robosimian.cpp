@@ -35,7 +35,7 @@ using namespace chrono;
 using namespace chrono::collision;
 
 ////double time_step = 2e-3;
-double time_step = 4e-4;
+double time_step = 1e-4;
 
 // Time interval between two render frames
 double render_step_size = 1.0 / 30;  // FPS = 50
@@ -57,7 +57,7 @@ bool image_output = false;
 
 // =============================================================================
 
-class RobotEventReceiver;
+class RobotGUIEventReceiver;
 
 class RobotIrrApp : public irrlicht::ChIrrApp {
   public:
@@ -84,7 +84,7 @@ class RobotIrrApp : public irrlicht::ChIrrApp {
     robosimian::RoboSimian* m_robot;
     robosimian::Driver* m_driver;
 
-    RobotEventReceiver* m_erecv;
+    RobotGUIEventReceiver* m_erecv;
 
     int m_HUD_x;  ///< x-coordinate of upper-left corner of HUD elements
     int m_HUD_y;  ///< y-coordinate of upper-left corner of HUD elements
@@ -94,12 +94,12 @@ class RobotIrrApp : public irrlicht::ChIrrApp {
     int m_gridNu;
     int m_gridNv;
 
-    friend class RobotEventReceiver;
+    friend class RobotGUIEventReceiver;
 };
 
-class RobotEventReceiver : public irr::IEventReceiver {
+class RobotGUIEventReceiver : public irr::IEventReceiver {
   public:
-    RobotEventReceiver(RobotIrrApp* app) : m_app(app), m_vis(robosimian::VisualizationType::COLLISION) {}
+      RobotGUIEventReceiver(RobotIrrApp* app) : m_app(app), m_vis(robosimian::VisualizationType::COLLISION) {}
 
     virtual bool OnEvent(const irr::SEvent& event) override;
 
@@ -118,7 +118,7 @@ RobotIrrApp::RobotIrrApp(robosimian::RoboSimian* robot,
       m_HUD_x(650),
       m_HUD_y(20),
       m_grid(false) {
-    m_erecv = new RobotEventReceiver(this);
+    m_erecv = new RobotGUIEventReceiver(this);
     SetUserEventReceiver(m_erecv);
 }
 
@@ -161,9 +161,21 @@ void RobotIrrApp::DrawAll() {
 
     sprintf(msg, "Driver phase: %s", m_driver->GetCurrentPhase().c_str());
     renderTextBox(msg, m_HUD_x, m_HUD_y + 30, 120, 15, irr::video::SColor(255, 250, 200, 00));
+
+    sprintf(msg, "omega FR: %.2f", m_robot->GetWheelOmega(robosimian::FR));
+    renderTextBox(msg, m_HUD_x, m_HUD_y + 60, 120, 15, irr::video::SColor(255, 250, 200, 00));
+
+    sprintf(msg, "omega RR: %.2f", m_robot->GetWheelOmega(robosimian::RR));
+    renderTextBox(msg, m_HUD_x, m_HUD_y + 75, 120, 15, irr::video::SColor(255, 250, 200, 00));
+
+    sprintf(msg, "omega FL: %.2f", m_robot->GetWheelOmega(robosimian::FL));
+    renderTextBox(msg, m_HUD_x, m_HUD_y + 90, 120, 15, irr::video::SColor(255, 250, 200, 00));
+
+    sprintf(msg, "omega RL: %.2f", m_robot->GetWheelOmega(robosimian::RL));
+    renderTextBox(msg, m_HUD_x, m_HUD_y + 105, 120, 15, irr::video::SColor(255, 250, 200, 00));
 }
 
-bool RobotEventReceiver::OnEvent(const irr::SEvent& event) {
+bool RobotGUIEventReceiver::OnEvent(const irr::SEvent& event) {
     if (event.EventType != irr::EET_KEY_INPUT_EVENT)
         return false;
 
@@ -185,6 +197,43 @@ bool RobotEventReceiver::OnEvent(const irr::SEvent& event) {
         }
     }
     return false;
+}
+
+// =============================================================================
+
+class RobotDriverCallback : public robosimian::Driver::PhaseChangeCallback {
+  public:
+    RobotDriverCallback(robosimian::RoboSimian* robot) : m_robot(robot), m_start_x(0), m_start_time(0) {}
+    virtual void OnPhaseChange(robosimian::Driver::Phase old_phase, robosimian::Driver::Phase new_phase) override;
+
+    double GetDistance() const;
+    double GetDuration() const;
+    double GetAvgSpeed() const;
+
+    double m_start_x;
+    double m_start_time;
+
+  private:
+    robosimian::RoboSimian* m_robot;
+};
+
+void RobotDriverCallback::OnPhaseChange(robosimian::Driver::Phase old_phase, robosimian::Driver::Phase new_phase) {
+    if (new_phase == robosimian::Driver::CYCLE && old_phase != robosimian::Driver::CYCLE) {
+        m_start_x = m_robot->GetChassisPos().x();
+        m_start_time = m_robot->GetSystem()->GetChTime();
+    }
+}
+
+double RobotDriverCallback::GetDistance() const {
+    return m_robot->GetChassisPos().x() - m_start_x;
+}
+
+double RobotDriverCallback::GetDuration() const {
+    return m_robot->GetSystem()->GetChTime() - m_start_time;
+}
+
+double RobotDriverCallback::GetAvgSpeed() const {
+    return GetDistance() / GetDuration();
 }
 
 // =============================================================================
@@ -273,6 +322,16 @@ std::shared_ptr<ChBody> CreateTerrain(ChSystem& sys, const ChVector<>& hdim, con
     ground->GetCollisionModel()->AddBox(hdim.x(), hdim.y(), hdim.z(), loc);
     ground->GetCollisionModel()->BuildModel();
 
+    float friction = 0.4f;
+    switch (ground->GetContactMethod()) {
+        case ChMaterialSurface::NSC:
+            ground->GetMaterialSurfaceNSC()->SetFriction(friction);
+            break;
+        case ChMaterialSurface::SMC:
+            ground->GetMaterialSurfaceSMC()->SetFriction(friction);
+            break;
+    }
+
     auto box = std::make_shared<ChBoxShape>();
     box->GetBoxGeometry().Size = hdim;
     box->GetBoxGeometry().Pos = loc;
@@ -354,6 +413,9 @@ int main(int argc, char* argv[]) {
         GetChronoDataFile("robosimian/actuation/driving_cycle.txt"),  // cycle input file
         GetChronoDataFile("robosimian/actuation/driving_stop.txt"),   // stop input file
         true);
+
+    RobotDriverCallback cbk(&robot);
+    driver->RegisterPhaseChangeCallback(&cbk);
 
     driver->SetOffset(time_offset);
     robot.SetDriver(driver);
@@ -481,6 +543,8 @@ int main(int argc, char* argv[]) {
 
         application.EndScene();
     }
+
+    std::cout << "avg. speed: " << cbk.GetAvgSpeed() << std::endl;
 
     return 0;
 }

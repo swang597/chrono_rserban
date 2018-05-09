@@ -486,7 +486,7 @@ Driver::Driver(const std::string& filename_start,
                const std::string& filename_cycle,
                const std::string& filename_stop,
                bool repeat)
-    : m_repeat(repeat), m_offset(0), m_phase(POSE) {
+    : m_repeat(repeat), m_offset(0), m_phase(POSE), m_callback(nullptr) {
     assert(!filename_cycle.empty());
     m_ifs_cycle.open(filename_cycle.c_str());
 
@@ -521,10 +521,9 @@ void Driver::Update(double time) {
     if (m_phase == POSE) {
         m_actuations = m_actuations_1;
         if (time >= m_offset) {
-            if (m_ifs_start.is_open())
-                m_phase = START;
-            else
-                m_phase = CYCLE;
+            m_phase = (m_ifs_start.is_open()) ? START : CYCLE;
+            if (m_callback)
+                m_callback->OnPhaseChange(POSE, m_phase);
             std::cout << "time = " << time << "  Switch to phase: " << GetCurrentPhase() << std::endl;
         }
         return;
@@ -546,6 +545,8 @@ void Driver::Update(double time) {
                     LoadDataLine(m_time_1, m_actuations_1);
                     LoadDataLine(m_time_2, m_actuations_2);
                     m_offset = time;
+                    if (m_callback)
+                        m_callback->OnPhaseChange(START, CYCLE);
                     std::cout << "time = " << time << "  Switch to phase: " << GetCurrentPhase() << std::endl;
                     return;
                 }
@@ -564,6 +565,8 @@ void Driver::Update(double time) {
                         LoadDataLine(m_time_1, m_actuations_1);
                         LoadDataLine(m_time_2, m_actuations_2);
                         m_offset = time;
+                        if (m_callback)
+                            m_callback->OnPhaseChange(CYCLE, CYCLE);
                         std::cout << "time = " << time << " New cycle" << std::endl;
                     }
                     return;
@@ -978,6 +981,8 @@ void Limb::Initialize(std::shared_ptr<ChBodyAuxRef> chassis,
                 chassis->GetSystem()->AddLink(joint);
                 m_joints.insert(std::make_pair(joints[i].name, joint));
                 m_motors.insert(std::make_pair(joints[i].name, joint));
+                if (joints[i].name.compare("joint8") == 0)
+                    m_wheel_motor = joint;
                 break;
             }
         }
