@@ -164,35 +164,35 @@ const int num_joints = 10;
 
 const JointData joints[] = {
 
-    {"joint1", "link0", "link1", ActuationMode::ANGLE, ChVector<>(0.17203, 0.00000, 0.00000),
-     ChVector<>(3.14159, 0.00000, 0.00000), ChVector<>(1, 0, 0)},
+    {"joint1", "link0", "link1", false, ChVector<>(0.17203, 0.00000, 0.00000), ChVector<>(3.14159, 0.00000, 0.00000),
+     ChVector<>(1, 0, 0)},
 
-    {"joint2", "link1", "link2", ActuationMode::ANGLE, ChVector<>(0.00000, 0.00000, 0.00000),
-     ChVector<>(0.00000, 0.00000, 0.00000), ChVector<>(0, -1, 0)},
+    {"joint2", "link1", "link2", false, ChVector<>(0.00000, 0.00000, 0.00000), ChVector<>(0.00000, 0.00000, 0.00000),
+     ChVector<>(0, -1, 0)},
 
-    {"joint3", "link2", "link3", ActuationMode::ANGLE, ChVector<>(0.28650, -0.11700, 0.00000),
+    {"joint3", "link2", "link3", false, ChVector<>(0.28650, -0.11700, 0.00000), ChVector<>(0.00000, 0.00000, 0.00000),
+     ChVector<>(1, 0, 0)},
+
+    {"joint4", "link3", "link4", false, ChVector<>(0.00000, 0.00000, 0.00000), ChVector<>(0.00000, 0.00000, 0.00000),
+     ChVector<>(0, -1, 0)},
+
+    {"joint5", "link4", "link5", false, ChVector<>(0.28650, -0.11700, 0.00000), ChVector<>(0.00000, 0.00000, 0.00000),
+     ChVector<>(1, 0, 0)},
+
+    {"joint6", "link5", "link6", false, ChVector<>(0.00000, 0.00000, 0.00000), ChVector<>(0.00000, 0.00000, 0.00000),
+     ChVector<>(0, -1, 0)},
+
+    {"ftadapter_joint", "link6", "ftadapter_link", true, ChVector<>(0.20739, -0.12100, 0.00000),
      ChVector<>(0.00000, 0.00000, 0.00000), ChVector<>(1, 0, 0)},
 
-    {"joint4", "link3", "link4", ActuationMode::ANGLE, ChVector<>(0.00000, 0.00000, 0.00000),
-     ChVector<>(0.00000, 0.00000, 0.00000), ChVector<>(0, -1, 0)},
-
-    {"joint5", "link4", "link5", ActuationMode::ANGLE, ChVector<>(0.28650, -0.11700, 0.00000),
+    {"ft_joint", "ftadapter_link", "ft_link", true, ChVector<>(0.0263755, 0.00000, 0.00000),
      ChVector<>(0.00000, 0.00000, 0.00000), ChVector<>(1, 0, 0)},
 
-    {"joint6", "link5", "link6", ActuationMode::ANGLE, ChVector<>(0.00000, 0.00000, 0.00000),
-     ChVector<>(0.00000, 0.00000, 0.00000), ChVector<>(0, -1, 0)},
+    {"joint7", "link6", "link7", false, ChVector<>(0.19250, -0.11700, 0.00000), ChVector<>(0.00000, 0.00000, 0.00000),
+     ChVector<>(1, 0, 0)},
 
-    {"ftadapter_joint", "link6", "ftadapter_link", ActuationMode::FIXED, ChVector<>(0.20739, -0.12100, 0.00000),
-     ChVector<>(0.00000, 0.00000, 0.00000), ChVector<>(1, 0, 0)},
-
-    {"ft_joint", "ftadapter_link", "ft_link", ActuationMode::FIXED, ChVector<>(0.0263755, 0.00000, 0.00000),
-     ChVector<>(0.00000, 0.00000, 0.00000), ChVector<>(1, 0, 0)},
-
-    {"joint7", "link6", "link7", ActuationMode::ANGLE, ChVector<>(0.19250, -0.11700, 0.00000),
-     ChVector<>(0.00000, 0.00000, 0.00000), ChVector<>(1, 0, 0)},
-
-    {"joint8", "link7", "link8", ActuationMode::SPEED, ChVector<>(0.12024, 0.17200, 0.00000),
-     ChVector<>(-1.57000, 0.00000, 0.00000), ChVector<>(0, 0, 1)}
+    {"joint8", "link7", "link8", false, ChVector<>(0.12024, 0.17200, 0.00000), ChVector<>(-1.57000, 0.00000, 0.00000),
+     ChVector<>(0, 0, 1)}
 
 };
 
@@ -333,7 +333,7 @@ bool ContactManager::OnReportContact(const ChVector<>& pA,
 // =============================================================================
 
 RoboSimian::RoboSimian(ChMaterialSurface::ContactMethod contact_method, bool has_sled, bool fixed)
-    : m_owns_system(true), m_contacts(new ContactManager) {
+    : m_owns_system(true), m_wheel_mode(ActuationMode::SPEED), m_contacts(new ContactManager) {
     m_system = (contact_method == ChMaterialSurface::NSC) ? static_cast<ChSystem*>(new ChSystemNSC)
                                                           : static_cast<ChSystem*>(new ChSystemSMC);
     m_system->Set_G_acc(ChVector<>(0, 0, -9.81));
@@ -348,7 +348,7 @@ RoboSimian::RoboSimian(ChMaterialSurface::ContactMethod contact_method, bool has
 }
 
 RoboSimian::RoboSimian(ChSystem* system, bool has_sled, bool fixed)
-    : m_owns_system(false), m_system(system), m_contacts(new ContactManager) {
+    : m_owns_system(false), m_system(system), m_wheel_mode(ActuationMode::SPEED), m_contacts(new ContactManager) {
     Create(has_sled, fixed);
 }
 
@@ -394,13 +394,13 @@ void RoboSimian::Initialize(const ChCoordsys<>& pos) {
         m_sled->Initialize(m_chassis->m_body, ChVector<>(0.0, 0.0, 0.21), ChVector<>(1.570796, 0, 0));
 
     m_limbs[FR]->Initialize(m_chassis->m_body, ChVector<>(+0.29326, +0.20940, 0.03650),
-                            ChVector<>(0.00000, -1.57080, -0.26180), CollisionFamily::LIMB_FR);
+                            ChVector<>(0.00000, -1.57080, -0.26180), CollisionFamily::LIMB_FR, m_wheel_mode);
     m_limbs[RR]->Initialize(m_chassis->m_body, ChVector<>(-0.29326, +0.20940, 0.03650),
-                            ChVector<>(0.00000, -1.57080, +0.26180), CollisionFamily::LIMB_RR);
+                            ChVector<>(0.00000, -1.57080, +0.26180), CollisionFamily::LIMB_RR, m_wheel_mode);
     m_limbs[RL]->Initialize(m_chassis->m_body, ChVector<>(-0.29326, -0.20940, 0.03650),
-                            ChVector<>(0.00000, -1.57080, 2.87979), CollisionFamily::LIMB_RL);
+                            ChVector<>(0.00000, -1.57080, 2.87979), CollisionFamily::LIMB_RL, m_wheel_mode);
     m_limbs[FL]->Initialize(m_chassis->m_body, ChVector<>(+0.29326, -0.20940, 0.03650),
-                            ChVector<>(0.00000, -1.57080, 3.40339), CollisionFamily::LIMB_FL);
+                            ChVector<>(0.00000, -1.57080, 3.40339), CollisionFamily::LIMB_FL, m_wheel_mode);
 
     ////m_wheel_left->Initialize(m_chassis->m_body, ChVector<>(-0.42943, -0.19252, 0.06380),
     ////                         ChVector<>(0.00000, +1.57080, -1.57080));
@@ -452,13 +452,27 @@ void RoboSimian::Activate(LimbID id, const std::string& motor_name, double time,
 }
 
 void RoboSimian::DoStepDynamics(double step) {
+    static double w[4] = {0, 0, 0, 0};
+
     if (m_driver) {
         // Update driver
         double time = m_system->GetChTime();
         m_driver->Update(time);
 
-        // Get driver activations and apply to limbs
+        // Get driver activations
         Actuation actuation = m_driver->GetActuation();
+
+        if (m_wheel_mode == ActuationMode::ANGLE) {
+            // Overwrite wheel actuations (angle instead of speed)
+            for (int i = 0; i < 4; i++) {
+                double speed = actuation[i][7];
+                double pos = w[i] + speed * step;
+                actuation[i][7] = pos;
+                w[i] = pos;
+            }
+        }
+
+        // Apply activations to limbs
         for (int i = 0; i < 4; i++)
             m_limbs[i]->Activate(time, actuation[i]);
     }
@@ -587,7 +601,7 @@ void Driver::Update(double time) {
     op.a2 = (t - m_time_1) / (m_time_2 - m_time_1);
     for (int i = 0; i < 4; i++) {
         std::transform(m_actuations_1[i].begin(), m_actuations_1[i].end(), m_actuations_2[i].begin(),
-            m_actuations[i].begin(), op);
+                       m_actuations[i].begin(), op);
     }
 }
 
@@ -911,7 +925,8 @@ Limb::Limb(const std::string& name, LimbID id, const LinkData data[], ChSystem* 
 void Limb::Initialize(std::shared_ptr<ChBodyAuxRef> chassis,
                       const ChVector<>& xyz,
                       const ChVector<>& rpy,
-                      CollisionFamily::Enum collision_family) {
+                      CollisionFamily::Enum collision_family,
+                      ActuationMode wheel_mode) {
     // Set absolute position of link0
     auto parent_body = chassis;                                  // parent body
     auto child_body = m_links.find("link0")->second->m_body;     // child body
@@ -951,40 +966,50 @@ void Limb::Initialize(std::shared_ptr<ChBodyAuxRef> chassis,
         else
             child_body->SetCollide(m_collide_links);
 
-        // Create joint
-        switch (joints[i].mode) {
-            case ActuationMode::FIXED: {
-                auto joint = std::make_shared<ChLinkLockLock>();
-                joint->SetNameString(m_name + "_" + joints[i].name);
-                joint->Initialize(parent_body, child_body, calcJointFrame(X_GC, joints[i].axis));
-                chassis->GetSystem()->AddLink(joint);
-                m_joints.insert(std::make_pair(joints[i].name, joint));
-                break;
-            }
-            case ActuationMode::ANGLE: {
-                auto motor_fun = std::make_shared<ChFunction_Setpoint>();
-                auto joint = std::make_shared<ChLinkMotorRotationAngle>();
-                joint->SetNameString(m_name + "_" + joints[i].name);
-                joint->Initialize(parent_body, child_body, ChFrame<>(calcJointFrame(X_GC, joints[i].axis)));
-                joint->SetAngleFunction(motor_fun);
-                chassis->GetSystem()->AddLink(joint);
-                m_joints.insert(std::make_pair(joints[i].name, joint));
-                m_motors.insert(std::make_pair(joints[i].name, joint));
-                break;
-            }
-            case ActuationMode::SPEED: {
-                auto motor_fun = std::make_shared<ChFunction_Setpoint>();
-                auto joint = std::make_shared<ChLinkMotorRotationSpeed>();
-                joint->SetNameString(m_name + "_" + joints[i].name);
-                joint->Initialize(parent_body, child_body, ChFrame<>(calcJointFrame(X_GC, joints[i].axis)));
-                joint->SetSpeedFunction(motor_fun);
-                chassis->GetSystem()->AddLink(joint);
-                m_joints.insert(std::make_pair(joints[i].name, joint));
-                m_motors.insert(std::make_pair(joints[i].name, joint));
-                if (joints[i].name.compare("joint8") == 0)
-                    m_wheel_motor = joint;
-                break;
-            }
+        // Weld joints
+        if (joints[i].fixed) {
+            auto joint = std::make_shared<ChLinkLockLock>();
+            joint->SetNameString(m_name + "_" + joints[i].name);
+            joint->Initialize(parent_body, child_body, calcJointFrame(X_GC, joints[i].axis));
+            chassis->GetSystem()->AddLink(joint);
+            m_joints.insert(std::make_pair(joints[i].name, joint));
+            continue;
+        }
+
+        // Actuated joints (except the wheel motor joint)
+        if (joints[i].name.compare("joint8") != 0) {
+            auto motor_fun = std::make_shared<ChFunction_Setpoint>();
+            auto joint = std::make_shared<ChLinkMotorRotationAngle>();
+            joint->SetNameString(m_name + "_" + joints[i].name);
+            joint->Initialize(parent_body, child_body, ChFrame<>(calcJointFrame(X_GC, joints[i].axis)));
+            joint->SetAngleFunction(motor_fun);
+            chassis->GetSystem()->AddLink(joint);
+            m_joints.insert(std::make_pair(joints[i].name, joint));
+            m_motors.insert(std::make_pair(joints[i].name, joint));
+            continue;
+        }
+
+        // Wheel motor joint
+        if (wheel_mode == ActuationMode::SPEED) {
+            auto motor_fun = std::make_shared<ChFunction_Setpoint>();
+            auto joint = std::make_shared<ChLinkMotorRotationSpeed>();
+            joint->SetNameString(m_name + "_" + joints[i].name);
+            joint->Initialize(parent_body, child_body, ChFrame<>(calcJointFrame(X_GC, joints[i].axis)));
+            joint->SetSpeedFunction(motor_fun);
+            chassis->GetSystem()->AddLink(joint);
+            m_joints.insert(std::make_pair(joints[i].name, joint));
+            m_motors.insert(std::make_pair(joints[i].name, joint));
+            m_wheel_motor = joint;
+        } else {
+            auto motor_fun = std::make_shared<ChFunction_Setpoint>();
+            auto joint = std::make_shared<ChLinkMotorRotationAngle>();
+            joint->SetNameString(m_name + "_" + joints[i].name);
+            joint->Initialize(parent_body, child_body, ChFrame<>(calcJointFrame(X_GC, joints[i].axis)));
+            joint->SetAngleFunction(motor_fun);
+            chassis->GetSystem()->AddLink(joint);
+            m_joints.insert(std::make_pair(joints[i].name, joint));
+            m_motors.insert(std::make_pair(joints[i].name, joint));
+            m_wheel_motor = joint;
         }
     }
 }

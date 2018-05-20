@@ -47,6 +47,31 @@ bool povray_output = false;
 
 // =============================================================================
 
+class RobotDriverCallback : public robosimian::Driver::PhaseChangeCallback {
+  public:
+    RobotDriverCallback(robosimian::RoboSimian* robot) : m_robot(robot), m_start_x(0), m_start_time(0) {}
+    virtual void OnPhaseChange(robosimian::Driver::Phase old_phase, robosimian::Driver::Phase new_phase) override;
+
+    double GetDistance() const { return m_robot->GetChassisPos().x() - m_start_x; }
+    double GetDuration() const { return m_robot->GetSystem()->GetChTime() - m_start_time; }
+    double GetAvgSpeed() const { return GetDistance() / GetDuration(); }
+
+    double m_start_x;
+    double m_start_time;
+
+  private:
+    robosimian::RoboSimian* m_robot;
+};
+
+void RobotDriverCallback::OnPhaseChange(robosimian::Driver::Phase old_phase, robosimian::Driver::Phase new_phase) {
+    if (new_phase == robosimian::Driver::CYCLE && old_phase != robosimian::Driver::CYCLE) {
+        m_start_x = m_robot->GetChassisPos().x();
+        m_start_time = m_robot->GetSystem()->GetChTime();
+    }
+}
+
+// =============================================================================
+
 int main(int argc, char* argv[]) {
     // -------------
     // Create system
@@ -89,6 +114,9 @@ int main(int argc, char* argv[]) {
 
     robosimian::RoboSimian robot(&my_sys, true, true);
 
+    // Ensure wheels are actuated in ANGLE mode (required for Chrono::Parallel)
+    robot.SetMotorActuationMode(robosimian::ActuationMode::ANGLE);
+
     ////robot.Initialize(ChCoordsys<>(ChVector<>(0, 0, 0), QUNIT));
     robot.Initialize(ChCoordsys<>(ChVector<>(0, 0, 0), Q_from_AngX(CH_C_PI)));
 
@@ -120,6 +148,9 @@ int main(int argc, char* argv[]) {
         GetChronoDataFile("robosimian/actuation/driving_cycle.txt"),  // cycle input file
         GetChronoDataFile("robosimian/actuation/driving_stop.txt"),   // stop input file
         true);
+
+    RobotDriverCallback cbk(&robot);
+    driver->RegisterPhaseChangeCallback(&cbk);
 
     driver->SetOffset(1);
     robot.SetDriver(driver);
@@ -173,12 +204,13 @@ int main(int argc, char* argv[]) {
         ////double val = 0.5 * A * (1 - std::cos(CH_C_2PI * freq * time));
         ////robot.Activate(robosimian::FR, "joint2", time, val);
         ////robot.Activate(robosimian::RL, "joint5", time, val);
+        ////robot.Activate(robosimian::FL, "joint8", time, -0.4 * time);
 
         robot.DoStepDynamics(step_size);
-        
-        if (my_sys.GetNcontacts() > 0) {
-            robot.ReportContacts();
-        }
+
+        ////if (my_sys.GetNcontacts() > 0) {
+        ////    robot.ReportContacts();
+        ////}
 
         sim_frame++;
     }

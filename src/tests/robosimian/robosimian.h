@@ -70,8 +70,7 @@ enum Enum {
 
 enum class ActuationMode {
     ANGLE,  ///< prescribe time-series for joint angle
-    SPEED,  ///< prescribe time-series for joint angular speed
-    FIXED   ///< weld joint
+    SPEED   ///< prescribe time-series for joint angular speed
 };
 
 // -----------------------------------------------------------------------------
@@ -245,7 +244,7 @@ struct JointData {
     std::string name;
     std::string linkA;
     std::string linkB;
-    ActuationMode mode;
+    bool fixed;
     chrono::ChVector<> xyz;
     chrono::ChVector<> rpy;
     chrono::ChVector<> axis;
@@ -260,7 +259,8 @@ class Limb {
     void Initialize(std::shared_ptr<chrono::ChBodyAuxRef> chassis,  ///< chassis body
                     const chrono::ChVector<>& xyz,                  ///< location (relative to chassis)
                     const chrono::ChVector<>& rpy,                  ///< roll-pitch-yaw (relative to chassis)
-                    CollisionFamily::Enum collision_family          ///< collision family
+                    CollisionFamily::Enum collision_family,         ///< collision family
+                    ActuationMode wheel_mode                        ///< motor type for wheel actuation
     );
 
     /// Set visualization type for all limb links.
@@ -317,6 +317,9 @@ class RoboSimian {
     ~RoboSimian();
 
     chrono::ChSystem* GetSystem() { return m_system; }
+
+    /// Set actuation type for wheel motors (default: SPEED)
+    void SetMotorActuationMode(ActuationMode mode) { m_wheel_mode = mode; }
 
     /// Set collision flags for the various subsystems.
     /// By default, collision is enabled for the sled and wheels only.
@@ -376,6 +379,8 @@ class RoboSimian {
     std::vector<std::shared_ptr<Limb>> m_limbs;  ///< robot limbs
     ////std::shared_ptr<WheelDD> m_wheel_left;       ///< left DD wheel
     ////std::shared_ptr<WheelDD> m_wheel_right;      ///< right DD wheel
+
+    ActuationMode m_wheel_mode;  ///< type of actuation for wheel motor
 
     std::shared_ptr<Driver> m_driver;
     ContactManager* m_contacts;

@@ -365,6 +365,9 @@ int main(int argc, char* argv[]) {
 
     robosimian::RoboSimian robot(&my_sys, true, true);
 
+    // Set actuation mode for wheel motors
+    ////robot.SetMotorActuationMode(robosimian::ActuationMode::ANGLE);
+
     // Control collisions (default: true for sled and wheels only)
 
     ////robot.SetCollide(robosimian::CollisionFlags::NONE);
