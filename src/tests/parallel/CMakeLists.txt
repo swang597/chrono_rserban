@@ -34,6 +34,7 @@ SET(DEMOS_GL
     box_granular
     collide_flag
     jcol_example
+    rot_motor
 )
 
 IF(ENABLE_MODULE_OPENGL)
