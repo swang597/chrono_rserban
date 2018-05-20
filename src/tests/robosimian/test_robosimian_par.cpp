@@ -25,6 +25,8 @@
 
 #include "chrono_parallel/physics/ChSystemParallel.h"
 
+#include "chrono_vehicle/terrain/GranularTerrain.h"
+
 #include "chrono_opengl/ChOpenGLWindow.h"
 
 #include "robosimian.h"
@@ -33,10 +35,25 @@ using namespace chrono;
 using namespace chrono::collision;
 
 // Integration step size
-double step_size = 1e-3;
+double step_size = 1e-4;
+
+// OpenGL rendering?
+bool render = true;
 
 // Time interval between two render frames
 double render_step_size = 1.0 / 50;  // FPS = 50
+
+// Drop the robot on terrain
+bool drop = true;
+
+// Timed events
+double time_create_terrain = 0.5;
+double duration_settle_terrain = 1.0;
+double time_release = time_create_terrain + duration_settle_terrain;
+double duration_settle_robot = 0.5;
+double time_offset = time_release + duration_settle_robot;
+double duration_sim = 10;
+double time_end = time_offset + duration_sim;
 
 // Output directories
 const std::string out_dir = GetChronoOutputPath() + "ROBOSIMIAN_PAR";
@@ -72,6 +89,36 @@ void RobotDriverCallback::OnPhaseChange(robosimian::Driver::Phase old_phase, rob
 
 // =============================================================================
 
+double CreateTerrain(ChSystem& sys, double x, double z) {
+    double r_g = 0.0075;
+    double rho_g = 2000;
+    double coh = 400e3;
+    double area = CH_C_PI * r_g * r_g;
+    double coh_force = area * coh;
+    double coh_g = coh_force * step_size;
+
+    std::cout << "x = " << x << "  z = " << z << std::endl;
+
+    double length = 6;
+    double width = 3;
+    unsigned int num_layers = 5;
+    ChVector<> center(length / 2 + x - 1.5, 0, z - num_layers * 2.1 * r_g);
+
+    vehicle::GranularTerrain terrain(&sys);
+    terrain.SetContactFrictionCoefficient(0.7f);
+    terrain.SetContactCohesion((float)coh_g);
+    terrain.SetCollisionEnvelope(0.1 * r_g / 5);
+
+    terrain.EnableVisualization(true);
+    terrain.Initialize(center, length, width, num_layers, r_g, rho_g);
+
+    std::cout << "Generated " << terrain.GetNumParticles() << " particles";
+
+    return (length + x - 2 * 1.5);
+}
+
+// =============================================================================
+
 int main(int argc, char* argv[]) {
     // -------------
     // Create system
@@ -102,7 +149,7 @@ int main(int argc, char* argv[]) {
     my_sys.GetSettings()->solver.contact_recovery_speed = 1000;
     my_sys.GetSettings()->solver.bilateral_clamp_speed = 1e8;
     my_sys.GetSettings()->min_threads = threads;
-    
+
     my_sys.GetSettings()->collision.collision_envelope = 0.01;
     my_sys.GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
 
@@ -152,17 +199,19 @@ int main(int argc, char* argv[]) {
     RobotDriverCallback cbk(&robot);
     driver->RegisterPhaseChangeCallback(&cbk);
 
-    driver->SetOffset(1);
+    driver->SetOffset(time_offset);
     robot.SetDriver(driver);
 
     // -----------------
     // Initialize OpenGL
     // -----------------
 
-    opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-    gl_window.Initialize(1280, 720, "RoboSimian", &my_sys);
-    gl_window.SetCamera(ChVector<>(2, 2, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1));
-    gl_window.SetRenderMode(opengl::WIREFRAME);
+    if (render) {
+        opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
+        gl_window.Initialize(1280, 720, "RoboSimian", &my_sys);
+        gl_window.SetCamera(ChVector<>(2, -2, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1), 0.05f);
+        gl_window.SetRenderMode(opengl::WIREFRAME);
+    }
 
     // -----------------------------
     // Initialize output directories
@@ -187,8 +236,39 @@ int main(int argc, char* argv[]) {
     int sim_frame = 0;
     int render_frame = 0;
 
-    while (gl_window.Active()) {
-        gl_window.Render();
+    bool terrain_created = false;
+    bool robot_released = false;
+    double x_max = 0;
+
+    while (true) {
+        double time = my_sys.GetChTime();
+        double x = robot.GetChassisPos().x();
+
+        if (time >= time_end) {
+            std::cout << "Reached final time: " << time << std::endl;
+            break;
+        }
+
+        if (drop) {
+            if (!terrain_created && time > time_create_terrain) {
+                // Robot position and bottom point
+                double z = robot.GetWheelPos(robosimian::FR).z() - 0.15;
+                // Create terrain
+                std::cout << "Time: " << time << "  CREATE TERRAIN" << std::endl;
+                x_max = CreateTerrain(my_sys, x, z);
+                terrain_created = true;
+            }
+            if (!robot_released && time > time_release) {
+                std::cout << "Time: " << time << "  RELEASE ROBOT" << std::endl;
+                robot.GetChassis()->GetBody()->SetBodyFixed(false);
+                robot_released = true;
+            }
+
+            if (robot_released && x > x_max) {
+                std::cout << "Time: " << time << " Reached maximum distance" << std::endl;
+                break;
+            }
+        }
 
         // Output POV-Ray data
         if (povray_output && sim_frame % render_steps == 0) {
@@ -211,6 +291,15 @@ int main(int argc, char* argv[]) {
         ////if (my_sys.GetNcontacts() > 0) {
         ////    robot.ReportContacts();
         ////}
+
+        if (render) {
+            opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
+            if (gl_window.Active()) {
+                gl_window.Render();
+            } else {
+                break;
+            }
+        }
 
         sim_frame++;
     }
