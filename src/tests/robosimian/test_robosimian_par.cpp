@@ -89,7 +89,7 @@ void RobotDriverCallback::OnPhaseChange(robosimian::Driver::Phase old_phase, rob
 
 // =============================================================================
 
-double CreateTerrain(ChSystem& sys, double x, double z) {
+double CreateTerrain(ChSystemParallel& sys, double x, double z) {
     double r_g = 0.0075;
     double rho_g = 2000;
     double coh = 400e3;
@@ -112,7 +112,18 @@ double CreateTerrain(ChSystem& sys, double x, double z) {
     terrain.EnableVisualization(true);
     terrain.Initialize(center, length, width, num_layers, r_g, rho_g);
 
-    std::cout << "Generated " << terrain.GetNumParticles() << " particles";
+    std::cout << "Generated " << terrain.GetNumParticles() << " particles" << std::endl;
+
+    // Estimate number of bins for collision detection
+    int factor = 2;
+    int binsX = (int)std::ceil((0.5 * length) / r_g) / factor;
+    int binsY = (int)std::ceil((0.5 * width) / r_g) / factor;
+    int binsZ = 1;
+    sys.GetSettings()->collision.bins_per_axis = vec3(binsX, binsY, binsZ);
+    std::cout << " broad-phase bins: " << binsX << " x " << binsY << " x " << binsZ << std::endl;
+
+    // Set collision envelope
+    sys.GetSettings()->collision.collision_envelope = 0.1 * r_g / 5;
 
     return (length + x - 2 * 1.5);
 }
