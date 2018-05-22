@@ -21,6 +21,8 @@
 #include <vector>
 
 #include "chrono/core/ChFileutils.h"
+#include "chrono/utils/ChUtilsCreators.h"
+#include "chrono/utils/ChUtilsGenerators.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
 
 #include "chrono_parallel/physics/ChSystemParallel.h"
@@ -41,13 +43,13 @@ double step_size = 1e-4;
 bool render = true;
 
 // Time interval between two render frames
-double render_step_size = 1.0 / 50;  // FPS = 50
+double render_step_size = 1.0 / 100;  // FPS = 100
 
 // Drop the robot on terrain
 bool drop = true;
 
 // Timed events
-double time_create_terrain = 0.5;
+double time_create_terrain = 0.1;
 double duration_settle_terrain = 1.0;
 double time_release = time_create_terrain + duration_settle_terrain;
 double duration_settle_robot = 0.5;
@@ -60,7 +62,7 @@ const std::string out_dir = GetChronoOutputPath() + "ROBOSIMIAN_PAR";
 const std::string pov_dir = out_dir + "/POVRAY";
 
 // POV-Ray output
-bool povray_output = false;
+bool povray_output = true;
 
 // =============================================================================
 
@@ -90,6 +92,112 @@ void RobotDriverCallback::OnPhaseChange(robosimian::Driver::Phase old_phase, rob
 // =============================================================================
 
 double CreateTerrain(ChSystemParallel& sys, double x, double z) {
+    std::cout << "x = " << x << "  z = " << z << std::endl;
+
+    double r_g = 0.0075;
+    double rho_g = 2000;
+    double coh = 400e3;
+    double area = CH_C_PI * r_g * r_g;
+    double coh_force = area * coh;
+    double coh_g = coh_force * step_size;
+
+    double length = 6;
+    double width = 3;
+
+    unsigned int num_layers = 5;
+
+    // Height of container surface
+    double r = 1.01 * r_g;
+    z -= (2 * r) * num_layers;
+
+    // Create contact material
+    std::shared_ptr<ChMaterialSurface> material;
+    switch (sys.GetContactMethod()) {
+        case ChMaterialSurface::SMC: {
+            auto mat = std::make_shared<ChMaterialSurfaceSMC>();
+            mat->SetFriction(0.9f);
+            mat->SetRestitution(0.0f);
+            mat->SetYoungModulus(8e5f);
+            mat->SetPoissonRatio(0.3f);
+            mat->SetAdhesion(static_cast<float>(coh_force));
+            mat->SetKn(1.0e6f);
+            mat->SetGn(6.0e1f);
+            mat->SetKt(4.0e5f);
+            mat->SetGt(4.0e1f);
+            material = mat;
+            break;
+        }
+        case ChMaterialSurface::NSC: {
+            auto mat = std::make_shared<ChMaterialSurfaceNSC>();
+            mat->SetFriction(0.9f);
+            mat->SetRestitution(0.0f);
+            mat->SetCohesion(static_cast<float>(coh_force));
+            material = mat;
+            break;
+        }
+    }
+
+    // Create container
+    auto ground = std::shared_ptr<ChBody>(sys.NewBody());
+    ground->SetIdentifier(-1);
+    ground->SetPos(ChVector<>(length / 2 + x - 1.5, 0, z));
+    ground->SetBodyFixed(true);
+    ground->SetCollide(true);
+    ground->SetMaterialSurface(material);
+
+    ChVector<> hdim(length / 2, width / 2, 0.4);
+    double hthick = 0.1;
+    ground->GetCollisionModel()->ClearModel();
+    utils::AddBoxGeometry(ground.get(), ChVector<>(hdim.x(), hdim.y(), hthick), ChVector<>(0, 0, -hthick), QUNIT, true);
+    utils::AddBoxGeometry(ground.get(), ChVector<>(hthick, hdim.y(), hdim.z()),
+                          ChVector<>(-hdim.x() - hthick, 0, hdim.z()), QUNIT, false);
+    utils::AddBoxGeometry(ground.get(), ChVector<>(hthick, hdim.y(), hdim.z()),
+                          ChVector<>(hdim.x() + hthick, 0, hdim.z()), QUNIT, false);
+    utils::AddBoxGeometry(ground.get(), ChVector<>(hdim.x(), hthick, hdim.z()),
+                          ChVector<>(0, -hdim.y() - hthick, hdim.z()), QUNIT, false);
+    utils::AddBoxGeometry(ground.get(), ChVector<>(hdim.x(), hthick, hdim.z()),
+                          ChVector<>(0, hdim.y() + hthick, hdim.z()), QUNIT, false);
+    ground->GetCollisionModel()->BuildModel();
+
+    sys.AddBody(ground);
+
+    // Create particles
+    utils::Generator gen(&sys);
+    std::shared_ptr<utils::MixtureIngredient> m1 = gen.AddMixtureIngredient(utils::SPHERE, 1.0);
+    m1->setDefaultMaterial(material);
+    m1->setDefaultDensity(rho_g);
+    m1->setDefaultSize(r_g);
+
+    // Set starting value for body identifiers
+    gen.setBodyIdentifier(10000);
+
+    // Create particles in layers until reaching the desired number of particles
+    ChVector<> hdims(length/2 - r, width/2 - r, 0);
+    ChVector<> center(length / 2 + x - 1.5, 0, z + r);
+
+    for (unsigned int il = 0; il < num_layers; il++) {
+        std::cout << "Create layer at " << center.z() << std::endl;
+        gen.createObjectsBox(utils::POISSON_DISK, 2 * r, center, hdims);
+        center.z() += 2 * r;
+    }
+
+    std::cout << "Generated " << gen.getTotalNumBodies() << " particles" << std::endl;
+
+    // Estimate number of bins for collision detection
+    int factor = 2;
+    int binsX = (int)std::ceil((0.5 * length) / r_g) / factor;
+    int binsY = (int)std::ceil((0.5 * width) / r_g) / factor;
+    int binsZ = 1;
+    sys.GetSettings()->collision.bins_per_axis = vec3(binsX, binsY, binsZ);
+    std::cout << "Broad-phase bins: " << binsX << " x " << binsY << " x " << binsZ << std::endl;
+
+    // Set collision envelope
+    sys.GetSettings()->collision.collision_envelope = 0.1 * r_g / 5;
+
+    return (length + x - 2 * 1.5);
+}
+
+double CreateTerrainPatch(ChSystemParallel& sys, double x, double z) {
     double r_g = 0.0075;
     double rho_g = 2000;
     double coh = 400e3;
@@ -120,7 +228,7 @@ double CreateTerrain(ChSystemParallel& sys, double x, double z) {
     int binsY = (int)std::ceil((0.5 * width) / r_g) / factor;
     int binsZ = 1;
     sys.GetSettings()->collision.bins_per_axis = vec3(binsX, binsY, binsZ);
-    std::cout << " broad-phase bins: " << binsX << " x " << binsY << " x " << binsZ << std::endl;
+    std::cout << "Broad-phase bins: " << binsX << " x " << binsY << " x " << binsZ << std::endl;
 
     // Set collision envelope
     sys.GetSettings()->collision.collision_envelope = 0.1 * r_g / 5;
@@ -186,11 +294,11 @@ int main(int argc, char* argv[]) {
     // Create a driver and attach to robot
     // -----------------------------------
 
-    ////auto driver = std::make_shared<robosimian::Driver>(
-    ////    "",                                                           // start input file
-    ////    GetChronoDataFile("robosimian/actuation/walking_cycle.txt"),  // cycle input file
-    ////    "",                                                           // stop input file
-    ////    true);
+    auto driver = std::make_shared<robosimian::Driver>(
+        "",                                                           // start input file
+        GetChronoDataFile("robosimian/actuation/walking_cycle.txt"),  // cycle input file
+        "",                                                           // stop input file
+        true);
     ////auto driver = std::make_shared<robosimian::Driver>(
     ////    GetChronoDataFile("robosimian/actuation/sculling_start.txt"),  // start input file
     ////    GetChronoDataFile("robosimian/actuation/sculling_cycle.txt"),  // cycle input file
@@ -201,11 +309,11 @@ int main(int argc, char* argv[]) {
     ////    GetChronoDataFile("robosimian/actuation/inchworming_cycle.txt"),  // cycle input file
     ////    GetChronoDataFile("robosimian/actuation/inchworming_stop.txt"),   // stop input file
     ////    true);
-    auto driver = std::make_shared<robosimian::Driver>(
-        GetChronoDataFile("robosimian/actuation/driving_start.txt"),  // start input file
-        GetChronoDataFile("robosimian/actuation/driving_cycle.txt"),  // cycle input file
-        GetChronoDataFile("robosimian/actuation/driving_stop.txt"),   // stop input file
-        true);
+    ////auto driver = std::make_shared<robosimian::Driver>(
+    ////    GetChronoDataFile("robosimian/actuation/driving_start.txt"),  // start input file
+    ////    GetChronoDataFile("robosimian/actuation/driving_cycle.txt"),  // cycle input file
+    ////    GetChronoDataFile("robosimian/actuation/driving_stop.txt"),   // stop input file
+    ////    true);
 
     RobotDriverCallback cbk(&robot);
     driver->RegisterPhaseChangeCallback(&cbk);
@@ -267,6 +375,7 @@ int main(int argc, char* argv[]) {
                 // Create terrain
                 std::cout << "Time: " << time << "  CREATE TERRAIN" << std::endl;
                 x_max = CreateTerrain(my_sys, x, z);
+                ////x_max = CreateTerrainPatch(my_sys, x, z);
                 terrain_created = true;
             }
             if (!robot_released && time > time_release) {
@@ -286,6 +395,7 @@ int main(int argc, char* argv[]) {
             char filename[100];
             sprintf(filename, "%s/data_%03d.dat", pov_dir.c_str(), render_frame + 1);
             utils::WriteShapesPovray(&my_sys, filename);
+            std::cout << "Write output at t = " << time << std::endl;
             render_frame++;
         }
 
