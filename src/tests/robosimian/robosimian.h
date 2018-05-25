@@ -73,6 +73,13 @@ enum class ActuationMode {
     SPEED   ///< prescribe time-series for joint angular speed
 };
 
+enum class LocomotionMode {
+    WALK,      ///<
+    SCULL,     ///<
+    INCHWORM,  ///<
+    DRIVE      ///<
+};
+
 // -----------------------------------------------------------------------------
 // Definition of a part (body + collision shapes + visualization assets)
 // -----------------------------------------------------------------------------

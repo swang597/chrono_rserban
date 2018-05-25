@@ -18,6 +18,7 @@
 
 #include <cmath>
 #include <cstdio>
+#include <fstream>
 #include <vector>
 
 #include "chrono/core/ChFileutils.h"
@@ -31,38 +32,67 @@
 
 #include "chrono_opengl/ChOpenGLWindow.h"
 
+#include "chrono_thirdparty/SimpleOpt/SimpleOpt.h"
+
 #include "robosimian.h"
 
 using namespace chrono;
 using namespace chrono::collision;
 
-// Integration step size
-double step_size = 1e-4;
+using std::cout;
+using std::endl;
 
-// OpenGL rendering?
-bool render = true;
+// =============================================================================
 
-// Time interval between two render frames
-double render_step_size = 1.0 / 100;  // FPS = 100
+// ID values to identify command line arguments
+enum {
+    OPT_HELP,
+    OPT_MODE,
+    OPT_SIM_TIME,
+    OPT_STEP_SIZE,
+    OPT_FPS,
+    OPT_NUM_THREADS,
+    OPT_NO_RELEASE,
+    OPT_NO_OUTPUT,
+    OPT_NO_RENDERING,
+    OPT_SUFFIX
+};
 
-// Drop the robot on terrain
-bool drop = true;
+// Table of CSimpleOpt::Soption structures. Each entry specifies:
+// - the ID for the option (returned from OptionId() during processing)
+// - the option as it should appear on the command line
+// - type of the option
+// The last entry must be SO_END_OF_OPTIONS
+CSimpleOptA::SOption g_options[] = {{OPT_NUM_THREADS, "--num-threads", SO_REQ_CMB},
+                                    {OPT_MODE, "-m", SO_REQ_CMB},
+                                    {OPT_MODE, "--mode", SO_REQ_CMB},
+                                    {OPT_SIM_TIME, "-t", SO_REQ_CMB},
+                                    {OPT_SIM_TIME, "--simulation-time", SO_REQ_CMB},
+                                    {OPT_STEP_SIZE, "-s", SO_REQ_CMB},
+                                    {OPT_STEP_SIZE, "--step-size", SO_REQ_CMB},
+                                    {OPT_FPS, "-f", SO_REQ_CMB},
+                                    {OPT_FPS, "--frames-per-second", SO_REQ_CMB},
+                                    {OPT_NO_RELEASE, "--no-release", SO_NONE},
+                                    {OPT_NO_OUTPUT, "--no-output", SO_NONE},
+                                    {OPT_NO_RENDERING, "--no-rendering", SO_NONE},
+                                    {OPT_SUFFIX, "--suffix", SO_REQ_CMB},
+                                    {OPT_HELP, "-?", SO_NONE},
+                                    {OPT_HELP, "-h", SO_NONE},
+                                    {OPT_HELP, "--help", SO_NONE},
+                                    SO_END_OF_OPTIONS};
 
-// Timed events
-double time_create_terrain = 0.1;
-double duration_settle_terrain = 1.0;
-double time_release = time_create_terrain + duration_settle_terrain;
-double duration_settle_robot = 0.5;
-double time_offset = time_release + duration_settle_robot;
-double duration_sim = 10;
-double time_end = time_offset + duration_sim;
-
-// Output directories
-const std::string out_dir = GetChronoOutputPath() + "ROBOSIMIAN_PAR";
-const std::string pov_dir = out_dir + "/POVRAY";
-
-// POV-Ray output
-bool povray_output = true;
+void ShowUsage();
+bool GetProblemSpecs(int argc,
+                     char** argv,
+                     robosimian::LocomotionMode& mode,
+                     double& sim_time,
+                     double& step_size,
+                     double& fps,
+                     int& nthreads,
+                     bool& drop,
+                     bool& output,
+                     bool& render,
+                     std::string& suffix);
 
 // =============================================================================
 
@@ -91,7 +121,7 @@ void RobotDriverCallback::OnPhaseChange(robosimian::Driver::Phase old_phase, rob
 
 // =============================================================================
 
-double CreateTerrain(ChSystemParallel& sys, double x, double z) {
+double CreateTerrain(ChSystemParallel& sys, double x, double z, double step_size) {
     std::cout << "x = " << x << "  z = " << z << std::endl;
 
     double r_g = 0.0075;
@@ -197,7 +227,7 @@ double CreateTerrain(ChSystemParallel& sys, double x, double z) {
     return (length + x - 2 * 1.5);
 }
 
-double CreateTerrainPatch(ChSystemParallel& sys, double x, double z) {
+double CreateTerrainPatch(ChSystemParallel& sys, double x, double z, double step_size) {
     double r_g = 0.0075;
     double rho_g = 2000;
     double coh = 400e3;
@@ -239,6 +269,93 @@ double CreateTerrainPatch(ChSystemParallel& sys, double x, double z) {
 // =============================================================================
 
 int main(int argc, char* argv[]) {
+    // ----------------------------
+    // Parse command line arguments
+    // ----------------------------
+
+    robosimian::LocomotionMode mode = robosimian::LocomotionMode::WALK;
+    double step_size = 1e-4;
+    double duration_sim = 10;
+    double fps = 60;
+    int nthreads = 2;
+    bool drop = true;
+    bool render = true;
+    bool povray_output = true;
+    std::string suffix = "";
+
+    if (!GetProblemSpecs(argc, argv, mode, duration_sim, step_size, fps, nthreads, drop, povray_output, render,
+                         suffix)) {
+        return 1;
+    }
+
+    // Timed events
+    double time_create_terrain = 0.1;
+    double duration_settle_terrain = 1.0;
+    double time_release = time_create_terrain + duration_settle_terrain;
+    double duration_settle_robot = 0.5;
+    double time_offset = time_release + duration_settle_robot;
+    double time_end = time_offset + duration_sim;
+
+    // Output frequency
+    double render_step_size = 1.0 / fps;
+
+    // POV-Ray output directory
+    const std::string out_dir = "../ROBOSIMIAN_PAR";
+    std::string pov_dir = out_dir + "/POVRAY" + suffix;
+
+    // -----------------------------
+    // Initialize output directories
+    // -----------------------------
+
+    if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
+        std::cout << "Error creating directory " << out_dir << std::endl;
+        return 1;
+    }
+    if (povray_output) {
+        if (ChFileutils::MakeDirectory(pov_dir.c_str()) < 0) {
+            std::cout << "Error creating directory " << pov_dir << std::endl;
+            return 1;
+        }
+    }
+
+    // ----------------------
+    // Write problem settings
+    // ----------------------
+
+    std::ofstream outf;
+    outf.open(out_dir + "/settings" + suffix + ".txt", std::ios::out);
+    outf << "Locomotion mode: ";
+    switch (mode) {
+        case robosimian::LocomotionMode::WALK:
+            outf << "WALK" << endl;
+            break;
+        case robosimian::LocomotionMode::SCULL:
+            outf << "SCULL" << endl;
+            break;
+        case robosimian::LocomotionMode::INCHWORM:
+            outf << "INCHWORM" << endl;
+            break;
+        case robosimian::LocomotionMode::DRIVE:
+            outf << "DRIVE" << endl;
+            break;
+    }
+    outf << "Release robot? " << (drop ? "YES" : "NO") << endl;
+    outf << endl;
+    outf << "Time terrain settling: " << duration_settle_terrain << endl;
+    outf << "Time robot settling: " << duration_settle_robot << endl;
+    outf << "Time locomotion: " << duration_sim << endl;
+    outf << "Total time: " << time_end << endl;
+    outf << endl;
+    outf << "Step size: " << step_size << endl;
+    outf << "Number threads: " << nthreads << endl;
+    outf << endl;
+    outf << "Output? " << (povray_output ? "YES" : "NO") << endl;
+    if (povray_output) {
+        outf << "Output frequency (FPS): " << fps << endl;
+        outf << "Output directory: " << pov_dir << endl;
+    }
+    outf.close();
+
     // -------------
     // Create system
     // -------------
@@ -248,12 +365,11 @@ int main(int argc, char* argv[]) {
     my_sys.Set_G_acc(ChVector<double>(0, 0, -9.8));
     ////my_sys.Set_G_acc(ChVector<double>(0, 0, 0));
 
-    int threads = 2;
     int max_threads = CHOMPfunctions::GetNumProcs();
-    if (threads > max_threads)
-        threads = max_threads;
-    my_sys.SetParallelThreadNumber(threads);
-    CHOMPfunctions::SetNumThreads(threads);
+    if (nthreads > max_threads)
+        nthreads = max_threads;
+    my_sys.SetParallelThreadNumber(nthreads);
+    CHOMPfunctions::SetNumThreads(nthreads);
 
     my_sys.GetSettings()->solver.tolerance = 1e-3;
     my_sys.GetSettings()->solver.solver_mode = SolverMode::SLIDING;
@@ -267,7 +383,7 @@ int main(int argc, char* argv[]) {
     my_sys.GetSettings()->solver.use_full_inertia_tensor = false;
     my_sys.GetSettings()->solver.contact_recovery_speed = 1000;
     my_sys.GetSettings()->solver.bilateral_clamp_speed = 1e8;
-    my_sys.GetSettings()->min_threads = threads;
+    my_sys.GetSettings()->min_threads = nthreads;
 
     my_sys.GetSettings()->collision.collision_envelope = 0.01;
     my_sys.GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
@@ -294,26 +410,50 @@ int main(int argc, char* argv[]) {
     // Create a driver and attach to robot
     // -----------------------------------
 
-    auto driver = std::make_shared<robosimian::Driver>(
-        "",                                                           // start input file
-        GetChronoDataFile("robosimian/actuation/walking_cycle.txt"),  // cycle input file
-        "",                                                           // stop input file
-        true);
-    ////auto driver = std::make_shared<robosimian::Driver>(
-    ////    GetChronoDataFile("robosimian/actuation/sculling_start.txt"),  // start input file
-    ////    GetChronoDataFile("robosimian/actuation/sculling_cycle.txt"),  // cycle input file
-    ////    GetChronoDataFile("robosimian/actuation/sculling_stop.txt"),   // stop input file
-    ////    true);
-    ////auto driver = std::make_shared<robosimian::Driver>(
-    ////    GetChronoDataFile("robosimian/actuation/inchworming_start.txt"),  // start input file
-    ////    GetChronoDataFile("robosimian/actuation/inchworming_cycle.txt"),  // cycle input file
-    ////    GetChronoDataFile("robosimian/actuation/inchworming_stop.txt"),   // stop input file
-    ////    true);
-    ////auto driver = std::make_shared<robosimian::Driver>(
-    ////    GetChronoDataFile("robosimian/actuation/driving_start.txt"),  // start input file
-    ////    GetChronoDataFile("robosimian/actuation/driving_cycle.txt"),  // cycle input file
-    ////    GetChronoDataFile("robosimian/actuation/driving_stop.txt"),   // stop input file
-    ////    true);
+    std::shared_ptr<robosimian::Driver> driver;
+
+    switch (mode) {
+        case robosimian::LocomotionMode::WALK: {
+            auto drv = std::make_shared<robosimian::Driver>(
+                "",                                                           // start input file
+                GetChronoDataFile("robosimian/actuation/walking_cycle.txt"),  // cycle input file
+                "",                                                           // stop input file
+                true);
+            driver = drv;
+            std::cout << "Locomotion mode: WALK" << std::endl;
+            break;
+        }
+        case robosimian::LocomotionMode::SCULL: {
+            auto drv = std::make_shared<robosimian::Driver>(
+                GetChronoDataFile("robosimian/actuation/sculling_start.txt"),  // start input file
+                GetChronoDataFile("robosimian/actuation/sculling_cycle.txt"),  // cycle input file
+                GetChronoDataFile("robosimian/actuation/sculling_stop.txt"),   // stop input file
+                true);
+            driver = drv;
+            std::cout << "Locomotion mode: SCULL" << std::endl;
+            break;
+        }
+        case robosimian::LocomotionMode::INCHWORM: {
+            auto drv = std::make_shared<robosimian::Driver>(
+                GetChronoDataFile("robosimian/actuation/inchworming_start.txt"),  // start input file
+                GetChronoDataFile("robosimian/actuation/inchworming_cycle.txt"),  // cycle input file
+                GetChronoDataFile("robosimian/actuation/inchworming_stop.txt"),   // stop input file
+                true);
+            driver = drv;
+            std::cout << "Locomotion mode: INCHWORM" << std::endl;
+            break;
+        }
+        case robosimian::LocomotionMode::DRIVE: {
+            auto drv = std::make_shared<robosimian::Driver>(
+                GetChronoDataFile("robosimian/actuation/driving_start.txt"),  // start input file
+                GetChronoDataFile("robosimian/actuation/driving_cycle.txt"),  // cycle input file
+                GetChronoDataFile("robosimian/actuation/driving_stop.txt"),   // stop input file
+                true);
+            driver = drv;
+            std::cout << "Locomotion mode: DRIVE" << std::endl;
+            break;
+        }
+    }
 
     RobotDriverCallback cbk(&robot);
     driver->RegisterPhaseChangeCallback(&cbk);
@@ -330,21 +470,6 @@ int main(int argc, char* argv[]) {
         gl_window.Initialize(1280, 720, "RoboSimian", &my_sys);
         gl_window.SetCamera(ChVector<>(2, -2, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1), 0.05f);
         gl_window.SetRenderMode(opengl::WIREFRAME);
-    }
-
-    // -----------------------------
-    // Initialize output directories
-    // -----------------------------
-
-    if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
-        std::cout << "Error creating directory " << out_dir << std::endl;
-        return 1;
-    }
-    if (povray_output) {
-        if (ChFileutils::MakeDirectory(pov_dir.c_str()) < 0) {
-            std::cout << "Error creating directory " << pov_dir << std::endl;
-            return 1;
-        }
     }
 
     // ---------------------------------
@@ -374,8 +499,8 @@ int main(int argc, char* argv[]) {
                 double z = robot.GetWheelPos(robosimian::FR).z() - 0.15;
                 // Create terrain
                 std::cout << "Time: " << time << "  CREATE TERRAIN" << std::endl;
-                x_max = CreateTerrain(my_sys, x, z);
-                ////x_max = CreateTerrainPatch(my_sys, x, z);
+                x_max = CreateTerrain(my_sys, x, z, step_size);
+                ////x_max = CreateTerrainPatch(my_sys, x, z, step_size);
                 terrain_created = true;
             }
             if (!robot_released && time > time_release) {
@@ -393,7 +518,7 @@ int main(int argc, char* argv[]) {
         // Output POV-Ray data
         if (povray_output && sim_frame % render_steps == 0) {
             char filename[100];
-            sprintf(filename, "%s/data_%03d.dat", pov_dir.c_str(), render_frame + 1);
+            sprintf(filename, "%s/data_%04d.dat", pov_dir.c_str(), render_frame + 1);
             utils::WriteShapesPovray(&my_sys, filename);
             std::cout << "Write output at t = " << time << std::endl;
             render_frame++;
@@ -426,4 +551,119 @@ int main(int argc, char* argv[]) {
     }
 
     return 0;
+}
+
+// =============================================================================
+
+void ShowUsage() {
+    cout << "Usage:  test_robosimian_par [OPTIONS]" << endl;
+    cout << endl;
+    cout << " --num-threads=NUM_THREADS_TIRE" << endl;
+    cout << "        Specify number of OpenMP threads [default: 2]" << endl;
+    cout << " -m=MODE" << endl;
+    cout << " --mode=MODE" << endl;
+    cout << "        Specify locomotion mode [default: 0]" << endl;
+    cout << "          0: walk" << endl;
+    cout << "          1: scull" << endl;
+    cout << "          2: inchworm" << endl;
+    cout << "          3: drive" << endl;
+    cout << " -t=SIM_TIME" << endl;
+    cout << " --simulation-time=SIM_TIME" << endl;
+    cout << "        Specify simulation length (after robot release) in seconds [default: 10]" << endl;
+    cout << " -s=STEP_SIZE" << endl;
+    cout << " --step-size=STEP_SIZE" << endl;
+    cout << "        Specify integration step size in seconds [default: 1e-4]" << endl;
+    cout << " -f=FPS" << endl;
+    cout << " --frames-pre-second=FPS" << endl;
+    cout << "        Specify frequency of output [default: 60]" << endl;
+    cout << " --no-release" << endl;
+    cout << "        Do not release the robot (no terrain created)" << endl;
+    cout << " --no-output" << endl;
+    cout << "        Disable generation of output files" << endl;
+    cout << " --no-rendering" << endl;
+    cout << "        Disable OpenGL rendering" << endl;
+    cout << " --suffix=SUFFIX" << endl;
+    cout << "        Specify suffix for output directory names [default: \"\"]" << endl;
+    cout << " -? -h --help" << endl;
+    cout << "        Print this message and exit." << endl;
+    cout << endl;
+}
+
+bool GetProblemSpecs(int argc,
+    char** argv,
+    robosimian::LocomotionMode& mode,
+    double& sim_time,
+    double& step_size,
+    double& fps,
+    int& nthreads,
+    bool& drop,
+    bool& output,
+    bool& render,
+    std::string& suffix) {
+    // Create the option parser and pass it the program arguments and the array of valid options.
+    CSimpleOptA args(argc, argv, g_options);
+
+    // Default locomotion mode: WALK
+    int imode = 0;
+
+    // Then loop for as long as there are arguments to be processed.
+    while (args.Next()) {
+        // Exit immediately if we encounter an invalid argument.
+        if (args.LastError() != SO_SUCCESS) {
+            cout << "Invalid argument: " << args.OptionText() << endl;
+            ShowUsage();
+            return false;
+        }
+
+        // Process the current argument.
+        switch (args.OptionId()) {
+            case OPT_HELP:
+                ShowUsage();
+                return false;
+            case OPT_NUM_THREADS:
+                nthreads = std::stoi(args.OptionArg());
+                break;
+            case OPT_MODE:
+                imode = std::stoi(args.OptionArg());
+                break;
+            case OPT_SIM_TIME:
+                sim_time = std::stod(args.OptionArg());
+                break;
+            case OPT_STEP_SIZE:
+                step_size = std::stod(args.OptionArg());
+                break;
+            case OPT_FPS:
+                fps = std::stod(args.OptionArg());
+                break;
+            case OPT_NO_RELEASE:
+                drop = false;
+                break;
+            case OPT_NO_OUTPUT:
+                output = false;
+                break;
+            case OPT_NO_RENDERING:
+                render = false;
+                break;
+            case OPT_SUFFIX:
+                suffix = args.OptionArg();
+                break;
+        }
+    }
+
+    switch (imode) {
+        case 0:
+            mode = robosimian::LocomotionMode::WALK;
+            break;
+        case 1:
+            mode = robosimian::LocomotionMode::SCULL;
+            break;
+        case 2:
+            mode = robosimian::LocomotionMode::INCHWORM;
+            break;
+        case 3:
+            mode = robosimian::LocomotionMode::DRIVE;
+            break;
+    }
+
+    return true;
 }
