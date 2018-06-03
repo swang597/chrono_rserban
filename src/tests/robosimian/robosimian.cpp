@@ -487,6 +487,12 @@ void RoboSimian::ReportContacts() {
 
 // =============================================================================
 
+class ax {
+public:
+    double operator()(const double& v) { return a * v; }
+    double a;
+};
+
 class axpby {
   public:
     double operator()(const double& v1, const double& v2) { return a1 * v1 + a2 * v2; }
@@ -531,9 +537,14 @@ void Driver::LoadDataLine(double& time, Actuation& activations) {
 }
 
 void Driver::Update(double time) {
-    // In the POSE phase, always return the first data entry
+    // In the POSE phase, use a logistic function to reach first data entry
     if (m_phase == POSE) {
-        m_actuations = m_actuations_1;
+        ax op;
+        double x = 20 * (time / m_offset) - 10;
+        op.a = std::exp(x) / (1 + std::exp(x));
+        for(int i = 0; i < 4; i++) {
+            std::transform(m_actuations_1[i].begin(), m_actuations_1[i].end(), m_actuations[i].begin(), op);
+        }
         if (time >= m_offset) {
             m_phase = (m_ifs_start.is_open()) ? START : CYCLE;
             if (m_callback)
