@@ -14,6 +14,8 @@
 //
 // =============================================================================
 
+#include <cmath>
+
 #include "chrono/assets/ChBoxShape.h"
 #include "chrono/assets/ChColorAsset.h"
 #include "chrono/assets/ChCylinderShape.h"
@@ -333,7 +335,7 @@ bool ContactManager::OnReportContact(const ChVector<>& pA,
 // =============================================================================
 
 RoboSimian::RoboSimian(ChMaterialSurface::ContactMethod contact_method, bool has_sled, bool fixed)
-    : m_owns_system(true), m_wheel_mode(ActuationMode::SPEED), m_contacts(new ContactManager) {
+    : m_owns_system(true), m_wheel_mode(ActuationMode::SPEED), m_contacts(new ContactManager), m_outdir("") {
     m_system = (contact_method == ChMaterialSurface::NSC) ? static_cast<ChSystem*>(new ChSystemNSC)
                                                           : static_cast<ChSystem*>(new ChSystemSMC);
     m_system->Set_G_acc(ChVector<>(0, 0, -9.81));
@@ -348,7 +350,7 @@ RoboSimian::RoboSimian(ChMaterialSurface::ContactMethod contact_method, bool has
 }
 
 RoboSimian::RoboSimian(ChSystem* system, bool has_sled, bool fixed)
-    : m_owns_system(false), m_system(system), m_wheel_mode(ActuationMode::SPEED), m_contacts(new ContactManager) {
+    : m_owns_system(false), m_system(system), m_wheel_mode(ActuationMode::SPEED), m_contacts(new ContactManager), m_outdir("") {
     Create(has_sled, fixed);
 }
 
@@ -406,6 +408,13 @@ void RoboSimian::Initialize(const ChCoordsys<>& pos) {
     ////                         ChVector<>(0.00000, +1.57080, -1.57080));
     ////m_wheel_right->Initialize(m_chassis->m_body, ChVector<>(-0.42943, +0.19252, 0.06380),
     ////                          ChVector<>(0.00000, -1.57080, -1.57080));
+
+    // Create output files
+    for (int i = 0; i < 4; i++) {
+        m_outf[i].open(m_outdir + "/results_limb" + std::to_string(i) + ".dat");
+        m_outf[i].precision(7);
+        m_outf[i] << std::scientific;
+    }
 }
 
 void RoboSimian::SetCollide(int flags) {
@@ -483,6 +492,25 @@ void RoboSimian::DoStepDynamics(double step) {
 
 void RoboSimian::ReportContacts() {
     m_contacts->Process(this);
+}
+
+void RoboSimian::Output() {
+    for (int i = 0; i < 4; i++) {
+        m_outf[i] << m_system->GetChTime();
+        std::array<double, 8> angles = m_limbs[i]->GetMotorAngles();
+        for (auto v : angles) {
+            m_outf[i] << "  " << v;
+        }
+        std::array<double, 8> speeds = m_limbs[i]->GetMotorOmegas();
+        for (auto v : speeds) {
+            m_outf[i] << "  " << v;
+        }
+        std::array<double, 8> torques = m_limbs[i]->GetMotorTorques();
+        for (auto v : torques) {
+            m_outf[i] << "  " << v;
+        }
+        m_outf[i] << std::endl;
+    }
 }
 
 // =============================================================================
@@ -1036,22 +1064,83 @@ void Limb::SetVisualizationType(VisualizationType vis) {
 
 void Limb::Activate(const std::string& motor_name, double time, double val) {
     auto itr = m_motors.find(motor_name);
-    if (itr == m_motors.end())
+    if (itr == m_motors.end()) {
+        std::cout << "Limb::Activate -- Unknown motor " << motor_name << std::endl;
         return;
+    }
 
     // Note: currently hard-coded for angle motor
     auto fun = std::static_pointer_cast<ChFunction_Setpoint>(itr->second->GetMotorFunction());
     fun->SetSetpoint(-val, time);
 }
 
+double Limb::GetMotorAngle(const std::string& motor_name) const {
+    auto itr = m_motors.find(motor_name);
+    if (itr == m_motors.end()) {
+        std::cout << "Limb::GetMotorAngle -- Unknown motor " << motor_name << std::endl;
+        return 0;
+    }
+
+    return itr->second->GetMotorRot();
+}
+
+double Limb::GetMotorOmega(const std::string& motor_name) const {
+    auto itr = m_motors.find(motor_name);
+    if (itr == m_motors.end()) {
+        std::cout << "Limb::GetMotorOmega -- Unknown motor " << motor_name << std::endl;
+        return 0;
+    }
+
+    return itr->second->GetMotorRot_dt();
+}
+
+double Limb::GetMotorTorque(const std::string& motor_name) const {
+    auto itr = m_motors.find(motor_name);
+    if (itr == m_motors.end()) {
+        std::cout << "Limb::GetMotorTorque -- Unknown motor " << motor_name << std::endl;
+        return 0;
+    }
+
+    return itr->second->GetMotorTorque();
+}
+
 static std::string motor_names[] = {"joint1", "joint2", "joint3", "joint4", "joint5", "joint6", "joint7", "joint8"};
 
 void Limb::Activate(double time, const std::array<double, 8>& vals) {
-    //// TODO: Not a terribly satisfying solution...
     for (int i = 0; i < 8; i++) {
         auto fun = std::static_pointer_cast<ChFunction_Setpoint>(m_motors[motor_names[i]]->GetMotorFunction());
         fun->SetSetpoint(-vals[i], time);
     }
+}
+
+std::array<double, 8> Limb::GetMotorAngles() {
+    std::array<double, 8> result;
+
+    for (int i = 0; i < 8; i++) {
+        result[i] = m_motors[motor_names[i]]->GetMotorRot();
+    }
+
+    return result;
+}
+
+std::array<double, 8> Limb::GetMotorOmegas() {
+    std::array<double, 8> result;
+
+    for (int i = 0; i < 8; i++) {
+        result[i] = m_motors[motor_names[i]]->GetMotorRot_dt();
+    }
+
+    return result;
+}
+
+std::array<double, 8> Limb::GetMotorTorques() {
+    std::array<double, 8> result;
+
+    for (int i = 0; i < 8; i++) {
+        result[i] = m_motors[motor_names[i]]->GetMotorTorque();
+    }
+
+    return result;
 }
 
 void Limb::SetCollideLinks(bool state) {

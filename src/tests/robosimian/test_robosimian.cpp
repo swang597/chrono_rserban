@@ -40,6 +40,9 @@ double time_step = 1e-4;
 // Time interval between two render frames
 double render_step_size = 1.0 / 30;  // FPS = 50
 
+// Time interval between two data output frames
+double output_step_size = 1.0 / 100;
+
 // Time interval for assuming initial pose
 double time_offset = 3;
 
@@ -52,6 +55,7 @@ const std::string pov_dir = out_dir + "/POVRAY";
 const std::string img_dir = out_dir + "/IMG";
 
 // POV-Ray amd/or IMG output
+bool data_output = true;
 bool povray_output = false;
 bool image_output = false;
 
@@ -365,7 +369,12 @@ int main(int argc, char* argv[]) {
 
     robosimian::RoboSimian robot(&my_sys, true, true);
 
+    // Set output directory
+
+    robot.SetOutputDirectory(out_dir);
+
     // Set actuation mode for wheel motors
+    
     ////robot.SetMotorActuationMode(robosimian::ActuationMode::ANGLE);
 
     // Control collisions (default: true for sled and wheels only)
@@ -470,8 +479,10 @@ int main(int argc, char* argv[]) {
     // Run simulation for specified time
     // ---------------------------------
 
+    int output_steps = (int)std::ceil(output_step_size / time_step);
     int render_steps = (int)std::ceil(render_step_size / time_step);
     int sim_frame = 0;
+    int output_frame = 0;
     int render_frame = 0;
 
     bool released = false;
@@ -537,6 +548,10 @@ int main(int argc, char* argv[]) {
         ////robot.Activate(robosimian::RL, "joint5", time, val);
 
         robot.DoStepDynamics(time_step);
+
+        if (data_output && sim_frame % output_steps == 0) {
+            robot.Output();
+        }
 
         ////if (my_sys.GetNcontacts() > 0) {
         ////    robot.ReportContacts();

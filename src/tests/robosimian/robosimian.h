@@ -18,6 +18,7 @@
 #define ROBO_SIMIAN_H
 
 #include <array>
+#include <fstream>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -291,6 +292,27 @@ class Limb {
     /// Get wheel angular speed.
     double GetWheelOmega() const { return m_wheel_motor->GetMotorRot_dt(); }
 
+    /// Get angle for specified motor.
+    /// Motors are named "joint1", "joint2", ... , "joint8", starting at the chassis.
+    double GetMotorAngle(const std::string& motor_name) const;
+
+    /// Get angular speed for specified motor.
+    /// Motors are named "joint1", "joint2", ... , "joint8", starting at the chassis.
+    double GetMotorOmega(const std::string& motor_name) const;
+
+    /// Get actuator reaction torque [Nm] for specified motor.
+    /// Motors are named "joint1", "joint2", ... , "joint8", starting at the chassis.
+    double GetMotorTorque(const std::string& motor_name) const;
+
+    /// Get angles for all 8 limb motors.
+    std::array<double, 8> GetMotorAngles();
+
+    /// Get angular velocities for all 8 limb motors.
+    std::array<double, 8> GetMotorOmegas();
+
+    /// Get actuator torques for all 8 limb motors.
+    std::array<double, 8> GetMotorTorques();
+
     /// Set activation for given motor at current time.
     void Activate(const std::string& motor_name, double time, double val);
 
@@ -342,6 +364,9 @@ class RoboSimian {
     void SetVisualizationTypeLimb(LimbID id, VisualizationType vis);
     void SetVisualizationTypeWheels(VisualizationType vis);
 
+    /// Set output directory.
+    void SetOutputDirectory(const std::string& outdir) { m_outdir = outdir; }
+
     /// Get a handle to the robot's chassis subsystem.
     std::shared_ptr<Chassis> GetChassis() const { return m_chassis; }
 
@@ -363,6 +388,15 @@ class RoboSimian {
     /// Get wheel angular speed for the specified limb.
     double GetWheelOmega(LimbID id) const { return m_limbs[id]->GetWheelOmega(); }
 
+    /// Get angles for all 8 limb motors.
+    std::array<double, 8> GetMotorAngles(LimbID id) { return m_limbs[id]->GetMotorAngles(); }
+
+    /// Get angular velocities for all 8 limb motors.
+    std::array<double, 8> GetMotorOmegas(LimbID id) { return m_limbs[id]->GetMotorOmegas(); }
+
+    /// Get actuator torques for all 8 limb motors.
+    std::array<double, 8> GetMotorTorques(LimbID id) { return m_limbs[id]->GetMotorTorques(); }
+
     /// Initialize the robot at the specified chassis position and orientation.
     void Initialize(const chrono::ChCoordsys<>& pos);
 
@@ -372,6 +406,9 @@ class RoboSimian {
     /// Advance dynamics of underlying system.
     /// If a driver system is specified, apply motor actuations at current time.
     void DoStepDynamics(double step);
+
+    /// Output current data.
+    void Output();
 
     void ReportContacts();
 
@@ -391,6 +428,9 @@ class RoboSimian {
 
     std::shared_ptr<Driver> m_driver;
     ContactManager* m_contacts;
+
+    std::string m_outdir;
+    std::ofstream m_outf[4];
 };
 
 // -----------------------------------------------------------------------------
