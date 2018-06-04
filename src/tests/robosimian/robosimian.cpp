@@ -528,13 +528,13 @@ class axpby {
     double a2;
 };
 
-const std::string Driver::m_phase_names[] = {"POSE", "START", "CYCLE", "STOP"};
+const std::string Driver::m_phase_names[] = {"POSE", "HOLD", "START", "CYCLE", "STOP"};
 
 Driver::Driver(const std::string& filename_start,
                const std::string& filename_cycle,
                const std::string& filename_stop,
                bool repeat)
-    : m_repeat(repeat), m_offset(0), m_phase(POSE), m_callback(nullptr) {
+    : m_repeat(repeat), m_time_pose(0), m_time_hold(0), m_offset(0), m_phase(POSE), m_callback(nullptr) {
     assert(!filename_cycle.empty());
     m_ifs_cycle.open(filename_cycle.c_str());
 
@@ -555,6 +555,12 @@ Driver::Driver(const std::string& filename_start,
 
 Driver::~Driver() {}
 
+void Driver::SetTimeOffsets(double time_pose, double time_hold) {
+    m_time_pose = time_pose;
+    m_time_hold = time_hold;
+    m_offset = time_pose + time_hold;
+}
+
 void Driver::LoadDataLine(double& time, Actuation& activations) {
     *m_ifs >> time;
     for (int i = 0; i < 4; i++) {
@@ -568,15 +574,27 @@ void Driver::Update(double time) {
     // In the POSE phase, use a logistic function to reach first data entry
     if (m_phase == POSE) {
         ax op;
-        double x = 20 * (time / m_offset) - 10;
+        double x = 20 * (time / m_time_pose) - 10;
         op.a = std::exp(x) / (1 + std::exp(x));
         for(int i = 0; i < 4; i++) {
             std::transform(m_actuations_1[i].begin(), m_actuations_1[i].end(), m_actuations[i].begin(), op);
         }
+        if (time >= m_time_pose) {
+            m_phase = HOLD;
+            if (m_callback)
+                m_callback->OnPhaseChange(POSE, m_phase);
+            std::cout << "time = " << time << "  Switch to phase: " << GetCurrentPhase() << std::endl;
+        }
+        return;
+    }
+
+    // In the HOLD phase, always use the first data entry
+    if (m_phase == HOLD) {
+        m_actuations = m_actuations_1;
         if (time >= m_offset) {
             m_phase = (m_ifs_start.is_open()) ? START : CYCLE;
             if (m_callback)
-                m_callback->OnPhaseChange(POSE, m_phase);
+                m_callback->OnPhaseChange(HOLD, m_phase);
             std::cout << "time = " << time << "  Switch to phase: " << GetCurrentPhase() << std::endl;
         }
         return;

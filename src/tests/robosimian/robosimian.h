@@ -441,7 +441,7 @@ typedef std::array<std::array<double, 8>, 4> Actuation;
 
 class Driver {
   public:
-    enum Phase { POSE, START, CYCLE, STOP };
+    enum Phase { POSE, HOLD, START, CYCLE, STOP };
 
     Driver(const std::string& filename_start,
            const std::string& filename_cycle,
@@ -449,8 +449,8 @@ class Driver {
            bool repeat = false);
     ~Driver();
 
-    /// Specify a time interval over which the robot is allowed to assume the initial pose.
-    void SetOffset(double offset) { m_offset = offset; }
+    /// Specify time intervals to assume and then hold the initial pose.
+    void SetTimeOffsets(double time_pose, double time_hold);
 
     /// Return the current limb motor actuations.
     Actuation GetActuation() { return m_actuations; }
@@ -476,7 +476,9 @@ class Driver {
     std::ifstream m_ifs_cycle;        ///< input file stream for cycle phase
     std::ifstream m_ifs_stop;         ///< input file stream for stop phase
     std::ifstream* m_ifs;             ///< active input file stream
-    double m_offset;                  ///< ease-in duration to reach initial pose
+    double m_time_pose;               ///< time interval to assume initial pose
+    double m_time_hold;               ///< time interval to hold initial pose
+    double m_offset;                  ///< current time offset in input files
     bool m_repeat;                    ///< repeat cycle
     Phase m_phase;                    ///< current phase
     double m_time_1;                  ///< time for cached actuations
@@ -486,7 +488,7 @@ class Driver {
     Actuation m_actuations;           ///< current actuations
     PhaseChangeCallback* m_callback;  ///< user callback for phase change
 
-    static const std::string m_phase_names[4];
+    static const std::string m_phase_names[5];
 
     friend class RoboSimian;
 };

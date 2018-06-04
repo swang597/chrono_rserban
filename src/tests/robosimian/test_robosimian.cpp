@@ -34,23 +34,22 @@
 using namespace chrono;
 using namespace chrono::collision;
 
-////double time_step = 2e-3;
 double time_step = 1e-4;
-
-// Time interval between two render frames
-double render_step_size = 1.0 / 30;  // FPS = 50
-
-// Time interval between two data output frames
-double output_step_size = 1.0 / 100;
-
-// Time interval for assuming initial pose
-double time_offset = 3;
 
 // Drop the robot on rigid terrain
 bool drop = true;
 
+// Phase durations
+double duration_pose = 1.0;          // Interval to assume initial pose
+double duration_settle_robot = 0.5;  // Interval to allow robot settling on terrain
+double duration_sim = 10;            // Duration of actual locomotion simulation
+
+// Output frequencies
+double output_fps = 100;
+double render_fps = 60;
+
 // Output directories
-const std::string out_dir = GetChronoOutputPath() + "ROBOSIMIAN";
+const std::string out_dir = "../ROBOSIMIAN";
 const std::string pov_dir = out_dir + "/POVRAY";
 const std::string img_dir = out_dir + "/IMG";
 
@@ -103,7 +102,7 @@ class RobotIrrApp : public irrlicht::ChIrrApp {
 
 class RobotGUIEventReceiver : public irr::IEventReceiver {
   public:
-      RobotGUIEventReceiver(RobotIrrApp* app) : m_app(app), m_vis(robosimian::VisualizationType::COLLISION) {}
+    RobotGUIEventReceiver(RobotIrrApp* app) : m_app(app), m_vis(robosimian::VisualizationType::COLLISION) {}
 
     virtual bool OnEvent(const irr::SEvent& event) override;
 
@@ -349,6 +348,14 @@ std::shared_ptr<ChBody> CreateTerrain(ChSystem& sys, const ChVector<>& hdim, con
 // =============================================================================
 
 int main(int argc, char* argv[]) {
+    // ------------
+    // Timed events
+    // ------------
+
+    double time_create_terrain = duration_pose;                       // create terrain after robot assumes initial pose
+    double time_start = time_create_terrain + duration_settle_robot;  // start actual simulation after robot settling
+    double time_end = time_start + duration_sim;                      // end simulation after specified duration
+
     // -------------
     // Create system
     // -------------
@@ -374,7 +381,7 @@ int main(int argc, char* argv[]) {
     robot.SetOutputDirectory(out_dir);
 
     // Set actuation mode for wheel motors
-    
+
     ////robot.SetMotorActuationMode(robosimian::ActuationMode::ANGLE);
 
     // Control collisions (default: true for sled and wheels only)
@@ -429,14 +436,15 @@ int main(int argc, char* argv[]) {
     RobotDriverCallback cbk(&robot);
     driver->RegisterPhaseChangeCallback(&cbk);
 
-    driver->SetOffset(time_offset);
+    driver->SetTimeOffsets(duration_pose, duration_settle_robot);
     robot.SetDriver(driver);
 
     // -------------------------------
     // Cast rays into collision models
     // -------------------------------
 
-    ////RayCaster caster(&my_sys, ChFrame<>(ChVector<>(2, 0, -1), Q_from_AngY(-CH_C_PI_2)), ChVector2<>(2.5, 2.5), 0.02);
+    ////RayCaster caster(&my_sys, ChFrame<>(ChVector<>(2, 0, -1), Q_from_AngY(-CH_C_PI_2)), ChVector2<>(2.5, 2.5),
+    ///0.02);
     RayCaster caster(&my_sys, ChFrame<>(ChVector<>(0, -2, -1), Q_from_AngX(-CH_C_PI_2)), ChVector2<>(2.5, 2.5), 0.02);
 
     // -------------------------------
@@ -479,18 +487,18 @@ int main(int argc, char* argv[]) {
     // Run simulation for specified time
     // ---------------------------------
 
-    int output_steps = (int)std::ceil(output_step_size / time_step);
-    int render_steps = (int)std::ceil(render_step_size / time_step);
+    int output_steps = (int)std::ceil((1.0 / output_fps) / time_step);
+    int render_steps = (int)std::ceil((1.0 / render_fps) / time_step);
     int sim_frame = 0;
     int output_frame = 0;
     int render_frame = 0;
 
-    bool released = false;
+    bool terrain_created = false;
 
     while (application.GetDevice()->run()) {
         ////caster.Update();
 
-        if (drop && !released && my_sys.GetChTime() > time_offset / 2) {
+        if (drop && !terrain_created && my_sys.GetChTime() > time_create_terrain) {
             // Set terrain height
             double z = robot.GetWheelPos(robosimian::FR).z() - 0.15;
 
@@ -507,18 +515,23 @@ int main(int argc, char* argv[]) {
 
             // Coordinate system for grid
             ChCoordsys<> gridCsys =
-                ChCoordsys<>(ChVector<>(length / 4, 0, z + 0.01), chrono::Q_from_AngAxis(-CH_C_PI_2, VECT_Z));
+                ChCoordsys<>(ChVector<>(length / 4, 0, z + 0.005), chrono::Q_from_AngAxis(-CH_C_PI_2, VECT_Z));
             int gridNu = static_cast<int>(width / 0.1);
             int gridNv = static_cast<int>(length / 0.1);
             application.EnableGrid(gridCsys, gridNu, gridNv);
 
             // Release robot
             robot.GetChassis()->GetBody()->SetBodyFixed(false);
-            released = true;
+
+            terrain_created = true;
         }
 
         application.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
         application.DrawAll();
+
+        if (data_output && sim_frame % output_steps == 0) {
+            robot.Output();
+        }
 
         // Output POV-Ray date and/or snapshot images
         if (sim_frame % render_steps == 0) {
@@ -548,10 +561,6 @@ int main(int argc, char* argv[]) {
         ////robot.Activate(robosimian::RL, "joint5", time, val);
 
         robot.DoStepDynamics(time_step);
-
-        if (data_output && sim_frame % output_steps == 0) {
-            robot.Output();
-        }
 
         ////if (my_sys.GetNcontacts() > 0) {
         ////    robot.ReportContacts();

@@ -50,10 +50,12 @@ enum {
     OPT_MODE,
     OPT_SIM_TIME,
     OPT_STEP_SIZE,
-    OPT_FPS,
+    OPT_OUTPUT_FPS,
+    OPT_POVRAY_FPS,
     OPT_NUM_THREADS,
     OPT_NO_RELEASE,
     OPT_NO_OUTPUT,
+    OPT_NO_POVRAY_OUTPUT,
     OPT_NO_RENDERING,
     OPT_SUFFIX
 };
@@ -70,10 +72,11 @@ CSimpleOptA::SOption g_options[] = {{OPT_NUM_THREADS, "--num-threads", SO_REQ_CM
                                     {OPT_SIM_TIME, "--simulation-time", SO_REQ_CMB},
                                     {OPT_STEP_SIZE, "-s", SO_REQ_CMB},
                                     {OPT_STEP_SIZE, "--step-size", SO_REQ_CMB},
-                                    {OPT_FPS, "-f", SO_REQ_CMB},
-                                    {OPT_FPS, "--frames-per-second", SO_REQ_CMB},
+                                    {OPT_OUTPUT_FPS, "--output-FPS", SO_REQ_CMB},
+                                    {OPT_POVRAY_FPS, "--povray-FPS", SO_REQ_CMB},
                                     {OPT_NO_RELEASE, "--no-release", SO_NONE},
                                     {OPT_NO_OUTPUT, "--no-output", SO_NONE},
+                                    {OPT_NO_POVRAY_OUTPUT, "--no-povray-output", SO_NONE},
                                     {OPT_NO_RENDERING, "--no-rendering", SO_NONE},
                                     {OPT_SUFFIX, "--suffix", SO_REQ_CMB},
                                     {OPT_HELP, "-?", SO_NONE},
@@ -87,10 +90,12 @@ bool GetProblemSpecs(int argc,
                      robosimian::LocomotionMode& mode,
                      double& sim_time,
                      double& step_size,
-                     double& fps,
+                     double& out_fps,
+                     double& pov_fps,
                      int& nthreads,
                      bool& drop,
                      bool& output,
+                     bool& pov_output,
                      bool& render,
                      std::string& suffix);
 
@@ -276,42 +281,53 @@ int main(int argc, char* argv[]) {
     robosimian::LocomotionMode mode = robosimian::LocomotionMode::WALK;
     double step_size = 1e-4;
     double duration_sim = 10;
-    double fps = 60;
+    double out_fps = 100;
+    double pov_fps = 60;
     int nthreads = 2;
     bool drop = true;
     bool render = true;
-    bool povray_output = true;
+    bool pov_output = true;
+    bool output = true;
     std::string suffix = "";
 
-    if (!GetProblemSpecs(argc, argv, mode, duration_sim, step_size, fps, nthreads, drop, povray_output, render,
-                         suffix)) {
+    if (!GetProblemSpecs(argc, argv, mode, duration_sim, step_size, out_fps, pov_fps, nthreads, drop, output,
+                         pov_output, render, suffix)) {
         return 1;
     }
 
+    // ------------
     // Timed events
-    double time_create_terrain = 0.1;
-    double duration_settle_terrain = 1.0;
-    double time_release = time_create_terrain + duration_settle_terrain;
-    double duration_settle_robot = 0.5;
-    double time_offset = time_release + duration_settle_robot;
-    double time_end = time_offset + duration_sim;
+    // ------------
 
-    // Output frequency
-    double render_step_size = 1.0 / fps;
+    double duration_pose = 1.0;            // Interval to assume initial pose
+    double duration_settle_terrain = 1.0;  // Interval to allow granular material settling
+    double duration_settle_robot = 0.5;    // Interval to allow robot settling on terrain
+    double duration_hold = duration_settle_terrain + duration_settle_robot;
 
-    // POV-Ray output directory
-    const std::string out_dir = "../ROBOSIMIAN_PAR";
-    std::string pov_dir = out_dir + "/POVRAY" + suffix;
+    double time_create_terrain = duration_pose;  // create terrain after robot assumes initial pose
+    double time_release = time_create_terrain + duration_settle_terrain;  // release robot after terrain settling
+    double time_start = time_release + duration_settle_robot;  // start actual simulation after robot settling
+    double time_end = time_start + duration_sim;               // end simulation after specified duration
 
     // -----------------------------
     // Initialize output directories
     // -----------------------------
 
-    if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
-        std::cout << "Error creating directory " << out_dir << std::endl;
+    const std::string dir = "../ROBOSIMIAN_PAR";
+    std::string pov_dir = dir + "/POVRAY" + suffix;
+    std::string out_dir = dir + "/RESULTS" + suffix;
+
+    if (ChFileutils::MakeDirectory(dir.c_str()) < 0) {
+        std::cout << "Error creating directory " << dir << std::endl;
         return 1;
     }
-    if (povray_output) {
+    if (output) {
+        if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
+            std::cout << "Error creating directory " << out_dir << std::endl;
+            return 1;
+        }
+    }
+    if (pov_output) {
         if (ChFileutils::MakeDirectory(pov_dir.c_str()) < 0) {
             std::cout << "Error creating directory " << pov_dir << std::endl;
             return 1;
@@ -323,7 +339,7 @@ int main(int argc, char* argv[]) {
     // ----------------------
 
     std::ofstream outf;
-    outf.open(out_dir + "/settings" + suffix + ".txt", std::ios::out);
+    outf.open(dir + "/settings" + suffix + ".txt", std::ios::out);
     outf << "Locomotion mode: ";
     switch (mode) {
         case robosimian::LocomotionMode::WALK:
@@ -349,10 +365,15 @@ int main(int argc, char* argv[]) {
     outf << "Step size: " << step_size << endl;
     outf << "Number threads: " << nthreads << endl;
     outf << endl;
-    outf << "Output? " << (povray_output ? "YES" : "NO") << endl;
-    if (povray_output) {
-        outf << "Output frequency (FPS): " << fps << endl;
-        outf << "Output directory: " << pov_dir << endl;
+    outf << "Result output?" << (output ? "YES" : "NO") << endl;
+    if (output) {
+        outf << "  Output frequency (FPS): " << out_fps << endl;
+        outf << "  Output directory:       " << out_dir << endl;
+    }
+    outf << "POV-Ray output? " << (pov_output ? "YES" : "NO") << endl;
+    if (pov_output) {
+        outf << "  Output frequency (FPS): " << pov_fps << endl;
+        outf << "  Output directory:       " << pov_dir << endl;
     }
     outf.close();
 
@@ -395,6 +416,9 @@ int main(int argc, char* argv[]) {
     // -----------------------
 
     robosimian::RoboSimian robot(&my_sys, true, true);
+
+    // Set output directory
+    robot.SetOutputDirectory(out_dir);
 
     // Ensure wheels are actuated in ANGLE mode (required for Chrono::Parallel)
     robot.SetMotorActuationMode(robosimian::ActuationMode::ANGLE);
@@ -458,7 +482,7 @@ int main(int argc, char* argv[]) {
     RobotDriverCallback cbk(&robot);
     driver->RegisterPhaseChangeCallback(&cbk);
 
-    driver->SetOffset(time_offset);
+    driver->SetTimeOffsets(duration_pose, duration_hold);
     robot.SetDriver(driver);
 
     // -----------------
@@ -476,9 +500,10 @@ int main(int argc, char* argv[]) {
     // Run simulation for specified time
     // ---------------------------------
 
-    int render_steps = (int)std::ceil(render_step_size / step_size);
+    int out_steps = (int)std::ceil((1.0 / out_fps) / step_size);
+    int pov_steps = (int)std::ceil((1.0 / pov_fps) / step_size);
     int sim_frame = 0;
-    int render_frame = 0;
+    int pov_frame = 0;
 
     bool terrain_created = false;
     bool robot_released = false;
@@ -515,13 +540,17 @@ int main(int argc, char* argv[]) {
             }
         }
 
+        // Output results
+        if (output && sim_frame % out_steps == 0) {
+            robot.Output();
+        }
+
         // Output POV-Ray data
-        if (povray_output && sim_frame % render_steps == 0) {
+        if (pov_output && sim_frame % pov_steps == 0) {
             char filename[100];
-            sprintf(filename, "%s/data_%04d.dat", pov_dir.c_str(), render_frame + 1);
+            sprintf(filename, "%s/data_%04d.dat", pov_dir.c_str(), pov_frame + 1);
             utils::WriteShapesPovray(&my_sys, filename);
-            std::cout << "Write output at t = " << time << std::endl;
-            render_frame++;
+            pov_frame++;
         }
 
         ////double time = my_sys.GetChTime();
@@ -573,13 +602,16 @@ void ShowUsage() {
     cout << " -s=STEP_SIZE" << endl;
     cout << " --step-size=STEP_SIZE" << endl;
     cout << "        Specify integration step size in seconds [default: 1e-4]" << endl;
-    cout << " -f=FPS" << endl;
-    cout << " --frames-pre-second=FPS" << endl;
-    cout << "        Specify frequency of output [default: 60]" << endl;
+    cout << " --output-FPS=FPS" << endl;
+    cout << "        Specify frequency of results output [default: 100]" << endl;
+    cout << " --povray-FPS=FPS" << endl;
+    cout << "        Specify frequency of POV-Ray output [default: 60]" << endl;
     cout << " --no-release" << endl;
     cout << "        Do not release the robot (no terrain created)" << endl;
     cout << " --no-output" << endl;
-    cout << "        Disable generation of output files" << endl;
+    cout << "        Disable generation of result output files" << endl;
+    cout << " --no-povray-output" << endl;
+    cout << "        Disable generation of POV-Ray output files" << endl;
     cout << " --no-rendering" << endl;
     cout << "        Disable OpenGL rendering" << endl;
     cout << " --suffix=SUFFIX" << endl;
@@ -590,16 +622,18 @@ void ShowUsage() {
 }
 
 bool GetProblemSpecs(int argc,
-    char** argv,
-    robosimian::LocomotionMode& mode,
-    double& sim_time,
-    double& step_size,
-    double& fps,
-    int& nthreads,
-    bool& drop,
-    bool& output,
-    bool& render,
-    std::string& suffix) {
+                     char** argv,
+                     robosimian::LocomotionMode& mode,
+                     double& sim_time,
+                     double& step_size,
+                     double& out_fps,
+                     double& pov_fps,
+                     int& nthreads,
+                     bool& drop,
+                     bool& output,
+                     bool& pov_output,
+                     bool& render,
+                     std::string& suffix) {
     // Create the option parser and pass it the program arguments and the array of valid options.
     CSimpleOptA args(argc, argv, g_options);
 
@@ -632,14 +666,20 @@ bool GetProblemSpecs(int argc,
             case OPT_STEP_SIZE:
                 step_size = std::stod(args.OptionArg());
                 break;
-            case OPT_FPS:
-                fps = std::stod(args.OptionArg());
+            case OPT_OUTPUT_FPS:
+                out_fps = std::stod(args.OptionArg());
+                break;
+            case OPT_POVRAY_FPS:
+                pov_fps = std::stod(args.OptionArg());
                 break;
             case OPT_NO_RELEASE:
                 drop = false;
                 break;
             case OPT_NO_OUTPUT:
                 output = false;
+                break;
+            case OPT_NO_POVRAY_OUTPUT:
+                pov_output = false;
                 break;
             case OPT_NO_RENDERING:
                 render = false;
