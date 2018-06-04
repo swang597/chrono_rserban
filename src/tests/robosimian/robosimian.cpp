@@ -496,17 +496,28 @@ void RoboSimian::ReportContacts() {
 
 void RoboSimian::Output() {
     for (int i = 0; i < 4; i++) {
+        // Current motor angles
         m_outf[i] << m_system->GetChTime();
         std::array<double, 8> angles = m_limbs[i]->GetMotorAngles();
         for (auto v : angles) {
             m_outf[i] << "  " << v;
         }
+        // Current motor angular speeds
         std::array<double, 8> speeds = m_limbs[i]->GetMotorOmegas();
         for (auto v : speeds) {
             m_outf[i] << "  " << v;
         }
+        // Current motor (reaction) torques
         std::array<double, 8> torques = m_limbs[i]->GetMotorTorques();
         for (auto v : torques) {
+            m_outf[i] << "  " << v;
+        } 
+        // Actuations data
+        m_limbs[i]->GetMotorActuations(angles, speeds);
+        for (auto v : angles) {
+            m_outf[i] << "  " << v;
+        }
+        for (auto v : speeds) {
             m_outf[i] << "  " << v;
         }
         m_outf[i] << std::endl;
@@ -1159,6 +1170,15 @@ std::array<double, 8> Limb::GetMotorTorques() {
     }
 
     return result;
+}
+
+void Limb::GetMotorActuations(std::array<double, 8>& angles, std::array<double, 8>& speeds) {
+    for (int i = 0; i < 8; i++) {
+        auto fun = std::static_pointer_cast<ChFunction_Setpoint>(m_motors[motor_names[i]]->GetMotorFunction());
+        // Note: the time passed as argument here does not matter for a Chfunction_Setpoint
+        angles[i] = fun->Get_y(0);
+        speeds[i] = fun->Get_y_dx(0);
+    }
 }
 
 void Limb::SetCollideLinks(bool state) {

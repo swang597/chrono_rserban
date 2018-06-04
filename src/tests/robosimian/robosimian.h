@@ -313,6 +313,9 @@ class Limb {
     /// Get actuator torques for all 8 limb motors.
     std::array<double, 8> GetMotorTorques();
 
+    /// Get current motor actuations.
+    void GetMotorActuations(std::array<double, 8>& angles, std::array<double, 8>& speeds);
+
     /// Set activation for given motor at current time.
     void Activate(const std::string& motor_name, double time, double val);
 
