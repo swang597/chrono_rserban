@@ -409,7 +409,7 @@ int main(int argc, char* argv[]) {
     my_sys.GetSettings()->collision.collision_envelope = 0.01;
     my_sys.GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
 
-    my_sys.ChangeSolverType(SolverType::BB);
+    my_sys.ChangeSolverType(SolverType::APGD);
 
     // -----------------------
     // Create RoboSimian robot
