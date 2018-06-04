@@ -48,6 +48,7 @@ using std::endl;
 enum {
     OPT_HELP,
     OPT_MODE,
+    OPT_CONTACT_METHOD,
     OPT_SIM_TIME,
     OPT_STEP_SIZE,
     OPT_OUTPUT_FPS,
@@ -68,6 +69,8 @@ enum {
 CSimpleOptA::SOption g_options[] = {{OPT_NUM_THREADS, "--num-threads", SO_REQ_CMB},
                                     {OPT_MODE, "-m", SO_REQ_CMB},
                                     {OPT_MODE, "--mode", SO_REQ_CMB},
+                                    {OPT_CONTACT_METHOD, "-c", SO_REQ_CMB},
+                                    {OPT_CONTACT_METHOD, "--contact_method", SO_REQ_CMB},
                                     {OPT_SIM_TIME, "-t", SO_REQ_CMB},
                                     {OPT_SIM_TIME, "--simulation-time", SO_REQ_CMB},
                                     {OPT_STEP_SIZE, "-s", SO_REQ_CMB},
@@ -88,6 +91,7 @@ void ShowUsage();
 bool GetProblemSpecs(int argc,
                      char** argv,
                      robosimian::LocomotionMode& mode,
+                     ChMaterialSurface::ContactMethod& method,
                      double& sim_time,
                      double& step_size,
                      double& out_fps,
@@ -126,17 +130,17 @@ void RobotDriverCallback::OnPhaseChange(robosimian::Driver::Phase old_phase, rob
 
 // =============================================================================
 
-double CreateTerrain(ChSystemParallel& sys, double x, double z, double step_size) {
+double CreateTerrain(ChSystemParallel* sys, double x, double z, double step_size) {
     std::cout << "x = " << x << "  z = " << z << std::endl;
 
-    double r_g = 0.0075;
+    double r_g = 0.0075;  //// 0.04;
     double rho_g = 2000;
     double coh = 400e3;
     double area = CH_C_PI * r_g * r_g;
     double coh_force = area * coh;
     double coh_g = coh_force * step_size;
 
-    double length = 6;
+    double length = 6;  //// 4;
     double width = 3;
 
     unsigned int num_layers = 5;
@@ -147,7 +151,7 @@ double CreateTerrain(ChSystemParallel& sys, double x, double z, double step_size
 
     // Create contact material
     std::shared_ptr<ChMaterialSurface> material;
-    switch (sys.GetContactMethod()) {
+    switch (sys->GetContactMethod()) {
         case ChMaterialSurface::SMC: {
             auto mat = std::make_shared<ChMaterialSurfaceSMC>();
             mat->SetFriction(0.9f);
@@ -173,7 +177,7 @@ double CreateTerrain(ChSystemParallel& sys, double x, double z, double step_size
     }
 
     // Create container
-    auto ground = std::shared_ptr<ChBody>(sys.NewBody());
+    auto ground = std::shared_ptr<ChBody>(sys->NewBody());
     ground->SetIdentifier(-1);
     ground->SetPos(ChVector<>(length / 2 + x - 1.5, 0, z));
     ground->SetBodyFixed(true);
@@ -194,10 +198,10 @@ double CreateTerrain(ChSystemParallel& sys, double x, double z, double step_size
                           ChVector<>(0, hdim.y() + hthick, hdim.z()), QUNIT, false);
     ground->GetCollisionModel()->BuildModel();
 
-    sys.AddBody(ground);
+    sys->AddBody(ground);
 
     // Create particles
-    utils::Generator gen(&sys);
+    utils::Generator gen(sys);
     std::shared_ptr<utils::MixtureIngredient> m1 = gen.AddMixtureIngredient(utils::SPHERE, 1.0);
     m1->setDefaultMaterial(material);
     m1->setDefaultDensity(rho_g);
@@ -223,16 +227,17 @@ double CreateTerrain(ChSystemParallel& sys, double x, double z, double step_size
     int binsX = (int)std::ceil((0.5 * length) / r_g) / factor;
     int binsY = (int)std::ceil((0.5 * width) / r_g) / factor;
     int binsZ = 1;
-    sys.GetSettings()->collision.bins_per_axis = vec3(binsX, binsY, binsZ);
+    sys->GetSettings()->collision.bins_per_axis = vec3(binsX, binsY, binsZ);
     std::cout << "Broad-phase bins: " << binsX << " x " << binsY << " x " << binsZ << std::endl;
 
-    // Set collision envelope
-    sys.GetSettings()->collision.collision_envelope = 0.1 * r_g / 5;
+    // Set collision envelope (NSC only!)
+    if (sys->GetContactMethod() == ChMaterialSurface::NSC)
+        sys->GetSettings()->collision.collision_envelope = 0.1 * r_g / 5;
 
     return (length + x - 2 * 1.5);
 }
 
-double CreateTerrainPatch(ChSystemParallel& sys, double x, double z, double step_size) {
+double CreateTerrainPatch(ChSystemParallel* sys, double x, double z, double step_size) {
     double r_g = 0.0075;
     double rho_g = 2000;
     double coh = 400e3;
@@ -247,7 +252,7 @@ double CreateTerrainPatch(ChSystemParallel& sys, double x, double z, double step
     unsigned int num_layers = 5;
     ChVector<> center(length / 2 + x - 1.5, 0, z - num_layers * 2.1 * r_g);
 
-    vehicle::GranularTerrain terrain(&sys);
+    vehicle::GranularTerrain terrain(sys);
     terrain.SetContactFrictionCoefficient(0.7f);
     terrain.SetContactCohesion((float)coh_g);
     terrain.SetCollisionEnvelope(0.1 * r_g / 5);
@@ -262,11 +267,12 @@ double CreateTerrainPatch(ChSystemParallel& sys, double x, double z, double step
     int binsX = (int)std::ceil((0.5 * length) / r_g) / factor;
     int binsY = (int)std::ceil((0.5 * width) / r_g) / factor;
     int binsZ = 1;
-    sys.GetSettings()->collision.bins_per_axis = vec3(binsX, binsY, binsZ);
+    sys->GetSettings()->collision.bins_per_axis = vec3(binsX, binsY, binsZ);
     std::cout << "Broad-phase bins: " << binsX << " x " << binsY << " x " << binsZ << std::endl;
 
-    // Set collision envelope
-    sys.GetSettings()->collision.collision_envelope = 0.1 * r_g / 5;
+    // Set collision envelope (NSC only!)
+    if (sys->GetContactMethod() == ChMaterialSurface::NSC)
+        sys->GetSettings()->collision.collision_envelope = 0.1 * r_g / 5;
 
     return (length + x - 2 * 1.5);
 }
@@ -279,6 +285,7 @@ int main(int argc, char* argv[]) {
     // ----------------------------
 
     robosimian::LocomotionMode mode = robosimian::LocomotionMode::WALK;
+    ChMaterialSurface::ContactMethod contact_method = ChMaterialSurface::NSC;
     double step_size = 1e-4;
     double duration_sim = 10;
     double out_fps = 100;
@@ -290,8 +297,8 @@ int main(int argc, char* argv[]) {
     bool output = true;
     std::string suffix = "";
 
-    if (!GetProblemSpecs(argc, argv, mode, duration_sim, step_size, out_fps, pov_fps, nthreads, drop, output,
-                         pov_output, render, suffix)) {
+    if (!GetProblemSpecs(argc, argv, mode, contact_method, duration_sim, step_size, out_fps, pov_fps, nthreads, drop,
+                         output, pov_output, render, suffix)) {
         return 1;
     }
 
@@ -340,6 +347,15 @@ int main(int argc, char* argv[]) {
 
     std::ofstream outf;
     outf.open(dir + "/settings" + suffix + ".txt", std::ios::out);
+    outf << "System type (contact method): ";
+    switch (contact_method) {
+        case ChMaterialSurface::NSC:
+            outf << "NSC (non-smooth contact)" << endl;
+            break;
+        case ChMaterialSurface::SMC:
+            outf << "SMC (smooth contact)" << endl;
+            break;
+    }
     outf << "Locomotion mode: ";
     switch (mode) {
         case robosimian::LocomotionMode::WALK:
@@ -381,41 +397,61 @@ int main(int argc, char* argv[]) {
     // Create system
     // -------------
 
-    ////ChSystemParallelSMC my_sys;
-    ChSystemParallelNSC my_sys;
-    my_sys.Set_G_acc(ChVector<double>(0, 0, -9.8));
-    ////my_sys.Set_G_acc(ChVector<double>(0, 0, 0));
+    ChSystemParallel* sys;
+    switch (contact_method) {
+        case ChMaterialSurface::NSC: {
+            auto my_sys = new ChSystemParallelNSC;
+            cout << "System type: NSC" << endl;
+
+            my_sys->GetSettings()->solver.solver_mode = SolverMode::SLIDING;
+            my_sys->GetSettings()->solver.max_iteration_normal = 0;
+            my_sys->GetSettings()->solver.max_iteration_sliding = 100;
+            my_sys->GetSettings()->solver.max_iteration_spinning = 0;
+            my_sys->GetSettings()->solver.compute_N = false;
+            my_sys->GetSettings()->solver.alpha = 0;
+            my_sys->GetSettings()->solver.contact_recovery_speed = 1000;
+            my_sys->GetSettings()->collision.collision_envelope = 0.01;
+
+            my_sys->ChangeSolverType(SolverType::APGD);
+
+            sys = my_sys;
+            break;
+        }
+        case ChMaterialSurface::SMC: {
+            auto my_sys = new ChSystemParallelSMC;
+            cout << "System type: SMC" << endl;
+
+            my_sys->GetSettings()->solver.contact_force_model = ChSystemSMC::Hertz;
+            my_sys->GetSettings()->solver.tangential_displ_mode = ChSystemSMC::OneStep;
+
+            sys = my_sys;
+            break;
+        }
+    }
+
+    sys->Set_G_acc(ChVector<double>(0, 0, -9.8));
+    ////sys->Set_G_acc(ChVector<double>(0, 0, 0));
 
     int max_threads = CHOMPfunctions::GetNumProcs();
     if (nthreads > max_threads)
         nthreads = max_threads;
-    my_sys.SetParallelThreadNumber(nthreads);
+    sys->SetParallelThreadNumber(nthreads);
     CHOMPfunctions::SetNumThreads(nthreads);
 
-    my_sys.GetSettings()->solver.tolerance = 1e-3;
-    my_sys.GetSettings()->solver.solver_mode = SolverMode::SLIDING;
-    my_sys.GetSettings()->solver.max_iteration_normal = 0;
-    my_sys.GetSettings()->solver.max_iteration_sliding = 100;
-    my_sys.GetSettings()->solver.max_iteration_spinning = 0;
-    my_sys.GetSettings()->solver.max_iteration_bilateral = 100;
-    my_sys.GetSettings()->solver.compute_N = false;
-    my_sys.GetSettings()->solver.alpha = 0;
-    my_sys.GetSettings()->solver.cache_step_length = true;
-    my_sys.GetSettings()->solver.use_full_inertia_tensor = false;
-    my_sys.GetSettings()->solver.contact_recovery_speed = 1000;
-    my_sys.GetSettings()->solver.bilateral_clamp_speed = 1e8;
-    my_sys.GetSettings()->min_threads = nthreads;
+    sys->GetSettings()->solver.tolerance = 1e-3;
+    sys->GetSettings()->solver.max_iteration_bilateral = 100;
+    sys->GetSettings()->solver.cache_step_length = true;
+    sys->GetSettings()->solver.use_full_inertia_tensor = false;
+    sys->GetSettings()->solver.bilateral_clamp_speed = 1e8;
+    sys->GetSettings()->min_threads = nthreads;
 
-    my_sys.GetSettings()->collision.collision_envelope = 0.01;
-    my_sys.GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
-
-    my_sys.ChangeSolverType(SolverType::APGD);
+    sys->GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
 
     // -----------------------
     // Create RoboSimian robot
     // -----------------------
 
-    robosimian::RoboSimian robot(&my_sys, true, true);
+    robosimian::RoboSimian robot(sys, true, true);
 
     // Set output directory
     robot.SetOutputDirectory(out_dir);
@@ -491,7 +527,7 @@ int main(int argc, char* argv[]) {
 
     if (render) {
         opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-        gl_window.Initialize(1280, 720, "RoboSimian", &my_sys);
+        gl_window.Initialize(1280, 720, "RoboSimian", sys);
         gl_window.SetCamera(ChVector<>(2, -2, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1), 0.05f);
         gl_window.SetRenderMode(opengl::WIREFRAME);
     }
@@ -510,7 +546,7 @@ int main(int argc, char* argv[]) {
     double x_max = 0;
 
     while (true) {
-        double time = my_sys.GetChTime();
+        double time = sys->GetChTime();
         double x = robot.GetChassisPos().x();
 
         if (time >= time_end) {
@@ -524,8 +560,8 @@ int main(int argc, char* argv[]) {
                 double z = robot.GetWheelPos(robosimian::FR).z() - 0.15;
                 // Create terrain
                 std::cout << "Time: " << time << "  CREATE TERRAIN" << std::endl;
-                x_max = CreateTerrain(my_sys, x, z, step_size);
-                ////x_max = CreateTerrainPatch(my_sys, x, z, step_size);
+                x_max = CreateTerrain(sys, x, z, step_size);
+                ////x_max = CreateTerrainPatch(sys, x, z, step_size);
                 terrain_created = true;
             }
             if (!robot_released && time > time_release) {
@@ -535,7 +571,7 @@ int main(int argc, char* argv[]) {
             }
 
             if (robot_released && x > x_max) {
-                std::cout << "Time: " << time << " Reached maximum distance" << std::endl;
+                std::cout << "Time: " << time << "  Reached maximum distance" << std::endl;
                 break;
             }
         }
@@ -549,11 +585,10 @@ int main(int argc, char* argv[]) {
         if (pov_output && sim_frame % pov_steps == 0) {
             char filename[100];
             sprintf(filename, "%s/data_%04d.dat", pov_dir.c_str(), pov_frame + 1);
-            utils::WriteShapesPovray(&my_sys, filename);
+            utils::WriteShapesPovray(sys, filename);
             pov_frame++;
         }
 
-        ////double time = my_sys.GetChTime();
         ////double A = CH_C_PI / 6;
         ////double freq = 2;
         ////double val = 0.5 * A * (1 - std::cos(CH_C_2PI * freq * time));
@@ -563,7 +598,7 @@ int main(int argc, char* argv[]) {
 
         robot.DoStepDynamics(step_size);
 
-        ////if (my_sys.GetNcontacts() > 0) {
+        ////if (sys->GetNcontacts() > 0) {
         ////    robot.ReportContacts();
         ////}
 
@@ -587,7 +622,7 @@ int main(int argc, char* argv[]) {
 void ShowUsage() {
     cout << "Usage:  test_robosimian_par [OPTIONS]" << endl;
     cout << endl;
-    cout << " --num-threads=NUM_THREADS_TIRE" << endl;
+    cout << " --num-threads=NUM_THREADS" << endl;
     cout << "        Specify number of OpenMP threads [default: 2]" << endl;
     cout << " -m=MODE" << endl;
     cout << " --mode=MODE" << endl;
@@ -596,6 +631,11 @@ void ShowUsage() {
     cout << "          1: scull" << endl;
     cout << "          2: inchworm" << endl;
     cout << "          3: drive" << endl;
+    cout << " -c=METHOD" << endl;
+    cout << " --contact-method=METHOD" << endl;
+    cout << "        Specify contact method [default: NSC]" << endl;
+    cout << "          0: NSC (non-smooth contact)" << endl;
+    cout << "          1: SMC (smooth contact)" << endl;
     cout << " -t=SIM_TIME" << endl;
     cout << " --simulation-time=SIM_TIME" << endl;
     cout << "        Specify simulation length (after robot release) in seconds [default: 10]" << endl;
@@ -624,6 +664,7 @@ void ShowUsage() {
 bool GetProblemSpecs(int argc,
                      char** argv,
                      robosimian::LocomotionMode& mode,
+                     ChMaterialSurface::ContactMethod& method,
                      double& sim_time,
                      double& step_size,
                      double& out_fps,
@@ -639,6 +680,9 @@ bool GetProblemSpecs(int argc,
 
     // Default locomotion mode: WALK
     int imode = 0;
+
+    // Default contact method: NSC
+    int imethod = 0;
 
     // Then loop for as long as there are arguments to be processed.
     while (args.Next()) {
@@ -659,6 +703,9 @@ bool GetProblemSpecs(int argc,
                 break;
             case OPT_MODE:
                 imode = std::stoi(args.OptionArg());
+                break;
+            case OPT_CONTACT_METHOD:
+                imethod = std::stoi(args.OptionArg());
                 break;
             case OPT_SIM_TIME:
                 sim_time = std::stod(args.OptionArg());
@@ -703,6 +750,21 @@ bool GetProblemSpecs(int argc,
         case 3:
             mode = robosimian::LocomotionMode::DRIVE;
             break;
+        default:
+            cout << "Invalid locomotion mode" << endl;
+            return false;
+    }
+
+    switch (imethod) {
+        case 0:
+            method = ChMaterialSurface::NSC;
+            break;
+        case 1:
+            method = ChMaterialSurface::SMC;
+            break;
+        default:
+            cout << "Invalid contact method" << endl;
+            return false;
     }
 
     return true;
