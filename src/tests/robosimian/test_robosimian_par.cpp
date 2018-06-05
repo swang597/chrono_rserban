@@ -70,7 +70,7 @@ CSimpleOptA::SOption g_options[] = {{OPT_NUM_THREADS, "--num-threads", SO_REQ_CM
                                     {OPT_MODE, "-m", SO_REQ_CMB},
                                     {OPT_MODE, "--mode", SO_REQ_CMB},
                                     {OPT_CONTACT_METHOD, "-c", SO_REQ_CMB},
-                                    {OPT_CONTACT_METHOD, "--contact_method", SO_REQ_CMB},
+                                    {OPT_CONTACT_METHOD, "--contact-method", SO_REQ_CMB},
                                     {OPT_SIM_TIME, "-t", SO_REQ_CMB},
                                     {OPT_SIM_TIME, "--simulation-time", SO_REQ_CMB},
                                     {OPT_STEP_SIZE, "-s", SO_REQ_CMB},
@@ -752,6 +752,7 @@ bool GetProblemSpecs(int argc,
             break;
         default:
             cout << "Invalid locomotion mode" << endl;
+            ShowUsage();
             return false;
     }
 
@@ -764,6 +765,7 @@ bool GetProblemSpecs(int argc,
             break;
         default:
             cout << "Invalid contact method" << endl;
+            ShowUsage();
             return false;
     }
 
