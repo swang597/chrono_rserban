@@ -46,6 +46,7 @@ if(ENABLE_MODULE_PARALLEL)
     add_subdirectory(parallel)
     add_subdirectory(box_collision)
     add_subdirectory(rolling)
+	add_subdirectory(JPL_direct_shear)
 endif()
 
 if(ENABLE_MODULE_PARALLEL AND ENABLE_MODULE_IRRLICHT AND ENABLE_MODULE_OPENGL)
