@@ -166,7 +166,7 @@ class CustomCompositionStrategy : public ChMaterialCompositionStrategy<real> {
 // =============================================================================
 
 void ShowUsage(const std::string& name);
-bool GetProblemSpecs(int argc, char** argv, std::string& file, int& line, int& threads, bool& render, bool& copy);
+bool GetProblemSpecs(int argc, char** argv, std::string& file, int& line, int& threads, bool& render, bool& copy, bool& pov_output);
 
 WVP* CreateVehicle(ChSystem* system, double vertical_offset);
 GONOGO_Driver* CreateDriver(ChVehicle& vehicle);
@@ -188,9 +188,10 @@ int main(int argc, char* argv[]) {
     int threads = 0;              // Number of threads
     bool render = true;           // Render?
     bool copy = true;             // Copy input file?
+    bool pov_output = false;      // Currently not used
 
     // Extract arguments
-    if (!GetProblemSpecs(argc, argv, input_file, line_number, threads, render, copy)) {
+    if (!GetProblemSpecs(argc, argv, input_file, line_number, threads, render, copy, pov_output)) {
         return 1;
     }
 

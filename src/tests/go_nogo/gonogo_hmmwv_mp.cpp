@@ -161,7 +161,7 @@ class CustomCompositionStrategy : public ChMaterialCompositionStrategy<real> {
 // =============================================================================
 
 void ShowUsage(const std::string& name);
-bool GetProblemSpecs(int argc, char** argv, std::string& file, int& line, int& threads, bool& render, bool& copy);
+bool GetProblemSpecs(int argc, char** argv, std::string& file, int& line, int& threads, bool& render, bool& copy, bool& pov_output);
 
 HMMWV_Full* CreateVehicle(ChSystem* system, double vertical_offset);
 GONOGO_Driver* CreateDriver(ChVehicle& vehicle);
@@ -183,9 +183,10 @@ int main(int argc, char* argv[]) {
     int threads = 0;              // Number of threads
     bool render = true;           // Render?
     bool copy = true;             // Copy input file?
+    bool pov_output = false;      // Generate data for POV-Ray?
 
     // Extract arguments
-    if (!GetProblemSpecs(argc, argv, input_file, line_number, threads, render, copy)) {
+    if (!GetProblemSpecs(argc, argv, input_file, line_number, threads, render, copy, pov_output)) {
         return 1;
     }
 
@@ -267,28 +268,38 @@ int main(int argc, char* argv[]) {
 
     std::ofstream ofile;
     std::string del("  ");
+    std::string pov_dir;
+
+    if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
+        cout << "Error creating directory " << out_dir << endl;
+        return 1;
+    }
+
+    out_dir += "/" + stem;
+
+    if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
+        cout << "Error creating directory " << out_dir << endl;
+        return 1;
+    }
+
+    // Copy input file to output directory
+    if (copy) {
+        std::ofstream dst(out_dir + "/" + filename, std::ios::binary);
+        dst << ifile.rdbuf();
+    }
 
     if (output) {
-        if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
-            cout << "Error creating directory " << out_dir << endl;
-            return 1;
-        }
-
-        out_dir += "/" + stem;
-
-        if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
-            cout << "Error creating directory " << out_dir << endl;
-            return 1;
-        }
-
-        // Copy input file to output directory
-        if (copy) {
-            std::ofstream dst(out_dir + "/" + filename, std::ios::binary);
-            dst << ifile.rdbuf();
-        }
-
         // Open the output file stream
         ofile.open(out_dir + "/results_" + std::to_string(line_number) + ".out", std::ios::out);
+    }
+
+    if (pov_output) {
+        // Create directory for POV-Ray output files
+        pov_dir = out_dir + "/POVRAY_" + std::to_string(line_number);
+        if (ChFileutils::MakeDirectory(pov_dir.c_str()) < 0) {
+            std::cout << "Error creating directory " << pov_dir << std::endl;
+            return 1;
+        }
     }
 
     // -------------
@@ -408,10 +419,12 @@ int main(int argc, char* argv[]) {
 
     // Number of simulation steps between two output frames
     int output_steps = (int)std::ceil((1 / output_frequency) / time_step);
+    int pov_steps = (int)std::ceil((1 / 60.0) / time_step);
 
     double time = 0;
     int sim_frame = 0;
     int out_frame = 0;
+    int pov_frame = 0;
     int next_out_frame = 0;
     double exec_time = 0;
 
@@ -438,6 +451,10 @@ int main(int argc, char* argv[]) {
             hmmwv = CreateVehicle(system, max_height);
             driver = CreateDriver(hmmwv->GetVehicle());
 
+            if (pov_output) {
+                driver->ExportPathPovray(out_dir);
+            }
+
             // Enable moving patch, based on vehicle location
             if (moving_patch)
                 terrain.EnableMovingPatch(hmmwv->GetChassisBody(), buffer_distance, shift_distance);
@@ -450,6 +467,14 @@ int main(int argc, char* argv[]) {
             cout << time << "    Pitch: " << gravityR.x() << " " << gravityR.y() << " " << gravityR.z() << endl;
             system->Set_G_acc(gravityR);
             is_pitched = true;
+        }
+
+        // Output POV-Ray data
+        if (pov_output && sim_frame % pov_steps == 0) {
+            char filename[100];
+            sprintf(filename, "%s/data_%04d.dat", pov_dir.c_str(), pov_frame + 1);
+            utils::WriteShapesPovray(system, filename);
+            pov_frame++;
         }
 
         // Synchronize terrain system
@@ -590,11 +615,11 @@ HMMWV_Full* CreateVehicle(ChSystem* system, double vertical_offset) {
 
     hmmwv->Initialize();
 
-    hmmwv->SetChassisVisualizationType(VisualizationType::NONE);
+    hmmwv->SetChassisVisualizationType(VisualizationType::MESH);
     hmmwv->SetSuspensionVisualizationType(VisualizationType::PRIMITIVES);
     hmmwv->SetSteeringVisualizationType(VisualizationType::PRIMITIVES);
-    hmmwv->SetWheelVisualizationType(VisualizationType::NONE);
-    hmmwv->SetTireVisualizationType(VisualizationType::PRIMITIVES);
+    hmmwv->SetWheelVisualizationType(VisualizationType::MESH);
+    hmmwv->SetTireVisualizationType(VisualizationType::NONE);
 
     hmmwv->GetVehicle().SetStepsize(time_step);
 
