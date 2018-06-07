@@ -34,6 +34,8 @@
 #include <valarray>
 #include <vector>
 
+#include "chrono_thirdparty/SimpleOpt/SimpleOpt.h"
+
 #include "chrono/ChConfig.h"
 #include "chrono/core/ChFileutils.h"
 #include "chrono/core/ChStream.h"
@@ -68,9 +70,9 @@ using std::flush;
 // Comment the following line to use NSC contact
 #define USE_SMC
 
-enum ProblemType { SETTLING = 0, PRESSING = 1, SHEARING = 2 };
+enum { SETTLING = 0, PRESSING = 1, SHEARING = 2 };
 
-ProblemType problem;
+int problem = -1;
 
 // -----------------------------------------------------------------------------
 // Conversion factors
@@ -113,10 +115,10 @@ double settling_tol = 0.2;
 
 // Solver settings
 #ifdef USE_SMC
-double time_step = 5e-6;
+double time_step = -1;  // 5e-6
 int max_iteration_bilateral = 100;
 #else
-double time_step = 3e-4;
+double time_step = -1;  // 3e-4;
 int max_iteration_normal = 0;
 int max_iteration_sliding = 100;
 int max_iteration_spinning = 0;
@@ -158,7 +160,7 @@ int timing_frame = -1;
 // Gravitational acceleration [cm/s^2]
 double gravity = 981;
 
-double r_g = 50e-3;  // [cm] radius of granular spheres // TODO RADIUS RANGE: 1-50e-4cm
+double r_g = -1;  // 50e-3;  // [cm] radius of granular spheres // TODO RADIUS RANGE: 1-50e-4cm
 // double r_g_min = 100e-3;
 // double r_g_max = 200e-3;
 // double r_g_stddev = (r_g_max - r_g_min) / 2;
@@ -173,15 +175,15 @@ double hdimY = (2.416 * In2Cm) / 2;  // [cm] bin half-depth in y direction
 double hdimZ =
     (1.14657 * In2Cm) / 2;  // [cm] bin half-height in z direction // NOTE Makes uncompressed volume of 0.003873ft^3
 
+int pressure_index = -1;
 double unpacked_volume =
     0.003873 * 12 * 12 * 12 * In2Cm * In2Cm * In2Cm;  // NOTE Makes 0.003873 ft^3 total sample volume
 double hdimZ_unpacked = unpacked_volume / (8 * hdimX * hdimY);
 
-double hthick = r_g * 2;  // [cm] bin half-thickness of the walls
+double hthick;  // [cm] bin half-thickness of the walls
 
 double h_scaling = 5;  // ratio of shear box height to bin height // TODO
 
-// TODO Material of the wall?
 float Y_walls = (float)(Pa2cgs * 1e7);
 float cr_walls = 0.6f;
 float nu_walls = 0.3f;
@@ -206,14 +208,33 @@ double desiredBulkDensity = 1.5;  // [g/cm^3] desired bulk density // TODO ?
 
 // TODO Unknowns to optimize over
 float Y_g = (float)(Pa2cgs * 4e6);
-float cr_g = 0.87f; // TODO?
-float nu_g = 0.22f; // dimensionless
-float mu_g = 0.18f; // dimensionless
+float cr_g = 0.87f;  // TODO what cr?
+float nu_g = 0.22f;  // dimensionless
+float mu_g = 0.18f;  // dimensionless
 
 // Parameters of the testing ball
 int Id_ball = -4;
 double mass_ball = 200;            // [g] mass of testing ball
 double radius_ball = 0.9 * hdimX;  // [cm] radius of testing ball
+
+// ID values to identify command line arguments
+enum { OPT_HELP, OPT_PRESS, OPT_STAGE, OPT_RAD, OPT_STEP };
+
+// Table of CSimpleOpt::Soption structures. Each entry specifies:
+// - the ID for the option (returned from OptionId() during processing)
+// - the option as it should appear on the command line
+// - type of the option
+// The last entry must be SO_END_OF_OPTIONS
+CSimpleOptA::SOption g_options[] = {{OPT_PRESS, "--pressure", SO_REQ_CMB},
+                                    {OPT_RAD, "--radius", SO_REQ_CMB},
+                                    {OPT_STEP, "--step", SO_REQ_CMB},
+                                    {OPT_STAGE, "--stage", SO_REQ_CMB},
+                                    {OPT_HELP, "-h", SO_NONE},
+                                    {OPT_HELP, "--help", SO_NONE},
+                                    SO_END_OF_OPTIONS};
+
+void ShowUsage();
+bool GetProblemSpecs(int argc, char** argv);
 
 void AdjustInertia(ChSystemParallel* m_sys) {
     // TODO skip the box bodies
@@ -232,7 +253,6 @@ void AdjustInertia(ChSystemParallel* m_sys) {
 // Both the shear box and load plate are constructed fixed to the ground.
 // No joints between bodies are defined at this time.
 // =============================================================================
-
 void CreateMechanismBodies(ChSystemParallel* system) {
     // -------------------------------
     // Create a material for the walls
@@ -358,7 +378,6 @@ void CreateMechanismBodies(ChSystemParallel* system) {
 // Connect the shear box to the containing bin (ground) through a translational
 // joint and create a linear actuator.
 // =============================================================================
-
 void ConnectShearBox(ChSystemParallel* system, std::shared_ptr<ChBody> ground, std::shared_ptr<ChBody> box) {
     auto prismatic = std::make_shared<ChLinkLockPrismatic>();
     prismatic->Initialize(ground, box, ChCoordsys<>(ChVector<>(0, 0, 2 * hdimZ), Q_from_AngY(CH_C_PI_2)));
@@ -397,7 +416,6 @@ void ConnectLoadPlate(ChSystemParallel* system, std::shared_ptr<ChBody> ground, 
 // layers with locations within each layer obtained using Poisson Disk sampling,
 // thus ensuring that no two spheres are closer than twice the radius.
 // =============================================================================
-
 int CreateGranularMaterial(ChSystemParallel* system) {
     // -------------------------------------------
     // Create a material for the granular material
@@ -495,18 +513,18 @@ void setBulkDensity(ChSystem* sys, double bulkDensity) {
 }
 
 // =============================================================================
-
 int main(int argc, char* argv[]) {
-    // Usage directShearJPL <phase> <pressure index>
-    if (argc != 3)
+    if (!GetProblemSpecs(argc, argv)) {
         return 1;
+    }
+
+    hthick = r_g * 2;
 
     // Applied normal pressure
     double pressures[] = {25., 100., 250., 500., 1000., 2000., 2500.};  //  kg/m2
-    normalPressure = Pa2cgs * 9.81 * pressures[std::atoi(argv[1])];     // 25kg/m^2 * 9.81 N/kg = Pa
+    normalPressure = Pa2cgs * 9.81 * pressures[pressure_index];         // 25kg/m^2 * 9.81 N/kg = Pa
 
-    problem = (ProblemType)std::atoi(argv[1]);
-    std::string press_i = std::string(argv[2]);
+    std::string press_i = std::to_string(pressure_index);
 
 // Output
 #ifdef USE_SMC
@@ -918,4 +936,82 @@ int main(int argc, char* argv[]) {
     cout << "Number of threads: " << threads << endl;
 
     return 0;
+}
+
+// =============================================================================
+
+void ShowUsage() {
+    cout << "Usage:  directShearJPL [OPTIONS]" << endl;
+    cout << "NOTE THE CGS UNIT SYSTEM" << endl;
+    cout << "--step=<step_size>           Time step in seconds [REQUIRED]" << endl;
+    cout << "--stage=<problem stage>      Problem: 0:SETTLING 1:PRESSING 2:SHEARING" << endl;
+    cout << "--pressure=<pressure index>" << endl;
+    cout << "\t0:25 1:100 2:250 3:500 4:1000 5:2000 6:2500 KG/M^2 [REQUIRED]" << endl;
+    cout << "--radius=<particle radius>   Particle radius in cm [REQUIRED]" << endl;
+    cout << "-h --help                    Print this message and exit." << endl;
+}
+
+bool GetProblemSpecs(int argc, char** argv) {
+    // Create the option parser and pass it the program arguments and the array of valid options.
+    CSimpleOptA args(argc, argv, g_options);
+
+    // Then loop for as long as there are arguments to be processed.
+    while (args.Next()) {
+        // Exit immediately if we encounter an invalid argument.
+        if (args.LastError() != SO_SUCCESS) {
+            cout << "Invalid argument: " << args.OptionText() << endl;
+            ShowUsage();
+            return false;
+        }
+
+        // Process the current argument.
+        switch (args.OptionId()) {
+            case OPT_STEP:
+                time_step = std::stod(args.OptionArg());
+                break;
+
+            case OPT_RAD:
+                r_g = std::stod(args.OptionArg());
+                break;
+
+            case OPT_STAGE:
+                switch (std::stoi(args.OptionArg())) {
+                    case 0:
+                        problem = SETTLING;
+                        break;
+
+                    case 1:
+                        problem = PRESSING;
+                        break;
+
+                    case 2:
+                        problem = SHEARING;
+                        break;
+
+                    default:
+                        ShowUsage();
+                        return false;
+                }
+                break;
+
+            case OPT_PRESS:
+                pressure_index = std::stoi(args.OptionArg());
+                if (pressure_index < 0 || pressure_index > 6) {
+                    ShowUsage();
+                    return false;
+                }
+                break;
+
+            case OPT_HELP:
+            default:
+                ShowUsage();
+                return false;
+        }
+    }
+
+    if (time_step < 0 || r_g < 0 || problem < 0 || pressure_index < 0) {
+        ShowUsage();
+        return false;
+    }
+    return true;
 }
