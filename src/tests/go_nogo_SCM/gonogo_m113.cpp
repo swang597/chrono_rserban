@@ -73,7 +73,7 @@ double hdimY = 2.5;
 double factor = 6;
 
 // Vehicle horizontal offset
-double horizontal_offset = 6;
+double horizontal_offset = 12;
 double horizontal_pos = hdimX - horizontal_offset;
 
 // Initial vehicle position, orientation, and forward velocity
@@ -467,7 +467,7 @@ int main(int argc, char* argv[]) {
         double fwd_acc_std = fwd_acc_filter.GetStdDev();
 
         // Check if vehicle is sliding backward
-        if (pv.x() <= -horizontal_pos - 1) {
+        if (pv.x() <= -horizontal_pos - 7) {
             if (output) {
                 ofile << "# " << endl;
                 ofile << "# Vehicle sliding backward" << endl;
@@ -504,12 +504,12 @@ int main(int argc, char* argv[]) {
 
         // Save output
         if (output && sim_frame == next_out_frame) {
-            cout << system->GetChTime() << " pos: " << pv.x() << " vel: " << vv.x() << " Wtime: " << exec_time << endl;
+            cout << system->GetChTime() << " pos: " << pv.x() - 6 << " vel: " << vv.x() << " Wtime: " << exec_time << endl;
 
             ofile << system->GetChTime() << del;
             ofile << throttle_input << del << steering_input << del;
 
-            ofile << pv.x() << del << pv.y() << del << pv.z() << del;
+            ofile << pv.x() - 6 << del << pv.y() << del << pv.z() << del;
             ofile << vv.x() << del << vv.y() << del << vv.z() << del;
 
             ofile << fwd_vel_mean << del << fwd_vel_std << del;

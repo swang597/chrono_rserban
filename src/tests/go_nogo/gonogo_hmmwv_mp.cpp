@@ -70,7 +70,7 @@ double hdimY = 1.75;
 bool rough = false;
 
 // Depth of granular material (mm)
-double depth = 100;
+double depth = 140;
 int num_layers_min = 4;
 int num_layers_max = 8;
 
