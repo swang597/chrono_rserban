@@ -1,85 +1,34 @@
-#=============================================================================
-# CMake configuration file for projects requiring the Chrono PARALLEL module
-# 
-# Cannot be used stand-alone (but is mostly self-contained).
-#=============================================================================
+# ------------------------------------------------------------------------------
 
-#--------------------------------------------------------------
-# List of all executables
-#--------------------------------------------------------------
+INCLUDE_DIRECTORIES(${CH_PARALLEL_INCLUDES})
 
-set(DEMOS
-	directShearJPL
+SET(LIBRARIES
+    ChronoEngine
+    ChronoEngine_parallel
 )
 
-#--------------------------------------------------------------
-# Find the Chrono package with required components
-#--------------------------------------------------------------
+IF(ENABLE_MODULE_OPENGL)
+    INCLUDE_DIRECTORIES(${CH_OPENGL_INCLUDES})
+    SET(LIBRARIES ${LIBRARIES} ChronoEngine_opengl)
 
-# Invoke find_package in CONFIG mode.
-
-find_package(Chrono
-             COMPONENTS Parallel
-             OPTIONAL_COMPONENTS OpenGL
-             CONFIG
-)
-
-# If Chrono and/or the required component(s) were not found, return now.
-
-if(NOT Chrono_FOUND)
-  message("Could not find requirements for PARALLEL projects")
-  return()
-endif()
+    IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+       SET (CH_LINKERFLAG_EXE  "${CH_LINKERFLAG_EXE} -framework IOKit -framework Cocoa -framework OpenGL")
+    ENDIF()
+ENDIF()
 
 #--------------------------------------------------------------
-# Include paths and libraries
-#--------------------------------------------------------------
 
-# (A) Path to the Chrono include headers
-# - If using an installed version of Chrono, this will be the path 
-#   to the installed headers (the configuration headers are also
-#   available there)
-# - If using a build version of Chrono, this will contain both the
-#   path to the Chrono sources and the path to the chrono BUILD tree
-#   (the latter for the configuration headers)
-# 
-# (B) Path to the top of the source tree for this project
-# - for access to utility headers
+set(PROGRAM directShearJPL)
 
-include_directories(
-    ${CHRONO_INCLUDE_DIRS}
-    ${CMAKE_SOURCE_DIR}
-)
+message(STATUS "...add ${PROGRAM}")
 
-#--------------------------------------------------------------
-# Append to the parent's list of DLLs (and make it visible up)
-#--------------------------------------------------------------
+add_executable(${PROGRAM}  "${PROGRAM}.cpp")
+source_group(""  FILES "${PROGRAM}.cpp")
 
-list(APPEND ALL_DLLS "${CHRONO_DLLS}")
-set(ALL_DLLS "${ALL_DLLS}" PARENT_SCOPE)
-
-#--------------------------------------------------------------
-# Loop over all demo programs and build them
-#--------------------------------------------------------------
-
-message(STATUS "Granular validation programs...")
-
-foreach(PROGRAM ${DEMOS})
-
-  message(STATUS "...add ${PROGRAM}")
-
-  add_executable(${PROGRAM}  "${PROGRAM}.cpp")
-  source_group(""  FILES "${PROGRAM}.cpp")
-
-  set_target_properties(${PROGRAM} PROPERTIES
+set_target_properties(${PROGRAM} PROPERTIES
     FOLDER demos
-    COMPILE_FLAGS "${CHRONO_CXX_FLAGS}"
-    COMPILE_DEFINITIONS "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\""
-    LINK_FLAGS "${CHRONO_CXX_FLAGS} ${CHRONO_LINKER_FLAGS}"
-  )
+    COMPILE_FLAGS "${CH_CXX_FLAGS} ${CH_PARALLEL_CXX_FLAGS}"
+    LINK_FLAGS "${CH_LINKERFLAG_EXE}"
+)
 
-  target_link_libraries(${PROGRAM} ${CHRONO_LIBRARIES})
-
-endforeach(PROGRAM)
-
-message(STATUS "")
+target_link_libraries(${PROGRAM} ${LIBRARIES})
