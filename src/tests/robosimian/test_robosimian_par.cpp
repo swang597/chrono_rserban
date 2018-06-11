@@ -485,9 +485,9 @@ int main(int argc, char* argv[]) {
         }
         case robosimian::LocomotionMode::SCULL: {
             auto drv = std::make_shared<robosimian::Driver>(
-                GetChronoDataFile("robosimian/actuation/sculling_start.txt"),  // start input file
-                GetChronoDataFile("robosimian/actuation/sculling_cycle.txt"),  // cycle input file
-                GetChronoDataFile("robosimian/actuation/sculling_stop.txt"),   // stop input file
+                GetChronoDataFile("robosimian/actuation/sculling_start.txt"),   // start input file
+                GetChronoDataFile("robosimian/actuation/sculling_cycle2.txt"),  // cycle input file
+                GetChronoDataFile("robosimian/actuation/sculling_stop.txt"),    // stop input file
                 true);
             driver = drv;
             std::cout << "Locomotion mode: SCULL" << std::endl;

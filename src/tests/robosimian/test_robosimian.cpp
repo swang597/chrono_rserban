@@ -418,9 +418,9 @@ int main(int argc, char* argv[]) {
     ////    "",                                                           // stop input file
     ////    true);
     ////auto driver = std::make_shared<robosimian::Driver>(
-    ////    GetChronoDataFile("robosimian/actuation/sculling_start.txt"),  // start input file
-    ////    GetChronoDataFile("robosimian/actuation/sculling_cycle.txt"),  // cycle input file
-    ////    GetChronoDataFile("robosimian/actuation/sculling_stop.txt"),   // stop input file
+    ////    GetChronoDataFile("robosimian/actuation/sculling_start.txt"),   // start input file
+    ////    GetChronoDataFile("robosimian/actuation/sculling_cycle2.txt"),  // cycle input file
+    ////    GetChronoDataFile("robosimian/actuation/sculling_stop.txt"),    // stop input file
     ////    true);
     ////auto driver = std::make_shared<robosimian::Driver>(
     ////    GetChronoDataFile("robosimian/actuation/inchworming_start.txt"),  // start input file
