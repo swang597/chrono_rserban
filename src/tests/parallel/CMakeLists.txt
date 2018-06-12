@@ -35,6 +35,7 @@ SET(DEMOS_GL
     collide_flag
     jcol_example
     rot_motor
+    test_callbackNSC_PAR
 )
 
 IF(ENABLE_MODULE_OPENGL)
