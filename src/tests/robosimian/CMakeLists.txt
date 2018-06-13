@@ -32,7 +32,11 @@ message(STATUS "Test programs for RoboSimian...")
 foreach(PROGRAM ${PROGRAMS})
     message(STATUS "...add ${PROGRAM}")
 
-    add_executable(${PROGRAM}  "${PROGRAM}.cpp" ${MODEL_FILES})
+    if(APPLE)
+        add_executable(${PROGRAM} MACOSX_BUNDLE "${PROGRAM}.cpp" ${MODEL_FILES})
+    else()
+        add_executable(${PROGRAM}  "${PROGRAM}.cpp" ${MODEL_FILES})
+    endif()
     source_group(""  FILES "${PROGRAM}.cpp" ${MODEL_FILES})
 
     set_target_properties(${PROGRAM} PROPERTIES

@@ -55,7 +55,11 @@ foreach(DEMO ${DEMOS})
 
     message(STATUS "...add ${DEMO}")
     
-    add_executable(${DEMO} ${DEMO}.cpp)
+    if(APPLE)
+        add_executable(${DEMO} MACOSX_BUNDLE ${DEMO}.cpp)
+    else()
+        add_executable(${DEMO} ${DEMO}.cpp)
+    endif()
     source_group("" FILES ${DEMO}.cpp)
     set_target_properties(${DEMO} PROPERTIES
                           FOLDER demos 
