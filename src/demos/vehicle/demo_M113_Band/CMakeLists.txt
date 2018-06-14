@@ -56,11 +56,7 @@ foreach(DEMO ${DEMOS})
 
     message(STATUS "...add ${DEMO}")
 
-	if(APPLE)
-    	add_executable(${DEMO} MACOSX_BUNDLE ${DEMO}.cpp ${MODEL_FILES})
-	else()
-    	add_executable(${DEMO} ${DEMO}.cpp ${MODEL_FILES})
-    endif()
+    add_executable(${DEMO} ${DEMO}.cpp ${MODEL_FILES})
     source_group("" FILES ${DEMO}.cpp)
     set_target_properties(${DEMO} PROPERTIES 
                           COMPILE_FLAGS "${COMPILER_FLAGS}"

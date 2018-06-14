@@ -56,11 +56,7 @@ MESSAGE(STATUS "Demo programs for FEA module...")
 FOREACH(PROGRAM ${FEA_DEMOS})
     MESSAGE(STATUS "...add ${PROGRAM}")
 
-    IF(APPLE)
-        ADD_EXECUTABLE(${PROGRAM} MACOSX_BUNDLE  "${PROGRAM}.cpp")        
-    ELSE()
-        ADD_EXECUTABLE(${PROGRAM}  "${PROGRAM}.cpp")
-    ENDIF()
+    ADD_EXECUTABLE(${PROGRAM}  "${PROGRAM}.cpp")
     SOURCE_GROUP(""  FILES  "${PROGRAM}.cpp")
     SET_TARGET_PROPERTIES(${PROGRAM} PROPERTIES 
         FOLDER demos
@@ -112,11 +108,7 @@ IF(ENABLE_MODULE_IRRLICHT)
     FOREACH(PROGRAM ${FEA_DEMOS_IRR})
         MESSAGE(STATUS "...add ${PROGRAM}")
 
-        IF(APPLE)
-            ADD_EXECUTABLE(${PROGRAM} MACOSX_BUNDLE "${PROGRAM}.cpp")
-        ELSE()
-            ADD_EXECUTABLE(${PROGRAM}  "${PROGRAM}.cpp")
-        ENDIF()
+        ADD_EXECUTABLE(${PROGRAM}  "${PROGRAM}.cpp")
         SOURCE_GROUP(""  FILES  "${PROGRAM}.cpp")
         SET_TARGET_PROPERTIES(${PROGRAM} PROPERTIES 
             FOLDER demos
@@ -138,12 +130,8 @@ IF(ENABLE_MODULE_IRRLICHT)
 
         FOREACH(PROGRAM ${FEA_DEMOS_IRR_MATLAB})
             MESSAGE(STATUS "...add ${PROGRAM}")
-            
-            IF(APPLE)
-                ADD_EXECUTABLE(${PROGRAM} MACOSX_BUNDLE "${PROGRAM}.cpp")
-            ELSE()
-                ADD_EXECUTABLE(${PROGRAM}  "${PROGRAM}.cpp")
-            ENDIF()
+
+            ADD_EXECUTABLE(${PROGRAM}  "${PROGRAM}.cpp")
             SOURCE_GROUP(""  FILES  "${PROGRAM}.cpp")
             SET_TARGET_PROPERTIES(${PROGRAM} PROPERTIES 
                 FOLDER demos
@@ -172,11 +160,7 @@ IF(ENABLE_MODULE_IRRLICHT)
         FOREACH(PROGRAM ${FEA_DEMOS_IRR_MKL})
             MESSAGE(STATUS "...add ${PROGRAM}")
 
-            IF(APPLE)
-                ADD_EXECUTABLE(${PROGRAM} MACOSX_BUNDLE "${PROGRAM}.cpp")
-            ELSE()
-                ADD_EXECUTABLE(${PROGRAM}  "${PROGRAM}.cpp")
-            ENDIF()
+            ADD_EXECUTABLE(${PROGRAM}  "${PROGRAM}.cpp")
             SOURCE_GROUP(""  FILES  "${PROGRAM}.cpp")    
             SET_TARGET_PROPERTIES(${PROGRAM} PROPERTIES 
                 FOLDER demos

@@ -99,11 +99,7 @@ endif()
 # files in your project. 
 #--------------------------------------------------------------
 
-if(APPLE)
-    add_executable(myexe MACOSX_BUNDLE my_example.cpp)
-else()
-    add_executable(myexe my_example.cpp)
-endi()
+add_executable(myexe my_example.cpp)
 
 #--------------------------------------------------------------
 # Set properties for your executable target
