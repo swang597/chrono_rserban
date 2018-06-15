@@ -1,4 +1,7 @@
 #--------------------------------------------------------------
+if(APPLE)
+    set(CMAKE_MACOSX_BUNDLE OFF)
+endif()
 
 set(PY_DEMOS
 	demo_PY_parser
@@ -34,6 +37,9 @@ foreach(PROGRAM ${PY_DEMOS})
 endforeach()
 
 if(ENABLE_MODULE_IRRLICHT)
+    if(APPLE)
+        set(CMAKE_MACOSX_BUNDLE ON)
+    endif()
 
     include_directories(${CH_IRRLICHTINC})
 

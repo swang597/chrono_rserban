@@ -2,6 +2,10 @@
 # List of all executables
 # ------------------------------------------------------------------------------
 
+if(APPLE)
+    set(CMAKE_MACOSX_BUNDLE ON)
+endif()
+
 SET(DEMOS
     test_render_line
 )

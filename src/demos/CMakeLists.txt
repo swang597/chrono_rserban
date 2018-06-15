@@ -24,6 +24,14 @@ endif("${isSystemDir}" STREQUAL "-1")
 
 message(STATUS "==== Demo programs ====")
 
+#------------ on the Mac build application bundles instead of executables ----------
+# it's necessary for Irrlicht based demos, it has to be switched of for OpenGL and non graphics
+# demos and tests
+
+if(APPLE)
+    set(CMAKE_MACOSX_BUNDLE ON)
+endif()
+
 option(BUILD_DEMOS_BASE "Build demo programs for base Chrono module" TRUE)
 mark_as_advanced(FORCE BUILD_DEMOS_BASE)
 if(BUILD_DEMOS_BASE)

@@ -1,3 +1,7 @@
+if(APPLE)
+    set(CMAKE_MACOSX_BUNDLE ON)
+endif()
+
 #--------------------------------------------------------------
 # Additional include paths
 

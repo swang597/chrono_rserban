@@ -1,3 +1,7 @@
+if(APPLE)
+    set(CMAKE_MACOSX_BUNDLE OFF)
+endif()
+
 set(MKL_DEMOS
     demo_MKL_MklEngine
  )

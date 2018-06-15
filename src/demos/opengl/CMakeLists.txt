@@ -1,6 +1,11 @@
 #--------------------------------------------------------------
 # List of all OpenGL demos
 
+# Add (standard) executables
+if(APPLE)
+    set(CMAKE_MACOSX_BUNDLE OFF)
+endif()
+
 SET(DEMOS
   demo_GL_cohesion
   demo_GL_inv_pendulum
