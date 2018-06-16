@@ -1,10 +1,6 @@
 #--------------------------------------------------------------
 # Add executables
 
-if(APPLE)
-    set(CMAKE_MACOSX_BUNDLE OFF)
-endif()
-
 SET(DEMOS
   demo_COSIM_socket
   demo_COSIM_data_exchange

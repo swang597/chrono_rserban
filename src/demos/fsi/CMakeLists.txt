@@ -2,10 +2,6 @@
 # List of demos according their depencies
 # ------------------------------------------------------------------------------
 
-if(APPLE)
-    set(CMAKE_MACOSX_BUNDLE OFF)
-endif()
-
 # List all FSI demos that use chrono
 SET(FSI_DEMOS
 # add fluid demos here

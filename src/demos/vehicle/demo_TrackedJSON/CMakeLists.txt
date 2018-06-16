@@ -4,10 +4,6 @@
 # This example program works with and without Irrlicht run-time visualization
 #=============================================================================
 
-if(APPLE)
-    set(CMAKE_MACOSX_BUNDLE OFF)
-endif()
-
 #--------------------------------------------------------------
 # List all model files for this demo
 
@@ -32,9 +28,6 @@ SET(LIBRARIES
     ChronoEngine_vehicle)
 
 IF(ENABLE_MODULE_IRRLICHT)
-    if(APPLE)
-        set(CMAKE_MACOSX_BUNDLE ON)
-    endif()
   SET(LIBRARIES_IRR
       ChronoEngine_irrlicht
       ${CH_IRRLICHTLIB})

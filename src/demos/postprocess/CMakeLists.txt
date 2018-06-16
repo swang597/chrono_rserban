@@ -1,7 +1,4 @@
 #--------------------------------------------------------------
-if(APPLE)
-    set(CMAKE_MACOSX_BUNDLE OFF)
-endif()
 
 # List of demos with no additional dependencies 
 set(POST_DEMOS
@@ -35,10 +32,6 @@ foreach(PROGRAM ${POST_DEMOS})
 endforeach()
 
 if(ENABLE_MODULE_IRRLICHT)
-
-    if(APPLE)
-        set(CMAKE_MACOSX_BUNDLE ON)
-    endif()
 
     include_directories(${CH_IRRLICHTINC})
 

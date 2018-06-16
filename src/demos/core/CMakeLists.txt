@@ -1,9 +1,5 @@
 #--------------------------------------------------------------
-# Add (standard) executables
-
-if(APPLE)
-    set(CMAKE_MACOSX_BUNDLE OFF)
-endif()
+# Add executables
 
 SET(DEMOS
   demo_CH_coords

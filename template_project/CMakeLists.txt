@@ -58,17 +58,6 @@ project(my_project)
 # 
 # In this example, we only request the Irrlicht module (required)
 #--------------------------------------------------------------
-if(APPLE)
-    # if you are on the Mac AND want to use Irrlicht use this:
-    set(CMAKE_MACOSX_BUNDLE ON)
-    # you will get an application bundle called myexe.app
-    # usage: start_demo.sh myexe.app
-    
-    # without Irrlicht use this (or remove the block if(APPLE) ... endif()):
-    # set(CMAKE_MACOSX_BUNDLE OFF)
-    # you will get an executable called myexe
-    # usage: myexe
-endif()
 
 LIST(APPEND CMAKE_PREFIX_PATH "${CMAKE_INSTALL_PREFIX}/../Chrono/lib64")
 find_package(Chrono

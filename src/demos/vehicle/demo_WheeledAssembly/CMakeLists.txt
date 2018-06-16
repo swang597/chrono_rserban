@@ -3,10 +3,6 @@
 # This example program requires unit_PARALLEL with OpenGL support.
 #=============================================================================
 
-if(APPLE)
-    set(CMAKE_MACOSX_BUNDLE OFF)
-endif()
-
 #--------------------------------------------------------------
 # Check dependencies.
 

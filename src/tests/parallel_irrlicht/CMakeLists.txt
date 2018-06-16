@@ -2,10 +2,6 @@
 # Additional include paths and libraries
 # ------------------------------------------------------------------------------
 
-if(APPLE)
-    set(CMAKE_MACOSX_BUNDLE ON)
-endif()
-
 include_directories(${CH_PARALLEL_INCLUDES})
 include_directories(${CH_IRRLICHTINC})
 

@@ -2,10 +2,6 @@
 # Additional include paths and libraries
 # ------------------------------------------------------------------------------
 
-if(APPLE)
-    set(CMAKE_MACOSX_BUNDLE ON)
-endif()
-
 INCLUDE_DIRECTORIES(${CH_IRRLICHTINC})
 
 SET(LIBRARIES

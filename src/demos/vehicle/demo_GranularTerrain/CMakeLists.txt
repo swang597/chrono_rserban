@@ -4,10 +4,6 @@
 # run-time visualization
 #=============================================================================
 
-if(APPLE)
-    set(CMAKE_MACOSX_BUNDLE OFF)
-endif()
-
 IF(NOT ENABLE_MODULE_OPENGL OR NOT ENABLE_MODULE_PARALLEL)
   RETURN()
 ENDIF()

@@ -4,10 +4,6 @@
 # This example program works with and without Irrlicht run-time visualization
 #=============================================================================
 
-if(APPLE)
-    set(CMAKE_MACOSX_BUNDLE OFF)
-endif()
-
 #--------------------------------------------------------------
 # List all model files for this demo
 
@@ -21,10 +17,7 @@ SOURCE_GROUP("" FILES ${DEMO}.cpp)
 # Additional include directories
 
 IF(ENABLE_MODULE_IRRLICHT)
-    if(APPLE)
-        set(CMAKE_MACOSX_BUNDLE ON)
-    endif()
-    INCLUDE_DIRECTORIES(${CH_IRRLICHTINC})
+  INCLUDE_DIRECTORIES(${CH_IRRLICHTINC})
 ENDIF()
 
 #--------------------------------------------------------------

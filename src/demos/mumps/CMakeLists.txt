@@ -1,7 +1,3 @@
-if(APPLE)
-    set(CMAKE_MACOSX_BUNDLE OFF)
-endif()
-
 set(MUMPS_DEMOS
     demo_MUMPS_MumpsEngine
 )

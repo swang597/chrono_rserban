@@ -52,9 +52,6 @@ MESSAGE(STATUS "Demo programs for FEA module...")
 
 #--------------------------------------------------------------
 # Add executables for demos that have no other dependencies
-if(APPLE)
-    set(CMAKE_MACOSX_BUNDLE OFF)
-endif()
 
 FOREACH(PROGRAM ${FEA_DEMOS})
     MESSAGE(STATUS "...add ${PROGRAM}")
@@ -103,9 +100,6 @@ ENDFOREACH()
 #--------------------------------------------------------------
 # For demo executables that use Irrlicht
 # (and possibly Matlab and/or MKL)
-if(APPLE)
-    set(CMAKE_MACOSX_BUNDLE ON)
-endif()
 
 IF(ENABLE_MODULE_IRRLICHT)
 
