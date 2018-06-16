@@ -22,6 +22,16 @@ endif("${isSystemDir}" STREQUAL "-1")
 
 #--------------------------------------------------------------
 
+# Enable creation of "application bundles" on MacOSX.
+# This is necessary for Irrlicht-based tests and optional for OpenGL or non-graphics tests.
+# For simplicity and consistency, we enable here MACOSX_BUNDLE for all subsequent programs.
+
+if(APPLE)
+    set(CMAKE_MACOSX_BUNDLE ON)
+endif()
+
+#--------------------------------------------------------------
+
 message(STATUS "==== Test programs ====")
 
 add_subdirectory(core)
