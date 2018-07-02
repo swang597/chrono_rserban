@@ -334,8 +334,68 @@ bool ContactManager::OnReportContact(const ChVector<>& pA,
 
 // =============================================================================
 
+// Callback class for modifying composite material properties.
+// Notes:
+//   - currently, only ChSystemParallelNSC support user-provided callbacks for overwriting composite material properties
+//   - as such, this functor class is only created when using NSC frictonal contact
+//   - composite material properties are modified only for contacts involving the sled or one of the wheels
+//   - in these cases, the friction coefficient is set to the user-specified value
+//   - cohesion, restiturion, and compliance are set to 0
+
+class ContactMaterial : public ChContactContainer::AddContactCallback {
+  public:
+    ContactMaterial(RoboSimian* robot) : m_robot(robot) {}
+
+    virtual void OnAddContact(const collision::ChCollisionInfo& contactinfo,
+                              ChMaterialComposite* const material) override {
+        //// TODO: currently, only NSC parallel systems support user override of composite materials.
+        auto mat = static_cast<ChMaterialCompositeNSC* const>(material);
+
+        // Contactables in current collision pair
+        auto contactableA = contactinfo.modelA->GetContactable();
+        auto contactableB = contactinfo.modelB->GetContactable();
+
+        // Overwrite composite material properties if collision involves the sled body
+        auto sled = m_robot->m_sled->GetBody().get();
+        if (contactableA == sled || contactableB == sled) {
+            mat->static_friction = m_robot->m_sled_friction;
+            mat->sliding_friction = m_robot->m_sled_friction;
+            mat->cohesion = 0;
+            mat->restitution = 0;
+            mat->compliance = 0;
+            return;
+        }
+
+        // Overwrite composite material properties if collision involves a wheel body
+        auto wheel0 = m_robot->m_limbs[0]->GetWheelBody().get();
+        auto wheel1 = m_robot->m_limbs[1]->GetWheelBody().get();
+        auto wheel2 = m_robot->m_limbs[2]->GetWheelBody().get();
+        auto wheel3 = m_robot->m_limbs[3]->GetWheelBody().get();
+        if (contactableA == wheel0 || contactableB == wheel0 || contactableA == wheel1 || contactableB == wheel1 ||
+            contactableA == wheel2 || contactableB == wheel2 || contactableA == wheel3 || contactableB == wheel3) {
+            mat->static_friction = m_robot->m_wheel_friction;
+            mat->sliding_friction = m_robot->m_wheel_friction;
+            mat->cohesion = 0;
+            mat->restitution = 0;
+            mat->compliance = 0;
+            return;
+        }
+    }
+
+  private:
+    RoboSimian* m_robot;
+};
+
+// =============================================================================
+
 RoboSimian::RoboSimian(ChMaterialSurface::ContactMethod contact_method, bool has_sled, bool fixed)
-    : m_owns_system(true), m_wheel_mode(ActuationMode::SPEED), m_contacts(new ContactManager), m_outdir("") {
+    : m_owns_system(true),
+      m_wheel_mode(ActuationMode::SPEED),
+      m_contacts(new ContactManager),
+      m_materials(nullptr),
+      m_sled_friction(0.8f),
+      m_wheel_friction(0.8f),
+      m_outdir("") {
     m_system = (contact_method == ChMaterialSurface::NSC) ? static_cast<ChSystem*>(new ChSystemNSC)
                                                           : static_cast<ChSystem*>(new ChSystemSMC);
     m_system->Set_G_acc(ChVector<>(0, 0, -9.81));
@@ -347,17 +407,35 @@ RoboSimian::RoboSimian(ChMaterialSurface::ContactMethod contact_method, bool has
     m_system->SetSolverType(ChSolver::Type::BARZILAIBORWEIN);
 
     Create(has_sled, fixed);
+
+    //// TODO: currently, only NSC parallel systems support user override of composite materials
+    if (contact_method == ChMaterialSurface::NSC) {
+        m_materials = new ContactMaterial(this);
+    }
 }
 
 RoboSimian::RoboSimian(ChSystem* system, bool has_sled, bool fixed)
-    : m_owns_system(false), m_system(system), m_wheel_mode(ActuationMode::SPEED), m_contacts(new ContactManager), m_outdir("") {
+    : m_owns_system(false),
+      m_system(system),
+      m_wheel_mode(ActuationMode::SPEED),
+      m_contacts(new ContactManager),
+      m_materials(nullptr),
+      m_sled_friction(0.8f),
+      m_wheel_friction(0.8f),
+      m_outdir("") {
     Create(has_sled, fixed);
+
+    //// TODO: currently, only NSC parallel systems support user override of composite materials
+    if (system->GetContactMethod() == ChMaterialSurface::NSC) {
+        m_materials = new ContactMaterial(this);
+    }
 }
 
 RoboSimian::~RoboSimian() {
     if (m_owns_system)
         delete m_system;
     delete m_contacts;
+    delete m_materials;
 }
 
 void RoboSimian::Create(bool has_sled, bool fixed) {
@@ -427,6 +505,11 @@ void RoboSimian::SetCollide(int flags) {
         limb->SetCollideLinks((flags & static_cast<int>(CollisionFlags::LIMBS)) != 0);
         limb->SetCollideWheel((flags & static_cast<int>(CollisionFlags::WHEELS)) != 0);
     }
+}
+
+void RoboSimian::SetFrictionCoefficients(float sled_friction, float wheel_friction) {
+    m_sled_friction = sled_friction;
+    m_wheel_friction = wheel_friction;
 }
 
 void RoboSimian::SetVisualizationTypeChassis(VisualizationType vis) {
@@ -511,7 +594,7 @@ void RoboSimian::Output() {
         std::array<double, 8> torques = m_limbs[i]->GetMotorTorques();
         for (auto v : torques) {
             m_outf[i] << "  " << v;
-        } 
+        }
         // Actuations data
         m_limbs[i]->GetMotorActuations(angles, speeds);
         for (auto v : angles) {
@@ -527,7 +610,7 @@ void RoboSimian::Output() {
 // =============================================================================
 
 class ax {
-public:
+  public:
     double operator()(const double& v) { return a * v; }
     double a;
 };
@@ -587,7 +670,7 @@ void Driver::Update(double time) {
         ax op;
         double x = 20 * (time / m_time_pose) - 10;
         op.a = std::exp(x) / (1 + std::exp(x));
-        for(int i = 0; i < 4; i++) {
+        for (int i = 0; i < 4; i++) {
             std::transform(m_actuations_1[i].begin(), m_actuations_1[i].end(), m_actuations[i].begin(), op);
         }
         if (time >= m_time_pose) {

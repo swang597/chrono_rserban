@@ -280,6 +280,9 @@ class Limb {
     /// Enable/disable collision for final wheel (default: true).
     void SetCollideWheel(bool state);
 
+    /// Get a handle to the wheel body.
+    std::shared_ptr<chrono::ChBodyAuxRef> GetWheelBody() const { return m_wheel->GetBody(); }
+
     /// Get location of the wheel body.
     const chrono::ChVector<>& GetWheelPos() const { return m_wheel->GetPos(); }
 
@@ -340,6 +343,7 @@ class Limb {
 // -----------------------------------------------------------------------------
 
 class ContactManager;
+class ContactMaterial;
 class Driver;
 
 class RoboSimian {
@@ -358,9 +362,14 @@ class RoboSimian {
     /// The 'flags' argument can be any of the CollisionFlag enums, or a combination thereof (using bit-wise operators).
     void SetCollide(int flags);
 
+    /// Set coefficients of friction for sled-terrain and wheel-terrain contacts.
+    /// Default values: 0.8.
+    void SetFrictionCoefficients(float sled_friction, float wheel_friction);
+
     /// Attach a driver system.
     void SetDriver(std::shared_ptr<Driver> driver);
 
+    /// Set visualization type for individual robot subsystems.
     void SetVisualizationTypeChassis(VisualizationType vis);
     void SetVisualizationTypeSled(VisualizationType vis);
     void SetVisualizationTypeLimbs(VisualizationType vis);
@@ -429,11 +438,17 @@ class RoboSimian {
 
     ActuationMode m_wheel_mode;  ///< type of actuation for wheel motor
 
+    float m_wheel_friction;  ///< coefficient of friction wheel-terrain
+    float m_sled_friction;   ///< coefficient of frictoin sled-terrain
+
     std::shared_ptr<Driver> m_driver;
     ContactManager* m_contacts;
+    ContactMaterial* m_materials;
 
     std::string m_outdir;
     std::ofstream m_outf[4];
+
+    friend class ContactMaterial;
 };
 
 // -----------------------------------------------------------------------------
