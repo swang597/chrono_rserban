@@ -51,7 +51,7 @@ class GroundGranular {
     double m_width;             // path width
     unsigned int m_num_layers;  // number of particle layers
 
-    chrono::ChVector<> m_center;           // center of bottom boundary
+    chrono::ChVector<> m_center;   // center of bottom boundary
     double m_radius1;              // inflated particle radius
     unsigned int m_num_particles;  // number of generated particles
 

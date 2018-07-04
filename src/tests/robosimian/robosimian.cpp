@@ -675,9 +675,9 @@ void Driver::Update(double time) {
         }
         if (time >= m_time_pose) {
             m_phase = HOLD;
+            std::cout << "time = " << time << "  Switch to phase: " << GetCurrentPhase() << std::endl;
             if (m_callback)
                 m_callback->OnPhaseChange(POSE, m_phase);
-            std::cout << "time = " << time << "  Switch to phase: " << GetCurrentPhase() << std::endl;
         }
         return;
     }
@@ -687,9 +687,9 @@ void Driver::Update(double time) {
         m_actuations = m_actuations_1;
         if (time >= m_offset) {
             m_phase = (m_ifs_start.is_open()) ? START : CYCLE;
+            std::cout << "time = " << time << "  Switch to phase: " << GetCurrentPhase() << std::endl;
             if (m_callback)
                 m_callback->OnPhaseChange(HOLD, m_phase);
-            std::cout << "time = " << time << "  Switch to phase: " << GetCurrentPhase() << std::endl;
         }
         return;
     }
@@ -710,9 +710,9 @@ void Driver::Update(double time) {
                     LoadDataLine(m_time_1, m_actuations_1);
                     LoadDataLine(m_time_2, m_actuations_2);
                     m_offset = time;
+                    std::cout << "time = " << time << "  Switch to phase: " << GetCurrentPhase() << std::endl;
                     if (m_callback)
                         m_callback->OnPhaseChange(START, CYCLE);
-                    std::cout << "time = " << time << "  Switch to phase: " << GetCurrentPhase() << std::endl;
                     return;
                 }
             }

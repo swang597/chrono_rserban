@@ -34,6 +34,7 @@
 
 #include "chrono_thirdparty/SimpleOpt/SimpleOpt.h"
 
+#include "granular.h"
 #include "robosimian.h"
 
 using namespace chrono;
@@ -122,6 +123,16 @@ class RobotDriverCallback : public robosimian::Driver::PhaseChangeCallback {
 };
 
 void RobotDriverCallback::OnPhaseChange(robosimian::Driver::Phase old_phase, robosimian::Driver::Phase new_phase) {
+    if (new_phase == robosimian::Driver::HOLD) {
+        auto& fl = m_robot->GetWheelPos(robosimian::FL);
+        auto& fr = m_robot->GetWheelPos(robosimian::FR);
+        auto& rl = m_robot->GetWheelPos(robosimian::RL);
+        auto& rr = m_robot->GetWheelPos(robosimian::RR);
+        std::cout << "wheel FL: " << fl.x() << "  " << fl.y() << std::endl;
+        std::cout << "wheel FR: " << fr.x() << "  " << fr.y() << std::endl;
+        std::cout << "wheel RL: " << rl.x() << "  " << rl.y() << std::endl;
+        std::cout << "wheel RR: " << rr.x() << "  " << rr.y() << std::endl;
+    }
     if (new_phase == robosimian::Driver::CYCLE && old_phase != robosimian::Driver::CYCLE) {
         m_start_x = m_robot->GetChassisPos().x();
         m_start_time = m_robot->GetSystem()->GetChTime();
@@ -130,152 +141,16 @@ void RobotDriverCallback::OnPhaseChange(robosimian::Driver::Phase old_phase, rob
 
 // =============================================================================
 
-double CreateTerrain(ChSystemParallel* sys, double x, double z, double step_size) {
-    std::cout << "x = " << x << "  z = " << z << std::endl;
+// Granular terrain parameters
+double r_g = 0.0075;
+double rho_g = 2000;
+double coh_g = 40e3;
+float mu_g = 0.4f;
 
-    double r_g = 0.0075;  //// 0.04;
-    double rho_g = 2000;
-    double coh = 400e3;
-    double area = CH_C_PI * r_g * r_g;
-    double coh_force = area * coh;
-    double coh_g = coh_force * step_size;
-
-    double length = 6;  //// 4;
-    double width = 3;
-
-    unsigned int num_layers = 5;
-
-    // Height of container surface
-    double r = 1.01 * r_g;
-    z -= (2 * r) * num_layers;
-
-    // Create contact material
-    std::shared_ptr<ChMaterialSurface> material;
-    switch (sys->GetContactMethod()) {
-        case ChMaterialSurface::SMC: {
-            auto mat = std::make_shared<ChMaterialSurfaceSMC>();
-            mat->SetFriction(0.9f);
-            mat->SetRestitution(0.0f);
-            mat->SetYoungModulus(8e5f);
-            mat->SetPoissonRatio(0.3f);
-            mat->SetAdhesion(static_cast<float>(coh_force));
-            mat->SetKn(1.0e6f);
-            mat->SetGn(6.0e1f);
-            mat->SetKt(4.0e5f);
-            mat->SetGt(4.0e1f);
-            material = mat;
-            break;
-        }
-        case ChMaterialSurface::NSC: {
-            auto mat = std::make_shared<ChMaterialSurfaceNSC>();
-            mat->SetFriction(0.9f);
-            mat->SetRestitution(0.0f);
-            mat->SetCohesion(static_cast<float>(coh_force));
-            material = mat;
-            break;
-        }
-    }
-
-    // Create container
-    auto ground = std::shared_ptr<ChBody>(sys->NewBody());
-    ground->SetIdentifier(-1);
-    ground->SetPos(ChVector<>(length / 2 + x - 1.5, 0, z));
-    ground->SetBodyFixed(true);
-    ground->SetCollide(true);
-    ground->SetMaterialSurface(material);
-
-    ChVector<> hdim(length / 2, width / 2, 0.4);
-    double hthick = 0.1;
-    ground->GetCollisionModel()->ClearModel();
-    utils::AddBoxGeometry(ground.get(), ChVector<>(hdim.x(), hdim.y(), hthick), ChVector<>(0, 0, -hthick), QUNIT, true);
-    utils::AddBoxGeometry(ground.get(), ChVector<>(hthick, hdim.y(), hdim.z()),
-                          ChVector<>(-hdim.x() - hthick, 0, hdim.z()), QUNIT, false);
-    utils::AddBoxGeometry(ground.get(), ChVector<>(hthick, hdim.y(), hdim.z()),
-                          ChVector<>(hdim.x() + hthick, 0, hdim.z()), QUNIT, false);
-    utils::AddBoxGeometry(ground.get(), ChVector<>(hdim.x(), hthick, hdim.z()),
-                          ChVector<>(0, -hdim.y() - hthick, hdim.z()), QUNIT, false);
-    utils::AddBoxGeometry(ground.get(), ChVector<>(hdim.x(), hthick, hdim.z()),
-                          ChVector<>(0, hdim.y() + hthick, hdim.z()), QUNIT, false);
-    ground->GetCollisionModel()->BuildModel();
-
-    sys->AddBody(ground);
-
-    // Create particles
-    utils::Generator gen(sys);
-    std::shared_ptr<utils::MixtureIngredient> m1 = gen.AddMixtureIngredient(utils::SPHERE, 1.0);
-    m1->setDefaultMaterial(material);
-    m1->setDefaultDensity(rho_g);
-    m1->setDefaultSize(r_g);
-
-    // Set starting value for body identifiers
-    gen.setBodyIdentifier(10000);
-
-    // Create particles in layers until reaching the desired number of particles
-    ChVector<> hdims(length/2 - r, width/2 - r, 0);
-    ChVector<> center(length / 2 + x - 1.5, 0, z + r);
-
-    for (unsigned int il = 0; il < num_layers; il++) {
-        std::cout << "Create layer at " << center.z() << std::endl;
-        gen.createObjectsBox(utils::POISSON_DISK, 2 * r, center, hdims);
-        center.z() += 2 * r;
-    }
-
-    std::cout << "Generated " << gen.getTotalNumBodies() << " particles" << std::endl;
-
-    // Estimate number of bins for collision detection
-    int factor = 2;
-    int binsX = (int)std::ceil((0.5 * length) / r_g) / factor;
-    int binsY = (int)std::ceil((0.5 * width) / r_g) / factor;
-    int binsZ = 1;
-    sys->GetSettings()->collision.bins_per_axis = vec3(binsX, binsY, binsZ);
-    std::cout << "Broad-phase bins: " << binsX << " x " << binsY << " x " << binsZ << std::endl;
-
-    // Set collision envelope (NSC only!)
-    if (sys->GetContactMethod() == ChMaterialSurface::NSC)
-        sys->GetSettings()->collision.collision_envelope = 0.1 * r_g / 5;
-
-    return (length + x - 2 * 1.5);
-}
-
-double CreateTerrainPatch(ChSystemParallel* sys, double x, double z, double step_size) {
-    double r_g = 0.0075;
-    double rho_g = 2000;
-    double coh = 400e3;
-    double area = CH_C_PI * r_g * r_g;
-    double coh_force = area * coh;
-    double coh_g = coh_force * step_size;
-
-    std::cout << "x = " << x << "  z = " << z << std::endl;
-
-    double length = 6;
-    double width = 3;
-    unsigned int num_layers = 5;
-    ChVector<> center(length / 2 + x - 1.5, 0, z - num_layers * 2.1 * r_g);
-
-    vehicle::GranularTerrain terrain(sys);
-    terrain.SetContactFrictionCoefficient(0.7f);
-    terrain.SetContactCohesion((float)coh_g);
-    terrain.SetCollisionEnvelope(0.1 * r_g / 5);
-
-    terrain.EnableVisualization(true);
-    terrain.Initialize(center, length, width, num_layers, r_g, rho_g);
-
-    std::cout << "Generated " << terrain.GetNumParticles() << " particles" << std::endl;
-
-    // Estimate number of bins for collision detection
-    int factor = 2;
-    int binsX = (int)std::ceil((0.5 * length) / r_g) / factor;
-    int binsY = (int)std::ceil((0.5 * width) / r_g) / factor;
-    int binsZ = 1;
-    sys->GetSettings()->collision.bins_per_axis = vec3(binsX, binsY, binsZ);
-    std::cout << "Broad-phase bins: " << binsX << " x " << binsY << " x " << binsZ << std::endl;
-
-    // Set collision envelope (NSC only!)
-    if (sys->GetContactMethod() == ChMaterialSurface::NSC)
-        sys->GetSettings()->collision.collision_envelope = 0.1 * r_g / 5;
-
-    return (length + x - 2 * 1.5);
-}
+// Terrain patch
+double patch_length = 5;
+double patch_width = 2.5;
+unsigned int num_layers = 10;
 
 // =============================================================================
 
@@ -306,7 +181,7 @@ int main(int argc, char* argv[]) {
     // Timed events
     // ------------
 
-    double duration_pose = 1.0;            // Interval to assume initial pose
+    double duration_pose = 0.5;            // Interval to assume initial pose
     double duration_settle_terrain = 1.0;  // Interval to allow granular material settling
     double duration_settle_robot = 0.5;    // Interval to allow robot settling on terrain
     double duration_hold = duration_settle_terrain + duration_settle_robot;
@@ -325,18 +200,18 @@ int main(int argc, char* argv[]) {
     std::string out_dir = dir + "/RESULTS" + suffix;
 
     if (ChFileutils::MakeDirectory(dir.c_str()) < 0) {
-        std::cout << "Error creating directory " << dir << std::endl;
+        cout << "Error creating directory " << dir << endl;
         return 1;
     }
     if (output) {
         if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
-            std::cout << "Error creating directory " << out_dir << std::endl;
+            cout << "Error creating directory " << out_dir << endl;
             return 1;
         }
     }
     if (pov_output) {
         if (ChFileutils::MakeDirectory(pov_dir.c_str()) < 0) {
-            std::cout << "Error creating directory " << pov_dir << std::endl;
+            cout << "Error creating directory " << pov_dir << endl;
             return 1;
         }
     }
@@ -480,7 +355,7 @@ int main(int argc, char* argv[]) {
                 "",                                                           // stop input file
                 true);
             driver = drv;
-            std::cout << "Locomotion mode: WALK" << std::endl;
+            cout << "Locomotion mode: WALK" << endl;
             break;
         }
         case robosimian::LocomotionMode::SCULL: {
@@ -490,7 +365,7 @@ int main(int argc, char* argv[]) {
                 GetChronoDataFile("robosimian/actuation/sculling_stop.txt"),    // stop input file
                 true);
             driver = drv;
-            std::cout << "Locomotion mode: SCULL" << std::endl;
+            cout << "Locomotion mode: SCULL" << endl;
             break;
         }
         case robosimian::LocomotionMode::INCHWORM: {
@@ -500,7 +375,7 @@ int main(int argc, char* argv[]) {
                 GetChronoDataFile("robosimian/actuation/inchworming_stop.txt"),   // stop input file
                 true);
             driver = drv;
-            std::cout << "Locomotion mode: INCHWORM" << std::endl;
+            cout << "Locomotion mode: INCHWORM" << endl;
             break;
         }
         case robosimian::LocomotionMode::DRIVE: {
@@ -510,7 +385,7 @@ int main(int argc, char* argv[]) {
                 GetChronoDataFile("robosimian/actuation/driving_stop.txt"),   // stop input file
                 true);
             driver = drv;
-            std::cout << "Locomotion mode: DRIVE" << std::endl;
+            cout << "Locomotion mode: DRIVE" << endl;
             break;
         }
     }
@@ -550,28 +425,43 @@ int main(int argc, char* argv[]) {
         double x = robot.GetChassisPos().x();
 
         if (time >= time_end) {
-            std::cout << "Reached final time: " << time << std::endl;
+            cout << "Reached final time: " << time << endl;
             break;
         }
 
         if (drop) {
             if (!terrain_created && time > time_create_terrain) {
-                // Robot position and bottom point
+                // Find robot bottom point (below wheels)
                 double z = robot.GetWheelPos(robosimian::FR).z() - 0.15;
+
                 // Create terrain
-                std::cout << "Time: " << time << "  CREATE TERRAIN" << std::endl;
-                x_max = CreateTerrain(sys, x, z, step_size);
-                ////x_max = CreateTerrainPatch(sys, x, z, step_size);
+                cout << "Time: " << time << "  CREATE TERRAIN" << endl;
+
+                robosimian::GroundGranularA ground(sys);
+                ////robosimian::GroundGranularB ground(sys);
+
+                ground.SetParticleProperties(r_g, rho_g, mu_g, coh_g);
+                ground.SetPatchProperties(patch_length, patch_width, num_layers);
+
+                ground.Initialize(x - 1.0, z, step_size);
+
+                cout << "Generated " << ground.GetNumParticles() << " particles" << endl;
+                cout << "Bottom: " << ground.GetBottomHeight() << endl;
+                cout << "Top:    " << ground.GetTopHeight() << endl;
+
+                x_max = (x - 1.0) + patch_length - 1.0;
+
                 terrain_created = true;
             }
+
             if (!robot_released && time > time_release) {
-                std::cout << "Time: " << time << "  RELEASE ROBOT" << std::endl;
+                cout << "Time: " << time << "  RELEASE ROBOT" << endl;
                 robot.GetChassis()->GetBody()->SetBodyFixed(false);
                 robot_released = true;
             }
 
             if (robot_released && x > x_max) {
-                std::cout << "Time: " << time << "  Reached maximum distance" << std::endl;
+                cout << "Time: " << time << "  Reached maximum distance" << endl;
                 break;
             }
         }

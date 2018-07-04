@@ -215,7 +215,7 @@ double GroundGranular::GetTopHeight(int num_samples) const {
         auto pos = body->GetPos();
         int ix = (int)std::floor((pos.x() - xm) / dx);
         int iy = (int)std::floor((pos.y() - ym) / dy);
-        int idx = ix * nx + iy;
+        int idx = ix * ny + iy;
         if (pos.z() > heights[idx])
             heights[idx] = pos.z();
     }
