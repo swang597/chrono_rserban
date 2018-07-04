@@ -15,11 +15,14 @@ endif()
 set(PROGRAMS
     test_robosimian
     test_robosimian_par
+    test_terrain_par
 )
 
 set(MODEL_FILES
     robosimian.h
     robosimian.cpp
+    granular.h
+    granular.cpp
 )
 
 
