@@ -18,6 +18,7 @@ SET(LIBRARIES
 # Programs that can work with or without OpenGL
 SET(DEMOS
     hmmwv_bump
+    test_Bezier
 )
 
 # ------------------------------------------------------------------------------
