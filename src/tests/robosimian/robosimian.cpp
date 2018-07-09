@@ -337,14 +337,16 @@ bool ContactManager::OnReportContact(const ChVector<>& pA,
 // Callback class for modifying composite material properties.
 // Notes:
 //   - currently, only ChSystemParallelNSC support user-provided callbacks for overwriting composite material properties
-//   - as such, this functor class is only created when using NSC frictonal contact
+//   - as such, this functor class is only created when using NSC frictional contact
 //   - composite material properties are modified only for contacts involving the sled or one of the wheels
 //   - in these cases, the friction coefficient is set to the user-specified value
 //   - cohesion, restiturion, and compliance are set to 0
 
 class ContactMaterial : public ChContactContainer::AddContactCallback {
   public:
-    ContactMaterial(RoboSimian* robot) : m_robot(robot) {}
+    ContactMaterial(RoboSimian* robot) : m_robot(robot) {
+        m_robot->GetSystem()->GetContactContainer()->RegisterAddContactCallback(this);
+    }
 
     virtual void OnAddContact(const collision::ChCollisionInfo& contactinfo,
                               ChMaterialComposite* const material) override {

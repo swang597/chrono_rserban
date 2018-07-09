@@ -420,6 +420,9 @@ int main(int argc, char* argv[]) {
     bool robot_released = false;
     double x_max = 0;
 
+    robosimian::GroundGranularA ground(sys);
+    ////robosimian::GroundGranularB ground(sys);
+
     while (true) {
         double time = sys->GetChTime();
         double x = robot.GetChassisPos().x();
@@ -434,11 +437,8 @@ int main(int argc, char* argv[]) {
                 // Find robot bottom point (below wheels)
                 double z = robot.GetWheelPos(robosimian::FR).z() - 0.15;
 
-                // Create terrain
+                // Create granular terrain
                 cout << "Time: " << time << "  CREATE TERRAIN" << endl;
-
-                robosimian::GroundGranularA ground(sys);
-                ////robosimian::GroundGranularB ground(sys);
 
                 ground.SetParticleProperties(r_g, rho_g, mu_g, coh_g);
                 ground.SetPatchProperties(patch_length, patch_width, num_layers);
