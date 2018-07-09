@@ -420,6 +420,10 @@ int main(int argc, char* argv[]) {
     bool robot_released = false;
     double x_max = 0;
 
+    double terrain_bottom_height;
+    std::pair<double, double> terrain_init_height;
+    std::pair<double, double> terrain_settled_height;
+
     robosimian::GroundGranularA ground(sys);
     ////robosimian::GroundGranularB ground(sys);
 
@@ -445,9 +449,12 @@ int main(int argc, char* argv[]) {
 
                 ground.Initialize(x - 1.0, z, step_size);
 
-                cout << "Generated " << ground.GetNumParticles() << " particles" << endl;
-                cout << "Bottom: " << ground.GetBottomHeight() << endl;
-                cout << "Top:    " << ground.GetTopHeight() << endl;
+                terrain_init_height = ground.GetTopHeight();
+                terrain_bottom_height = ground.GetBottomHeight();
+
+                cout << "  Generated " << ground.GetNumParticles() << " particles" << endl;
+                cout << "  Terrain bottom: " << terrain_bottom_height << endl;
+                cout << "  Terrain top:    " << terrain_init_height.first << " " << terrain_init_height.second << endl;
 
                 x_max = (x - 1.0) + patch_length - 1.0;
 
@@ -455,7 +462,13 @@ int main(int argc, char* argv[]) {
             }
 
             if (!robot_released && time > time_release) {
-                cout << "Time: " << time << "  RELEASE ROBOT" << endl;
+                terrain_settled_height = ground.GetTopHeight();
+
+                cout << "Time: " << time << "  TRANSLATE & RELEASE ROBOT" << endl;
+                cout << "  Terrain bottom: " << terrain_bottom_height << endl;
+                cout << "  Terrain top:    " << terrain_settled_height.first << " " << terrain_settled_height.second << endl;
+
+                robot.Translate(ChVector<>(0, 0, terrain_settled_height.first - terrain_init_height.first));
                 robot.GetChassis()->GetBody()->SetBodyFixed(false);
                 robot_released = true;
             }

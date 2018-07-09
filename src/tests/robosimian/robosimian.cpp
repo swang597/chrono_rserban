@@ -575,6 +575,16 @@ void RoboSimian::DoStepDynamics(double step) {
     m_system->DoStepDynamics(step);
 }
 
+void RoboSimian::Translate(const ChVector<>& shift) {
+    m_chassis->Translate(shift);
+    if (m_sled)
+        m_sled->Translate(shift);
+    m_limbs[FR]->Translate(shift);
+    m_limbs[RR]->Translate(shift);
+    m_limbs[RL]->Translate(shift);
+    m_limbs[FL]->Translate(shift);
+}
+
 void RoboSimian::ReportContacts() {
     m_contacts->Process(this);
 }
@@ -941,6 +951,10 @@ void Chassis::SetCollide(bool state) {
     m_body->SetCollide(state);
 }
 
+void Chassis::Translate(const ChVector<>& shift) {
+    m_body->SetPos(m_body->GetPos() + shift);
+}
+
 // =============================================================================
 
 Sled::Sled(const std::string& name, chrono::ChSystem* system) : Part(name, system), m_collide(true) {
@@ -991,6 +1005,10 @@ void Sled::Initialize(std::shared_ptr<ChBodyAuxRef> chassis, const ChVector<>& x
 void Sled::SetCollide(bool state) {
     m_collide = state;
     m_body->SetCollide(state);
+}
+
+void Sled::Translate(const ChVector<>& shift) {
+    m_body->SetPos(m_body->GetPos() + shift);
 }
 
 // =============================================================================
@@ -1277,6 +1295,12 @@ void Limb::SetCollideLinks(bool state) {
 void Limb::SetCollideWheel(bool state) {
     m_collide_wheel = state;
     m_wheel->m_body->SetCollide(state);
+}
+
+void Limb::Translate(const ChVector<>& shift) {
+    for (auto link : m_links) {
+        link.second->m_body->SetPos(link.second->m_body->GetPos() + shift);
+    }
 }
 
 }  // end namespace robosimian

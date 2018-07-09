@@ -191,7 +191,7 @@ void GroundGranularB::Initialize(double x_min, double z_max, double step_size) {
     m_num_particles = gen.getTotalNumBodies();
 }
 
-double GroundGranular::GetTopHeight(int num_samples) const {
+std::pair<double, double> GroundGranular::GetTopHeight(int num_samples) const {
     // Number of bins in x and y directions
     int nx = (int)std::ceil(std::sqrt(num_samples * m_length / m_width));
     int ny = (int)std::ceil(std::sqrt(num_samples * m_width / m_length));
@@ -226,8 +226,10 @@ double GroundGranular::GetTopHeight(int num_samples) const {
     ////std::cout << "    min value:   " << *std::min_element(heights.begin(), heights.end()) << std::endl;
     ////std::cout << "    max value:   " << *std::max_element(heights.begin(), heights.end()) << std::endl;
 
-    double average = std::accumulate(heights.begin(), heights.end(), 0.0) / heights.size();
-    return average;
+    double avg_height = std::accumulate(heights.begin(), heights.end(), 0.0) / heights.size();
+    double max_height = *std::max_element(heights.begin(), heights.end());
+
+    return std::make_pair(max_height + m_radius, avg_height + m_radius);
 }
 
 }  // end namespace robosimian

@@ -165,7 +165,12 @@ class Chassis : public Part {
     void SetCollide(bool state);
 
   private:
+    /// Translate the chassis by the specified value.
+    void Translate(const chrono::ChVector<>& shift);
+
     bool m_collide;
+
+    friend class RoboSimian;
 };
 
 // -----------------------------------------------------------------------------
@@ -187,7 +192,12 @@ class Sled : public Part {
     void SetCollide(bool state);
 
   private:
+    /// Translate the sled by the specified value.
+    void Translate(const chrono::ChVector<>& shift);
+
     bool m_collide;
+
+    friend class RoboSimian;
 };
 
 // -----------------------------------------------------------------------------
@@ -326,6 +336,9 @@ class Limb {
     void Activate(double time, const std::array<double, 8>& vals);
 
   private:
+    /// Translate the limb bodies by the specified value.
+    void Translate(const chrono::ChVector<>& shift);
+
     LimbID m_id;
     std::string m_name;
     std::unordered_map<std::string, std::shared_ptr<Part>> m_links;
@@ -336,6 +349,8 @@ class Limb {
 
     bool m_collide_links;  ///< collide flag for all links (except final wheel)
     bool m_collide_wheel;  ///< collide flag for the final wheel
+
+    friend class RoboSimian;
 };
 
 // -----------------------------------------------------------------------------
@@ -418,6 +433,9 @@ class RoboSimian {
     /// Advance dynamics of underlying system.
     /// If a driver system is specified, apply motor actuations at current time.
     void DoStepDynamics(double step);
+
+    /// Translate all robot bodies by the specified value.
+    void Translate(const chrono::ChVector<>& shift);
 
     /// Output current data.
     void Output();

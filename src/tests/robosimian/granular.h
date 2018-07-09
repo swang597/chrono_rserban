@@ -30,7 +30,7 @@ class GroundGranular {
     void SetPatchProperties(double length, double width, unsigned int num_layers);
 
     double GetBottomHeight() const { return m_center.z(); }
-    double GetTopHeight(int num_samples = 200) const;
+    std::pair<double, double> GetTopHeight(int num_samples = 200) const;
 
     unsigned int GetNumParticles() const { return m_num_particles; }
 
