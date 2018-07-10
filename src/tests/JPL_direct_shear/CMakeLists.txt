@@ -21,6 +21,7 @@ ENDIF()
 SET(PROGRAMS
     directShearJPL
 	directShear
+	demo_shear
 )
 
 FOREACH(PROGRAM ${PROGRAMS})
