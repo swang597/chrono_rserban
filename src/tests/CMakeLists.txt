@@ -83,3 +83,5 @@ endif()
 if(ENABLE_MODULE_PARALLEL AND ENABLE_MODULE_IRRLICHT)
    add_subdirectory(parallel_irrlicht)
 endif()
+
+add_subdirectory(test_cosimulation)
