@@ -36,22 +36,23 @@ using std::endl;
 
 // Simulation settings
 ChMaterialSurface::ContactMethod contact_method = ChMaterialSurface::NSC;
-double step_size = 1e-3;
+////double step_size = 1e-4;  // for SMC
+double step_size = 1e-2;  // for NSC
 double duration_settling = 0.2;
-double duration_simulation = 0.2;
+double duration_simulation = 0.3;
 int nthreads = 2;
 bool render = true;
 
 // Granular material properties
 double radius = 0.0075;
 double density = 2000;
-double cohesion = 40e3;
+double cohesion = 20e3;
 double friction = 0.4f;
 
 // Terrain patch
 double patch_length = 0.5;
 double patch_width = 0.5;
-unsigned int num_layers = 10;
+unsigned int num_layers = 15;
 
 // =============================================================================
 
@@ -110,6 +111,17 @@ int main(int argc, char* argv[]) {
     sys->GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
 
     // -----------------
+    // Initialize OpenGL
+    // -----------------
+
+    if (render) {
+        opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
+        gl_window.Initialize(1280, 720, "RoboSimian terrain test", sys);
+        gl_window.SetCamera(ChVector<>(0.4, -0.4, -0.1), ChVector<>(0, 0, -0.1), ChVector<>(0, 0, 1), 0.05f);
+        gl_window.SetRenderMode(opengl::SOLID);
+    }
+
+    // -----------------
     // Create wheel body
     // -----------------
 
@@ -150,21 +162,13 @@ int main(int argc, char* argv[]) {
     ground.SetPatchProperties(patch_length, patch_width, num_layers);
 
     ground.Initialize(location.x() - patch_length / 2, location.z() - 0.15, step_size);
+    auto terrain_bottom = ground.GetBottomHeight();
+    auto terrain_init_top = ground.GetTopHeight();
+    auto terrain_settled_top = terrain_init_top;
 
     cout << "Generated " << ground.GetNumParticles() << " particles" << endl;
-    cout << "Bottom: " << ground.GetBottomHeight() << endl;
-    cout << "Top:    " << ground.GetTopHeight() << endl;
-
-    // -----------------
-    // Initialize OpenGL
-    // -----------------
-
-    if (render) {
-        opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-        gl_window.Initialize(1280, 720, "RoboSimian", sys);
-        gl_window.SetCamera(ChVector<>(0.4, -0.4, -0.1), ChVector<>(0, 0, -0.1), ChVector<>(0, 0, 1), 0.05f);
-        gl_window.SetRenderMode(opengl::SOLID);
-    }
+    cout << "Bottom: " << terrain_bottom << endl;
+    cout << "Top:    " << terrain_init_top.first << "  " << terrain_init_top.second << endl;
 
     // ---------------------------------
     // Run simulation for specified time
@@ -186,10 +190,12 @@ int main(int argc, char* argv[]) {
         }
 
         if (!wheel_released && time > time_release) {
-            cout << "Time: " << time << "  RELEASE WHEEL" << endl;
-            cout << "Terrain height: " << ground.GetTopHeight() << endl;
+            terrain_settled_top = ground.GetTopHeight();
+            wheel->SetPos(wheel->GetPos() - ChVector<>(0, 0, terrain_init_top.first - terrain_settled_top.first));
             wheel->SetBodyFixed(false);
             wheel_released = true;
+            cout << "Time: " << time << "  RELEASE WHEEL" << endl;
+            cout << "Terrain height: " << terrain_settled_top.first << "  " << terrain_settled_top.second << endl;
         }
 
         sys->DoStepDynamics(step_size);
@@ -207,6 +213,8 @@ int main(int argc, char* argv[]) {
     }
 
     cout << "Wheel center height: " << wheel->GetPos().z() << endl;
+    cout << "Wheel bottom point:  " << wheel->GetPos().z() - cyl_radius << endl;
+    cout << "Wheel sinkage:       " << terrain_settled_top.second - (wheel->GetPos().z() - cyl_radius) << endl;
 
     return 0;
 }
