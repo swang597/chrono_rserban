@@ -36,6 +36,7 @@ SET(DEMOS_GL
     jcol_example
     rot_motor
     test_callbackNSC_PAR
+    test_parallel_triangle
 )
 
 IF(ENABLE_MODULE_OPENGL)

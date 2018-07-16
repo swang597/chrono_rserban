@@ -84,4 +84,8 @@ if(ENABLE_MODULE_PARALLEL AND ENABLE_MODULE_IRRLICHT)
    add_subdirectory(parallel_irrlicht)
 endif()
 
+
+add_subdirectory(distributed)
 add_subdirectory(test_cosimulation)
+add_subdirectory(test_cosimulation_HMMWV)
+add_subdirectory(test_cosimulation_RIG)
