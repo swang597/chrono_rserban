@@ -1,29 +1,14 @@
-# REQUIRES: FEA, Vehicle, Irrlicht, OpenGL
+# REQUIRES: FEA, MKL, Vehicle, Irrlicht, OpenGL
 
-MESSAGE(STATUS "Test programs for COSIMULATION...")
-
-if(NOT ENABLE_MODULE_IRRLICHT)
-   message(STATUS "...requires Chrono::Irrlicht")
-   return()
-endif()
-
-if(NOT ENABLE_MODULE_OPENGL)
-   message(STATUS "...requires Chrono::OpenGL")
+if(NOT ENABLE_MODULE_IRRLICHT OR NOT ENABLE_MODULE_OPENGL)
    return()
 endif()
 
 if(NOT ENABLE_MODULE_VEHICLE)
-   message(STATUS "...requires Chrono::Vehicle")
    return()
 endif()
 
-if(NOT ENABLE_MODULE_FEA)
-   message(STATUS "...requires Chrono::FEA")
-   return()
-endif()
-
-if(NOT ENABLE_MODULE_MKL)
-   message(STATUS "...requires Chrono::MKL")
+if(NOT ENABLE_MODULE_FEA OR NOT ENABLE_MODULE_MKL)
    return()
 endif()
 
@@ -50,7 +35,7 @@ SET(LIBRARIES
 
 # Programs that can work with or without OpenGL
 SET(DEMOS
-    test_cosimulation
+    test_COSIM_tire
 )
 
 # ------------------------------------------------------------------------------

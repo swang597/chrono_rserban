@@ -48,10 +48,9 @@ endif()
 
 # ------------------------------------------------------------------------------
 
-set(PROGRAM test_cosimulation_RIG)
+set(PROGRAM test_COSIM_rig)
 
 set(TEST_FILES 
-    test_cosimulation_RIG.cpp
     BaseNode.h
     BaseNode.cpp
     RigNode.h
@@ -63,7 +62,7 @@ source_group("" FILES ${TEST_FILES})
 
 message(STATUS "...add ${PROGRAM}")
 
-add_executable(${PROGRAM} ${TEST_FILES})
+add_executable(${PROGRAM} ${PROGRAM}.cpp ${TEST_FILES})
 
 set_target_properties(${PROGRAM} PROPERTIES 
     COMPILE_FLAGS "${COMPILER_FLAGS}"

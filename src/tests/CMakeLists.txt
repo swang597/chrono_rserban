@@ -34,6 +34,10 @@ endif()
 
 message(STATUS "==== Test programs ====")
 
+
+
+
+
 add_subdirectory(core)
 add_subdirectory(filesystem)
 add_subdirectory(hdf5)
@@ -86,6 +90,9 @@ endif()
 
 
 add_subdirectory(distributed)
-add_subdirectory(test_cosimulation)
-add_subdirectory(test_cosimulation_HMMWV)
-add_subdirectory(test_cosimulation_RIG)
+
+option(BUILD_TESTS_COSIMULATION "Build co-simulation test programs" ON)
+mark_as_advanced(FORCE BUILD_TESTS_COSIMULATION)
+if(BUILD_TESTS_COSIMULATION)
+  add_subdirectory(cosimulation)
+endif()

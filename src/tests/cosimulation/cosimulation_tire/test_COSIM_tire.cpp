@@ -100,16 +100,15 @@ TireNode::TireNode() {
     m_app = new irrlicht::ChIrrApp(m_sys, L"Tire", irr::core::dimension2d<irr::u32>(800, 600), false, true);
     irrlicht::ChIrrWizard::add_typical_Logo(m_app->GetDevice());
     irrlicht::ChIrrWizard::add_typical_Sky(m_app->GetDevice());
-    irrlicht::ChIrrWizard::add_typical_Lights(m_app->GetDevice(), irr::core::vector3df(30.f, -100.f, 30.f),
-        irr::core::vector3df(30.f, -80.f, -30.f));
-    irrlicht::ChIrrWizard::add_typical_Camera(m_app->GetDevice(), irr::core::vector3df(0, -4, 0.6));
+    irrlicht::ChIrrWizard::add_typical_Lights(m_app->GetDevice(), irr::core::vector3df(30.0f, -100.0f, 30.0f),
+                                              irr::core::vector3df(30.0f, -80.0f, -30.0f));
+    irrlicht::ChIrrWizard::add_typical_Camera(m_app->GetDevice(), irr::core::vector3df(0, -4, 0.6f));
 
     m_app->AssetBindAll();
     m_app->AssetUpdateAll();
 
     // Mark completion of system construction
     m_sys->SetupInitial();
-
 }
 
 bool TireNode::Advance(double step) {

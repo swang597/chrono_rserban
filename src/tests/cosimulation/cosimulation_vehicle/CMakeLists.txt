@@ -11,7 +11,7 @@ endif()
 
 if(NOT ENABLE_MODULE_PARALLEL)
   return()
-endif()  
+endif()
 
 # ------------------------------------------------------------------------------
 
@@ -48,10 +48,7 @@ endif()
 
 # ------------------------------------------------------------------------------
 
-message(STATUS "Test programs for COSIMULATION...")
-
-
-set(PROGRAM test_utils_sampler)
+set(PROGRAM test_COSIM_check_sampler)
 message(STATUS "...add ${PROGRAM}")
 add_executable(${PROGRAM} ${PROGRAM}.cpp)    
 source_group("" FILES ${PROGRAM}.cpp)
@@ -70,7 +67,7 @@ set(COMMON_FILES
     TireNode.cpp
     )
 
-set(PROGRAM test_utils_triangles)
+set(PROGRAM test_COSIM_check_triangles)
 set(TEST_FILES "${COMMON_FILES}")
 message(STATUS "...add ${PROGRAM}")
 add_executable(${PROGRAM} ${PROGRAM}.cpp ${TEST_FILES})    
@@ -81,7 +78,7 @@ set_target_properties(${PROGRAM} PROPERTIES
 target_link_libraries(${PROGRAM} ${LIBRARIES})
 
 
-set(PROGRAM test_cosimulation_HMMWV)
+set(PROGRAM test_COSIM_vehicle)
 set(TEST_FILES "${COMMON_FILES}" TerrainNode.h TerrainNode.cpp)
 message(STATUS "...add ${PROGRAM}")
 add_executable(${PROGRAM} ${PROGRAM}.cpp ${TEST_FILES})    
@@ -93,7 +90,7 @@ target_link_libraries(${PROGRAM} ${LIBRARIES})
 
 
 if(ENABLE_MODULE_DISTRIBUTED)
-    set(PROGRAM test_cosimulation_HMMWV_DISTR)
+    set(PROGRAM test_COSIM_vehicle_distr)
     set(TEST_FILES "${COMMON_FILES}" TerrainNodeDistr.h TerrainNodeDistr.cpp)
     message(STATUS "...add ${PROGRAM}")
     add_executable(${PROGRAM} ${PROGRAM}.cpp ${TEST_FILES})    
