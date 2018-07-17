@@ -1,12 +1,14 @@
+if(NOT ENABLE_MODULE_POSTPROCESS)
+  return()
+endif()  
+
+message(STATUS "Test programs for POSTPROCESS module...")
+
 #--------------------------------------------------------------
 
 set(POST_DEMOS
-	cubic_spline
+	test_POST_cubic_spline
 	)
-
-#--------------------------------------------------------------
-
-message(STATUS "Test programs for POSTPROCESS module...")
 
 foreach(PROGRAM ${POST_DEMOS})
     message(STATUS "...add ${PROGRAM}")

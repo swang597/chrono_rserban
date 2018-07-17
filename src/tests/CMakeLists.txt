@@ -38,8 +38,7 @@ message(STATUS "==== Test programs ====")
 
 
 
-add_subdirectory(core)
-add_subdirectory(filesystem)
+
 
 
 if(ENABLE_MODULE_IRRLICHT)
@@ -48,10 +47,6 @@ endif()
 
 if(ENABLE_MODULE_FEA AND ENABLE_MODULE_IRRLICHT)
     add_subdirectory(collision_FEA)
-endif()
-
-if(ENABLE_MODULE_POSTPROCESS)
-    add_subdirectory(postprocess)
 endif()
 
 if(ENABLE_MODULE_PARALLEL)
@@ -112,4 +107,16 @@ option(BUILD_TESTS_VISUALIZATION "Build visualization test programs" ON)
 mark_as_advanced(FORCE BUILD_TESTS_VISUALIZATION)
 if(BUILD_TESTS_VISUALIZATION)
   add_subdirectory(visualization)
+endif()
+
+option(BUILD_TESTS_POSTPROCESS "Build Chrono::Postprocess test programs" ON)
+mark_as_advanced(FORCE BUILD_TESTS_POSTPROCESS)
+if(BUILD_TESTS_POSTPROCESS)
+  add_subdirectory(postprocess)
+endif()
+
+option(BUILD_TESTS_BASE "Build base Chrono module test programs" ON)
+mark_as_advanced(FORCE BUILD_TESTS_BASE)
+if(BUILD_TESTS_BASE)
+  add_subdirectory(core)
 endif()

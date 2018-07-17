@@ -1,14 +1,11 @@
-IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-    SET(CH_LINKERFLAG_EXE  "${CH_LINKERFLAG_EXE} -framework IOKit -framework Cocoa -framework OpenGL")
-ENDIF()
-
 # ------------------------------------------------------------------------------
 # List of all executables
 # ------------------------------------------------------------------------------
 
 SET(DEMOS
-	test_convex_hull
-	test_motors
+	test_CH_convex_hull
+	test_CH_motors
+    test_CH_filesystem
 )
 
 # ------------------------------------------------------------------------------
