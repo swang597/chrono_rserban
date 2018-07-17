@@ -1,3 +1,14 @@
+# Test programs for RoboSimian simulation
+# ------------------------------------------------------------------------------
+
+if(NOT ENABLE_MODULE_PARALLEL OR NOT ENABLE_MODULE_VEHICLE)
+  return()
+endif()
+
+if(NOT ENABLE_MODULE_IRRLICHT OR NOT ENABLE_MODULE_OPENGL)
+  return()
+endif()
+
 # ------------------------------------------------------------------------------
 # Additional include paths and libraries
 # ------------------------------------------------------------------------------
@@ -13,9 +24,9 @@ endif()
 # ------------------------------------------------------------------------------
 
 set(PROGRAMS
-    test_robosimian
-    test_robosimian_par
-    test_terrain_par
+    test_RS_robosimian
+    test_RS_robosimian_par
+    test_RS_terrain_par
 )
 
 set(MODEL_FILES
@@ -24,7 +35,6 @@ set(MODEL_FILES
     granular.h
     granular.cpp
 )
-
 
 # ------------------------------------------------------------------------------
 # Add all executables
