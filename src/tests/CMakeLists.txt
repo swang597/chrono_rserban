@@ -88,8 +88,11 @@ if(ENABLE_MODULE_PARALLEL AND ENABLE_MODULE_IRRLICHT)
    add_subdirectory(parallel_irrlicht)
 endif()
 
-
-add_subdirectory(distributed)
+option(BUILD_TESTS_DISTRIBUTED "Build Chrono::Distributed test programs" ON)
+mark_as_advanced(FORCE BUILD_TESTS_DISTRIBUTED)
+if(BUILD_TESTS_DISTRIBUTED)
+  add_subdirectory(distributed)
+endif()
 
 option(BUILD_TESTS_COSIMULATION "Build co-simulation test programs" ON)
 mark_as_advanced(FORCE BUILD_TESTS_COSIMULATION)
