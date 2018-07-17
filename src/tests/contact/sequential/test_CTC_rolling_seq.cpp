@@ -105,7 +105,7 @@ int main(int argc, char* argv[]) {
     utils::AddSphereGeometry(ball.get(), radius);
     ball->GetCollisionModel()->BuildModel();
 
-    ball->AddAsset(std::make_shared<ChColorAsset>(ChColor(0.2f, 0.3f, 0.4f)));
+    ball->AddAsset(std::make_shared<ChTexture>(GetChronoDataFile("bluwhite.png")));
 
     system.AddBody(ball);
 

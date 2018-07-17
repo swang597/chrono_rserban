@@ -40,19 +40,8 @@ message(STATUS "==== Test programs ====")
 
 
 
-
-if(ENABLE_MODULE_IRRLICHT)
-    add_subdirectory(collision)
-endif()
-
-if(ENABLE_MODULE_FEA AND ENABLE_MODULE_IRRLICHT)
-    add_subdirectory(collision_FEA)
-endif()
-
 if(ENABLE_MODULE_PARALLEL)
     add_subdirectory(parallel)
-    add_subdirectory(box_collision)
-    add_subdirectory(rolling)
 endif()
 
 if(ENABLE_MODULE_PARALLEL AND ENABLE_MODULE_IRRLICHT AND ENABLE_MODULE_OPENGL)
@@ -119,4 +108,10 @@ option(BUILD_TESTS_BASE "Build base Chrono module test programs" ON)
 mark_as_advanced(FORCE BUILD_TESTS_BASE)
 if(BUILD_TESTS_BASE)
   add_subdirectory(core)
+endif()
+
+option(BUILD_TESTS_CONTACT "Build contact test programs" ON)
+mark_as_advanced(FORCE BUILD_TESTS_CONTACT)
+if(BUILD_TESTS_CONTACT)
+  add_subdirectory(contact)
 endif()
