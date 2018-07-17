@@ -1,3 +1,7 @@
+if(NOT ENABLE_MODULE_IRRLICHT)
+  return()
+endif()  
+
 # ------------------------------------------------------------------------------
 # Additional include paths and libraries
 # ------------------------------------------------------------------------------
@@ -37,8 +41,6 @@ SET(DEMOS
 # ------------------------------------------------------------------------------
 # Add all executables
 # ------------------------------------------------------------------------------
-
-MESSAGE(STATUS "Test programs for WVP (sequential)...")
 
 FOREACH(PROGRAM ${DEMOS})
     MESSAGE(STATUS "...add ${PROGRAM}")

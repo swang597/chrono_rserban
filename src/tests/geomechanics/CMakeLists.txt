@@ -1,3 +1,12 @@
+# Various geomechanics tests
+# ------------------------------------------------------------------------------
+
+if(NOT ENABLE_MODULE_PARALLEL)
+  return()
+endif()
+
+message(STATUS "Test programs for geomechanics...")
+
 # ------------------------------------------------------------------------------
 
 INCLUDE_DIRECTORIES(${CH_PARALLEL_INCLUDES})
@@ -19,9 +28,9 @@ ENDIF()
 #--------------------------------------------------------------
 
 SET(PROGRAMS
-    directShearJPL
-	directShear
-	demo_shear
+    test_GEO_direct_shear1
+	test_GEO_direct_shear2
+	test_GEO_direct_shearJPL
 )
 
 FOREACH(PROGRAM ${PROGRAMS})

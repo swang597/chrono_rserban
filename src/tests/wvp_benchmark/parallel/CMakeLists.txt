@@ -1,6 +1,6 @@
-IF(NOT ENABLE_MODULE_PARALLEL OR NOT ENABLE_MODULE_OPENGL)
-  RETURN()
-ENDIF()
+if(NOT ENABLE_MODULE_PARALLEL OR NOT ENABLE_MODULE_OPENGL)
+  return()
+endif()
 
 # ------------------------------------------------------------------------------
 # Additional include paths and libraries
@@ -36,8 +36,6 @@ SET(DEMOS
 # Add all executables
 # ------------------------------------------------------------------------------
 
-MESSAGE(STATUS "Test programs for WVP (parallel)...")
-
 FOREACH(PROGRAM ${DEMOS})
     MESSAGE(STATUS "...add ${PROGRAM}")
 
@@ -53,4 +51,3 @@ FOREACH(PROGRAM ${DEMOS})
     TARGET_LINK_LIBRARIES(${PROGRAM} ${LIBRARIES})
 
 ENDFOREACH(PROGRAM)
-

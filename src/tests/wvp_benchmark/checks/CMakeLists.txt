@@ -20,8 +20,6 @@ SET(DEMOS
 # Add all executables
 # ------------------------------------------------------------------------------
 
-MESSAGE(STATUS "Check programs for WVP...")
-
 FOREACH(PROGRAM ${DEMOS})
     MESSAGE(STATUS "...add ${PROGRAM}")
 

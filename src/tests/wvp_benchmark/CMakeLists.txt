@@ -1,9 +1,9 @@
+message(STATUS "Test programs for WVP...")
+
+if(NOT ENABLE_MODULE_VEHICLE)
+  return()
+endif()  
+
 add_subdirectory(checks)
-
-if(ENABLE_MODULE_IRRLICHT)
-  add_subdirectory(sequential)
-endif()
-
-if(ENABLE_MODULE_PARALLEL)
-  add_subdirectory(parallel)
-endif()
+add_subdirectory(sequential)
+add_subdirectory(parallel)
