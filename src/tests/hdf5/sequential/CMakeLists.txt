@@ -1,3 +1,7 @@
+if(NOT ENABLE_MODULE_IRRLICHT)
+  return()
+endif()
+
 # ------------------------------------------------------------------------------
 # List of all executables
 # ------------------------------------------------------------------------------
@@ -9,11 +13,10 @@ SET(DEMOS
 # ------------------------------------------------------------------------------
 
 include_directories(${CH_IRRLICHTINC})
-include_directories(${HDF5_INCLUDE_DIR})
+include_directories(${HDF5_INCLUDE_DIRS})
 
 set(CXX_FLAGS "${CH_CXX_FLAGS} ${CH_IRRLICHT_CXX_FLAGS}")
-set(LIBRARIES ChronoEngine ChronoEngine_irrlicht ${HDF5_CXX_${LIB_TYPE}_LIBRARY})
-
+set(LIBRARIES ChronoEngine ChronoEngine_irrlicht ${HDF5_CXX_LIBRARIES})
 
 # ------------------------------------------------------------------------------
 # Add all executables
@@ -28,7 +31,7 @@ foreach(PROGRAM ${DEMOS})
     set_target_properties(${PROGRAM} PROPERTIES
         FOLDER demos
         COMPILE_FLAGS "${CXX_FLAGS}"
-        COMPILE_DEFINITIONS "H5_BUILT_AS_DYNAMIC_LIB "
+        COMPILE_DEFINITIONS "${HDF5_COMPILE_DEFS}"
         LINK_FLAGS "${CH_LINKERFLAG_EXE}"
     )
 

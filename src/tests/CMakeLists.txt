@@ -40,7 +40,7 @@ message(STATUS "==== Test programs ====")
 
 add_subdirectory(core)
 add_subdirectory(filesystem)
-add_subdirectory(hdf5)
+
 
 if(ENABLE_MODULE_IRRLICHT)
     add_subdirectory(collision)
@@ -103,4 +103,10 @@ option(BUILD_TESTS_VEHICLE "Build Chrono::Vehicle test programs" ON)
 mark_as_advanced(FORCE BUILD_TESTS_VEHICLE)
 if(BUILD_TESTS_VEHICLE)
   add_subdirectory(vehicle)
+endif()
+
+option(BUILD_TESTS_HDF5 "Build HDF5 test programs" ON)
+mark_as_advanced(FORCE BUILD_TESTS_HDF5)
+if(BUILD_TESTS_HDF5)
+  add_subdirectory(hdf5)
 endif()
