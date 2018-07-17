@@ -1,26 +1,44 @@
-# ------------------------------------------------------------------------------
-# Additional include paths and libraries
-# ------------------------------------------------------------------------------
-
-include_directories(${CH_PARALLEL_INCLUDES})
-include_directories(${CH_IRRLICHTINC})
-
-set(CXX_FLAGS "${CH_CXX_FLAGS} ${CH_PARALLEL_CXX_FLAGS} ${CH_IRRLICHT_CXX_FLAGS}")
-set(LIBRARIES ChronoEngine ChronoEngine_parallel)
+if(NOT ENABLE_MODULE_IRRLICHT)
+  return()
+endif()  
 
 # ------------------------------------------------------------------------------
 
-set(PROGRAMS
-    plate_balls
+set(PROGRAMS_SEQ
+    test_VIS_line
 )
 
-# ------------------------------------------------------------------------------
-# Add all executables
+include_directories(${CH_IRRLICHTINC})
+
+foreach(PROGRAM ${PROGRAMS_SEQ})
+    message(STATUS "...add ${PROGRAM}")
+
+    add_executable(${PROGRAM}  "${PROGRAM}.cpp")
+    source_group(""  FILES "${PROGRAM}.cpp")
+
+    set_target_properties(${PROGRAM} PROPERTIES
+        FOLDER demos
+        COMPILE_FLAGS "${CH_CXX_FLAGS} ${CH_IRRLICHT_CXX_FLAGS}"
+        LINK_FLAGS "${CH_LINKERFLAG_EXE}"
+    )
+
+    target_link_libraries(${PROGRAM} ChronoEngine ChronoEngine_irrlicht)
+
+endforeach(PROGRAM)
+
 # ------------------------------------------------------------------------------
 
-message(STATUS "Test programs for parallel_irrlicht...")
+if(NOT ENABLE_MODULE_PARALLEL)
+  return()
+endif()
 
-foreach(PROGRAM ${PROGRAMS})
+set(PROGRAMS_PAR
+   test_VIS_plate_balls
+)
+
+include_directories(${CH_PARALLEL_INCLUDES})
+
+foreach(PROGRAM ${PROGRAMS_PAR})
     message(STATUS "...add ${PROGRAM}")
 
     add_executable(${PROGRAM}  "${PROGRAM}.cpp")
@@ -38,4 +56,3 @@ foreach(PROGRAM ${PROGRAMS})
                           ChronoEngine_irrlicht)
 
 endforeach(PROGRAM)
-

@@ -44,7 +44,6 @@ add_subdirectory(filesystem)
 
 if(ENABLE_MODULE_IRRLICHT)
     add_subdirectory(collision)
-    add_subdirectory(render)
 endif()
 
 if(ENABLE_MODULE_FEA AND ENABLE_MODULE_IRRLICHT)
@@ -65,9 +64,7 @@ if(ENABLE_MODULE_PARALLEL AND ENABLE_MODULE_IRRLICHT AND ENABLE_MODULE_OPENGL)
     add_subdirectory(body_force)
 endif()
 
-if(ENABLE_MODULE_PARALLEL AND ENABLE_MODULE_IRRLICHT)
-   add_subdirectory(parallel_irrlicht)
-endif()
+
 
 option(BUILD_TESTS_DISTRIBUTED "Build Chrono::Distributed test programs" ON)
 mark_as_advanced(FORCE BUILD_TESTS_DISTRIBUTED)
@@ -109,4 +106,10 @@ option(BUILD_TESTS_HDF5 "Build HDF5 test programs" ON)
 mark_as_advanced(FORCE BUILD_TESTS_HDF5)
 if(BUILD_TESTS_HDF5)
   add_subdirectory(hdf5)
+endif()
+
+option(BUILD_TESTS_VISUALIZATION "Build visualization test programs" ON)
+mark_as_advanced(FORCE BUILD_TESTS_VISUALIZATION)
+if(BUILD_TESTS_VISUALIZATION)
+  add_subdirectory(visualization)
 endif()
