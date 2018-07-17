@@ -1,3 +1,7 @@
+if(NOT ENABLE_MODULE_PARALLEL)
+  return()
+endif()
+
 # ------------------------------------------------------------------------------
 # Additional include paths and libraries
 # ------------------------------------------------------------------------------
@@ -23,9 +27,9 @@ ENDIF()
 # ------------------------------------------------------------------------------
 
 SET(PROGRAMS
-    gonogo_hmmwv
-    gonogo_hmmwv_mp
-    gonogo_wvp_mp
+    test_VEH_gonogo_hmmwv
+    test_VEH_gonogo_hmmwv_mp
+    test_VEH_gonogo_wvp_mp
 )
 
 SET(COMMON_FILES
@@ -36,8 +40,6 @@ SET(COMMON_FILES
 )
 
 # ------------------------------------------------------------------------------
-
-MESSAGE(STATUS "GO/NO-GO programs...")
 
 FOREACH(PROG ${PROGRAMS})
 

@@ -1,41 +1,46 @@
+if(NOT ENABLE_MODULE_IRRLICHT)
+  return()
+endif()  
+
 # ------------------------------------------------------------------------------
 # Additional include paths and libraries
 # ------------------------------------------------------------------------------
 
-set(LIBRARIES
+INCLUDE_DIRECTORIES(${CH_IRRLICHTINC})
+
+SET(LIBRARIES
     ChronoEngine
+    ChronoEngine_irrlicht
     ChronoEngine_vehicle
     ChronoModels_vehicle
 )
-
-if (ENABLE_MODULE_IRRLICHT)
-    include_directories(${CH_IRRLICHTINC})
-    set(CXX_FLAGS "${CXX_FLAGS} ${CH_IRRLICHT_CXX_FLAGS}")
-    set(LIBRARIES ${LIBRARIES} ChronoEngine_irrlicht)
-endif()
 
 # ------------------------------------------------------------------------------
 # List of all executables
 # ------------------------------------------------------------------------------
 
-set(DEMOS
-    gonogo_m113
+SET(DEMOS
+    test_VEH_bump
+    test_VEH_Bezier
 )
 
 # ------------------------------------------------------------------------------
 # Add all executables
 # ------------------------------------------------------------------------------
 
-message(STATUS "GO/NO-GO programs...")
+FOREACH(PROGRAM ${DEMOS})
+    MESSAGE(STATUS "...add ${PROGRAM}")
 
-foreach(PROGRAM ${DEMOS})
-    message(STATUS "...add ${PROGRAM}")
+    ADD_EXECUTABLE(${PROGRAM}  "${PROGRAM}.cpp")
+    SOURCE_GROUP(""  FILES "${PROGRAM}.cpp")
 
-    add_executable(${PROGRAM}  ${PROGRAM}.cpp)
-    source_group(""  FILES ${PROGRAM}.cpp)
-    set_target_properties(${PROGRAM} PROPERTIES
-        FOLDER tests
-        COMPILE_FLAGS "${CXX_FLAGS}"
-        LINK_FLAGS "${CH_LINKERFLAG_EXE}")
-    target_link_libraries(${PROGRAM} ${LIBRARIES})
-endforeach(PROGRAM)
+    SET_TARGET_PROPERTIES(${PROGRAM} PROPERTIES
+        FOLDER demos
+        COMPILE_FLAGS "${CH_CXX_FLAGS} ${CH_IRRLICHT_CXX_FLAGS}"
+        LINK_FLAGS "${CH_LINKERFLAG_EXE}"
+    )
+
+    TARGET_LINK_LIBRARIES(${PROGRAM} ${LIBRARIES})
+
+ENDFOREACH(PROGRAM)
+

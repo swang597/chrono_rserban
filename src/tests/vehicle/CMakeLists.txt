@@ -1,45 +1,9 @@
-# ------------------------------------------------------------------------------
-# Additional include paths and libraries
-# ------------------------------------------------------------------------------
+message(STATUS "Test programs for VEHICLE module...")
 
-INCLUDE_DIRECTORIES(${CH_IRRLICHTINC})
+if(NOT ENABLE_MODULE_VEHICLE)
+  return()
+endif()  
 
-SET(LIBRARIES
-    ChronoEngine
-    ChronoEngine_irrlicht
-    ChronoEngine_vehicle
-    ChronoModels_vehicle
-)
-
-# ------------------------------------------------------------------------------
-# List of all executables
-# ------------------------------------------------------------------------------
-
-# Programs that can work with or without OpenGL
-SET(DEMOS
-    hmmwv_bump
-    test_Bezier
-)
-
-# ------------------------------------------------------------------------------
-# Add all executables
-# ------------------------------------------------------------------------------
-
-MESSAGE(STATUS "Test programs for VEHICLE module...")
-
-FOREACH(PROGRAM ${DEMOS})
-    MESSAGE(STATUS "...add ${PROGRAM}")
-
-    ADD_EXECUTABLE(${PROGRAM}  "${PROGRAM}.cpp")
-    SOURCE_GROUP(""  FILES "${PROGRAM}.cpp")
-
-    SET_TARGET_PROPERTIES(${PROGRAM} PROPERTIES
-        FOLDER demos
-        COMPILE_FLAGS "${CH_CXX_FLAGS} ${CH_IRRLICHT_CXX_FLAGS}"
-        LINK_FLAGS "${CH_LINKERFLAG_EXE}"
-    )
-
-    TARGET_LINK_LIBRARIES(${PROGRAM} ${LIBRARIES})
-
-ENDFOREACH(PROGRAM)
-
+add_subdirectory(sequential)
+add_subdirectory(go_nogo)
+add_subdirectory(go_nogo_SCM)
