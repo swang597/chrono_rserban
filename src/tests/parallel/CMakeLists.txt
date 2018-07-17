@@ -1,67 +1,70 @@
+if(NOT ENABLE_MODULE_PARALLEL)
+  return()
+endif()  
+
+message(STATUS "Test programs for PARALLEL module...")
+
 # ------------------------------------------------------------------------------
 # Additional include paths and libraries
 # ------------------------------------------------------------------------------
 
-INCLUDE_DIRECTORIES(${CH_PARALLEL_INCLUDES})
+include_directories(${CH_PARALLEL_INCLUDES})
 
-SET(LIBRARIES
+set(LIBRARIES
     ChronoEngine
     ChronoEngine_parallel
 )
 
-IF(ENABLE_MODULE_OPENGL)
-    INCLUDE_DIRECTORIES(${CH_OPENGL_INCLUDES})
-    SET(LIBRARIES ${LIBRARIES} ChronoEngine_opengl)
+if(ENABLE_MODULE_OPENGL)
+    include_directories(${CH_OPENGL_INCLUDES})
+    set(LIBRARIES ${LIBRARIES} ChronoEngine_opengl)
 
-    IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-       SET (CH_LINKERFLAG_EXE  "${CH_LINKERFLAG_EXE} -framework IOKit -framework Cocoa -framework OpenGL")
-    ENDIF()
-ENDIF()
+    if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+       set (CH_LINKERFLAG_EXE  "${CH_LINKERFLAG_EXE} -framework IOKit -framework Cocoa -framework OpenGL")
+    endif()
+endif()
 
 # ------------------------------------------------------------------------------
 # List of all executables
 # ------------------------------------------------------------------------------
 
 # Programs that can work with or without OpenGL
-SET(DEMOS
-    rotate_gravity
-    incline_particles
-    global_aabb
+set(DEMOS
+    test_PAR_rotate_gravity
+    test_PAR_incline_particles
+    test_PAR_global_aabb
 )
 
 # Programs that require OpenGL
-SET(DEMOS_GL
-    box_granular
-    collide_flag
-    jcol_example
-    rot_motor
-    test_callbackNSC_PAR
-    test_parallel_triangle
+set(DEMOS_GL
+    test_PAR_box_granular
+    test_PAR_collide_flag
+    test_PAR_rot_motor
+    test_PAR_callbackNSC
+    test_PAR_triangle
 )
 
-IF(ENABLE_MODULE_OPENGL)
-    SET(DEMOS ${DEMOS} ${DEMOS_GL})
-ENDIF()
+if(ENABLE_MODULE_OPENGL)
+    set(DEMOS ${DEMOS} ${DEMOS_GL})
+endif()
 
 # ------------------------------------------------------------------------------
 # Add all executables
 # ------------------------------------------------------------------------------
 
-MESSAGE(STATUS "Test programs for PARALLEL module...")
+foreach(PROGRAM ${DEMOS})
+    message(STATUS "...add ${PROGRAM}")
 
-FOREACH(PROGRAM ${DEMOS})
-    MESSAGE(STATUS "...add ${PROGRAM}")
+    add_executable(${PROGRAM}  "${PROGRAM}.cpp")
+    source_group(""  FILES "${PROGRAM}.cpp")
 
-    ADD_EXECUTABLE(${PROGRAM}  "${PROGRAM}.cpp")
-    SOURCE_GROUP(""  FILES "${PROGRAM}.cpp")
-
-    SET_TARGET_PROPERTIES(${PROGRAM} PROPERTIES
+    set_target_properties(${PROGRAM} PROPERTIES
         FOLDER demos
         COMPILE_FLAGS "${CH_CXX_FLAGS} ${CH_PARALLEL_CXX_FLAGS}"
         LINK_FLAGS "${CH_LINKERFLAG_EXE}"
     )
 
-    TARGET_LINK_LIBRARIES(${PROGRAM} ${LIBRARIES})
+    target_link_libraries(${PROGRAM} ${LIBRARIES})
 
-ENDFOREACH(PROGRAM)
+endforeach(PROGRAM)
 

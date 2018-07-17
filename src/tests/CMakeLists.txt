@@ -40,10 +40,6 @@ message(STATUS "==== Test programs ====")
 
 
 
-if(ENABLE_MODULE_PARALLEL)
-    add_subdirectory(parallel)
-endif()
-
 if(ENABLE_MODULE_PARALLEL AND ENABLE_MODULE_IRRLICHT AND ENABLE_MODULE_OPENGL)
     add_subdirectory(body_force)
 endif()
@@ -114,4 +110,10 @@ option(BUILD_TESTS_CONTACT "Build contact test programs" ON)
 mark_as_advanced(FORCE BUILD_TESTS_CONTACT)
 if(BUILD_TESTS_CONTACT)
   add_subdirectory(contact)
+endif()
+
+option(BUILD_TESTS_PARALLEL "Build Chrono::Parallel test programs" ON)
+mark_as_advanced(FORCE BUILD_TESTS_PARALLEL)
+if(BUILD_TESTS_PARALLEL)
+  add_subdirectory(parallel)
 endif()

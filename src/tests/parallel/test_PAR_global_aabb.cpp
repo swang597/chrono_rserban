@@ -88,7 +88,7 @@ void RigidBoundingBox_seq(const custom_vector<real3>& aabb_min,
                           const custom_vector<char>& collide_rigid,
                           real3& min_point,
                           real3& max_point) {
-    uint num_rigid_shapes = aabb_min.size();
+    uint num_rigid_shapes = static_cast<uint>(aabb_min.size());
 
     if (aabb_min.size() == 0)
         return;
@@ -96,7 +96,7 @@ void RigidBoundingBox_seq(const custom_vector<real3>& aabb_min,
     min_point = real3(+C_LARGE_REAL, +C_LARGE_REAL, +C_LARGE_REAL);
     max_point = real3(-C_LARGE_REAL, -C_LARGE_REAL, -C_LARGE_REAL);
 
-    for (int i = 0; i < num_rigid_shapes; i++) {
+    for (uint i = 0; i < num_rigid_shapes; i++) {
         uint id = id_rigid[i];
 
         if (id == UINT_MAX || !collide_rigid[id]) {
