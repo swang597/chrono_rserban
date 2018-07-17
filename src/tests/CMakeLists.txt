@@ -45,7 +45,6 @@ add_subdirectory(hdf5)
 if(ENABLE_MODULE_IRRLICHT)
     add_subdirectory(collision)
     add_subdirectory(render)
-    add_subdirectory(steering_mechanism)
 endif()
 
 if(ENABLE_MODULE_FEA AND ENABLE_MODULE_IRRLICHT)
