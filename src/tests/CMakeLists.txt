@@ -32,19 +32,57 @@ endif()
 
 #--------------------------------------------------------------
 
+message(STATUS "")
 message(STATUS "==== Test programs ====")
+message(STATUS "")
 
-
-
-
-
-
-
-if(ENABLE_MODULE_PARALLEL AND ENABLE_MODULE_IRRLICHT AND ENABLE_MODULE_OPENGL)
-    add_subdirectory(body_force)
+option(BUILD_TESTS_BASE "Build base Chrono module test programs" ON)
+mark_as_advanced(FORCE BUILD_TESTS_BASE)
+if(BUILD_TESTS_BASE)
+  add_subdirectory(base)
 endif()
 
+option(BUILD_TESTS_VISUALIZATION "Build visualization test programs" ON)
+mark_as_advanced(FORCE BUILD_TESTS_VISUALIZATION)
+if(BUILD_TESTS_VISUALIZATION)
+  add_subdirectory(visualization)
+endif()
 
+option(BUILD_TESTS_POSTPROCESS "Build Chrono::Postprocess test programs" ON)
+mark_as_advanced(FORCE BUILD_TESTS_POSTPROCESS)
+if(BUILD_TESTS_POSTPROCESS)
+  add_subdirectory(postprocess)
+endif()
+
+option(BUILD_TESTS_HDF5 "Build HDF5 test programs" ON)
+mark_as_advanced(FORCE BUILD_TESTS_HDF5)
+if(BUILD_TESTS_HDF5)
+  add_subdirectory(hdf5)
+endif()
+
+option(BUILD_TESTS_CONTACT "Build contact test programs" ON)
+mark_as_advanced(FORCE BUILD_TESTS_CONTACT)
+if(BUILD_TESTS_CONTACT)
+  add_subdirectory(contact)
+endif()
+
+option(BUILD_TESTS_GRANULAR "Build granular dynamics test programs" ON)
+mark_as_advanced(FORCE BUILD_TESTS_GRANULAR)
+if(BUILD_TESTS_GRANULAR)
+  add_subdirectory(granular)
+endif()
+
+option(BUILD_TESTS_GEOMECHANICS "Build geomechanics test programs" ON)
+mark_as_advanced(FORCE BUILD_TESTS_GEOMECHANICS)
+if(BUILD_TESTS_GEOMECHANICS)
+  add_subdirectory(geomechanics)
+endif()
+
+option(BUILD_TESTS_VEHICLE "Build Chrono::Vehicle test programs" ON)
+mark_as_advanced(FORCE BUILD_TESTS_VEHICLE)
+if(BUILD_TESTS_VEHICLE)
+  add_subdirectory(vehicle)
+endif()
 
 option(BUILD_TESTS_DISTRIBUTED "Build Chrono::Distributed test programs" ON)
 mark_as_advanced(FORCE BUILD_TESTS_DISTRIBUTED)
@@ -64,56 +102,8 @@ if(BUILD_TESTS_ROBOSIMIAN)
   add_subdirectory(robosimian)
 endif()
 
-option(BUILD_TESTS_GEOMECHANICS "Build geomechanics test programs" ON)
-mark_as_advanced(FORCE BUILD_TESTS_GEOMECHANICS)
-if(BUILD_TESTS_GEOMECHANICS)
-  add_subdirectory(geomechanics)
-endif()
-
 option(BUILD_TESTS_WVP "Build WVP (wheeled vehicle platform) test programs" ON)
 mark_as_advanced(FORCE BUILD_TESTS_WVP)
 if(BUILD_TESTS_WVP)
   add_subdirectory(wvp_benchmark)
-endif()
-
-option(BUILD_TESTS_VEHICLE "Build Chrono::Vehicle test programs" ON)
-mark_as_advanced(FORCE BUILD_TESTS_VEHICLE)
-if(BUILD_TESTS_VEHICLE)
-  add_subdirectory(vehicle)
-endif()
-
-option(BUILD_TESTS_HDF5 "Build HDF5 test programs" ON)
-mark_as_advanced(FORCE BUILD_TESTS_HDF5)
-if(BUILD_TESTS_HDF5)
-  add_subdirectory(hdf5)
-endif()
-
-option(BUILD_TESTS_VISUALIZATION "Build visualization test programs" ON)
-mark_as_advanced(FORCE BUILD_TESTS_VISUALIZATION)
-if(BUILD_TESTS_VISUALIZATION)
-  add_subdirectory(visualization)
-endif()
-
-option(BUILD_TESTS_POSTPROCESS "Build Chrono::Postprocess test programs" ON)
-mark_as_advanced(FORCE BUILD_TESTS_POSTPROCESS)
-if(BUILD_TESTS_POSTPROCESS)
-  add_subdirectory(postprocess)
-endif()
-
-option(BUILD_TESTS_BASE "Build base Chrono module test programs" ON)
-mark_as_advanced(FORCE BUILD_TESTS_BASE)
-if(BUILD_TESTS_BASE)
-  add_subdirectory(core)
-endif()
-
-option(BUILD_TESTS_CONTACT "Build contact test programs" ON)
-mark_as_advanced(FORCE BUILD_TESTS_CONTACT)
-if(BUILD_TESTS_CONTACT)
-  add_subdirectory(contact)
-endif()
-
-option(BUILD_TESTS_PARALLEL "Build Chrono::Parallel test programs" ON)
-mark_as_advanced(FORCE BUILD_TESTS_PARALLEL)
-if(BUILD_TESTS_PARALLEL)
-  add_subdirectory(parallel)
 endif()
