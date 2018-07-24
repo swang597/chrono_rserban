@@ -190,6 +190,34 @@ set(CVM_WVP_FILES
 )
 source_group("wvp" FILES ${CVM_WVP_FILES})
 
+set(CVM_SEDAN_FILES
+    sedan/Sedan.cpp
+    sedan/Sedan.h
+    sedan/Sedan_BrakeSimple.cpp
+    sedan/Sedan_BrakeSimple.h
+    sedan/Sedan_Chassis.h
+    sedan/Sedan_Chassis.cpp
+    sedan/Sedan_DoubleWishbone.cpp
+    sedan/Sedan_DoubleWishbone.h
+    sedan/Sedan_Driveline2WD.cpp
+    sedan/Sedan_Driveline2WD.h
+    sedan/Sedan_MultiLink.cpp
+    sedan/Sedan_MultiLink.h
+    sedan/Sedan_RigidTire.cpp
+    sedan/Sedan_RigidTire.h
+    sedan/Sedan_TMeasyTire.cpp
+    sedan/Sedan_TMeasyTire.h
+    sedan/Sedan_RackPinion.cpp
+    sedan/Sedan_RackPinion.h
+    sedan/Sedan_SimpleMapPowertrain.cpp
+    sedan/Sedan_SimpleMapPowertrain.h
+    sedan/Sedan_Vehicle.h
+    sedan/Sedan_Vehicle.cpp
+    sedan/Sedan_Wheel.cpp
+    sedan/Sedan_Wheel.h
+)
+source_group("sedan" FILES ${CVM_SEDAN_FILES})
+
 set(CVM_M113_FILES
     m113/M113_BrakeSimple.h
     m113/M113_Chassis.h
@@ -294,6 +322,7 @@ add_library(ChronoModels_vehicle SHARED
     ${CVM_UAZ_FILES}
     ${CVM_GENERIC_FILES}
     ${CVM_WVP_FILES}
+    ${CVM_SEDAN_FILES}
     ${CVM_M113_FILES}
     ${CVM_M113_A_FILES}
     ${CVM_M113_FEA_FILES}
