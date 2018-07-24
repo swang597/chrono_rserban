@@ -1,0 +1,137 @@
+// =============================================================================
+// PROJECT CHRONO - http://projectchrono.org
+//
+// Copyright (c) 2014 projectchrono.org
+// All rights reserved.
+//
+// Use of this source code is governed by a BSD-style license that can be found
+// in the LICENSE file at the top level of the distribution and at
+// http://projectchrono.org/license-chrono.txt.
+//
+// =============================================================================
+// Authors: Radu Serban
+// =============================================================================
+//
+//
+// =============================================================================
+
+#include "chrono/physics/ChSystemNSC.h"
+
+#include "chrono_vehicle/utils/ChVehiclePath.h"
+
+#include "framework.h"
+
+using namespace chrono;
+
+int main(int argc, char* argv[]) {
+    std::string vis_file("corridor/park_visual_irr.obj");
+    std::string coll_file("corridor/park_collision.obj");
+
+    av::Scene scene(av::GPScoord(43.072172, -89.400391), vis_file, coll_file);
+    av::Framework framework(scene, false);
+    framework.SetIntegrationStep(5e-3);
+
+    auto pos1 = framework.GetLocation(av::GPScoord(43.0726234, -89.40045));
+    pos1.z() += 0.25;
+    auto p1 = framework.AddPath(vehicle::CirclePath(pos1, 15, 80, false, 3), false);
+    auto v1 = framework.AddVehicle(av::Vehicle::Type::VAN, p1, 4.0);
+
+    std::vector<ChVector<>> local_points = {ChVector<>(64.8927, 13.249, -0.481722),    //
+                                            ChVector<>(80.3284, 12.7266, -0.603526),   //
+                                            ChVector<>(94.6545, 12.2176, -0.694871),   //
+                                            ChVector<>(105.61, 12.3841, -0.739324),    //
+                                            ChVector<>(114.282, 16.0502, -0.693778),   //
+                                            ChVector<>(120.643, 26.2061, -0.528403),   //
+                                            ChVector<>(121.556, 41.204, -0.317819),    //
+                                            ChVector<>(122.405, 63.1628, 0.00486306),  //
+                                            ChVector<>(121.647, 76.5746, 0.20102),     //
+                                            ChVector<>(120.709, 88.7467, 0.389847),    //
+                                            ChVector<>(120.974, 107.356, 0.759666),    //
+                                            ChVector<>(121.9, 124.316, 1.09734),       //
+                                            ChVector<>(123.194, 147.227, 1.59602),     //
+                                            ChVector<>(123.864, 155.117, 1.87896),     //
+                                            ChVector<>(123.159, 160.661, 1.82409),     //
+                                            ChVector<>(118.760, 163.799, 1.61755),     //
+                                            ChVector<>(106.761, 164.621, 1.2629),      //
+                                            ChVector<>(84.4186, 165.658, 0.667642),    //
+                                            ChVector<>(60.3295, 166.995, 0.0448156),   //
+                                            ChVector<>(41.2747, 168.255, -0.414149),   //
+                                            ChVector<>(18.7352, 169.553, -0.935203),   //
+                                            ChVector<>(7.37289, 169.942, -1.14195),    //
+                                            ChVector<>(0.416377, 167.835, -1.23743),   //
+                                            ChVector<>(-1.55959, 159.595, -0.857577),  //
+                                            ChVector<>(-2.12039, 140.422, -0.056825),  //
+                                            ChVector<>(-3.4468, 114.978, 0.612327),    //
+                                            ChVector<>(-2.90567, 98.4509, 0.934667),   //
+                                            ChVector<>(-2.13378, 87.3479, 1.06922),    //
+                                            ChVector<>(-1.94289, 76.7192, 1.0948),     //
+                                            ChVector<>(-2.36216, 63.751, 0.885862),    //
+                                            ChVector<>(-3.5639, 46.2598, 0.512486),    //
+                                            ChVector<>(-3.72494, 35.4111, 0.233689),   //
+                                            ChVector<>(-3.96505, 28.2692, 0.0131532),  //
+                                            ChVector<>(-2.41712, 24.2123, -0.130718),  //
+                                            ChVector<>(3.0726, 22.2459, -0.157238),    //
+                                            ChVector<>(17.785, 19.1502, -0.209135),    //
+                                            ChVector<>(34.5575, 15.9428, -0.298507),   //
+                                            ChVector<>(52.1876, 14.0408, -0.381472)};
+    auto p2 = framework.AddPath(local_points, 0.25, true);
+    auto v2 = framework.AddVehicle(av::Vehicle::Type::TRUCK, p2, 8.0);
+
+    std::vector<av::GPScoord> gps_points = {av::GPScoord(43.0723306, -89.4006454),  //
+                                            av::GPScoord(43.0724198, -89.4006307),  //
+                                            av::GPScoord(43.0725187, -89.4006173),  //
+                                            av::GPScoord(43.0726324, -89.4006025),  //
+                                            av::GPScoord(43.0727739, -89.4005972),  //
+                                            av::GPScoord(43.0728785, -89.4005972),  //
+                                            av::GPScoord(43.0730984, -89.4005915),  //
+                                            av::GPScoord(43.0731849, -89.4006079),  //
+                                            av::GPScoord(43.0732143, -89.4006562),  //
+                                            av::GPScoord(43.0732319, -89.4007192),  //
+                                            av::GPScoord(43.0732329, -89.4008466),  //
+                                            av::GPScoord(43.0732358, -89.4010759),  //
+                                            av::GPScoord(43.0732437, -89.4015011),  //
+                                            av::GPScoord(43.0732515, -89.4019302),  //
+                                            av::GPScoord(43.0732545, -89.4022507),  //
+                                            av::GPScoord(43.0732525, -89.4023594),  //
+                                            av::GPScoord(43.0732388, -89.4024224),  //
+                                            av::GPScoord(43.0732045, -89.4024506),  //
+                                            av::GPScoord(43.0731281, -89.4024546),  //
+                                            av::GPScoord(43.0728763, -89.4024573),  //
+                                            av::GPScoord(43.0726921, -89.4024559),  //
+                                            av::GPScoord(43.0724551, -89.4024640),  //
+                                            av::GPScoord(43.0723169, -89.4024680),  //
+                                            av::GPScoord(43.0722376, -89.4024774),  //
+                                            av::GPScoord(43.0721915, -89.4024613),  //
+                                            av::GPScoord(43.0721719, -89.4023916),  //
+                                            av::GPScoord(43.0721670, -89.4022454),  //
+                                            av::GPScoord(43.0721621, -89.4018913),  //
+                                            av::GPScoord(43.0721582, -89.4015172),  //
+                                            av::GPScoord(43.0721514, -89.4011537),  //
+                                            av::GPScoord(43.0721484, -89.4009914),  //
+                                            av::GPScoord(43.0721474, -89.4008318),  //
+                                            av::GPScoord(43.0721553, -89.4007836),  //
+                                            av::GPScoord(43.0721651, -89.4007460),  //
+                                            av::GPScoord(43.0721812, -89.4007098),  //
+                                            av::GPScoord(43.0722033, -89.4006790),  //
+                                            av::GPScoord(43.0722807, -89.4006588),  //
+                                            av::GPScoord(43.0723306, -89.4006454)};
+    auto p3 = framework.AddPath(gps_points, 0.25, true);
+    //auto v3 = framework.AddVehicle(av::Vehicle::Type::TRUCK, p3, 8.0);
+
+    auto l1 = framework.AddTrafficLight(av::GPScoord(43.073430, -89.400839));
+    auto l2 = framework.AddTrafficLight(av::GPScoord(43.072172, -89.400391));
+    auto l3 = framework.AddTrafficLight(av::GPScoord(43.073987, -89.400656));
+    auto l4 = framework.AddTrafficLight(av::GPScoord(43.073223, -89.400640));
+    
+    framework.ListAgents();
+
+    framework.SetPathColor(p1, ChColor(0.6f, 0.6f, 0.0f));
+    framework.SetPathColor(p2, ChColor(0.0f, 0.6f, 0.0f));
+    framework.SetPathColor(p3, ChColor(0.0f, 0.0f, 0.6f));
+
+    framework.SetEgoVehicle(v2);
+
+    framework.Run(200, 20, true);
+
+    return 0;
+}
