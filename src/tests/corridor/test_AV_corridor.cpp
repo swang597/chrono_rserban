@@ -33,8 +33,8 @@ int main(int argc, char* argv[]) {
 
     auto pos1 = framework.GetLocation(av::GPScoord(43.0726234, -89.40045));
     pos1.z() += 0.25;
-    auto p1 = framework.AddPath(vehicle::CirclePath(pos1, 15, 80, false, 3), false);
-    auto v1 = framework.AddVehicle(av::Vehicle::Type::VAN, p1, 4.0);
+    auto circle_path = framework.AddPath(vehicle::CirclePath(pos1, 15, 80, false, 3), false);
+    auto van1 = framework.AddVehicle(av::Vehicle::Type::VAN, circle_path, pos1, 4.0);
 
     std::vector<ChVector<>> local_points = {ChVector<>(64.8927, 13.249, -0.481722),    //
                                             ChVector<>(80.3284, 12.7266, -0.603526),   //
@@ -74,8 +74,11 @@ int main(int argc, char* argv[]) {
                                             ChVector<>(17.785, 19.1502, -0.209135),    //
                                             ChVector<>(34.5575, 15.9428, -0.298507),   //
                                             ChVector<>(52.1876, 14.0408, -0.381472)};
-    auto p2 = framework.AddPath(local_points, 0.25, true);
-    auto v2 = framework.AddVehicle(av::Vehicle::Type::TRUCK, p2, 8.0);
+    auto loop_path = framework.AddPath(local_points, 0.25, true);
+    auto truck1 =
+        framework.AddVehicle(av::Vehicle::Type::TRUCK, loop_path, ChVector<>(41.2747, 168.255, -0.414149), 8.25);
+    auto truck2 =
+        framework.AddVehicle(av::Vehicle::Type::TRUCK, loop_path, ChVector<>(0.416377, 167.835, -1.23743), 8.0);
 
     std::vector<av::GPScoord> gps_points = {av::GPScoord(43.0723306, -89.4006454),  //
                                             av::GPScoord(43.0724198, -89.4006307),  //
@@ -115,21 +118,20 @@ int main(int argc, char* argv[]) {
                                             av::GPScoord(43.0722033, -89.4006790),  //
                                             av::GPScoord(43.0722807, -89.4006588),  //
                                             av::GPScoord(43.0723306, -89.4006454)};
-    auto p3 = framework.AddPath(gps_points, 0.25, true);
-    //auto v3 = framework.AddVehicle(av::Vehicle::Type::TRUCK, p3, 8.0);
+    auto gps_loop_path = framework.AddPath(gps_points, 0.25, true);
+    auto truck3 =
+        framework.AddVehicle(av::Vehicle::Type::TRUCK, gps_loop_path, av::GPScoord(43.0732437, -89.4015011), 4.0);
 
     auto l1 = framework.AddTrafficLight(av::GPScoord(43.073430, -89.400839));
     auto l2 = framework.AddTrafficLight(av::GPScoord(43.072172, -89.400391));
-    auto l3 = framework.AddTrafficLight(av::GPScoord(43.073987, -89.400656));
-    auto l4 = framework.AddTrafficLight(av::GPScoord(43.073223, -89.400640));
-    
+
     framework.ListAgents();
 
-    framework.SetPathColor(p1, ChColor(0.6f, 0.6f, 0.0f));
-    framework.SetPathColor(p2, ChColor(0.0f, 0.6f, 0.0f));
-    framework.SetPathColor(p3, ChColor(0.0f, 0.0f, 0.6f));
+    framework.SetPathColor(circle_path, ChColor(0.6f, 0.6f, 0.0f));
+    framework.SetPathColor(loop_path, ChColor(0.0f, 0.6f, 0.0f));
+    framework.SetPathColor(gps_loop_path, ChColor(0.0f, 0.0f, 0.6f));
 
-    framework.SetEgoVehicle(v2);
+    framework.SetEgoVehicle(truck1);
 
     framework.Run(200, 20, true);
 

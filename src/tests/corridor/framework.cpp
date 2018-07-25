@@ -94,23 +94,65 @@ unsigned int Framework::AddPath(const std::vector<chrono::ChVector<>>& points, d
     return id;
 }
 
+// Create a vehicle associated with given path
+unsigned int Framework::AddVehicle(Vehicle::Type type, unsigned int path_id, const chrono::ChVector<>& loc, double target_speed) {
+    auto path = Path::Find(path_id);
+
+    // Find closest path node to provided location
+    auto np = path->m_curve->getNumPoints();
+    size_t i1 = 0;
+    auto min_d2 = (path->m_curve->getPoint(i1) - loc).Length2();
+    for (size_t i = 1; i < np; i++) {
+        auto crt_d2 = (path->m_curve->getPoint(i) - loc).Length2();
+        if ( crt_d2 < min_d2) {
+            i1 = i;
+            min_d2 = crt_d2;
+        }
+    }
+    auto point = path->m_curve->getPoint(i1);
+
+    // Find orientation from path chord
+    auto u = (i1 < np - 1) ? (path->m_curve->getPoint(i1 + 1) - point).GetNormalized()
+                           : (point - path->m_curve->getPoint(i1 - 1)).GetNormalized();
+    auto v = Vcross(ChVector<>(0, 0, 1), u);
+    auto w = Vcross(u, v);
+    ChMatrix33<> A;
+    A.Set_A_axis(u, v, w);
+
+    // Create vehicle at path node
+    std::cout << "Add vehicle" << std::endl;
+    std::cout << "  " << point.x() << "  " << point.y() << "  " << point.z() << std::endl;
+    auto id = AddVehicle(type, ChCoordsys<>(point + ChVector<>(0, 0, 0.5), A.Get_A_quaternion()));
+    if (id == -1)
+        return id;
+
+    // Set AV driver
+    Vehicle::Find(id)->SetupDriver(path->m_curve, path->m_closed, target_speed);
+
+    return id;
+}
+
+unsigned int Framework::AddVehicle(Vehicle::Type type, unsigned int path_id, const GPScoord& gps_loc, double target_speed) {
+    return AddVehicle(type, path_id, GetLocation(gps_loc), target_speed);
+}
+
 unsigned int Framework::AddVehicle(Vehicle::Type type, const ChCoordsys<>& pos) {
     auto id = Agent::GenerateID();
     std::shared_ptr<Vehicle> vehicle;
 
     switch (type) {
-        case Vehicle::Type::TRUCK:
-            vehicle = std::shared_ptr<TruckAV>(new TruckAV(this, pos));
-            break;
-        case Vehicle::Type::VAN:
-            vehicle = std::shared_ptr<VanAV>(new VanAV(this, pos));
-            break;
+    case Vehicle::Type::TRUCK:
+        vehicle = std::shared_ptr<TruckAV>(new TruckAV(this, pos));
+        break;
+    case Vehicle::Type::VAN:
+        vehicle = std::shared_ptr<VanAV>(new VanAV(this, pos));
+        break;
         ////case Vehicle::Type::SEDAN:
         ////    vehicle = std::shared_ptr<SedanAV>(new SedanAV(this, pos));
         ////    break;
-        default:
-            std::cout << "Unknown vehicle type" << std::endl;
-            return -1;
+    default:
+        std::cout << "Unknown vehicle type" << std::endl;
+        return -1;
     }
 
     vehicle->m_id = id;
@@ -120,40 +162,17 @@ unsigned int Framework::AddVehicle(Vehicle::Type type, const ChCoordsys<>& pos) 
     return id;
 }
 
-// Create a vehicle associated with given path
-unsigned int Framework::AddVehicle(Vehicle::Type type, unsigned int path_id, double target_speed) {
-    auto path = Path::Find(path_id);
-    auto p1 = path->m_curve->getPoint(0);
-    auto p2 = path->m_curve->getPoint(1);
-    auto u = (p2 - p1).GetNormalized();
-    auto v = Vcross(ChVector<>(0, 0, 1), u);
-    auto w = Vcross(u, v);
-    ChMatrix33<> A;
-    A.Set_A_axis(u, v, w);
-
-    std::cout << "Add vehicle" << std::endl;
-    std::cout << "  " << p1.x() << "  " << p1.y() << "  " << p1.z() << std::endl;
-
-    auto id = AddVehicle(type, ChCoordsys<>(p1 + ChVector<>(0, 0, 0.5), A.Get_A_quaternion()));
-    if (id == -1)
-        return id;
-
-    Vehicle::Find(id)->SetupDriver(path->m_curve, path->m_closed, target_speed);
-
-    return id;
-}
-
-unsigned int Framework::AddTrafficLight(const ChVector<>& pos) {
+unsigned int Framework::AddTrafficLight(const ChVector<>& loc) {
     auto id = Agent::GenerateID();
-    auto light = std::shared_ptr<TrafficLight>(new TrafficLight(this, pos));
+    auto light = std::shared_ptr<TrafficLight>(new TrafficLight(this, loc));
     light->m_id = id;
     TrafficLight::m_traffic_lights.insert(std::make_pair(id, light));
 
     return id;
 }
 
-unsigned int Framework::AddTrafficLight(const chrono::ChVector2<>& gps_point) {
-    return AddTrafficLight(GetLocation(gps_point));
+unsigned int Framework::AddTrafficLight(const GPScoord& gps_loc) {
+    return AddTrafficLight(GetLocation(gps_loc));
 }
 
 void Framework::SetPathColor(unsigned int id, const ChColor& color) {

@@ -40,11 +40,14 @@ class Framework {
 
     void SetPathColor(unsigned int id, const chrono::ChColor& color);
 
-    unsigned int AddVehicle(Vehicle::Type type, const chrono::ChCoordsys<>& pos);
-    unsigned int AddVehicle(Vehicle::Type type, unsigned int path_id, double target_speed);
+    unsigned int AddVehicle(Vehicle::Type type,
+                            unsigned int path_id,
+                            const chrono::ChVector<>& loc,
+                            double target_speed);
+    unsigned int AddVehicle(Vehicle::Type type, unsigned int path_id, const GPScoord& gps_loc, double target_speed);
 
-    unsigned int AddTrafficLight(const chrono::ChVector<>& pos);
-    unsigned int AddTrafficLight(const chrono::ChVector2<>& gps_point);
+    unsigned int AddTrafficLight(const chrono::ChVector<>& loc);
+    unsigned int AddTrafficLight(const GPScoord& gps_loc);
 
     void SetEgoVehicle(unsigned int vehicle_id);
     void SetIntegrationStep(double step) { m_step = step; }
@@ -61,6 +64,8 @@ class Framework {
     void CreateTerrain();
     void Initialize();
     void Advance();
+
+    unsigned int AddVehicle(Vehicle::Type type, const chrono::ChCoordsys<>& pos);
 
     Scene m_scene;
     chrono::ChSystem* m_system;
