@@ -38,6 +38,8 @@ set(MODEL_FILES
     truckAV.cpp
     vanAV.h
     vanAV.cpp
+    sedanAV.h
+    sedanAV.cpp
     ChSensor.h
     ChSensor.cpp
     ChCollisionLidar.h

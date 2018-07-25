@@ -75,6 +75,7 @@ class Framework {
 
     friend class TruckAV;
     friend class VanAV;
+    friend class SedanAV;
     friend class TrafficLight;
 };
 

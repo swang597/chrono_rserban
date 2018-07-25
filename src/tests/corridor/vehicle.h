@@ -35,7 +35,7 @@ typedef std::unordered_map<unsigned int, std::shared_ptr<Vehicle>> VehicleList;
 
 class Vehicle : public Agent {
   public:
-    enum class Type { TRUCK, VAN, BUS };
+    enum class Type { TRUCK, SEDAN, VAN, BUS };
 
     virtual ~Vehicle();
 

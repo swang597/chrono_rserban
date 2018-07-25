@@ -23,6 +23,7 @@
 
 #include "framework.h"
 #include "truckAV.h"
+#include "sedanAV.h"
 #include "vanAV.h"
 
 using namespace chrono;
@@ -104,6 +105,9 @@ unsigned int Framework::AddVehicle(Vehicle::Type type, const ChCoordsys<>& pos) 
         case Vehicle::Type::VAN:
             vehicle = std::shared_ptr<VanAV>(new VanAV(this, pos));
             break;
+        ////case Vehicle::Type::SEDAN:
+        ////    vehicle = std::shared_ptr<SedanAV>(new SedanAV(this, pos));
+        ////    break;
         default:
             std::cout << "Unknown vehicle type" << std::endl;
             return -1;
