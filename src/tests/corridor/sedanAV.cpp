@@ -38,7 +38,7 @@ SedanAV::SedanAV(Framework* framework, const chrono::ChCoordsys<>& init_pos) : V
     m_sedan->SetSuspensionVisualizationType(VisualizationType::PRIMITIVES);
     m_sedan->SetSteeringVisualizationType(VisualizationType::PRIMITIVES);
     m_sedan->SetWheelVisualizationType(VisualizationType::NONE);
-    m_sedan->SetTireVisualizationType(VisualizationType::NONE);
+    m_sedan->SetTireVisualizationType(VisualizationType::PRIMITIVES);
 }
 
 SedanAV::~SedanAV() {

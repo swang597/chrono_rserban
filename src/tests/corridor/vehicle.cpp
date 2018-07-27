@@ -26,7 +26,7 @@ VehicleList Vehicle::m_vehicles;
 
 // -----------------------------------------------------------------------------
 
-Vehicle::Vehicle(Framework* framework) : Agent(framework), m_steeringPID(nullptr), m_speedPID(nullptr) {
+Vehicle::Vehicle(Framework* framework) : Agent(framework), m_steeringPID(nullptr), m_speedPID(nullptr), m_steering(0), m_throttle(0), m_braking(0) {
     //
 }
 

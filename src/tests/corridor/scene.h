@@ -17,6 +17,8 @@
 #ifndef AV_SCENE_H
 #define AV_SCENE_H
 
+#include "chrono/core/ChMatrixDynamic.h"
+#include "chrono/core/ChFrame.h"
 #include "chrono/core/ChVector.h"
 #include "chrono/core/ChVector2.h"
 
@@ -24,10 +26,12 @@ namespace av {
 
 typedef chrono::ChVector2<> GPScoord;
 
-struct Area {
-    Area(const chrono::ChVector<>& loc_min, const chrono::ChVector<>& loc_max) : m_min(loc_min), m_max(loc_max) {}
-    chrono::ChVector<> m_min;
-    chrono::ChVector<> m_max;
+class Area {
+public:
+    Area(const chrono::ChFrame<>& frame, const chrono::ChVector<>& dims);
+
+    chrono::ChFrame<> m_frame;
+    chrono::ChVector<> m_dims;
 };
 
 class Scene {

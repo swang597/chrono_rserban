@@ -39,6 +39,7 @@ Framework::Framework(const Scene& scene, bool render_coll)
     m_system->SetMaxItersSolverSpeed(150);
     m_system->SetMaxItersSolverStab(150);
     m_system->SetMaxPenetrationRecoverySpeed(4.0);
+    m_system->SetSolverType(ChSolver::Type::BARZILAIBORWEIN);
 
     CreateTerrain();
 }
@@ -53,16 +54,6 @@ ChVector<> Framework::GetLocation(const GPScoord& gps) const {
     auto loc = m_scene.FromGPS(gps);
     auto h = m_terrain->GetHeight(loc.x(), loc.y());
     return ChVector<>(loc.x(), loc.y(), h);
-}
-
-Area Framework::GetArea(const GPScoord& gps_min, const GPScoord& gps_max) const {
-    auto loc_min = m_scene.FromGPS(gps_min);
-    auto h_min = m_terrain->GetHeight(loc_min.x(), loc_min.y());
-
-    auto loc_max = m_scene.FromGPS(gps_max);
-    auto h_max = m_terrain->GetHeight(loc_max.x(), loc_max.y());
-
-    return Area(ChVector<>(loc_min.x(), loc_min.y(), h_min), ChVector<>(loc_max.x(), loc_max.y(), h_max));
 }
 
 // Note: cannot use std::make_shared because the various constructors are not public.
@@ -147,9 +138,9 @@ unsigned int Framework::AddVehicle(Vehicle::Type type, const ChCoordsys<>& pos) 
     case Vehicle::Type::VAN:
         vehicle = std::shared_ptr<VanAV>(new VanAV(this, pos));
         break;
-        ////case Vehicle::Type::SEDAN:
-        ////    vehicle = std::shared_ptr<SedanAV>(new SedanAV(this, pos));
-        ////    break;
+        case Vehicle::Type::SEDAN:
+            vehicle = std::shared_ptr<SedanAV>(new SedanAV(this, pos));
+            break;
     default:
         std::cout << "Unknown vehicle type" << std::endl;
         return -1;
@@ -277,8 +268,33 @@ void Framework::Initialize() {
     if (!m_render_coll) {
         auto smanager = m_app->GetSceneManager();
         auto imesh = smanager->getMesh(GetChronoDataFile(m_scene.m_vis_file).c_str());
-        auto node = smanager->addMeshSceneNode(imesh, 0, -1, irr::core::vector3df(0, 0, 0), irr::core::vector3df(0, 0, 0),
-            irr::core::vector3df(1, 1, 1));
+
+        {
+            // Take care of left-handed frames in Irrlicht
+
+            const irr::u32 bcount = imesh->getMeshBufferCount();
+            for (irr::u32 b = 0; b < bcount; ++b) {
+                irr::scene::IMeshBuffer* buffer = imesh->getMeshBuffer(b);
+                const irr::u32 idxcnt = buffer->getIndexCount();
+                irr::u16* idx = buffer->getIndices();
+                irr::s32 tmp;
+
+                for (irr::u32 i = 0; i < idxcnt; i += 3) {
+                    tmp = idx[i + 1];
+                    idx[i + 1] = idx[i + 2];
+                    idx[i + 2] = tmp;
+                }
+                const irr::u32 vertcnt = buffer->getVertexCount();
+                for (irr::u32 i = 0; i < vertcnt; i++) {
+                    buffer->getPosition(i).X = -buffer->getPosition(i).X;  // mirror vertex
+                    irr::core::vector3df oldnorm = buffer->getNormal(i);
+                    buffer->getNormal(i).X = -oldnorm.X;  // mirrors normal on X
+                }
+            }
+        }
+
+        auto node = smanager->addMeshSceneNode(imesh, 0, -1, irr::core::vector3df(0, 0, 0),
+                                               irr::core::vector3df(0, 0, 0), irr::core::vector3df(1, 1, 1));
     }
 
     // Complete Irrlicht asset construction

@@ -56,7 +56,6 @@ class Framework {
 
     chrono::ChSystem* GetSystem() { return m_system; }
     chrono::ChVector<> GetLocation(const GPScoord& gps) const;
-    Area GetArea(const GPScoord& gps_min, const GPScoord& gps_max) const;
 
     void ListAgents();
 
