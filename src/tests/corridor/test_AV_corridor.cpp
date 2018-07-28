@@ -75,7 +75,7 @@ int main(int argc, char* argv[]) {
                                             ChVector<>(17.785, 19.1502, -0.209135),    //
                                             ChVector<>(34.5575, 15.9428, -0.298507),   //
                                             ChVector<>(52.1876, 14.0408, -0.381472)};
-    auto loop_path = framework.AddPath(local_points, 0.25, true);
+    auto loop_path = framework.AddPath(local_points, true);
 
     std::vector<av::GPScoord> gps_points = {av::GPScoord(43.0723306, -89.4006454),  //
                                             av::GPScoord(43.0724198, -89.4006307),  //
@@ -115,7 +115,7 @@ int main(int argc, char* argv[]) {
                                             av::GPScoord(43.0722033, -89.4006790),  //
                                             av::GPScoord(43.0722807, -89.4006588),  //
                                             av::GPScoord(43.0723306, -89.4006454)};
-    auto gps_loop_path = framework.AddPath(gps_points, 0.25, true);
+    auto gps_loop_path = framework.AddPath(gps_points, true);
 
     // Create vehicles
 
@@ -129,8 +129,8 @@ int main(int argc, char* argv[]) {
 
     // Create traffic lights
 
-    auto l1 = framework.AddTrafficLight(av::GPScoord(43.073430, -89.400839));
-    ////auto l2 = framework.AddTrafficLight(av::GPScoord(43.072172, -89.400391));
+    auto l1 = framework.AddTrafficLight(av::GPScoord(43.073269, -89.400572), 40, av::GPScoord(43.073430, -89.400839));
+    ////auto l2 = framework.AddTrafficLight(av::GPScoord(43.072172, -89.400391), 2, av::GPScoord(43.072172, -89.400391));
 
     framework.ListAgents();
 

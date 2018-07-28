@@ -39,16 +39,16 @@ class Vehicle : public Agent {
 
     virtual ~Vehicle();
 
-    virtual chrono::ChVector<> GetPosition() = 0;
-    virtual chrono::vehicle::ChVehicle& GetVehicle() = 0;
-    virtual chrono::vehicle::ChPowertrain& GetPowertrain() = 0;
+    virtual chrono::ChCoordsys<> GetPosition() const = 0;
+    virtual chrono::vehicle::ChVehicle& GetVehicle() const = 0;
+    virtual chrono::vehicle::ChPowertrain& GetPowertrain() const = 0;
 
     virtual void Synchronize(double time) = 0;
     virtual void Advance(double step) = 0;
 
-    virtual double GetLookAheadDistance() = 0;
-    virtual chrono::ChVector<> GetSteeringGainsPID() = 0;
-    virtual chrono::ChVector<> GetSpeedGansPID() = 0;
+    virtual double GetLookAheadDistance() const = 0;
+    virtual chrono::ChVector<> GetSteeringGainsPID() const = 0;
+    virtual chrono::ChVector<> GetSpeedGainsPID() const = 0;
 
     static std::shared_ptr<Vehicle> Find(unsigned int id);
     static VehicleList GetList() { return m_vehicles; }

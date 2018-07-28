@@ -30,13 +30,13 @@ class TruckAV : public Vehicle {
   private:
     TruckAV(Framework* framework, const chrono::ChCoordsys<>& init_pos);
 
-    virtual chrono::ChVector<> GetPosition() override { return m_hmmwv->GetVehicle().GetVehiclePos(); }
-    virtual chrono::vehicle::ChVehicle& GetVehicle() override { return m_hmmwv->GetVehicle(); }
-    virtual chrono::vehicle::ChPowertrain& GetPowertrain() override { return m_hmmwv->GetPowertrain(); }
+    virtual chrono::ChCoordsys<> GetPosition() const override;
+    virtual chrono::vehicle::ChVehicle& GetVehicle() const override;
+    virtual chrono::vehicle::ChPowertrain& GetPowertrain() const override;
 
-    virtual double GetLookAheadDistance() override { return 5; }
-    virtual chrono::ChVector<> GetSteeringGainsPID() override { return chrono::ChVector<>(0.8, 0, 0); }
-    virtual chrono::ChVector<> GetSpeedGansPID() { return chrono::ChVector<>(0.4, 0, 0); }
+    virtual double GetLookAheadDistance() const override { return 5; }
+    virtual chrono::ChVector<> GetSteeringGainsPID() const override { return chrono::ChVector<>(0.8, 0, 0); }
+    virtual chrono::ChVector<> GetSpeedGainsPID() const override { return chrono::ChVector<>(0.4, 0, 0); }
 
     virtual void Synchronize(double time) override;
     virtual void Advance(double step) override;

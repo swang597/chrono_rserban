@@ -15,6 +15,7 @@
 // =============================================================================
 
 #include "chrono/geometry/ChLineBezier.h"
+#include "chrono/geometry/ChLineArc.h"
 
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/physics/ChSystemSMC.h"
@@ -30,6 +31,10 @@ using namespace chrono;
 using namespace chrono::vehicle;
 
 namespace av {
+
+const double Framework::m_vertical_offset = 0.3;
+
+// -----------------------------------------------------------------------------
 
 Framework::Framework(const Scene& scene, bool render_coll)
     : m_scene(scene), m_render_coll(render_coll), m_step(1e-3), m_app(nullptr), m_initialized(false) {
@@ -67,18 +72,18 @@ unsigned int Framework::AddPath(std::shared_ptr<chrono::ChBezierCurve> curve, bo
     return id;
 }
 
-unsigned int Framework::AddPath(const std::vector<GPScoord>& gps_points, double v_offset, bool closed) {
+unsigned int Framework::AddPath(const std::vector<GPScoord>& gps_points, bool closed) {
     auto id = Agent::GenerateID();
-    auto path = std::shared_ptr<Path>(new Path(this, gps_points, v_offset, closed));
+    auto path = std::shared_ptr<Path>(new Path(this, gps_points, m_vertical_offset, closed));
     path->m_id = id;
     Path::m_paths.insert(std::make_pair(id, path));
 
     return id;
 }
 
-unsigned int Framework::AddPath(const std::vector<chrono::ChVector<>>& points, double v_offset, bool closed) {
+unsigned int Framework::AddPath(const std::vector<chrono::ChVector<>>& points, bool closed) {
     auto id = Agent::GenerateID();
-    auto path = std::shared_ptr<Path>(new Path(this, points, v_offset, closed));
+    auto path = std::shared_ptr<Path>(new Path(this, points, m_vertical_offset, closed));
     path->m_id = id;
     Path::m_paths.insert(std::make_pair(id, path));
 
@@ -153,17 +158,18 @@ unsigned int Framework::AddVehicle(Vehicle::Type type, const ChCoordsys<>& pos) 
     return id;
 }
 
-unsigned int Framework::AddTrafficLight(const ChVector<>& loc) {
+unsigned int Framework::AddTrafficLight(const chrono::ChVector<>& center, double radius, const ChCoordsys<>& pos) {
     auto id = Agent::GenerateID();
-    auto light = std::shared_ptr<TrafficLight>(new TrafficLight(this, loc));
+    auto light = std::shared_ptr<TrafficLight>(new TrafficLight(this, center, radius, pos));
     light->m_id = id;
     TrafficLight::m_traffic_lights.insert(std::make_pair(id, light));
 
     return id;
 }
 
-unsigned int Framework::AddTrafficLight(const GPScoord& gps_loc) {
-    return AddTrafficLight(GetLocation(gps_loc));
+//// TODO: add angle
+unsigned int Framework::AddTrafficLight(const GPScoord& gps_center, double radius, const GPScoord& gps_pos) {
+    return AddTrafficLight(GetLocation(gps_center), radius, ChCoordsys<>(GetLocation(gps_pos), QUNIT));
 }
 
 void Framework::SetPathColor(unsigned int id, const ChColor& color) {
@@ -248,11 +254,22 @@ void Framework::Initialize() {
         road->AddAsset(path_asset);
     }
 
+    // Create visualization assets for all traffic lights
+    for (auto t : TrafficLight::GetList()) {
+        auto origin = ChCoordsys<>(t.second->GetCenter() + ChVector<>(0, 0, 2 * m_vertical_offset), QUNIT);
+        auto circle_line = std::make_shared<geometry::ChLineArc>(origin, t.second->GetRadius());
+        auto circle_asset = std::make_shared<ChLineShape>();
+        circle_asset->SetColor(ChColor(1.0f, 0.0f, 0.0f));
+        circle_asset->SetName("circle_" + std::to_string(t.first));
+        circle_asset->SetLineGeometry(circle_line);
+        road->AddAsset(circle_asset);
+    }
+
     // Create Irrlicht visualization app
     if (!m_ego_vehicle)
         m_ego_vehicle = Vehicle::GetList().begin()->second;
 
-    auto pos = m_ego_vehicle->GetPosition();
+    auto pos = m_ego_vehicle->GetPosition().pos;
     auto pos1 = pos + ChVector<>(30, -30, 100);
     auto pos2 = pos + ChVector<>(30, +30, 100);
 
@@ -326,13 +343,13 @@ void Framework::ListAgents() {
     std::cout << "\nList of traffic agents" << std::endl;
     std::cout << "  Vehicles" << std::endl;
     for (auto v : Vehicle::GetList()) {
-        auto pos = v.second->GetPosition();
+        auto pos = v.second->GetPosition().pos;
         std::cout << "    " << v.first << "  " << pos.x() << " " << pos.y() << " " << pos.z() << std::endl;
     }
 
     std::cout << "  Lights" << std::endl;
     for (auto l : TrafficLight::GetList()) {
-        auto pos = l.second->GetPosition();
+        auto pos = l.second->GetPosition().pos;
         std::cout << "    " << l.first << "  " << pos.x() << " " << pos.y() << " " << pos.z() << std::endl;
     }
 }

@@ -45,6 +45,18 @@ SedanAV::~SedanAV() {
     //
 }
 
+ChCoordsys<> SedanAV::GetPosition() const {
+    return ChCoordsys<>(m_sedan->GetVehicle().GetVehiclePos(), m_sedan->GetVehicle().GetVehicleRot());
+}
+
+ChVehicle& SedanAV::GetVehicle() const {
+    return m_sedan->GetVehicle();
+}
+
+ChPowertrain& SedanAV::GetPowertrain() const {
+    return m_sedan->GetPowertrain();
+}
+
 void SedanAV::Synchronize(double time) {
     m_sedan->Synchronize(time, m_steering, m_braking, m_throttle, *m_framework->m_terrain);
 }

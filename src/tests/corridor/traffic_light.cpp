@@ -25,10 +25,14 @@ TrafficLightList TrafficLight::m_traffic_lights;
 
 // -----------------------------------------------------------------------------
 
-TrafficLight::TrafficLight(Framework* framework, const chrono::ChVector<>& pos) : Agent(framework) {
+TrafficLight::TrafficLight(Framework* framework,
+                           const chrono::ChVector<>& center,
+                           double radius,
+                           const chrono::ChCoordsys<>& pos)
+    : Agent(framework), m_center(center), m_radius(radius), m_pos(pos) {
     m_body = std::shared_ptr<ChBody>(framework->m_system->NewBody());
-    m_body->SetPos(pos);
-    m_body->SetRot(QUNIT);
+    m_body->SetPos(pos.pos);
+    m_body->SetRot(pos.rot);
     m_body->SetBodyFixed(true);
     m_body->SetCollide(false);
 
@@ -50,10 +54,6 @@ TrafficLight::TrafficLight(Framework* framework, const chrono::ChVector<>& pos) 
 
 TrafficLight::~TrafficLight() {
     //
-}
-
-ChVector<> TrafficLight::GetPosition() {
-    return m_body->GetPos();
 }
 
 std::shared_ptr<TrafficLight> TrafficLight::Find(unsigned int id) {

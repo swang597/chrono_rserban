@@ -35,8 +35,8 @@ class Framework {
     ~Framework();
 
     unsigned int AddPath(std::shared_ptr<chrono::ChBezierCurve> curve, bool closed);
-    unsigned int AddPath(const std::vector<GPScoord>& gps_points, double v_offset, bool closed);
-    unsigned int AddPath(const std::vector<chrono::ChVector<>>& points, double v_offset, bool closed);
+    unsigned int AddPath(const std::vector<GPScoord>& gps_points, bool closed);
+    unsigned int AddPath(const std::vector<chrono::ChVector<>>& points, bool closed);
 
     void SetPathColor(unsigned int id, const chrono::ChColor& color);
 
@@ -46,8 +46,8 @@ class Framework {
                             double target_speed);
     unsigned int AddVehicle(Vehicle::Type type, unsigned int path_id, const GPScoord& gps_loc, double target_speed);
 
-    unsigned int AddTrafficLight(const chrono::ChVector<>& loc);
-    unsigned int AddTrafficLight(const GPScoord& gps_loc);
+    unsigned int AddTrafficLight(const chrono::ChVector<>& center, double radius, const chrono::ChCoordsys<>& pos);
+    unsigned int AddTrafficLight(const GPScoord& gps_center, double radius, const GPScoord& gps_pos);
 
     void SetEgoVehicle(unsigned int vehicle_id);
     void SetIntegrationStep(double step) { m_step = step; }
@@ -76,6 +76,8 @@ class Framework {
     bool m_render_coll;
 
     std::shared_ptr<Vehicle> m_ego_vehicle;
+
+    static const double m_vertical_offset;
 
     friend class TruckAV;
     friend class VanAV;

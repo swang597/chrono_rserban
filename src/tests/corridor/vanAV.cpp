@@ -45,6 +45,18 @@ VanAV::~VanAV() {
     //
 }
 
+ChCoordsys<> VanAV::GetPosition() const {
+    return ChCoordsys<>(m_uaz->GetVehicle().GetVehiclePos(), m_uaz->GetVehicle().GetVehicleRot());
+}
+
+ChVehicle& VanAV::GetVehicle() const {
+    return m_uaz->GetVehicle();
+}
+
+ChPowertrain& VanAV::GetPowertrain() const {
+    return m_uaz->GetPowertrain();
+}
+
 void VanAV::Synchronize(double time) {
     m_uaz->Synchronize(time, m_steering, m_braking, m_throttle, *m_framework->m_terrain);
 }

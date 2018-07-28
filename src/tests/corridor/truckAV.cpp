@@ -47,6 +47,18 @@ TruckAV::~TruckAV() {
     //
 }
 
+ChCoordsys<> TruckAV::GetPosition() const {
+    return ChCoordsys<>(m_hmmwv->GetVehicle().GetVehiclePos(), m_hmmwv->GetVehicle().GetVehicleRot());
+}
+
+ChVehicle& TruckAV::GetVehicle() const {
+    return m_hmmwv->GetVehicle();
+}
+
+ChPowertrain& TruckAV::GetPowertrain() const {
+    return m_hmmwv->GetPowertrain();
+}
+
 void TruckAV::Synchronize(double time) {
     m_hmmwv->Synchronize(time, m_steering, m_braking, m_throttle, *m_framework->m_terrain);
 }

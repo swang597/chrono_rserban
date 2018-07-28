@@ -49,7 +49,7 @@ void Vehicle::SetupDriver(std::shared_ptr<chrono::ChBezierCurve> curve, bool clo
 
     double dist = GetLookAheadDistance();
     ChVector<> steering_gains = GetSteeringGainsPID();
-    ChVector<> speed_gains = GetSpeedGansPID();
+    ChVector<> speed_gains = GetSpeedGainsPID();
     m_steeringPID->SetLookAheadDistance(dist);
     m_steeringPID->SetGains(steering_gains.x(), steering_gains.y(), steering_gains.z());
     m_speedPID->SetGains(speed_gains.x(), speed_gains.y(), speed_gains.z());

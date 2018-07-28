@@ -30,14 +30,20 @@ class TrafficLight : public Agent {
   public:
     ~TrafficLight();
 
-    chrono::ChVector<> GetPosition();
+    chrono::ChVector<> GetCenter() const { return m_center; }
+    double GetRadius() const { return m_radius; }
+    chrono::ChCoordsys<> GetPosition() const { return m_pos; }
 
     static std::shared_ptr<TrafficLight> Find(unsigned int id);
     static TrafficLightList GetList() { return m_traffic_lights; }
 
   protected:
-    TrafficLight(Framework* framework, const chrono::ChVector<>& pos);
+    TrafficLight(Framework* framework, const chrono::ChVector<>& center, double radius, const chrono::ChCoordsys<>& pos);
 
+    chrono::ChVector<> m_center;
+    double m_radius;
+
+    chrono::ChCoordsys<> m_pos;
     std::shared_ptr<chrono::ChBody> m_body;
 
     static TrafficLightList m_traffic_lights;
