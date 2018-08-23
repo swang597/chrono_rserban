@@ -19,6 +19,7 @@
 
 #include "agent.h"
 #include "scene.h"
+#include "fsm/fsm.hpp"
 
 namespace av {
 
@@ -45,6 +46,8 @@ class TrafficLight : public Agent {
 
     chrono::ChCoordsys<> m_pos;
     std::shared_ptr<chrono::ChBody> m_body;
+
+    fsm::stack m_fsm;
 
     static TrafficLightList m_traffic_lights;
 
