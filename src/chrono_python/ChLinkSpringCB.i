@@ -1,7 +1,7 @@
 %{
 
 /* Includes the header in the wrapper code */
-#include "chrono/physics/ChSystem.h"
+#include "chrono/physics/ChLinkSpringCB.h"
 
 using namespace chrono;
 
@@ -14,34 +14,50 @@ using namespace chrono;
 // STEP 1: do aliases for the c++ compiler when compiling the .cxx wrapper 
 
 // for this nested class, inherit stubs (not virtual) as outside class
-class ChCustomCollisionCallbackP : public chrono::ChSystem::CustomCollisionCallback {
-	public: 
-		ChCustomCollisionCallbackP() {}
-		virtual ~ChCustomCollisionCallbackP() {}
-		virtual void OnCustomCollision(chrono::ChSystem* msys) {
-		    GetLog() << "You must implement OnCustomCollision()!\n";
-		}
+class ForceFunctorP : public chrono::ChLinkSpringCB::ForceFunctor {
+public:
+	ForceFunctorP() {}
+	virtual ~ForceFunctorP() {}
+
+	/// Calculate and return the general spring-damper force at the specified configuration.
+	virtual double operator()(double time,          ///< current time
+			double rest_length,   ///< undeformed length
+			double length,        ///< current length
+			double vel,           ///< current velocity (positive when extending)
+			ChLinkSpringCB* link  ///< back-pointer to associated link
+			)  {
+			GetLog() << "You must implement ForceFunctor::operator()!\n";
+			return 0;
+	}
 };
 
 %}
-
-// Forward ref
-%import "ChCollisionModel.i"
-%import "ChCollisionInfo.i"
+ 
+// Tell SWIG about parent class in Python
+%import "ChLinkMarkers.i"
 
 // Cross-inheritance between Python and c++ for callbacks that must be inherited.
 // Put this 'director' feature _before_ class wrapping declaration.
-%feature("director") ChCustomCollisionCallbackP;
+%feature("director") ForceFunctorP;
 
 // NESTED CLASSES - trick - step 2
 //
 // STEP 2: Now the nested classes  MyOutClass::MyNestedClass are declared  
 // as ::MyNestedClass (as non-nested), for SWIG interpreter _only_:
 
-class ChCustomCollisionCallbackP
-{
-	public: 
-		virtual void OnCustomCollision(chrono::ChSystem* msys) {}
+class ForceFunctorP {
+public:
+	ForceFunctorP() {}
+	virtual ~ForceFunctorP() {}
+	virtual double operator()(double time,          ///< current time
+		double rest_length,   ///< undeformed length
+		double length,        ///< current length
+		double vel,           ///< current velocity (positive when extending)
+		ChLinkSpringCB* link  ///< back-pointer to associated link
+		) {
+		GetLog() << "You must implement ForceFunctor::operator()!\n";
+		return 0;
+	}
 };
 
 // NESTED CLASSES - trick - step 3
@@ -55,12 +71,12 @@ class ChCustomCollisionCallbackP
 // this will confuse the python runtime, so do override these functions so that they return 
 // a ::IteratorBody type (see step 2), that will be interpreted ok in the python runtime.
 
-%extend chrono::ChSystem
+%extend chrono::ChLinkSpringCB
 {
-	void RegisterCustomCollisionCallback(::ChCustomCollisionCallbackP* mcallb)  // note the :: at the beginning
-	  {
-		  $self->RegisterCustomCollisionCallback(mcallb);
-	  }
+	void RegisterForceFunctor(::ForceFunctorP* functor)
+	{
+		$self->RegisterForceFunctor(functor);
+	}
 };
 
 // NESTED CLASSES - trick - step 5
@@ -69,11 +85,13 @@ class ChCustomCollisionCallbackP
 // original ones in the .h file, by using %ignore. NOTE that this must happen AFTER the %extend,
 // and BEFORE the %include !!!
 
-%ignore chrono::ChSystem::RegisterCustomCollisionCallback();
+%ignore chrono::ChLinkSpringCB::RegisterForceFunctor();
 
 
 /* Parse the header file to generate wrappers */
-%include "../chrono/physics/ChSystem.h" 
+%include "../chrono/physics/ChLinkSpringCB.h"  
+
+
 
 
 
