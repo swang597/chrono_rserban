@@ -31,6 +31,7 @@ SET(PROGRAMS
     test_GEO_direct_shear1
 	test_GEO_direct_shear2
 	test_GEO_direct_shearJPL
+    test_GEO_direct_shear_new
 )
 
 FOREACH(PROGRAM ${PROGRAMS})
