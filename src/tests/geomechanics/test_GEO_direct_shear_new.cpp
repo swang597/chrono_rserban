@@ -4,8 +4,10 @@
 #include <sstream>
 #include <string>
 
+#include <chrono/motion_functions/ChFunction_Const.h>
 #include <chrono/physics/ChBody.h>
 #include <chrono/physics/ChLinkLock.h>
+#include <chrono/physics/ChLinkMotorLinearSpeed.h>
 #include <chrono_parallel/physics/ChSystemParallel.h>
 
 #include <chrono/utils/ChUtilsCreators.h>
@@ -32,7 +34,7 @@ double g2kg = 1.0 / 1000.0;
 double grav = 9.81;  // Magnitude of gravity in the downward direction
 
 // NOTE true diameter in 2-100 um
-double sphere_inflation = 20;                     // Multiplier on particle radius
+double sphere_inflation = 50;                     // Multiplier on particle radius
 double sphere_radius = sphere_inflation * 50e-6;  // Particle radius 50um = 50e-6m
 double sphere_density = 400;                      // Particle density 0.4 g/cm^3 = 400 kg/m^3
 double sphere_mass = 4 * CH_C_PI * sphere_radius * sphere_radius * sphere_radius * sphere_density / 3;
@@ -170,6 +172,30 @@ void AddPlate(ChSystemParallelNSC& m_sys, std::shared_ptr<ChBody>& plate, std::s
     m_sys.AddLink(link);
 }
 
+void AddMotor(ChSystemParallelNSC& m_sys,
+              std::shared_ptr<ChBody>& top,
+              std::shared_ptr<ChLinkMotorLinearSpeed>& motor) {
+    double hz = box_dim_Z / 2;
+
+    auto ground = std::shared_ptr<ChBody>(m_sys.NewBody());
+    ground->SetBodyFixed(true);
+    ground->SetPos(ChVector<>(0, 0, 0));
+    m_sys.AddBody(ground);
+
+    auto speed_fun = std::make_shared<ChFunction_Const>(shear_velocity);
+
+    motor = std::make_shared<ChLinkMotorLinearSpeed>();
+    motor->Initialize(ground, top, ChFrame<>(ChVector<>(0, 0, hz / 2), QUNIT));
+    motor->SetSpeedFunction(speed_fun);
+    m_sys.AddLink(motor);
+}
+
+void FixPlate(ChSystemParallelNSC& m_sys, std::shared_ptr<ChBody>& plate, std::shared_ptr<ChBody>& top) {
+    auto lock = std::make_shared<ChLinkLockLock>();
+    lock->Initialize(plate, top, ChCoordsys<>(ChVector<>(0, 0, 0), QUNIT));
+    m_sys.AddLink(lock);
+}
+
 unsigned int AddParticles(ChSystemParallelNSC& m_sys, ChVector<> box_center, ChVector<> hdims) {
     auto sphere_mat = std::make_shared<ChMaterialSurfaceNSC>();
     sphere_mat->SetFriction(sphere_mu);
@@ -230,6 +256,8 @@ int main(int argc, char* argv[]) {
     cout << "Particle radius: " << sphere_radius << endl;
     cout << "Box dimensions: " << box_dim_X << " X " << box_dim_Y << " X " << box_dim_Z << endl;
     cout << "Approximate number of particles: " << approx_particles << endl;
+    cout << "Settling time: " << settling_time << endl;
+    cout << "Compression time: " << max_compression_time << endl;
     cout << "Shear velocity: " << shear_velocity << endl;
     cout << "Shear displacement: " << shear_displacement << endl;
     cout << "Shear time: " << shear_time << endl;
@@ -275,7 +303,8 @@ int main(int argc, char* argv[]) {
 
     cout << "Actual number of particles: " << num_particles << endl;
 
-    cout << "Running settling..." << endl;
+    // Settle material under its own weight for a fixed amount of time
+    cout << endl << "Running settling..." << endl;
     double m_time = 0;
     unsigned int step = 0;
     while (m_time < settling_time) {
@@ -288,15 +317,11 @@ int main(int argc, char* argv[]) {
         m_time += dt;
     }
 
-    double highest = -1e30;
-    for (unsigned int i = 3; i < num_particles; i++) {
-        highest = std::max(highest, m_sys.Get_bodylist()[i]->GetPos().z());
-    }
-
+    // Add a weighted top plate joined to the top of the box by a slider
     AddPlate(m_sys, plate, top);
 
-    // Run compression phase until plate reaches a small enough velocity, or until
-    cout << "Running compression..." << endl;
+    // Compress the material under the weight of the plate
+    cout << endl << "Running compression..." << endl;
     m_time = 0;
     do {
         m_sys.DoStepDynamics(dt);
@@ -309,8 +334,13 @@ int main(int argc, char* argv[]) {
         step++;
     } while (m_time < max_compression_time);
 
-    ChVector<> top_compress_pos = top->GetPos();
-    ChVector<> plate_compress_pos = plate->GetPos();
+    // Create a motor to slide the top of the box in the +x direction
+    std::shared_ptr<ChLinkMotorLinearSpeed> motor;
+    top->SetBodyFixed(false);
+    AddMotor(m_sys, top, motor);
+
+    // Fix the plate to the top of the box
+    FixPlate(m_sys, plate, top);
 
     // Run shearing for specified displacement
     cout << endl << "Running shear test..." << endl;
@@ -321,12 +351,6 @@ int main(int argc, char* argv[]) {
     step = 0;
     m_time = 0;
     while (m_time < shear_time) {
-        top->SetPos(top_compress_pos + ChVector<>(step * dt * shear_velocity, 0, 0));
-        top->SetPos_dt(ChVector<>(shear_velocity, 0, 0));
-
-        plate->SetPos(plate_compress_pos + ChVector<>(step * dt * shear_velocity, 0, 0));
-        plate->SetPos_dt(ChVector<>(shear_velocity, 0, 0));
-
         m_sys.DoStepDynamics(dt);
 
         // Output displacement and force
@@ -338,8 +362,9 @@ int main(int argc, char* argv[]) {
         m_time += dt;
         step++;
 
-        m_sys.CalculateContactForces();
-        double shear_force = std::abs(m_sys.GetBodyContactForce(top).x);
+        // m_sys.CalculateContactForces();
+        // double shear_force = std::abs(m_sys.GetBodyContactForce(top).x);
+        double shear_force = motor->GetMotorForce();
         ss << m_time << "," << top->GetPos().x() << "," << shear_force << endl;
     }
 
