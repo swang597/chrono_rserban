@@ -140,7 +140,10 @@ void AddBox(ChSystemParallel& m_sys, std::shared_ptr<ChBody>& top) {
     m_sys.AddBody(bot);
 }
 
-void AddPlate(ChSystemParallelNSC& m_sys, std::shared_ptr<ChBody>& plate, std::shared_ptr<ChBody>& top) {
+void AddPlate(ChSystemParallelNSC& m_sys,
+              std::shared_ptr<ChBody>& plate,
+              std::shared_ptr<ChBody>& top,
+              double plate_bottom) {
     auto box_mat = std::make_shared<ChMaterialSurfaceNSC>();
     box_mat->SetFriction(box_mu);
     box_mat->SetRestitution(box_cr);
@@ -153,7 +156,7 @@ void AddPlate(ChSystemParallelNSC& m_sys, std::shared_ptr<ChBody>& plate, std::s
 
     // Plate for applying confining pressure
     plate = std::shared_ptr<ChBody>(m_sys.NewBody());
-    plate->SetPos(ChVector<>(0, 0, -hz + hthick + sampling_dim_Z + hthick));
+    plate->SetPos(ChVector<>(0, 0, plate_bottom + hthick));
     plate->SetMass(plate_mass);
     plate->SetMaterialSurface(box_mat);
     plate->SetBodyFixed(false);
@@ -316,8 +319,15 @@ int main(int argc, char* argv[]) {
         m_time += dt;
     }
 
-    // Add a weighted top plate joined to the top of the box by a slider
-    AddPlate(m_sys, plate, top);
+    // Add a weighted top plate
+    double highest = -10e30;
+    for (unsigned int i = 2; i < m_sys.Get_bodylist().size(); i++) {
+        highest = std::max(highest, m_sys.Get_bodylist()[i]->GetPos().z());
+    }
+
+    highest += 2 * sphere_radius;
+
+    AddPlate(m_sys, plate, top, highest);
 
     // Compress the material under the weight of the plate
     cout << endl << "Running compression..." << endl;
