@@ -4,10 +4,10 @@
 #include <sstream>
 #include <string>
 
-#include <chrono/motion_functions/ChFunction_Const.h>
+#include <chrono/motion_functions/ChFunction_Setpoint.h>
 #include <chrono/physics/ChBody.h>
 #include <chrono/physics/ChLinkLock.h>
-#include <chrono/physics/ChLinkMotorLinearSpeed.h>
+#include <chrono/physics/ChLinkMotorLinearPosition.h>
 #include <chrono_parallel/physics/ChSystemParallel.h>
 
 #include <chrono/utils/ChUtilsCreators.h>
@@ -31,10 +31,9 @@ double in2m = 0.0254;
 double min2s = 60;
 double g2kg = 1.0 / 1000.0;
 
-double grav = 9.81;  // Magnitude of gravity in the downward direction
+double grav = 9.81;  // Magnitude of gravity in the -z direction
 
-// NOTE true diameter in 2-100 um
-double sphere_inflation = 50;                     // Multiplier on particle radius
+double sphere_inflation = 10;                     // Multiplier on particle radius
 double sphere_radius = sphere_inflation * 50e-6;  // Particle radius 50um = 50e-6m
 double sphere_density = 400;                      // Particle density 0.4 g/cm^3 = 400 kg/m^3
 double sphere_mass = 4 * CH_C_PI * sphere_radius * sphere_radius * sphere_radius * sphere_density / 3;
@@ -167,14 +166,14 @@ void AddPlate(ChSystemParallelNSC& m_sys, std::shared_ptr<ChBody>& plate, std::s
     m_sys.AddBody(plate);
 
     // Enforce a slider relationship between the load plate and the top of the shear box
-    auto link = std::make_shared<ChLinkLockPrismatic>();
-    link->Initialize(plate, top, ChCoordsys<>(ChVector<>(0, 0, 0)));
-    m_sys.AddLink(link);
+    // auto link = std::make_shared<ChLinkLockPrismatic>();
+    // link->Initialize(plate, top, ChCoordsys<>(ChVector<>(0, 0, 0)));
+    // m_sys.AddLink(link);
 }
 
 void AddMotor(ChSystemParallelNSC& m_sys,
               std::shared_ptr<ChBody>& top,
-              std::shared_ptr<ChLinkMotorLinearSpeed>& motor) {
+              std::shared_ptr<ChLinkMotorLinearPosition>& motor) {
     double hz = box_dim_Z / 2;
 
     auto ground = std::shared_ptr<ChBody>(m_sys.NewBody());
@@ -182,11 +181,11 @@ void AddMotor(ChSystemParallelNSC& m_sys,
     ground->SetPos(ChVector<>(0, 0, 0));
     m_sys.AddBody(ground);
 
-    auto speed_fun = std::make_shared<ChFunction_Const>(shear_velocity);
+    auto pos_func = std::make_shared<ChFunction_Setpoint>();
 
-    motor = std::make_shared<ChLinkMotorLinearSpeed>();
-    motor->Initialize(ground, top, ChFrame<>(ChVector<>(0, 0, hz / 2), QUNIT));
-    motor->SetSpeedFunction(speed_fun);
+    motor = std::make_shared<ChLinkMotorLinearPosition>();
+    motor->Initialize(top, ground, ChFrame<>(ChVector<>(0, 0, hz / 2), QUNIT));
+    motor->SetMotionFunction(pos_func);
     m_sys.AddLink(motor);
 }
 
@@ -335,12 +334,12 @@ int main(int argc, char* argv[]) {
     } while (m_time < max_compression_time);
 
     // Create a motor to slide the top of the box in the +x direction
-    std::shared_ptr<ChLinkMotorLinearSpeed> motor;
+    std::shared_ptr<ChLinkMotorLinearPosition> motor;
     top->SetBodyFixed(false);
     AddMotor(m_sys, top, motor);
 
     // Fix the plate to the top of the box
-    FixPlate(m_sys, plate, top);
+    // FixPlate(m_sys, plate, top); // BUG redundant constraints break the simulation
 
     // Run shearing for specified displacement
     cout << endl << "Running shear test..." << endl;
@@ -351,19 +350,23 @@ int main(int argc, char* argv[]) {
     step = 0;
     m_time = 0;
     while (m_time < shear_time) {
+        auto pos_func = std::static_pointer_cast<ChFunction_Setpoint>(motor->GetMotorFunction());
+        double pos = step * dt * shear_velocity;
+        double pos_dt = shear_velocity;
+        pos_func->SetSetpointAndDerivatives(pos, pos_dt, 0);
+
         m_sys.DoStepDynamics(dt);
 
         // Output displacement and force
         if (step % out_steps == 0) {
             cout << std::setprecision(4) << "Time: " << m_time << endl;
             cout << std::setprecision(4) << "\tShear displacement: " << top->GetPos().x() << endl;
+            cout << std::setprecision(4) << "\tShear force: " << motor->GetMotorForce() << endl;
             WriteParticles(m_sys, string("points_shear") + std::to_string(step) + string(".csv"));
         }
         m_time += dt;
         step++;
 
-        // m_sys.CalculateContactForces();
-        // double shear_force = std::abs(m_sys.GetBodyContactForce(top).x);
         double shear_force = motor->GetMotorForce();
         ss << m_time << "," << top->GetPos().x() << "," << shear_force << endl;
     }
