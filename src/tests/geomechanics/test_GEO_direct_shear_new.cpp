@@ -37,6 +37,7 @@ double sphere_inflation = 10;                     // Multiplier on particle radi
 double sphere_radius = sphere_inflation * 50e-6;  // Particle radius 50um = 50e-6m
 double sphere_density = 400;                      // Particle density 0.4 g/cm^3 = 400 kg/m^3
 double sphere_mass = 4 * CH_C_PI * sphere_radius * sphere_radius * sphere_radius * sphere_density / 3;
+ChVector<> sphere_inertia = 2 * sphere_mass * sphere_radius * sphere_radius / 3 * ChVector<>(1, 1, 1);
 
 // Particle material: Parameters to tune
 double sphere_mu = 0.18;  // Coefficient of friction
@@ -50,7 +51,7 @@ double box_dim_X = 2.416 * in2m;  // 2.416in shear box diameter
 double box_dim_Y = 2.416 * in2m;  // 2.416in shear box diameter
 double box_dim_Z = uncompressed_volume / (box_dim_X * box_dim_Y);
 
-double sampling_to_settled_ratio = 1.9;  // TODO tune
+double sampling_to_settled_ratio = 1.85;  // TODO tune
 
 double sampling_dim_Z = box_dim_Z * sampling_to_settled_ratio;
 
@@ -61,7 +62,6 @@ double box_mu = sphere_mu;
 double box_cr = sphere_cr;
 
 double dt = 1e-4;  // Simulation timestep
-// double dt_shear = 1e-3; // TODO
 double tolerance = 0.1;
 int max_iteration_normal = 0;
 int max_iteration_sliding = 100;
@@ -167,11 +167,6 @@ void AddPlate(ChSystemParallelNSC& m_sys,
     plate->GetCollisionModel()->SetFamily(1);
     plate->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(1);
     m_sys.AddBody(plate);
-
-    // Enforce a slider relationship between the load plate and the top of the shear box
-    // auto link = std::make_shared<ChLinkLockPrismatic>();
-    // link->Initialize(plate, top, ChCoordsys<>(ChVector<>(0, 0, 0)));
-    // m_sys.AddLink(link);
 }
 
 void AddMotor(ChSystemParallelNSC& m_sys,
@@ -210,7 +205,7 @@ unsigned int AddParticles(ChSystemParallelNSC& m_sys, ChVector<> box_center, ChV
 
         sphere->SetMaterialSurface(sphere_mat);
         sphere->SetMass(sphere_mass);
-        // sphere->SetInertiaXX(inertia);  // TODO
+        sphere->SetInertiaXX(sphere_inertia);
         sphere->SetPos(points[i]);
         sphere->SetRot(ChQuaternion<>(1, 0, 0, 0));
         sphere->SetBodyFixed(false);
@@ -288,7 +283,7 @@ int main(int argc, char* argv[]) {
     m_sys.GetSettings()->solver.contact_recovery_speed = contact_recovery_speed;
     m_sys.ChangeSolverType(SolverType::APGD);
 
-    m_sys.GetSettings()->collision.collision_envelope = 0.01 * sphere_radius;
+    m_sys.GetSettings()->collision.collision_envelope = 0.1 * sphere_radius;
 
     m_sys.GetSettings()->collision.bins_per_axis = vec3(15, 15, 15);  // TODO heuristic
     m_sys.GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
