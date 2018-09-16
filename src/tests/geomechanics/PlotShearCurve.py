@@ -7,24 +7,32 @@ if len(sys.argv) != 2:
 
 t = []
 x = []
-f = []
+fm = []
+fc = []
 
-# t,x,f
+# t,x,fm,fc
 file = open(sys.argv[1])
 for line in file.readlines()[1:]:
 	tok = line.split(',')
 	t.append(float(tok[0]))
 	x.append(float(tok[1]))
-	f.append(float(tok[2]))
+	fm.append(float(tok[2]))
+	fc.append(float(tok[3]))
 
 plt.figure(1)
-plt.subplot(211)
-plt.plot(x, f, 'r-')
+plt.subplot(311)
+plt.plot(x, fm, 'r-')
 plt.title('Displacement-Shear Curve')
 plt.xlabel('Shear Displacement (m)')
-plt.ylabel('Shear Force (N)')
+plt.ylabel('Shear Force (motor) (N)')
 
-plt.subplot(212)
+plt.subplot(312)
+plt.plot(x, fc, 'g-')
+plt.title('Displacement-Shear Curve')
+plt.xlabel('Shear Displacement (m)')
+plt.ylabel('Shear Force (contact) (N)')
+
+plt.subplot(313)
 plt.plot(t, x, 'b-')
 plt.title('Time-Displacement Curve')
 plt.xlabel('Time (t)')

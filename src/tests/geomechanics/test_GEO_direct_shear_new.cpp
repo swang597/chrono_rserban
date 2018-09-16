@@ -22,7 +22,7 @@ using namespace chrono::collision;
 
 string file_name;
 string file_name_prefix("shear_results");
-string csv_header("t,x,f");
+string csv_header("t,x,fm,fc");
 
 // UNIT SYSTEM: SI (kg, m, s)
 // Conversion factors for specifications
@@ -285,7 +285,18 @@ int main(int argc, char* argv[]) {
 
     m_sys.GetSettings()->collision.collision_envelope = 0.1 * sphere_radius;
 
-    m_sys.GetSettings()->collision.bins_per_axis = vec3(15, 15, 15);  // TODO heuristic
+    double factor = 2 * 2 * sphere_radius;  // Length of each dimension of a bin
+    double total_x = box_dim_X + 2 * box_thick + shear_displacement;
+    double total_y = box_dim_Y + 2 * box_thick;
+    double total_z = box_dim_Z + box_thick;
+
+    int bins_x = std::ceil(total_x / factor);
+    int bins_y = std::ceil(total_y / factor);
+    int bins_z = std::ceil(total_z / factor);
+
+    cout << "Bins: " << bins_x << " X " << bins_y << " X " << bins_z << endl;
+
+    m_sys.GetSettings()->collision.bins_per_axis = vec3(bins_x, bins_y, bins_z);
     m_sys.GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
 
     // Add containing box and compression plate
@@ -349,8 +360,9 @@ int main(int argc, char* argv[]) {
     // Run shearing for specified displacement
     cout << endl << "Running shear test..." << endl;
 
-    std::stringstream ss;
-    ss << csv_header << endl;
+    std::ofstream ostream;
+    ostream.open(file_name);
+    ostream << csv_header << endl;
 
     step = 0;
     m_time = 0;
@@ -366,20 +378,23 @@ int main(int argc, char* argv[]) {
         if (step % out_steps == 0) {
             cout << std::setprecision(4) << "Time: " << m_time << endl;
             cout << std::setprecision(4) << "\tShear displacement: " << top->GetPos().x() << endl;
-            cout << std::setprecision(4) << "\tShear force: " << motor->GetMotorForce() << endl;
+            cout << std::setprecision(4) << "\tShear force (motor): " << motor->GetMotorForce() << endl;
+
+            m_sys.CalculateContactForces();
+            double shear_force_contact = m_sys.GetBodyContactForce(top).x;
+            cout << std::setprecision(4) << "\tShear force (contact): " << shear_force_contact << endl;
+
             WriteParticles(m_sys, string("points_shear") + std::to_string(step) + string(".csv"));
         }
         m_time += dt;
         step++;
 
-        double shear_force = motor->GetMotorForce();
-        ss << m_time << "," << top->GetPos().x() << "," << shear_force << endl;
+        double shear_force_motor = motor->GetMotorForce();
+        m_sys.CalculateContactForces();
+        double shear_force_contact = m_sys.GetBodyContactForce(top).x;
+        ostream << m_time << "," << top->GetPos().x() << "," << shear_force_motor << "," << shear_force_contact << endl;
     }
 
-    std::ofstream ostream;
-    ostream.open(file_name);
-    ostream << ss.str();
     ostream.close();
-
     return 0;
 }
