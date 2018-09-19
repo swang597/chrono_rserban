@@ -9,6 +9,8 @@
 #include <chrono/physics/ChBody.h>
 #include <chrono/physics/ChLinkLock.h>
 #include <chrono/physics/ChLinkMotorLinearPosition.h>
+#include "chrono/solver/ChIterativeSolver.h"
+
 #include <chrono_parallel/physics/ChSystemParallel.h>
 
 #include <chrono/utils/ChUtilsCreators.h>
@@ -27,7 +29,7 @@ using namespace chrono::collision;
 
 string file_name;
 string file_name_prefix("shear_results");
-string csv_header("t,x,fm,fc");
+string csv_header("t,x,fm,fc,iter");
 
 // UNIT SYSTEM: SI (kg, m, s)
 // Conversion factors for specifications
@@ -38,7 +40,7 @@ double g2kg = 1.0 / 1000.0;
 
 double grav = 9.81;  // Magnitude of gravity in the -z direction
 
-double sphere_inflation = 10;                     // Multiplier on particle radius
+double sphere_inflation = 20;                     // Multiplier on particle radius
 double sphere_radius = sphere_inflation * 50e-6;  // Particle radius 50um = 50e-6m
 double sphere_density = 400;                      // Particle density 0.4 g/cm^3 = 400 kg/m^3
 double sphere_mass = 4 * CH_C_PI * sphere_radius * sphere_radius * sphere_radius * sphere_density / 3;
@@ -69,7 +71,7 @@ double box_cr = sphere_cr;
 double dt = 1e-4;  // Simulation timestep
 double tolerance = 0.1;
 int max_iteration_normal = 0;
-int max_iteration_sliding = 100;
+int max_iteration_sliding = 600;
 int max_iteration_spinning = 0;
 int max_iteration_bilateral = 100;
 double contact_recovery_speed = 10e30;
@@ -198,9 +200,12 @@ void AddMotor(ChSystemParallelNSC& m_sys,
 }
 
 void FixPlate(ChSystemParallelNSC& m_sys, std::shared_ptr<ChBody>& plate, std::shared_ptr<ChBody>& top) {
-    auto lock = std::make_shared<ChLinkLockLock>();
-    lock->Initialize(plate, top, ChCoordsys<>(ChVector<>(0, 0, 0), QUNIT));
-    m_sys.AddLink(lock);
+    ChQuaternion<> z2y;
+    z2y.Q_from_AngAxis(-CH_C_PI / 2, ChVector<>(1, 0, 0));
+
+    auto pin = std::make_shared<ChLinkLockPrismatic>();
+    pin->Initialize(plate, top, ChCoordsys<>(ChVector<>(0, 0, 0), z2y));
+    m_sys.AddLink(pin);
 }
 
 unsigned int AddParticles(ChSystemParallelNSC& m_sys, ChVector<> box_center, ChVector<> hdims) {
@@ -398,7 +403,7 @@ int main(int argc, char* argv[]) {
     AddMotor(m_sys, top, motor);
 
     // Fix the plate to the top of the box
-    // FixPlate(m_sys, plate, top); // BUG redundant constraints break the simulation
+    FixPlate(m_sys, plate, top);
 
     // Run shearing for specified displacement
     cout << endl << "Running shear test..." << endl;
@@ -444,7 +449,10 @@ int main(int argc, char* argv[]) {
         double shear_force_motor = motor->GetMotorForce();
         m_sys.CalculateContactForces();
         double shear_force_contact = m_sys.GetBodyContactForce(top).x;
-        ostream << m_time << "," << top->GetPos().x() << "," << shear_force_motor << "," << shear_force_contact << endl;
+
+        int iters = std::static_pointer_cast<ChIterativeSolver>(m_sys.GetSolver())->GetTotalIterations();
+
+        ostream << m_time << "," << top->GetPos().x() << "," << shear_force_motor << "," << shear_force_contact << "," << iters << endl;
     }
 
     ostream.close();
