@@ -4,6 +4,7 @@
 #include <sstream>
 #include <string>
 
+#include "chrono/ChConfig.h"
 #include <chrono/motion_functions/ChFunction_Setpoint.h>
 #include <chrono/physics/ChBody.h>
 #include <chrono/physics/ChLinkLock.h>
@@ -12,6 +13,10 @@
 
 #include <chrono/utils/ChUtilsCreators.h>
 #include <chrono/utils/ChUtilsSamplers.h>
+
+#ifdef CHRONO_OPENGL
+#include "chrono_opengl/ChOpenGLWindow.h"
+#endif
 
 using std::cout;
 using std::endl;
@@ -90,7 +95,7 @@ double shear_velocity = shear_velocity_inflation * 0.01 * in2m / min2s;  // X ve
 double shear_displacement = 0.25 * in2m;                                 // X displacement at which the test ends 0.25in
 double shear_time = shear_displacement / shear_velocity;
 
-double box_thick = shear_displacement / 2;  // Thickness of walls so that no material spills during shearing
+double box_thick = 1.5 * shear_displacement;  // Thickness of walls so that no material spills during shearing
 
 void AddBox(ChSystemParallel& m_sys, std::shared_ptr<ChBody>& top) {
     auto box_mat = std::make_shared<ChMaterialSurfaceNSC>();
@@ -104,6 +109,7 @@ void AddBox(ChSystemParallel& m_sys, std::shared_ptr<ChBody>& top) {
     double hthick = box_thick / 2;
 
     // Top half of shear box
+    bool top_vis = false;
     ChVector<> pos(0, 0, 0);
     top = std::shared_ptr<ChBody>(m_sys.NewBody());
     top->SetPos(pos);
@@ -111,10 +117,10 @@ void AddBox(ChSystemParallel& m_sys, std::shared_ptr<ChBody>& top) {
     top->SetMaterialSurface(box_mat);
     top->SetBodyFixed(true);
     top->GetCollisionModel()->ClearModel();
-    utils::AddBoxGeometry(top.get(), ChVector<>(hthick, hy, hz / 2), ChVector<>(-(hx + hthick), 0, hz / 2));  // Low X
-    utils::AddBoxGeometry(top.get(), ChVector<>(hthick, hy, hz / 2), ChVector<>(hx + hthick, 0, hz / 2));     // High X
-    utils::AddBoxGeometry(top.get(), ChVector<>(hx, hthick, hz / 2), ChVector<>(0, -(hy + hthick), hz / 2));  // Low Y
-    utils::AddBoxGeometry(top.get(), ChVector<>(hx, hthick, hz / 2), ChVector<>(0, hy + hthick, hz / 2));     // High Y
+    utils::AddBoxGeometry(top.get(), ChVector<>(hthick, hy, hz / 2), ChVector<>(-(hx + hthick), 0, hz / 2), QUNIT, top_vis);  // Low X
+    utils::AddBoxGeometry(top.get(), ChVector<>(hthick, hy, hz / 2), ChVector<>(hx + hthick, 0, hz / 2), QUNIT, top_vis);     // High X
+    utils::AddBoxGeometry(top.get(), ChVector<>(hx, hthick, hz / 2), ChVector<>(0, -(hy + hthick), hz / 2), QUNIT, top_vis);  // Low Y
+    utils::AddBoxGeometry(top.get(), ChVector<>(hx, hthick, hz / 2), ChVector<>(0, hy + hthick, hz / 2), QUNIT, top_vis);     // High Y
     top->GetCollisionModel()->BuildModel();
     top->SetCollide(true);
     top->GetCollisionModel()->SetFamily(1);
@@ -167,6 +173,10 @@ void AddPlate(ChSystemParallelNSC& m_sys,
     plate->GetCollisionModel()->SetFamily(1);
     plate->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(1);
     m_sys.AddBody(plate);
+
+    auto prismatic_plate_box = std::make_shared<ChLinkLockPrismatic>();
+    prismatic_plate_box->Initialize(plate, top, ChCoordsys<>(ChVector<>(0, 0, 0), QUNIT));
+    m_sys.AddLink(prismatic_plate_box);
 }
 
 void AddMotor(ChSystemParallelNSC& m_sys,
@@ -234,9 +244,13 @@ void WriteParticles(ChSystemParallelNSC& m_sys, string file_name) {
 }
 
 int main(int argc, char* argv[]) {
-    if (argc != 2) {
-        cout << "usage: " << argv[0] << " <pressure_index: 0-6>" << endl;
+    bool render = false;
+
+    if (argc < 2) {
+        cout << "usage: " << argv[0] << " <pressure_index: 0-6> [true]" << endl;
         return 1;
+    } else if (argc > 2) {
+        render = true;
     }
 
     unsigned int approx_particles = (box_dim_X - 2 * sphere_radius) * (box_dim_Y - 2 * sphere_radius) *
@@ -311,12 +325,31 @@ int main(int argc, char* argv[]) {
 
     cout << "Actual number of particles: " << num_particles << endl;
 
+#ifdef CHRONO_OPENGL
+    if (render) {
+        opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
+        gl_window.Initialize(800, 600, "Direct shear", &m_sys);
+        gl_window.SetCamera(ChVector<>(3 * box_dim_Y, 0, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1), (float)sphere_radius,
+            (float)sphere_radius);
+        gl_window.SetRenderMode(opengl::WIREFRAME);
+    }
+#endif
+
     // Settle material under its own weight for a fixed amount of time
     cout << endl << "Running settling..." << endl;
     double m_time = 0;
     unsigned int step = 0;
     while (m_time < settling_time) {
         m_sys.DoStepDynamics(dt);
+#ifdef CHRONO_OPENGL
+        if (render) {
+            opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
+            if (gl_window.Active())
+                gl_window.Render();
+            else
+                break;
+        }
+#endif
         if (step % out_steps == 0) {
             cout << std::setprecision(4) << "Time: " << m_time << endl;
             WriteParticles(m_sys, string("points_compression") + std::to_string(step) + string(".csv"));
@@ -338,8 +371,18 @@ int main(int argc, char* argv[]) {
     // Compress the material under the weight of the plate
     cout << endl << "Running compression..." << endl;
     m_time = 0;
+
     do {
         m_sys.DoStepDynamics(dt);
+#ifdef CHRONO_OPENGL
+        if (render) {
+            opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
+            if (gl_window.Active())
+                gl_window.Render();
+            else
+                break;
+        }
+#endif
         if (step % out_steps == 0) {
             cout << std::setprecision(4) << "Time: " << m_time << endl;
             cout << std::setprecision(4) << "\tPlate height: " << plate->GetPos().z() << endl;
@@ -373,6 +416,15 @@ int main(int argc, char* argv[]) {
         pos_func->SetSetpointAndDerivatives(pos, pos_dt, 0);
 
         m_sys.DoStepDynamics(dt);
+#ifdef CHRONO_OPENGL
+        if (render) {
+            opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
+            if (gl_window.Active())
+                gl_window.Render();
+            else
+                break;
+        }
+#endif
 
         // Output displacement and force
         if (step % out_steps == 0) {
