@@ -4,11 +4,11 @@
 #include <sstream>
 #include <string>
 
-#include "chrono/ChConfig.h"
 #include <chrono/motion_functions/ChFunction_Setpoint.h>
 #include <chrono/physics/ChBody.h>
 #include <chrono/physics/ChLinkLock.h>
 #include <chrono/physics/ChLinkMotorLinearPosition.h>
+#include "chrono/ChConfig.h"
 #include "chrono/solver/ChIterativeSolver.h"
 
 #include <chrono_parallel/physics/ChSystemParallel.h>
@@ -29,7 +29,8 @@ using namespace chrono::collision;
 
 string file_name;
 string file_name_prefix("shear_results");
-string csv_header("t,x,fm,fc,iter");
+string csv_header("t,x,fm,fc,A,iter");
+string settings_file_name("shear_settings.txt");
 
 // UNIT SYSTEM: SI (kg, m, s)
 // Conversion factors for specifications
@@ -48,7 +49,7 @@ ChVector<> sphere_inertia = 2 * sphere_mass * sphere_radius * sphere_radius / 3 
 
 // Particle material: Parameters to tune
 double sphere_mu = 0.18;  // Coefficient of friction
-double sphere_cr = 0.87;  // Coefficient of restitution
+double sphere_cr = 0.0;   // Coefficient of restitution
 
 double uncompressed_volume =
     0.003873 * ft2in * ft2in * ft2in * in2m * in2m * in2m;  // 0.003873 ft^3 sample before compression
@@ -65,8 +66,8 @@ double sampling_dim_Z = box_dim_Z * sampling_to_settled_ratio;
 double box_mass = 100;
 
 // Box material
-double box_mu = sphere_mu;
-double box_cr = sphere_cr;
+double box_mu = 0;
+double box_cr = 0;
 
 double dt = 1e-4;  // Simulation timestep
 double tolerance = 0.1;
@@ -119,10 +120,14 @@ void AddBox(ChSystemParallel& m_sys, std::shared_ptr<ChBody>& top) {
     top->SetMaterialSurface(box_mat);
     top->SetBodyFixed(true);
     top->GetCollisionModel()->ClearModel();
-    utils::AddBoxGeometry(top.get(), ChVector<>(hthick, hy, hz / 2), ChVector<>(-(hx + hthick), 0, hz / 2), QUNIT, top_vis);  // Low X
-    utils::AddBoxGeometry(top.get(), ChVector<>(hthick, hy, hz / 2), ChVector<>(hx + hthick, 0, hz / 2), QUNIT, top_vis);     // High X
-    utils::AddBoxGeometry(top.get(), ChVector<>(hx, hthick, hz / 2), ChVector<>(0, -(hy + hthick), hz / 2), QUNIT, top_vis);  // Low Y
-    utils::AddBoxGeometry(top.get(), ChVector<>(hx, hthick, hz / 2), ChVector<>(0, hy + hthick, hz / 2), QUNIT, top_vis);     // High Y
+    utils::AddBoxGeometry(top.get(), ChVector<>(hthick, hy, hz / 2), ChVector<>(-(hx + hthick), 0, hz / 2), QUNIT,
+                          top_vis);  // Low X
+    utils::AddBoxGeometry(top.get(), ChVector<>(hthick, hy, hz / 2), ChVector<>(hx + hthick, 0, hz / 2), QUNIT,
+                          top_vis);  // High X
+    utils::AddBoxGeometry(top.get(), ChVector<>(hx, hthick, hz / 2), ChVector<>(0, -(hy + hthick), hz / 2), QUNIT,
+                          top_vis);  // Low Y
+    utils::AddBoxGeometry(top.get(), ChVector<>(hx, hthick, hz / 2), ChVector<>(0, hy + hthick, hz / 2), QUNIT,
+                          top_vis);  // High Y
     top->GetCollisionModel()->BuildModel();
     top->SetCollide(true);
     top->GetCollisionModel()->SetFamily(1);
@@ -265,18 +270,21 @@ int main(int argc, char* argv[]) {
     plate_mass = confining_masses[std::stoi(argv[1])] * plate_area;
     file_name = file_name_prefix + argv[1] + ".csv";
 
-    cout << "Unit system: SI (mks)" << endl;
-    cout << "Pressure index: " << std::stoi(argv[1]) << endl;
-    cout << "Plate mass: " << plate_mass << endl;
-    cout << "Data file: " << file_name << endl;
-    cout << "Particle radius: " << sphere_radius << endl;
-    cout << "Box dimensions: " << box_dim_X << " X " << box_dim_Y << " X " << box_dim_Z << endl;
-    cout << "Approximate number of particles: " << approx_particles << endl;
-    cout << "Settling time: " << settling_time << endl;
-    cout << "Compression time: " << max_compression_time << endl;
-    cout << "Shear velocity: " << shear_velocity << endl;
-    cout << "Shear displacement: " << shear_displacement << endl;
-    cout << "Shear time: " << shear_time << endl;
+    std::ofstream settings_stream;
+    settings_stream.open(settings_file_name);
+    settings_stream << "Unit system: SI (mks)" << endl;
+    settings_stream << "Pressure index: " << std::stoi(argv[1]) << endl;
+    settings_stream << "Plate mass: " << plate_mass << endl;
+    settings_stream << "Data file: " << file_name << endl;
+    settings_stream << "Particle radius: " << sphere_radius << endl;
+    settings_stream << "Time step: " << dt << endl;
+    settings_stream << "Box dimensions: " << box_dim_X << " X " << box_dim_Y << " X " << box_dim_Z << endl;
+    settings_stream << "Approximate number of particles: " << approx_particles << endl;
+    settings_stream << "Settling time: " << settling_time << endl;
+    settings_stream << "Compression time: " << max_compression_time << endl;
+    settings_stream << "Shear velocity: " << shear_velocity << endl;
+    settings_stream << "Shear displacement: " << shear_displacement << endl;
+    settings_stream << "Shear time: " << shear_time << endl;
 
     ChSystemParallelNSC m_sys;
 
@@ -286,7 +294,7 @@ int main(int argc, char* argv[]) {
     m_sys.SetParallelThreadNumber(num_threads);
     omp_set_num_threads(num_threads);
     m_sys.GetSettings()->max_threads = num_threads;
-    cout << "OpenMP threads: " << num_threads << endl;
+    settings_stream << "OpenMP threads: " << num_threads << endl;
 
     m_sys.GetSettings()->solver.use_full_inertia_tensor = false;
     m_sys.GetSettings()->solver.tolerance = tolerance;
@@ -313,7 +321,7 @@ int main(int argc, char* argv[]) {
     int bins_y = std::ceil(total_y / factor);
     int bins_z = std::ceil(total_z / factor);
 
-    cout << "Bins: " << bins_x << " X " << bins_y << " X " << bins_z << endl;
+    settings_stream << "Bins: " << bins_x << " X " << bins_y << " X " << bins_z << endl;
 
     m_sys.GetSettings()->collision.bins_per_axis = vec3(bins_x, bins_y, bins_z);
     m_sys.GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
@@ -328,14 +336,15 @@ int main(int argc, char* argv[]) {
         m_sys, ChVector<>(0, 0, -box_dim_Z / 2 + sampling_dim_Z / 2),
         ChVector<>(box_dim_X / 2 - sphere_radius, box_dim_Y / 2 - sphere_radius, sampling_dim_Z / 2 - sphere_radius));
 
-    cout << "Actual number of particles: " << num_particles << endl;
+    settings_stream << "Actual number of particles: " << num_particles << endl;
+    settings_stream.close();
 
 #ifdef CHRONO_OPENGL
     if (render) {
         opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
         gl_window.Initialize(800, 600, "Direct shear", &m_sys);
-        gl_window.SetCamera(ChVector<>(3 * box_dim_Y, 0, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1), (float)sphere_radius,
-            (float)sphere_radius);
+        gl_window.SetCamera(ChVector<>(3 * box_dim_Y, 0, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1),
+                            (float)sphere_radius, (float)sphere_radius);
         gl_window.SetRenderMode(opengl::WIREFRAME);
     }
 #endif
@@ -449,10 +458,11 @@ int main(int argc, char* argv[]) {
         double shear_force_motor = motor->GetMotorForce();
         m_sys.CalculateContactForces();
         double shear_force_contact = m_sys.GetBodyContactForce(top).x;
-
+        double shear_area = box_dim_Y * (box_dim_X - 2 * top->GetPos().x());
         int iters = std::static_pointer_cast<ChIterativeSolver>(m_sys.GetSolver())->GetTotalIterations();
 
-        ostream << m_time << "," << top->GetPos().x() << "," << shear_force_motor << "," << shear_force_contact << "," << iters << endl;
+        ostream << m_time << "," << top->GetPos().x() << "," << shear_force_motor << "," << shear_force_contact << ","
+                << shear_area << "," << iters << endl;
     }
 
     ostream.close();
