@@ -11,6 +11,7 @@
 #include <chrono/physics/ChLinkLock.h>
 #include <chrono/physics/ChLinkMotorLinearPosition.h>
 #include "chrono/solver/ChIterativeSolver.h"
+#include "chrono/utils/ChFilters.h"
 
 #include <chrono_parallel/physics/ChSystemParallel.h>
 
@@ -30,7 +31,7 @@ using namespace chrono::collision;
 
 string file_name;
 string file_name_prefix("shear_results");
-string csv_header("t,x,fm,fc,A,iter");
+string csv_header("t,x,fm,fc,ffm,A,iter");
 string settings_file_name("shear_settings.txt");
 
 // UNIT SYSTEM: SI (kg, m, s)
@@ -361,7 +362,7 @@ int main(int argc, char* argv[]) {
             if (gl_window.Active())
                 gl_window.Render();
             else
-                break;
+                return 1;
         }
 #endif
         if (step % out_steps == 0) {
@@ -394,7 +395,7 @@ int main(int argc, char* argv[]) {
             if (gl_window.Active())
                 gl_window.Render();
             else
-                break;
+                return 1;
         }
 #endif
         if (step % out_steps == 0) {
@@ -421,6 +422,11 @@ int main(int argc, char* argv[]) {
     ostream.open(file_name);
     ostream << csv_header << endl;
 
+    // 5 Hz low pass filter
+    utils::ChButterworth_Lowpass fm_lowpass5(1, dt, 5.0);
+    double shear_force_motor_filtered;
+    double shear_area;
+
     step = 0;
     m_time = 0;
     while (m_time < shear_time) {
@@ -446,8 +452,10 @@ int main(int argc, char* argv[]) {
 
         double shear_force_motor = motor->GetMotorForce();
         double shear_force_contact = m_sys.GetBodyContactForce(top).x;
-        double shear_area = box_dim_Y * (box_dim_X - 2 * top->GetPos().x());
         int iters = std::static_pointer_cast<ChIterativeSolver>(m_sys.GetSolver())->GetTotalIterations();
+
+        shear_force_motor_filtered = fm_lowpass5.Filter(shear_force_motor);
+        shear_area = box_dim_Y * (box_dim_X - 2 * top->GetPos().x());
 
         // Output displacement and force
         if (step % out_steps == 0) {
@@ -463,8 +471,12 @@ int main(int argc, char* argv[]) {
         step++;
 
         ostream << m_time << "," << top->GetPos().x() << "," << shear_force_motor << "," << shear_force_contact << ","
-                << shear_area << "," << iters << endl;
+                << shear_force_motor_filtered << "," << shear_area << "," << iters << endl;
     }
+
+    cout << "\n\n" << endl;
+    cout << "Normal stress: " << (plate_mass * grav) / shear_area << endl;
+    cout << "Shear stress:  " << shear_force_motor_filtered / shear_area << endl;
 
     ostream.close();
     return 0;
