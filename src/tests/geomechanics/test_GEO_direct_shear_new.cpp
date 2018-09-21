@@ -4,11 +4,12 @@
 #include <sstream>
 #include <string>
 
+#include "chrono/ChConfig.h"
+
 #include <chrono/motion_functions/ChFunction_Setpoint.h>
 #include <chrono/physics/ChBody.h>
 #include <chrono/physics/ChLinkLock.h>
 #include <chrono/physics/ChLinkMotorLinearPosition.h>
-#include "chrono/ChConfig.h"
 #include "chrono/solver/ChIterativeSolver.h"
 
 #include <chrono_parallel/physics/ChSystemParallel.h>
@@ -48,8 +49,8 @@ double sphere_mass = 4 * CH_C_PI * sphere_radius * sphere_radius * sphere_radius
 ChVector<> sphere_inertia = 2 * sphere_mass * sphere_radius * sphere_radius / 3 * ChVector<>(1, 1, 1);
 
 // Particle material: Parameters to tune
-double sphere_mu = 0.18;  // Coefficient of friction
-double sphere_cr = 0.0;   // Coefficient of restitution
+float sphere_mu = 0.18f;  // Coefficient of friction
+float sphere_cr = 0.0f;   // Coefficient of restitution
 
 double uncompressed_volume =
     0.003873 * ft2in * ft2in * ft2in * in2m * in2m * in2m;  // 0.003873 ft^3 sample before compression
@@ -66,8 +67,8 @@ double sampling_dim_Z = box_dim_Z * sampling_to_settled_ratio;
 double box_mass = 100;
 
 // Box material
-double box_mu = 0;
-double box_cr = 0;
+float box_mu = 0;
+float box_cr = 0;
 
 double dt = 1e-4;  // Simulation timestep
 double tolerance = 0.1;
@@ -81,7 +82,7 @@ bool clamp_bilaterals = false;
 double bilateral_clamp_speed = 0.1;
 
 double out_interval = 1e-2;  // Prints a status at this interval
-unsigned int out_steps = out_interval / dt;
+unsigned int out_steps = static_cast<unsigned int>(out_interval / dt);
 
 double plate_area = box_dim_X * box_dim_Y;
 // Confining pressures expressed as mass per area kg/m2
@@ -213,7 +214,7 @@ void FixPlate(ChSystemParallelNSC& m_sys, std::shared_ptr<ChBody>& plate, std::s
     m_sys.AddLink(pin);
 }
 
-unsigned int AddParticles(ChSystemParallelNSC& m_sys, ChVector<> box_center, ChVector<> hdims) {
+size_t AddParticles(ChSystemParallelNSC& m_sys, ChVector<> box_center, ChVector<> hdims) {
     auto sphere_mat = std::make_shared<ChMaterialSurfaceNSC>();
     sphere_mat->SetFriction(sphere_mu);
     sphere_mat->SetRestitution(sphere_cr);
@@ -263,9 +264,8 @@ int main(int argc, char* argv[]) {
         render = true;
     }
 
-    unsigned int approx_particles = (box_dim_X - 2 * sphere_radius) * (box_dim_Y - 2 * sphere_radius) *
-                                    (box_dim_Z - 2 * sphere_radius) /
-                                    (8 * sphere_radius * sphere_radius * sphere_radius);
+    double approx_particles = (box_dim_X - 2 * sphere_radius) * (box_dim_Y - 2 * sphere_radius) *
+                              (box_dim_Z - 2 * sphere_radius) / (8 * sphere_radius * sphere_radius * sphere_radius);
 
     plate_mass = confining_masses[std::stoi(argv[1])] * plate_area;
     file_name = file_name_prefix + argv[1] + ".csv";
@@ -279,7 +279,7 @@ int main(int argc, char* argv[]) {
     settings_stream << "Particle radius: " << sphere_radius << endl;
     settings_stream << "Time step: " << dt << endl;
     settings_stream << "Box dimensions: " << box_dim_X << " X " << box_dim_Y << " X " << box_dim_Z << endl;
-    settings_stream << "Approximate number of particles: " << approx_particles << endl;
+    settings_stream << "Approximate number of particles: " << static_cast<int>(approx_particles) << endl;
     settings_stream << "Settling time: " << settling_time << endl;
     settings_stream << "Compression time: " << max_compression_time << endl;
     settings_stream << "Shear velocity: " << shear_velocity << endl;
@@ -317,9 +317,9 @@ int main(int argc, char* argv[]) {
     double total_y = box_dim_Y + 2 * box_thick;
     double total_z = box_dim_Z + box_thick;
 
-    int bins_x = std::ceil(total_x / factor);
-    int bins_y = std::ceil(total_y / factor);
-    int bins_z = std::ceil(total_z / factor);
+    int bins_x = static_cast<int>(std::ceil(total_x / factor));
+    int bins_y = static_cast<int>(std::ceil(total_y / factor));
+    int bins_z = static_cast<int>(std::ceil(total_z / factor));
 
     settings_stream << "Bins: " << bins_x << " X " << bins_y << " X " << bins_z << endl;
 
@@ -332,7 +332,7 @@ int main(int argc, char* argv[]) {
     AddBox(m_sys, top);
 
     // Add spherical particles
-    unsigned int num_particles = AddParticles(
+    auto num_particles = AddParticles(
         m_sys, ChVector<>(0, 0, -box_dim_Z / 2 + sampling_dim_Z / 2),
         ChVector<>(box_dim_X / 2 - sphere_radius, box_dim_Y / 2 - sphere_radius, sampling_dim_Z / 2 - sphere_radius));
 
@@ -412,7 +412,7 @@ int main(int argc, char* argv[]) {
     AddMotor(m_sys, top, motor);
 
     // Fix the plate to the top of the box
-    FixPlate(m_sys, plate, top);
+    ////FixPlate(m_sys, plate, top);
 
     // Run shearing for specified displacement
     cout << endl << "Running shear test..." << endl;
@@ -430,6 +430,8 @@ int main(int argc, char* argv[]) {
         pos_func->SetSetpointAndDerivatives(pos, pos_dt, 0);
 
         m_sys.DoStepDynamics(dt);
+        m_time += dt;
+
 #ifdef CHRONO_OPENGL
         if (render) {
             opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
@@ -440,26 +442,25 @@ int main(int argc, char* argv[]) {
         }
 #endif
 
+        m_sys.CalculateContactForces();
+
+        double shear_force_motor = motor->GetMotorForce();
+        double shear_force_contact = m_sys.GetBodyContactForce(top).x;
+        double shear_area = box_dim_Y * (box_dim_X - 2 * top->GetPos().x());
+        int iters = std::static_pointer_cast<ChIterativeSolver>(m_sys.GetSolver())->GetTotalIterations();
+
         // Output displacement and force
         if (step % out_steps == 0) {
             cout << std::setprecision(4) << "Time: " << m_time << endl;
             cout << std::setprecision(4) << "\tShear displacement: " << top->GetPos().x() << endl;
-            cout << std::setprecision(4) << "\tShear force (motor): " << motor->GetMotorForce() << endl;
-
-            m_sys.CalculateContactForces();
-            double shear_force_contact = m_sys.GetBodyContactForce(top).x;
+            cout << std::setprecision(4) << "\tShear force (motor): " << shear_force_motor << endl;
             cout << std::setprecision(4) << "\tShear force (contact): " << shear_force_contact << endl;
+            cout << std::setprecision(4) << "\tShear area: " << shear_area << endl;
+            cout << std::setprecision(4) << "\tIterations: " << iters << endl;
 
             WriteParticles(m_sys, string("points_shear") + std::to_string(step) + string(".csv"));
         }
-        m_time += dt;
         step++;
-
-        double shear_force_motor = motor->GetMotorForce();
-        m_sys.CalculateContactForces();
-        double shear_force_contact = m_sys.GetBodyContactForce(top).x;
-        double shear_area = box_dim_Y * (box_dim_X - 2 * top->GetPos().x());
-        int iters = std::static_pointer_cast<ChIterativeSolver>(m_sys.GetSolver())->GetTotalIterations();
 
         ostream << m_time << "," << top->GetPos().x() << "," << shear_force_motor << "," << shear_force_contact << ","
                 << shear_area << "," << iters << endl;
