@@ -33,6 +33,8 @@ string file_name;
 string file_name_prefix("shear_results");
 string csv_header("t,x,fm,fc,ffm,A,iter");
 string settings_file_name("shear_settings.txt");
+string data_file_name;
+string data_file_name_prefix("final_data");
 
 // UNIT SYSTEM: SI (kg, m, s)
 // Conversion factors for specifications
@@ -50,8 +52,8 @@ double sphere_mass = 4 * CH_C_PI * sphere_radius * sphere_radius * sphere_radius
 ChVector<> sphere_inertia = 2 * sphere_mass * sphere_radius * sphere_radius / 3 * ChVector<>(1, 1, 1);
 
 // Particle material: Parameters to tune
-float sphere_mu = 0.18f;  // Coefficient of friction
-float sphere_cr = 0.0f;   // Coefficient of restitution
+float sphere_mu;         // Coefficient of friction
+float sphere_cr = 0.0f;  // Coefficient of restitution
 
 double uncompressed_volume =
     0.003873 * ft2in * ft2in * ft2in * in2m * in2m * in2m;  // 0.003873 ft^3 sample before compression
@@ -258,10 +260,10 @@ void WriteParticles(ChSystemParallelNSC& m_sys, string file_name) {
 int main(int argc, char* argv[]) {
     bool render = false;
 
-    if (argc < 2) {
-        cout << "usage: " << argv[0] << " <pressure_index: 0-6> [true]" << endl;
+    if (argc < 3) {
+        cout << "usage: " << argv[0] << " <pressure_index: 0-6> <mu> [true]" << endl;
         return 1;
-    } else if (argc > 2) {
+    } else if (argc > 3) {
         render = true;
     }
 
@@ -269,7 +271,9 @@ int main(int argc, char* argv[]) {
                               (box_dim_Z - 2 * sphere_radius) / (8 * sphere_radius * sphere_radius * sphere_radius);
 
     plate_mass = confining_masses[std::stoi(argv[1])] * plate_area;
+    sphere_mu = std::stof(argv[2]);
     file_name = file_name_prefix + argv[1] + ".csv";
+    data_file_name = data_file_name_prefix + argv[2] + ".dat";
 
     std::ofstream settings_stream;
     settings_stream.open(settings_file_name);
@@ -277,6 +281,8 @@ int main(int argc, char* argv[]) {
     settings_stream << "Pressure index: " << std::stoi(argv[1]) << endl;
     settings_stream << "Plate mass: " << plate_mass << endl;
     settings_stream << "Data file: " << file_name << endl;
+    settings_stream << "Final data file: " << data_file_name << endl;
+    settings_stream << "Particle friction: " << sphere_mu << endl;
     settings_stream << "Particle radius: " << sphere_radius << endl;
     settings_stream << "Time step: " << dt << endl;
     settings_stream << "Box dimensions: " << box_dim_X << " X " << box_dim_Y << " X " << box_dim_Z << endl;
@@ -367,7 +373,7 @@ int main(int argc, char* argv[]) {
 #endif
         if (step % out_steps == 0) {
             cout << std::setprecision(4) << "Time: " << m_time << endl;
-            WriteParticles(m_sys, string("points_compression") + std::to_string(step) + string(".csv"));
+            // WriteParticles(m_sys, string("points_compression") + std::to_string(step) + string(".csv"));
         }
         step++;
         m_time += dt;
@@ -401,7 +407,7 @@ int main(int argc, char* argv[]) {
         if (step % out_steps == 0) {
             cout << std::setprecision(4) << "Time: " << m_time << endl;
             cout << std::setprecision(4) << "\tPlate height: " << plate->GetPos().z() << endl;
-            WriteParticles(m_sys, string("points_compression") + std::to_string(step) + string(".csv"));
+            // WriteParticles(m_sys, string("points_compression") + std::to_string(step) + string(".csv"));
         }
         m_time += dt;
         step++;
@@ -466,18 +472,28 @@ int main(int argc, char* argv[]) {
             cout << std::setprecision(4) << "\tShear area: " << shear_area << endl;
             cout << std::setprecision(4) << "\tIterations: " << iters << endl;
 
-            WriteParticles(m_sys, string("points_shear") + std::to_string(step) + string(".csv"));
+            // WriteParticles(m_sys, string("points_shear") + std::to_string(step) + string(".csv"));
         }
         step++;
 
         ostream << m_time << "," << top->GetPos().x() << "," << shear_force_motor << "," << shear_force_contact << ","
                 << shear_force_motor_filtered << "," << shear_area << "," << iters << endl;
     }
+    ostream.close();
+
+    double normal_stress = (plate_mass * grav) / shear_area;
+    double shear_stress = shear_force_motor_filtered / shear_area;
 
     cout << "\n\n" << endl;
-    cout << "Normal stress: " << (plate_mass * grav) / shear_area << endl;
-    cout << "Shear stress:  " << shear_force_motor_filtered / shear_area << endl;
+    cout << "Normal stress: " << normal_stress << endl;
+    cout << "Shear stress:  " << shear_stress << endl;
 
-    ostream.close();
+    std::ofstream data;
+    data.open(data_file_name);
+    data << "mu: " << sphere_mu << endl;
+    data << "Normal stress: " << normal_stress << endl;
+    data << "Shear stress:  " << shear_stress << endl;
+    data.close();
+
     return 0;
 }
