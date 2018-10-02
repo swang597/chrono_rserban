@@ -37,7 +37,8 @@ class Agent {
     unsigned int GetId() const { return m_id; }
     virtual chrono::ChCoordsys<> GetPosition() const = 0;
 
-    virtual void recieveMessage(Message newMessage) = 0;
+    void receiveMessage(Message newMessage);
+
     virtual void sendMessages(double time) = 0;
     virtual void processMessages() = 0;
 
@@ -46,6 +47,7 @@ class Agent {
 
     unsigned int m_id;
     Framework* m_framework;
+
     std::queue<Message> m_messagesIncoming;
     double m_messageFrequency = -1;
     double m_lastMessageTime = 0;

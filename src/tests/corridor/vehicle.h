@@ -35,11 +35,17 @@ typedef std::unordered_map<unsigned int, std::shared_ptr<Vehicle>> VehicleList;
 
 class Vehicle : public Agent {
   public:
-    enum class Type { TRUCK, SEDAN, VAN, BUS };
+    enum Type { TRUCK, SEDAN, VAN, BUS };
 
     virtual ~Vehicle();
 
-    virtual chrono::ChCoordsys<> GetPosition() const = 0;
+    Type GetType() const { return m_vehicle_type; }
+    const std::string& GetTypeName() const { return m_types[m_vehicle_type]; }
+
+    virtual chrono::ChCoordsys<> GetPosition() const override;
+    virtual void sendMessages(double time) override;
+    virtual void processMessages() override;
+
     virtual chrono::vehicle::ChVehicle& GetVehicle() const = 0;
     virtual chrono::vehicle::ChPowertrain& GetPowertrain() const = 0;
 
@@ -53,12 +59,8 @@ class Vehicle : public Agent {
     static std::shared_ptr<Vehicle> Find(unsigned int id);
     static VehicleList GetList() { return m_vehicles; }
 
-    virtual void recieveMessage(Message newMessage) = 0;
-    virtual void sendMessages(double time) = 0;
-    virtual void processMessages() = 0;
-
   protected:
-    Vehicle(Framework* framework);
+    Vehicle(Framework* framework, Type vehicle_type);
 
     void SetupDriver(std::shared_ptr<chrono::ChBezierCurve> curve, bool closed, double target_speed);
     void AdvanceDriver(double step);
@@ -68,11 +70,14 @@ class Vehicle : public Agent {
     double m_braking;
 
   private:
+    Type m_vehicle_type;
+
     chrono::vehicle::ChPathSteeringController* m_steeringPID;
     chrono::vehicle::ChSpeedController* m_speedPID;
     double m_target_speed;
 
     static const double m_throttle_threshold;
+    static const std::string m_types[4];
     static VehicleList m_vehicles;
 
     friend class Framework;

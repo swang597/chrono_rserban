@@ -27,14 +27,9 @@ class VanAV : public Vehicle {
   public:
     ~VanAV();
 
-    void recieveMessage(Message newMessage);
-    void sendMessages(double time);
-    void processMessages();
-
   private:
     VanAV(Framework* framework, const chrono::ChCoordsys<>& init_pos);
 
-    virtual chrono::ChCoordsys<> GetPosition() const override;
     virtual chrono::vehicle::ChVehicle& GetVehicle() const override;
     virtual chrono::vehicle::ChPowertrain& GetPowertrain() const override;
 

@@ -15,8 +15,6 @@
 // =============================================================================
 
 #include "agent.h"
-#include "traffic_light.h"
-#include "vehicle.h"
 
 namespace av {
 
@@ -35,6 +33,10 @@ Agent::~Agent() {
 
 unsigned int Agent::GenerateID() {
     return m_nextID++;
+}
+
+void Agent::receiveMessage(Message newMessage) {
+    m_messagesIncoming.push(newMessage);
 }
 
 }  // end namespace av

@@ -26,6 +26,8 @@ set(MODEL_FILES
     framework.cpp
     agent.h
     agent.cpp
+    message.h
+    message.cpp
     scene.h
     scene.cpp
     path.h

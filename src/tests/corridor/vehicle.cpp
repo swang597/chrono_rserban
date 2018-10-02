@@ -15,6 +15,7 @@
 // =============================================================================
 
 #include "vehicle.h"
+#include "traffic_light.h"
 
 using namespace chrono;
 using namespace chrono::vehicle;
@@ -22,17 +23,30 @@ using namespace chrono::vehicle;
 namespace av {
 
 const double Vehicle::m_throttle_threshold = 0.2;
+const std::string Vehicle::m_types[] = {"TRUCK", "SEDAN", "VAN", "BUS"};
 VehicleList Vehicle::m_vehicles;
 
 // -----------------------------------------------------------------------------
 
-Vehicle::Vehicle(Framework* framework) : Agent(framework), m_steeringPID(nullptr), m_speedPID(nullptr), m_steering(0), m_throttle(0), m_braking(0) {
-    //
+Vehicle::Vehicle(Framework* framework, Type vehicle_type)
+    : Agent(framework),
+      m_vehicle_type(vehicle_type),
+      m_steeringPID(nullptr),
+      m_speedPID(nullptr),
+      m_steering(0),
+      m_throttle(0),
+      m_braking(0) {
+    // TODO: Let derived classes set this
+    m_messageFrequency = 1;
 }
 
 Vehicle::~Vehicle() {
     delete m_steeringPID;
     delete m_speedPID;
+}
+
+ChCoordsys<> Vehicle::GetPosition() const {
+    return ChCoordsys<>(GetVehicle().GetVehiclePos(), GetVehicle().GetVehicleRot());
 }
 
 std::shared_ptr<Vehicle> Vehicle::Find(unsigned int id) {
@@ -81,6 +95,42 @@ void Vehicle::AdvanceDriver(double step) {
     double out_steering = m_steeringPID->Advance(GetVehicle(), step);
     ChClampValue(out_steering, -1.0, 1.0);
     m_steering = out_steering;
+}
+
+void Vehicle::sendMessages(double time) {
+    if (m_messageFrequency == -1) {
+        return;
+    }
+
+    if (time - m_lastMessageTime < 1 / m_messageFrequency) {
+        return;
+    } else {
+        m_lastMessageTime = time;
+    }
+
+    auto vehicleList = Vehicle::GetList();
+    auto trafficLightList = TrafficLight::GetList();
+    Message currentMessage(m_id, GetTypeName() + " " + std::to_string(m_id));
+
+    for (auto v : vehicleList) {
+        if (v.second->GetId() != m_id && (GetPosition().pos - v.second->GetPosition().pos).Length() <= 1000) {
+            v.second->receiveMessage(currentMessage);
+        }
+    }
+
+    for (auto l : trafficLightList) {
+        if ((GetPosition().pos - l.second->GetPosition().pos).Length() <= 1000) {
+            l.second->receiveMessage(currentMessage);
+        }
+    }
+}
+
+void Vehicle::processMessages() {
+    while (!m_messagesIncoming.empty()) {
+        std::cout << GetTypeName() << " " << m_id << " received message from " << m_messagesIncoming.front().getText()
+                  << std::endl;
+        m_messagesIncoming.pop();
+    }
 }
 
 }  // end namespace av

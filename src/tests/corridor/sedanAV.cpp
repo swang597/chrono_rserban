@@ -23,7 +23,7 @@ using namespace chrono::vehicle::sedan;
 
 namespace av {
 
-SedanAV::SedanAV(Framework* framework, const chrono::ChCoordsys<>& init_pos) : Vehicle(framework) {
+SedanAV::SedanAV(Framework* framework, const chrono::ChCoordsys<>& init_pos) : Vehicle(framework, Vehicle::SEDAN) {
     m_sedan = std::make_shared<Sedan>(framework->m_system);
 
     m_sedan->SetChassisFixed(false);
@@ -39,56 +39,10 @@ SedanAV::SedanAV(Framework* framework, const chrono::ChCoordsys<>& init_pos) : V
     m_sedan->SetSteeringVisualizationType(VisualizationType::PRIMITIVES);
     m_sedan->SetWheelVisualizationType(VisualizationType::NONE);
     m_sedan->SetTireVisualizationType(VisualizationType::PRIMITIVES);
-
-    m_messageFrequency = 1;
 }
 
 SedanAV::~SedanAV() {
     //
-}
-
-void SedanAV::recieveMessage(Message newMessage) {
-    m_messagesIncoming.push(newMessage);
-}
-
-void SedanAV::sendMessages(double time) {
-    if (m_messageFrequency == -1) {
-        return;
-    }
-
-    if (time - m_lastMessageTime < 1 / m_messageFrequency) {
-        return;
-    } else {
-        m_lastMessageTime = time;
-    }
-
-    auto vehicleList = Vehicle::GetList();
-    auto trafficLightList = TrafficLight::GetList();
-    Message currentMessage(m_id, "SedanAV " + std::to_string(m_id));
-
-    for (auto v : vehicleList) {
-        if (v.second->GetId() != m_id && (GetPosition().pos - v.second->GetPosition().pos).Length() <= 1000) {
-            v.second->recieveMessage(currentMessage);
-        }
-    }
-
-    for (auto l : trafficLightList) {
-        if ((GetPosition().pos - l.second->GetPosition().pos).Length() <= 1000) {
-            l.second->recieveMessage(currentMessage);
-        }
-    }
-}
-
-void SedanAV::processMessages() {
-    while (!m_messagesIncoming.empty()) {
-        std::cout << "SedanAV " << m_id << " recieved message from " << m_messagesIncoming.front().getText()
-                  << std::endl;
-        m_messagesIncoming.pop();
-    }
-}
-
-ChCoordsys<> SedanAV::GetPosition() const {
-    return ChCoordsys<>(m_sedan->GetVehicle().GetVehiclePos(), m_sedan->GetVehicle().GetVehicleRot());
 }
 
 ChVehicle& SedanAV::GetVehicle() const {

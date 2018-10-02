@@ -65,10 +65,6 @@ std::shared_ptr<TrafficLight> TrafficLight::Find(unsigned int id) {
     return nullptr;
 }
 
-void TrafficLight::recieveMessage(Message newMessage) {
-    m_messagesIncoming.push(newMessage);
-}
-
 void TrafficLight::sendMessages(double time) {
     if (m_messageFrequency == -1) {
         return;
@@ -85,14 +81,14 @@ void TrafficLight::sendMessages(double time) {
 
     for (auto v : vehicleList) {
         if (v.second->GetId() != m_id && (GetPosition().pos - v.second->GetPosition().pos).Length() <= 1000) {
-            v.second->recieveMessage(currentMessage);
+            v.second->receiveMessage(currentMessage);
         }
     }
 }
 
 void TrafficLight::processMessages() {
     while (!m_messagesIncoming.empty()) {
-        std::cout << "Traffic Light " << m_id << " recieved message from " << m_messagesIncoming.front().getText()
+        std::cout << "Traffic Light " << m_id << " received message from " << m_messagesIncoming.front().getText()
                   << std::endl;
         m_messagesIncoming.pop();
     }

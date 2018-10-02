@@ -27,14 +27,9 @@ class SedanAV : public Vehicle {
   public:
     ~SedanAV();
 
-    void recieveMessage(Message newMessage);
-    void sendMessages(double time);
-    void processMessages();
-
   private:
     SedanAV(Framework* framework, const chrono::ChCoordsys<>& init_pos);
 
-    virtual chrono::ChCoordsys<> GetPosition() const override;
     virtual chrono::vehicle::ChVehicle& GetVehicle() const override;
     virtual chrono::vehicle::ChPowertrain& GetPowertrain() const override;
 

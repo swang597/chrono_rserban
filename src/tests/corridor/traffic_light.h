@@ -33,14 +33,14 @@ class TrafficLight : public Agent {
 
     chrono::ChVector<> GetCenter() const { return m_center; }
     double GetRadius() const { return m_radius; }
-    chrono::ChCoordsys<> GetPosition() const { return m_pos; }
+
+    virtual chrono::ChCoordsys<> GetPosition() const override { return m_pos; }
 
     static std::shared_ptr<TrafficLight> Find(unsigned int id);
     static TrafficLightList GetList() { return m_traffic_lights; }
 
-    void recieveMessage(Message newMessage);
-    void sendMessages(double time);
-    void processMessages();
+    virtual void sendMessages(double time) override;
+    virtual void processMessages() override;
 
   protected:
     TrafficLight(Framework* framework,
