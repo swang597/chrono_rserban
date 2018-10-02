@@ -25,7 +25,7 @@ AgentList Agent::m_agents;
 // -----------------------------------------------------------------------------
 
 Agent::Agent(Framework* framework, unsigned int id)
-    : m_framework(framework), m_id(id), m_bcast_time(0), m_bcast_freq(-1) {}
+    : m_framework(framework), m_id(id), m_bcast_time(0), m_bcast_freq(-1), m_bcast_radius(1000) {}
 
 Agent::~Agent() {}
 

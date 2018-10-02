@@ -183,6 +183,14 @@ void Framework::SetPathColor(unsigned int id, const ChColor& color) {
         path->m_color = color;
 }
 
+void Framework::SetAgentBroadcast(unsigned int id, double freq, double radius) {
+    auto agent = Agent::Find(id);
+    if (agent) {
+        agent->m_bcast_freq = freq;
+        agent->m_bcast_radius = radius;
+    }
+}
+
 void Framework::SetEgoVehicle(unsigned int id) {
     m_ego_vehicle = Vehicle::Find(id);
 }

@@ -66,9 +66,6 @@ TrafficLight::TrafficLight(Framework* framework,
     m_spat_msg->time = 0;
     m_spat_msg->phase = 1;
     m_spat_msg->time_phase = 0;
-
-    //// TODO: provide mechanism for setting this frequency
-    m_bcast_freq = 2;
 }
 
 TrafficLight::~TrafficLight() {}
@@ -86,7 +83,7 @@ void TrafficLight::Broadcast(double time) {
     m_spat_msg->time = static_cast<float>(time);
 
     for (auto v : Vehicle::GetList()) {
-        if ((GetPosition().pos - v.second->GetPosition().pos).Length() <= 1000) {
+        if ((GetPosition().pos - v.second->GetPosition().pos).Length() <= m_bcast_radius) {
             Send(v.second, m_map_msg);
             Send(v.second, m_spat_msg);
         }

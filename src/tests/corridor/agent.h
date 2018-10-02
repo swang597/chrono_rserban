@@ -52,6 +52,7 @@ class Agent {
 
     std::queue<std::shared_ptr<Message>> m_messages;
     double m_bcast_freq;
+    double m_bcast_radius;
 
     static unsigned int GenerateID();
     static unsigned int m_nextID;

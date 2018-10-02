@@ -43,9 +43,6 @@ Vehicle::Vehicle(Framework* framework, unsigned int id, Type vehicle_type)
     m_vehicle_msg->senderID = id;
     m_vehicle_msg->time = 0;
     m_vehicle_msg->location = ChVector<>(0, 0, 0);
-
-    //// TODO: provide mechanism for setting this frequency
-    m_bcast_freq = 1;
 }
 
 Vehicle::~Vehicle() {
@@ -110,7 +107,7 @@ void Vehicle::Broadcast(double time) {
     m_vehicle_msg->location = GetPosition().pos;
 
     for (auto a : Agent::GetList()) {
-        if (a.second->GetId() != m_id && (GetPosition().pos - a.second->GetPosition().pos).Length() <= 1000) {
+        if (a.second->GetId() != m_id && (GetPosition().pos - a.second->GetPosition().pos).Length() <= m_bcast_radius) {
             Send(a.second, m_vehicle_msg);
         }
     }

@@ -118,6 +118,10 @@ int main(int argc, char* argv[]) {
                                             av::GPScoord(43.0723306, -89.4006454)};
     auto gps_loop_path = framework.AddPath(gps_points, true);
 
+    framework.SetPathColor(circle_path, ChColor(0.6f, 0.6f, 0.0f));
+    framework.SetPathColor(loop_path, ChColor(0.0f, 0.6f, 0.0f));
+    framework.SetPathColor(gps_loop_path, ChColor(0.0f, 0.0f, 0.6f));
+
     // Create vehicles
 
     auto van1 = framework.AddVehicle(av::Vehicle::Type::VAN, circle_path, pos1, 4.0);
@@ -128,19 +132,23 @@ int main(int argc, char* argv[]) {
     auto truck3 =
         framework.AddVehicle(av::Vehicle::Type::TRUCK, gps_loop_path, av::GPScoord(43.0732437, -89.4015011), 4.0);
 
+    framework.SetAgentBroadcast(van1, 1.0, 100);
+    ////framework.SetAgentBroadcast(truck1, 1.0, 100);
+    ////framework.SetAgentBroadcast(truck2, 1.0, 100);
+    ////framework.SetAgentBroadcast(truck3, 1.0, 100);
+
+    framework.SetEgoVehicle(truck1);
+
     // Create traffic lights
 
     auto l1 = framework.AddTrafficLight(av::GPScoord(43.073269, -89.400572), 40, av::GPScoord(43.073430, -89.400839));
     ////auto l2 = framework.AddTrafficLight(av::GPScoord(43.072172, -89.400391), 2, av::GPScoord(43.072172, -89.400391));
 
+    framework.SetAgentBroadcast(l1, 2.0, 1000);
+
+    // Start simulation loop
+
     framework.ListAgents();
-
-    framework.SetPathColor(circle_path, ChColor(0.6f, 0.6f, 0.0f));
-    framework.SetPathColor(loop_path, ChColor(0.0f, 0.6f, 0.0f));
-    framework.SetPathColor(gps_loop_path, ChColor(0.0f, 0.0f, 0.6f));
-
-    framework.SetEgoVehicle(truck1);
-
     framework.Run(200, 20, true);
 
     return 0;

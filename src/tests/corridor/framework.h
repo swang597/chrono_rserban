@@ -49,6 +49,8 @@ class Framework {
     unsigned int AddTrafficLight(const chrono::ChVector<>& center, double radius, const chrono::ChCoordsys<>& pos);
     unsigned int AddTrafficLight(const GPScoord& gps_center, double radius, const GPScoord& gps_pos);
 
+    void SetAgentBroadcast(unsigned int, double freq, double radius);
+
     void SetEgoVehicle(unsigned int vehicle_id);
     void SetIntegrationStep(double step) { m_step = step; }
 
