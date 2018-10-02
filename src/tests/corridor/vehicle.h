@@ -19,8 +19,8 @@
 
 #include "chrono/core/ChBezierCurve.h"
 
-#include "chrono_vehicle/ChVehicle.h"
 #include "chrono_vehicle/ChPowertrain.h"
+#include "chrono_vehicle/ChVehicle.h"
 
 #include "chrono_vehicle/utils/ChSpeedController.h"
 #include "chrono_vehicle/utils/ChSteeringController.h"
@@ -52,6 +52,10 @@ class Vehicle : public Agent {
 
     static std::shared_ptr<Vehicle> Find(unsigned int id);
     static VehicleList GetList() { return m_vehicles; }
+
+    virtual void recieveMessage(Message newMessage) = 0;
+    virtual void sendMessages(double time) = 0;
+    virtual void processMessages() = 0;
 
   protected:
     Vehicle(Framework* framework);

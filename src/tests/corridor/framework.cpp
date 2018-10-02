@@ -14,8 +14,8 @@
 //
 // =============================================================================
 
-#include "chrono/geometry/ChLineBezier.h"
 #include "chrono/geometry/ChLineArc.h"
+#include "chrono/geometry/ChLineBezier.h"
 
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/physics/ChSystemSMC.h"
@@ -23,8 +23,8 @@
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 
 #include "framework.h"
-#include "truckAV.h"
 #include "sedanAV.h"
+#include "truckAV.h"
 #include "vanAV.h"
 
 using namespace chrono;
@@ -91,7 +91,10 @@ unsigned int Framework::AddPath(const std::vector<chrono::ChVector<>>& points, b
 }
 
 // Create a vehicle associated with given path
-unsigned int Framework::AddVehicle(Vehicle::Type type, unsigned int path_id, const chrono::ChVector<>& loc, double target_speed) {
+unsigned int Framework::AddVehicle(Vehicle::Type type,
+                                   unsigned int path_id,
+                                   const chrono::ChVector<>& loc,
+                                   double target_speed) {
     auto path = Path::Find(path_id);
 
     // Find closest path node to provided location
@@ -100,7 +103,7 @@ unsigned int Framework::AddVehicle(Vehicle::Type type, unsigned int path_id, con
     auto min_d2 = (path->m_curve->getPoint(i1) - loc).Length2();
     for (size_t i = 1; i < np; i++) {
         auto crt_d2 = (path->m_curve->getPoint(i) - loc).Length2();
-        if ( crt_d2 < min_d2) {
+        if (crt_d2 < min_d2) {
             i1 = i;
             min_d2 = crt_d2;
         }
@@ -128,7 +131,10 @@ unsigned int Framework::AddVehicle(Vehicle::Type type, unsigned int path_id, con
     return id;
 }
 
-unsigned int Framework::AddVehicle(Vehicle::Type type, unsigned int path_id, const GPScoord& gps_loc, double target_speed) {
+unsigned int Framework::AddVehicle(Vehicle::Type type,
+                                   unsigned int path_id,
+                                   const GPScoord& gps_loc,
+                                   double target_speed) {
     return AddVehicle(type, path_id, GetLocation(gps_loc), target_speed);
 }
 
@@ -137,18 +143,18 @@ unsigned int Framework::AddVehicle(Vehicle::Type type, const ChCoordsys<>& pos) 
     std::shared_ptr<Vehicle> vehicle;
 
     switch (type) {
-    case Vehicle::Type::TRUCK:
-        vehicle = std::shared_ptr<TruckAV>(new TruckAV(this, pos));
-        break;
-    case Vehicle::Type::VAN:
-        vehicle = std::shared_ptr<VanAV>(new VanAV(this, pos));
-        break;
+        case Vehicle::Type::TRUCK:
+            vehicle = std::shared_ptr<TruckAV>(new TruckAV(this, pos));
+            break;
+        case Vehicle::Type::VAN:
+            vehicle = std::shared_ptr<VanAV>(new VanAV(this, pos));
+            break;
         case Vehicle::Type::SEDAN:
             vehicle = std::shared_ptr<SedanAV>(new SedanAV(this, pos));
             break;
-    default:
-        std::cout << "Unknown vehicle type" << std::endl;
-        return -1;
+        default:
+            std::cout << "Unknown vehicle type" << std::endl;
+            return -1;
     }
 
     vehicle->m_id = id;
@@ -203,7 +209,8 @@ void Framework::Run(double time_end, int fps, bool real_time) {
         time = m_system->GetChTime();
 
         if (real_time)
-            while (timer.GetTimeSecondsIntermediate() < time) {}
+            while (timer.GetTimeSecondsIntermediate() < time) {
+            }
     }
     timer.stop();
 
@@ -323,6 +330,24 @@ void Framework::Initialize() {
 
 void Framework::Advance() {
     double time = m_system->GetChTime();
+
+    // send messages
+    for (auto v : Vehicle::GetList()) {
+        v.second->sendMessages(time);
+    }
+
+    for (auto l : TrafficLight::GetList()) {
+        l.second->sendMessages(time);
+    }
+
+    // process messages
+    for (auto v : Vehicle::GetList()) {
+        v.second->processMessages();
+    }
+
+    for (auto l : TrafficLight::GetList()) {
+        l.second->processMessages();
+    }
 
     m_terrain->Synchronize(time);
     for (auto v : Vehicle::GetList()) {

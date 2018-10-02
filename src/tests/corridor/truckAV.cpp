@@ -41,10 +41,52 @@ TruckAV::TruckAV(Framework* framework, const chrono::ChCoordsys<>& init_pos) : V
     m_hmmwv->SetSteeringVisualizationType(VisualizationType::PRIMITIVES);
     m_hmmwv->SetWheelVisualizationType(VisualizationType::NONE);
     m_hmmwv->SetTireVisualizationType(VisualizationType::PRIMITIVES);
+
+    m_messageFrequency = 1;
 }
 
 TruckAV::~TruckAV() {
     //
+}
+
+void TruckAV::recieveMessage(Message newMessage) {
+    m_messagesIncoming.push(newMessage);
+}
+
+void TruckAV::sendMessages(double time) {
+    if (m_messageFrequency == -1) {
+        return;
+    }
+
+    if (time - m_lastMessageTime < 1 / m_messageFrequency) {
+        return;
+    } else {
+        m_lastMessageTime = time;
+    }
+
+    auto vehicleList = Vehicle::GetList();
+    auto trafficLightList = TrafficLight::GetList();
+    Message currentMessage(m_id, "TruckAV " + std::to_string(m_id));
+
+    for (auto v : vehicleList) {
+        if (v.second->GetId() != m_id && (GetPosition().pos - v.second->GetPosition().pos).Length() <= 1000) {
+            v.second->recieveMessage(currentMessage);
+        }
+    }
+
+    for (auto l : trafficLightList) {
+        if ((GetPosition().pos - l.second->GetPosition().pos).Length() <= 1000) {
+            l.second->recieveMessage(currentMessage);
+        }
+    }
+}
+
+void TruckAV::processMessages() {
+    while (!m_messagesIncoming.empty()) {
+        std::cout << "TruckAV " << m_id << " recieved message from " << m_messagesIncoming.front().getText()
+                  << std::endl;
+        m_messagesIncoming.pop();
+    }
 }
 
 ChCoordsys<> TruckAV::GetPosition() const {

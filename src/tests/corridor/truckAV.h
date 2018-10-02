@@ -27,6 +27,10 @@ class TruckAV : public Vehicle {
   public:
     ~TruckAV();
 
+    void recieveMessage(Message newMessage);
+    void sendMessages(double time);
+    void processMessages();
+
   private:
     TruckAV(Framework* framework, const chrono::ChCoordsys<>& init_pos);
 

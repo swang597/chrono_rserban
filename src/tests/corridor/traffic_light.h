@@ -18,8 +18,8 @@
 #define AV_TRAFFIC_LIGHT_H
 
 #include "agent.h"
-#include "scene.h"
 #include "fsm/fsm.hpp"
+#include "scene.h"
 
 namespace av {
 
@@ -38,8 +38,15 @@ class TrafficLight : public Agent {
     static std::shared_ptr<TrafficLight> Find(unsigned int id);
     static TrafficLightList GetList() { return m_traffic_lights; }
 
+    void recieveMessage(Message newMessage);
+    void sendMessages(double time);
+    void processMessages();
+
   protected:
-    TrafficLight(Framework* framework, const chrono::ChVector<>& center, double radius, const chrono::ChCoordsys<>& pos);
+    TrafficLight(Framework* framework,
+                 const chrono::ChVector<>& center,
+                 double radius,
+                 const chrono::ChCoordsys<>& pos);
 
     chrono::ChVector<> m_center;
     double m_radius;

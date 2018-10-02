@@ -15,6 +15,8 @@
 // =============================================================================
 
 #include "agent.h"
+#include "traffic_light.h"
+#include "vehicle.h"
 
 namespace av {
 

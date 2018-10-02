@@ -50,6 +50,8 @@ TrafficLight::TrafficLight(Framework* framework,
     m_body->AddAsset(std::make_shared<ChColorAsset>(ChColor(0.6f, 0, 0)));
 
     framework->m_system->AddBody(m_body);
+
+    m_messageFrequency = 0.5;
 }
 
 TrafficLight::~TrafficLight() {
@@ -61,6 +63,39 @@ std::shared_ptr<TrafficLight> TrafficLight::Find(unsigned int id) {
     if (it != m_traffic_lights.end())
         return it->second;
     return nullptr;
+}
+
+void TrafficLight::recieveMessage(Message newMessage) {
+    m_messagesIncoming.push(newMessage);
+}
+
+void TrafficLight::sendMessages(double time) {
+    if (m_messageFrequency == -1) {
+        return;
+    }
+
+    if (time - m_lastMessageTime < 1 / m_messageFrequency) {
+        return;
+    } else {
+        m_lastMessageTime = time;
+    }
+
+    auto vehicleList = Vehicle::GetList();
+    Message currentMessage(m_id, "Traffic Light " + std::to_string(m_id));
+
+    for (auto v : vehicleList) {
+        if (v.second->GetId() != m_id && (GetPosition().pos - v.second->GetPosition().pos).Length() <= 1000) {
+            v.second->recieveMessage(currentMessage);
+        }
+    }
+}
+
+void TrafficLight::processMessages() {
+    while (!m_messagesIncoming.empty()) {
+        std::cout << "Traffic Light " << m_id << " recieved message from " << m_messagesIncoming.front().getText()
+                  << std::endl;
+        m_messagesIncoming.pop();
+    }
 }
 
 }  // end namespace av

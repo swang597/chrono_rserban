@@ -27,6 +27,10 @@ class VanAV : public Vehicle {
   public:
     ~VanAV();
 
+    void recieveMessage(Message newMessage);
+    void sendMessages(double time);
+    void processMessages();
+
   private:
     VanAV(Framework* framework, const chrono::ChCoordsys<>& init_pos);
 

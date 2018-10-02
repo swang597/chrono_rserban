@@ -17,14 +17,15 @@
 #ifndef AV_AGENT_H
 #define AV_AGENT_H
 
+#include <queue>
 #include <string>
 #include <unordered_map>
 
 #include "chrono/core/ChCoordsys.h"
 #include "chrono/physics/ChSystem.h"
+#include "message.h"
 
 namespace av {
-
 class Framework;
 
 class Agent {
@@ -34,12 +35,20 @@ class Agent {
     virtual ~Agent();
 
     unsigned int GetId() const { return m_id; }
+    virtual chrono::ChCoordsys<> GetPosition() const = 0;
+
+    virtual void recieveMessage(Message newMessage) = 0;
+    virtual void sendMessages(double time) = 0;
+    virtual void processMessages() = 0;
 
   protected:
-    Agent(Framework* framework);
+    Agent(Framework* frameworsk);
 
     unsigned int m_id;
     Framework* m_framework;
+    std::queue<Message> m_messagesIncoming;
+    double m_messageFrequency = -1;
+    double m_lastMessageTime = 0;
 
   protected:
     static unsigned int GenerateID();
