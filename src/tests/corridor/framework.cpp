@@ -160,6 +160,7 @@ unsigned int Framework::AddVehicle(Vehicle::Type type, const ChCoordsys<>& pos) 
     vehicle->m_id = id;
     vehicle->m_framework = this;
     Vehicle::m_vehicles.insert(std::make_pair(id, vehicle));
+    Agent::m_agents.insert(std::make_pair(id, vehicle));
 
     return id;
 }
@@ -169,6 +170,7 @@ unsigned int Framework::AddTrafficLight(const chrono::ChVector<>& center, double
     auto light = std::shared_ptr<TrafficLight>(new TrafficLight(this, center, radius, pos));
     light->m_id = id;
     TrafficLight::m_traffic_lights.insert(std::make_pair(id, light));
+    Agent::m_agents.insert(std::make_pair(id, light));
 
     return id;
 }
@@ -198,7 +200,7 @@ void Framework::Run(double time_end, int fps, bool real_time) {
 
     timer.start();
     while (m_app->GetDevice()->run() && time <= time_end) {
-        if (m_system->GetChTime() > next_draw) {
+        if (time >= next_draw) {
             m_app->BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
             m_app->DrawAll();
             m_app->EndScene();
@@ -332,35 +334,30 @@ void Framework::Advance() {
     double time = m_system->GetChTime();
 
     // send messages
-    for (auto v : Vehicle::GetList()) {
-        v.second->sendMessages(time);
-    }
-
-    for (auto l : TrafficLight::GetList()) {
-        l.second->sendMessages(time);
+    for (auto a : Agent::GetList()) {
+        a.second->SendMessages(time);
     }
 
     // process messages
-    for (auto v : Vehicle::GetList()) {
-        v.second->processMessages();
+    for (auto a : Agent::GetList()) {
+        a.second->ProcessMessages();
     }
 
-    for (auto l : TrafficLight::GetList()) {
-        l.second->processMessages();
-    }
-
+    // synchronize agents and other objects
     m_terrain->Synchronize(time);
-    for (auto v : Vehicle::GetList()) {
-        v.second->Synchronize(time);
+    for (auto a : Agent::GetList()) {
+        a.second->Synchronize(time);
     }
     m_app->Synchronize("", m_ego_vehicle->m_steering, m_ego_vehicle->m_throttle, m_ego_vehicle->m_braking);
 
+    // advance state of agents and other objects
     m_terrain->Advance(m_step);
-    for (auto v : Vehicle::GetList()) {
-        v.second->Advance(m_step);
+    for (auto a : Agent::GetList()) {
+        a.second->Advance(m_step);
     }
     m_app->Advance(m_step);
 
+    // advance state of Chrono system
     m_system->DoStepDynamics(m_step);
 }
 

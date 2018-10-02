@@ -39,8 +39,12 @@ class TrafficLight : public Agent {
     static std::shared_ptr<TrafficLight> Find(unsigned int id);
     static TrafficLightList GetList() { return m_traffic_lights; }
 
-    virtual void sendMessages(double time) override;
-    virtual void processMessages() override;
+    virtual void Broadcast(double time) override;
+    virtual void Unicast(double time) override;
+    virtual void ProcessMessages() override;
+
+    virtual void Synchronize(double time) override;
+    virtual void Advance(double step) override;
 
   protected:
     TrafficLight(Framework* framework,

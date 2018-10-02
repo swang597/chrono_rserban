@@ -43,14 +43,12 @@ class Vehicle : public Agent {
     const std::string& GetTypeName() const { return m_types[m_vehicle_type]; }
 
     virtual chrono::ChCoordsys<> GetPosition() const override;
-    virtual void sendMessages(double time) override;
-    virtual void processMessages() override;
+    virtual void Broadcast(double time) override;
+    virtual void Unicast(double time) override;
+    virtual void ProcessMessages() override;
 
     virtual chrono::vehicle::ChVehicle& GetVehicle() const = 0;
     virtual chrono::vehicle::ChPowertrain& GetPowertrain() const = 0;
-
-    virtual void Synchronize(double time) = 0;
-    virtual void Advance(double step) = 0;
 
     virtual double GetLookAheadDistance() const = 0;
     virtual chrono::ChVector<> GetSteeringGainsPID() const = 0;

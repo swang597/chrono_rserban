@@ -51,7 +51,7 @@ TrafficLight::TrafficLight(Framework* framework,
 
     framework->m_system->AddBody(m_body);
 
-    m_messageFrequency = 0.5;
+    m_bcast_freq = 0.5;
 }
 
 TrafficLight::~TrafficLight() {
@@ -65,33 +65,34 @@ std::shared_ptr<TrafficLight> TrafficLight::Find(unsigned int id) {
     return nullptr;
 }
 
-void TrafficLight::sendMessages(double time) {
-    if (m_messageFrequency == -1) {
-        return;
-    }
+void TrafficLight::Broadcast(double time) {
+    Message currentMessage(m_id, time, "Traffic Light " + std::to_string(m_id));
 
-    if (time - m_lastMessageTime < 1 / m_messageFrequency) {
-        return;
-    } else {
-        m_lastMessageTime = time;
-    }
-
-    auto vehicleList = Vehicle::GetList();
-    Message currentMessage(m_id, "Traffic Light " + std::to_string(m_id));
-
-    for (auto v : vehicleList) {
-        if (v.second->GetId() != m_id && (GetPosition().pos - v.second->GetPosition().pos).Length() <= 1000) {
-            v.second->receiveMessage(currentMessage);
+    for (auto v : Vehicle::GetList()) {
+        if ((GetPosition().pos - v.second->GetPosition().pos).Length() <= 1000) {
+            Send(v.second, currentMessage);
         }
     }
 }
 
-void TrafficLight::processMessages() {
-    while (!m_messagesIncoming.empty()) {
-        std::cout << "Traffic Light " << m_id << " received message from " << m_messagesIncoming.front().getText()
-                  << std::endl;
-        m_messagesIncoming.pop();
+void TrafficLight::Unicast(double time) {
+    //
+}
+
+void TrafficLight::ProcessMessages() {
+    while (!m_messages.empty()) {
+        std::cout << "Traffic Light " << m_id << " received message from " << m_messages.front().getText()
+                  << " time stamp " << m_messages.front().getTimeStamp() << std::endl;
+        m_messages.pop();
     }
+}
+
+void TrafficLight::Synchronize(double time) {
+    //
+}
+
+void TrafficLight::Advance(double step) {
+    //
 }
 
 }  // end namespace av

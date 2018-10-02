@@ -37,7 +37,7 @@ Vehicle::Vehicle(Framework* framework, Type vehicle_type)
       m_throttle(0),
       m_braking(0) {
     // TODO: Let derived classes set this
-    m_messageFrequency = 1;
+    m_bcast_freq = 1;
 }
 
 Vehicle::~Vehicle() {
@@ -97,39 +97,25 @@ void Vehicle::AdvanceDriver(double step) {
     m_steering = out_steering;
 }
 
-void Vehicle::sendMessages(double time) {
-    if (m_messageFrequency == -1) {
-        return;
-    }
+void Vehicle::Broadcast(double time) {
+    Message currentMessage(m_id, time, GetTypeName() + " " + std::to_string(m_id));
 
-    if (time - m_lastMessageTime < 1 / m_messageFrequency) {
-        return;
-    } else {
-        m_lastMessageTime = time;
-    }
-
-    auto vehicleList = Vehicle::GetList();
-    auto trafficLightList = TrafficLight::GetList();
-    Message currentMessage(m_id, GetTypeName() + " " + std::to_string(m_id));
-
-    for (auto v : vehicleList) {
-        if (v.second->GetId() != m_id && (GetPosition().pos - v.second->GetPosition().pos).Length() <= 1000) {
-            v.second->receiveMessage(currentMessage);
-        }
-    }
-
-    for (auto l : trafficLightList) {
-        if ((GetPosition().pos - l.second->GetPosition().pos).Length() <= 1000) {
-            l.second->receiveMessage(currentMessage);
+    for (auto a : Agent::GetList()) {
+        if (a.second->GetId() != m_id && (GetPosition().pos - a.second->GetPosition().pos).Length() <= 1000) {
+            Send(a.second, currentMessage);
         }
     }
 }
 
-void Vehicle::processMessages() {
-    while (!m_messagesIncoming.empty()) {
-        std::cout << GetTypeName() << " " << m_id << " received message from " << m_messagesIncoming.front().getText()
-                  << std::endl;
-        m_messagesIncoming.pop();
+void Vehicle::Unicast(double time) {
+    //
+}
+
+void Vehicle::ProcessMessages() {
+    while (!m_messages.empty()) {
+        std::cout << GetTypeName() << " " << m_id << " received message from " << m_messages.front().getText()
+                  << " time stamp " << m_messages.front().getTimeStamp() << std::endl;
+        m_messages.pop();
     }
 }
 

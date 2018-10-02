@@ -28,6 +28,10 @@
 namespace av {
 class Framework;
 
+class Agent;
+
+typedef std::unordered_map<unsigned int, std::shared_ptr<Agent>> AgentList;
+
 class Agent {
   public:
     enum Type { VEHICLE, TRAFFIC };
@@ -37,24 +41,38 @@ class Agent {
     unsigned int GetId() const { return m_id; }
     virtual chrono::ChCoordsys<> GetPosition() const = 0;
 
-    void receiveMessage(Message newMessage);
-
-    virtual void sendMessages(double time) = 0;
-    virtual void processMessages() = 0;
+    static std::shared_ptr<Agent> Find(unsigned int id);
+    static AgentList GetList() { return m_agents; }
 
   protected:
     Agent(Framework* frameworsk);
 
+    void Send(std::shared_ptr<Agent> destination, Message message);
+
     unsigned int m_id;
     Framework* m_framework;
 
-    std::queue<Message> m_messagesIncoming;
-    double m_messageFrequency = -1;
-    double m_lastMessageTime = 0;
+    std::queue<Message> m_messages;
+    double m_bcast_freq;
 
-  protected:
     static unsigned int GenerateID();
     static unsigned int m_nextID;
+
+  private:
+    void SendMessages(double time);
+
+    virtual void Broadcast(double time) = 0;
+    virtual void Unicast(double time) = 0;
+    virtual void ProcessMessages() = 0;
+
+    virtual void Synchronize(double time) = 0;
+    virtual void Advance(double step) = 0;
+
+    double m_bcast_time;
+
+    static AgentList m_agents;
+
+    friend class Framework;
 };
 
 }  // end namespace av
