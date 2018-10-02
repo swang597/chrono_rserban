@@ -23,7 +23,8 @@ using namespace chrono::vehicle::uaz;
 
 namespace av {
 
-VanAV::VanAV(Framework* framework, const chrono::ChCoordsys<>& init_pos) : Vehicle(framework, Vehicle::VAN) {
+VanAV::VanAV(Framework* framework, unsigned int id, const chrono::ChCoordsys<>& init_pos)
+    : Vehicle(framework, id, Vehicle::VAN) {
     m_uaz = std::make_shared<UAZBUS>(framework->m_system);
 
     m_uaz->SetChassisFixed(false);

@@ -28,7 +28,7 @@ class VanAV : public Vehicle {
     ~VanAV();
 
   private:
-    VanAV(Framework* framework, const chrono::ChCoordsys<>& init_pos);
+    VanAV(Framework* framework, unsigned int id, const chrono::ChCoordsys<>& init_pos);
 
     virtual chrono::vehicle::ChVehicle& GetVehicle() const override;
     virtual chrono::vehicle::ChPowertrain& GetPowertrain() const override;

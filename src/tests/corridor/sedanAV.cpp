@@ -23,7 +23,8 @@ using namespace chrono::vehicle::sedan;
 
 namespace av {
 
-SedanAV::SedanAV(Framework* framework, const chrono::ChCoordsys<>& init_pos) : Vehicle(framework, Vehicle::SEDAN) {
+SedanAV::SedanAV(Framework* framework, unsigned int id, const chrono::ChCoordsys<>& init_pos)
+    : Vehicle(framework, id, Vehicle::SEDAN) {
     m_sedan = std::make_shared<Sedan>(framework->m_system);
 
     m_sedan->SetChassisFixed(false);

@@ -24,13 +24,10 @@ AgentList Agent::m_agents;
 
 // -----------------------------------------------------------------------------
 
-Agent::Agent(Framework* framework) : m_framework(framework), m_bcast_time(0), m_bcast_freq(-1){
-    //
-}
+Agent::Agent(Framework* framework, unsigned int id)
+    : m_framework(framework), m_id(id), m_bcast_time(0), m_bcast_freq(-1) {}
 
-Agent::~Agent() {
-    //
-}
+Agent::~Agent() {}
 
 std::shared_ptr<Agent> Agent::Find(unsigned int id) {
     auto it = m_agents.find(id);
@@ -52,7 +49,7 @@ void Agent::SendMessages(double time) {
     Unicast(time);
 }
 
-void Agent::Send(std::shared_ptr<Agent> destination, Message message) {
+void Agent::Send(std::shared_ptr<Agent> destination, std::shared_ptr<Message> message) {
     destination->m_messages.push(message);
 }
 

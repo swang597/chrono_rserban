@@ -37,7 +37,7 @@ const double Framework::m_vertical_offset = 0.3;
 // -----------------------------------------------------------------------------
 
 Framework::Framework(const Scene& scene, bool render_coll)
-    : m_scene(scene), m_render_coll(render_coll), m_step(1e-3), m_app(nullptr), m_initialized(false) {
+    : m_scene(scene), m_render_coll(render_coll), m_step(1e-3), m_app(nullptr), m_verbose(false), m_initialized(false) {
     m_system = new ChSystemNSC();
     m_system->Set_G_acc(ChVector<>(0, 0, -9.81));
 
@@ -144,21 +144,19 @@ unsigned int Framework::AddVehicle(Vehicle::Type type, const ChCoordsys<>& pos) 
 
     switch (type) {
         case Vehicle::Type::TRUCK:
-            vehicle = std::shared_ptr<TruckAV>(new TruckAV(this, pos));
+            vehicle = std::shared_ptr<TruckAV>(new TruckAV(this, id, pos));
             break;
         case Vehicle::Type::VAN:
-            vehicle = std::shared_ptr<VanAV>(new VanAV(this, pos));
+            vehicle = std::shared_ptr<VanAV>(new VanAV(this, id, pos));
             break;
         case Vehicle::Type::SEDAN:
-            vehicle = std::shared_ptr<SedanAV>(new SedanAV(this, pos));
+            vehicle = std::shared_ptr<SedanAV>(new SedanAV(this, id, pos));
             break;
         default:
             std::cout << "Unknown vehicle type" << std::endl;
             return -1;
     }
 
-    vehicle->m_id = id;
-    vehicle->m_framework = this;
     Vehicle::m_vehicles.insert(std::make_pair(id, vehicle));
     Agent::m_agents.insert(std::make_pair(id, vehicle));
 
@@ -167,8 +165,7 @@ unsigned int Framework::AddVehicle(Vehicle::Type type, const ChCoordsys<>& pos) 
 
 unsigned int Framework::AddTrafficLight(const chrono::ChVector<>& center, double radius, const ChCoordsys<>& pos) {
     auto id = Agent::GenerateID();
-    auto light = std::shared_ptr<TrafficLight>(new TrafficLight(this, center, radius, pos));
-    light->m_id = id;
+    auto light = std::shared_ptr<TrafficLight>(new TrafficLight(this, id, center, radius, pos));
     TrafficLight::m_traffic_lights.insert(std::make_pair(id, light));
     Agent::m_agents.insert(std::make_pair(id, light));
 

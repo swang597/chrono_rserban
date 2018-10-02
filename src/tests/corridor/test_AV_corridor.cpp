@@ -30,6 +30,7 @@ int main(int argc, char* argv[]) {
     av::Scene scene(av::GPScoord(43.072172, -89.400391), vis_file, coll_file);
     av::Framework framework(scene, false);
     framework.SetIntegrationStep(5e-3);
+    framework.SetVerbose(true);
 
     // Create paths
 

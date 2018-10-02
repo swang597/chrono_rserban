@@ -15,6 +15,7 @@
 // =============================================================================
 
 #include "vehicle.h"
+#include "framework.h"
 #include "traffic_light.h"
 
 using namespace chrono;
@@ -28,15 +29,22 @@ VehicleList Vehicle::m_vehicles;
 
 // -----------------------------------------------------------------------------
 
-Vehicle::Vehicle(Framework* framework, Type vehicle_type)
-    : Agent(framework),
+Vehicle::Vehicle(Framework* framework, unsigned int id, Type vehicle_type)
+    : Agent(framework, id),
       m_vehicle_type(vehicle_type),
       m_steeringPID(nullptr),
       m_speedPID(nullptr),
       m_steering(0),
       m_throttle(0),
       m_braking(0) {
-    // TODO: Let derived classes set this
+    // Prepare messages sent by this agent
+    m_vehicle_msg = std::make_shared<MessageVEH>();
+    m_vehicle_msg->type = Message::VEH;
+    m_vehicle_msg->senderID = id;
+    m_vehicle_msg->time = 0;
+    m_vehicle_msg->location = ChVector<>(0, 0, 0);
+
+    //// TODO: provide mechanism for setting this frequency
     m_bcast_freq = 1;
 }
 
@@ -98,25 +106,60 @@ void Vehicle::AdvanceDriver(double step) {
 }
 
 void Vehicle::Broadcast(double time) {
-    Message currentMessage(m_id, time, GetTypeName() + " " + std::to_string(m_id));
+    m_vehicle_msg->time = static_cast<float>(time);
+    m_vehicle_msg->location = GetPosition().pos;
 
     for (auto a : Agent::GetList()) {
         if (a.second->GetId() != m_id && (GetPosition().pos - a.second->GetPosition().pos).Length() <= 1000) {
-            Send(a.second, currentMessage);
+            Send(a.second, m_vehicle_msg);
         }
     }
 }
 
 void Vehicle::Unicast(double time) {
-    //
+    //// TODO
 }
 
 void Vehicle::ProcessMessages() {
     while (!m_messages.empty()) {
-        std::cout << GetTypeName() << " " << m_id << " received message from " << m_messages.front().getText()
-                  << " time stamp " << m_messages.front().getTimeStamp() << std::endl;
+        auto msg = m_messages.front();
+        if (m_framework->Verbose()) {
+            std::cout << GetTypeName() << " " << m_id << " received message from " << msg->senderID
+                      << " msg type: " << msg->type << " time stamp: " << msg->time << std::endl;
+        }
+        switch (msg->type) {
+            case Message::MAP:
+                ProcessMessageMAP(std::static_pointer_cast<MessageMAP>(msg));
+                break;
+            case Message::SPAT:
+                ProcessMessageSPAT(std::static_pointer_cast<MessageSPAT>(msg));
+                break;
+            case Message::VEH:
+                ProcessMessageVEH(std::static_pointer_cast<MessageVEH>(msg));
+                break;
+            default:
+                break;
+        }
         m_messages.pop();
     }
+}
+
+void Vehicle::ProcessMessageMAP(std::shared_ptr<MessageMAP> msg) {
+    //// TODO
+    if (m_framework->Verbose()) {
+        std::cout << "      Intersection ID: " << msg->intersectionID << std::endl;
+    }
+}
+
+void Vehicle::ProcessMessageSPAT(std::shared_ptr<MessageSPAT> msg) {
+    //// TODO
+    if (m_framework->Verbose()) {
+        std::cout << "      Signal phase: " << msg->phase << "  Signal timing: " << msg->time_phase << std::endl;
+    }
+}
+
+void Vehicle::ProcessMessageVEH(std::shared_ptr<MessageVEH> msg) {
+    //// TODO
 }
 
 }  // end namespace av

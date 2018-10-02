@@ -28,7 +28,7 @@ class SedanAV : public Vehicle {
     ~SedanAV();
 
   private:
-    SedanAV(Framework* framework, const chrono::ChCoordsys<>& init_pos);
+    SedanAV(Framework* framework, unsigned int id, const chrono::ChCoordsys<>& init_pos);
 
     virtual chrono::vehicle::ChVehicle& GetVehicle() const override;
     virtual chrono::vehicle::ChPowertrain& GetPowertrain() const override;

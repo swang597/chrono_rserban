@@ -26,6 +26,7 @@
 #include "chrono_vehicle/utils/ChSteeringController.h"
 
 #include "agent.h"
+#include "message.h"
 
 namespace av {
 
@@ -58,7 +59,11 @@ class Vehicle : public Agent {
     static VehicleList GetList() { return m_vehicles; }
 
   protected:
-    Vehicle(Framework* framework, Type vehicle_type);
+    Vehicle(Framework* framework, unsigned int id, Type vehicle_type);
+
+    void ProcessMessageMAP(std::shared_ptr<MessageMAP> msg);
+    void ProcessMessageSPAT(std::shared_ptr<MessageSPAT> msg);
+    void ProcessMessageVEH(std::shared_ptr<MessageVEH> msg);
 
     void SetupDriver(std::shared_ptr<chrono::ChBezierCurve> curve, bool closed, double target_speed);
     void AdvanceDriver(double step);
@@ -69,6 +74,8 @@ class Vehicle : public Agent {
 
   private:
     Type m_vehicle_type;
+
+    std::shared_ptr<MessageVEH> m_vehicle_msg;
 
     chrono::vehicle::ChPathSteeringController* m_steeringPID;
     chrono::vehicle::ChSpeedController* m_speedPID;

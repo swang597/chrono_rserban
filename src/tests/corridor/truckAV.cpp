@@ -23,7 +23,8 @@ using namespace chrono::vehicle::hmmwv;
 
 namespace av {
 
-TruckAV::TruckAV(Framework* framework, const chrono::ChCoordsys<>& init_pos) : Vehicle(framework, Vehicle::TRUCK) {
+TruckAV::TruckAV(Framework* framework, unsigned int id, const chrono::ChCoordsys<>& init_pos)
+    : Vehicle(framework, id, Vehicle::TRUCK) {
     m_hmmwv = std::make_shared<HMMWV_Reduced>(framework->m_system);
 
     m_hmmwv->SetChassisFixed(false);

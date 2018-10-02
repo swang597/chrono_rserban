@@ -52,6 +52,9 @@ class Framework {
     void SetEgoVehicle(unsigned int vehicle_id);
     void SetIntegrationStep(double step) { m_step = step; }
 
+    void SetVerbose(bool verbose) { m_verbose = verbose; }
+    bool Verbose() const { return m_verbose; }
+
     void Run(double time_end, int fps = 30, bool real_time = true);
 
     chrono::ChSystem* GetSystem() { return m_system; }
@@ -74,6 +77,7 @@ class Framework {
     double m_step;
     bool m_initialized;
     bool m_render_coll;
+    bool m_verbose;
 
     std::shared_ptr<Vehicle> m_ego_vehicle;
 

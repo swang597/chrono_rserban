@@ -1,17 +1,54 @@
+// =============================================================================
+// PROJECT CHRONO - http://projectchrono.org
+//
+// Copyright (c) 2014 projectchrono.org
+// All right reserved.
+//
+// Use of this source code is governed by a BSD-style license that can be found
+// in the LICENSE file at the top level of the distribution and at
+// http://projectchrono.org/license-chrono.txt.
+//
+// =============================================================================
+// Author: Radu Serban
+// =============================================================================
+//
+// =============================================================================
+
+#ifndef AV_MESSAGE_H
+#define AV_MESSAGE_H
+
 #include <string>
 
+#include "chrono/core/ChVector.h"
+
+namespace av {
+
 class Message {
-  private:
-    double time_stamp;
-    int senderID;
-    std::string messageText;
-
   public:
-    Message(int senderID, double time, std::string messageText);
-    Message();
-    std::string getText() { return messageText; }
-    int getSenderID() { return senderID; }
-    double getTimeStamp() { return time_stamp; }
+    enum Type { MAP, SPAT, VEH };
 
-    ~Message();
+    Type type;
+    unsigned int senderID;
+    float time;
 };
+
+class MessageMAP : public Message {
+  public:
+    unsigned int intersectionID;
+    short int num_lanes;
+};
+
+class MessageSPAT : public Message {
+  public:
+    short int phase;
+    float time_phase;
+};
+
+class MessageVEH : public Message {
+  public:
+    chrono::ChVector<> location;
+};
+
+}  // end namespace av
+
+#endif

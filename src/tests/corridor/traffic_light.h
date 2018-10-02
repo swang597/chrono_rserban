@@ -19,6 +19,7 @@
 
 #include "agent.h"
 #include "fsm/fsm.hpp"
+#include "message.h"
 #include "scene.h"
 
 namespace av {
@@ -46,11 +47,14 @@ class TrafficLight : public Agent {
     virtual void Synchronize(double time) override;
     virtual void Advance(double step) override;
 
-  protected:
+  private:
     TrafficLight(Framework* framework,
+                 unsigned int id,
                  const chrono::ChVector<>& center,
                  double radius,
                  const chrono::ChCoordsys<>& pos);
+
+    void ProcessMessageVEH(std::shared_ptr<MessageVEH> msg);
 
     chrono::ChVector<> m_center;
     double m_radius;
@@ -59,6 +63,9 @@ class TrafficLight : public Agent {
     std::shared_ptr<chrono::ChBody> m_body;
 
     fsm::stack m_fsm;
+
+    std::shared_ptr<MessageMAP> m_map_msg;
+    std::shared_ptr<MessageSPAT> m_spat_msg;
 
     static TrafficLightList m_traffic_lights;
 

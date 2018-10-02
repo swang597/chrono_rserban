@@ -34,8 +34,6 @@ typedef std::unordered_map<unsigned int, std::shared_ptr<Agent>> AgentList;
 
 class Agent {
   public:
-    enum Type { VEHICLE, TRAFFIC };
-
     virtual ~Agent();
 
     unsigned int GetId() const { return m_id; }
@@ -45,14 +43,14 @@ class Agent {
     static AgentList GetList() { return m_agents; }
 
   protected:
-    Agent(Framework* frameworsk);
+    Agent(Framework* framework, unsigned int id);
 
-    void Send(std::shared_ptr<Agent> destination, Message message);
+    void Send(std::shared_ptr<Agent> destination, std::shared_ptr<Message> message);
 
     unsigned int m_id;
     Framework* m_framework;
 
-    std::queue<Message> m_messages;
+    std::queue<std::shared_ptr<Message>> m_messages;
     double m_bcast_freq;
 
     static unsigned int GenerateID();
