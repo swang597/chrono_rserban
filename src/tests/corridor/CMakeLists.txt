@@ -30,6 +30,8 @@ set(MODEL_FILES
     message.cpp
     scene.h
     scene.cpp
+    irrapp.h
+    irrapp.cpp
     path.h
     path.cpp
     traffic_light.h

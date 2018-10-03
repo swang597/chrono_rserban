@@ -143,7 +143,7 @@ int main(int argc, char* argv[]) {
     auto l1 = framework.AddTrafficLight(av::GPScoord(43.073269, -89.400572), 40, av::GPScoord(43.073430, -89.400839));
     ////auto l2 = framework.AddTrafficLight(av::GPScoord(43.072172, -89.400391), 2, av::GPScoord(43.072172, -89.400391));
 
-    framework.SetAgentBroadcast(l1, 2.0, 1000);
+    framework.SetAgentBroadcast(l1, 2.0, 150.0);
 
     // Start simulation loop
 

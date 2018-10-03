@@ -36,7 +36,10 @@ Vehicle::Vehicle(Framework* framework, unsigned int id, Type vehicle_type)
       m_speedPID(nullptr),
       m_steering(0),
       m_throttle(0),
-      m_braking(0) {
+      m_braking(0),
+      m_MAP_id(0),
+      m_SPAT_phase(-1),
+      m_SPAT_time(0) {
     // Prepare messages sent by this agent
     m_vehicle_msg = std::make_shared<MessageVEH>();
     m_vehicle_msg->type = Message::VEH;
@@ -143,6 +146,8 @@ void Vehicle::ProcessMessages() {
 
 void Vehicle::ProcessMessageMAP(std::shared_ptr<MessageMAP> msg) {
     //// TODO
+    m_MAP_id = msg->intersectionID;
+
     if (m_framework->Verbose()) {
         std::cout << "      Intersection ID: " << msg->intersectionID << std::endl;
     }
@@ -150,6 +155,9 @@ void Vehicle::ProcessMessageMAP(std::shared_ptr<MessageMAP> msg) {
 
 void Vehicle::ProcessMessageSPAT(std::shared_ptr<MessageSPAT> msg) {
     //// TODO
+    m_SPAT_phase = msg->phase;
+    m_SPAT_time = msg->time_phase;
+
     if (m_framework->Verbose()) {
         std::cout << "      Signal phase: " << msg->phase << "  Signal timing: " << msg->time_phase << std::endl;
     }

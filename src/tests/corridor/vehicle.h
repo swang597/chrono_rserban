@@ -75,7 +75,11 @@ class Vehicle : public Agent {
   private:
     Type m_vehicle_type;
 
-    std::shared_ptr<MessageVEH> m_vehicle_msg;
+    std::shared_ptr<MessageVEH> m_vehicle_msg;  ///< outgoing VEH message
+
+    unsigned int m_MAP_id;   ///< current MAP intersection ID
+    short int m_SPAT_phase;  ///< current SPaT signal phase
+    float m_SPAT_time;       ///< current SPaT signal timing
 
     chrono::vehicle::ChPathSteeringController* m_steeringPID;
     chrono::vehicle::ChSpeedController* m_speedPID;
@@ -86,6 +90,7 @@ class Vehicle : public Agent {
     static VehicleList m_vehicles;
 
     friend class Framework;
+    friend class IrrApp;
 };
 
 }  // end namespace av

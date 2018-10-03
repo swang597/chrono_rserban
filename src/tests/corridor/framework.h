@@ -22,10 +22,11 @@
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 #include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
 
-#include "scene.h"
+#include "irrapp.h"
 #include "path.h"
-#include "vehicle.h"
+#include "scene.h"
 #include "traffic_light.h"
+#include "vehicle.h"
 
 namespace av {
 
@@ -76,7 +77,7 @@ class Framework {
 
     Scene m_scene;
     chrono::ChSystem* m_system;
-    chrono::vehicle::ChWheeledVehicleIrrApp* m_app;
+    IrrApp* m_app;
     chrono::vehicle::RigidTerrain* m_terrain;
 
     double m_step;

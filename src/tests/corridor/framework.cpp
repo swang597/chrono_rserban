@@ -298,7 +298,8 @@ void Framework::Initialize() {
         auto pos1 = pos + ChVector<>(30, -30, 100);
         auto pos2 = pos + ChVector<>(30, +30, 100);
 
-        m_app = new ChWheeledVehicleIrrApp(&m_ego_vehicle->GetVehicle(), &m_ego_vehicle->GetPowertrain(), L"Corridor Demo");
+        m_app = new IrrApp(m_ego_vehicle);
+
         m_app->SetSkyBox();
         m_app->AddTypicalLogo();
         m_app->AddTypicalLights(irr::core::vector3df((irr::f32)pos1.x(), (irr::f32)pos1.y(), (irr::f32)pos1.z()),

@@ -124,6 +124,7 @@ void TrafficLight::Synchronize(double time) {
     //// TODO:
     //// - implement FSM for this agent
     //// - update SPAT message for next broadcast
+    m_spat_msg->time_phase = static_cast<float>(10 - std::fmod(time, 10));
 }
 
 void TrafficLight::Advance(double step) {
