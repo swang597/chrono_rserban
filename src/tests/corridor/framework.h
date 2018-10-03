@@ -49,13 +49,16 @@ class Framework {
     unsigned int AddTrafficLight(const chrono::ChVector<>& center, double radius, const chrono::ChCoordsys<>& pos);
     unsigned int AddTrafficLight(const GPScoord& gps_center, double radius, const GPScoord& gps_pos);
 
-    void SetAgentBroadcast(unsigned int, double freq, double radius);
+    void SetAgentBroadcast(unsigned int id, double freq, double radius);
 
     void SetEgoVehicle(unsigned int vehicle_id);
     void SetIntegrationStep(double step) { m_step = step; }
 
     void SetVerbose(bool verbose) { m_verbose = verbose; }
     bool Verbose() const { return m_verbose; }
+
+    void SetRender(bool render) { m_render = render; }
+    bool Render() const { return m_render; }
 
     void Run(double time_end, int fps = 30, bool real_time = true);
 
@@ -80,6 +83,7 @@ class Framework {
     bool m_initialized;
     bool m_render_coll;
     bool m_verbose;
+    bool m_render;
 
     std::shared_ptr<Vehicle> m_ego_vehicle;
 

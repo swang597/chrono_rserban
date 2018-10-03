@@ -37,7 +37,13 @@ const double Framework::m_vertical_offset = 0.3;
 // -----------------------------------------------------------------------------
 
 Framework::Framework(const Scene& scene, bool render_coll)
-    : m_scene(scene), m_render_coll(render_coll), m_step(1e-3), m_app(nullptr), m_verbose(false), m_initialized(false) {
+    : m_scene(scene),
+      m_render_coll(render_coll),
+      m_step(1e-3),
+      m_app(nullptr),
+      m_render(true),
+      m_verbose(false),
+      m_initialized(false) {
     m_system = new ChSystemNSC();
     m_system->Set_G_acc(ChVector<>(0, 0, -9.81));
 
@@ -204,12 +210,16 @@ void Framework::Run(double time_end, int fps, bool real_time) {
     ChTimer<double> timer;
 
     timer.start();
-    while (m_app->GetDevice()->run() && time <= time_end) {
-        if (time >= next_draw) {
-            m_app->BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-            m_app->DrawAll();
-            m_app->EndScene();
-            next_draw += delta;
+    while (time <= time_end) {
+        if (m_render) {
+            if (!m_app->GetDevice()->run())
+                break;
+            if (time >= next_draw) {
+                m_app->BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
+                m_app->DrawAll();
+                m_app->EndScene();
+                next_draw += delta;
+            }
         }
 
         Advance();
@@ -283,54 +293,56 @@ void Framework::Initialize() {
     if (!m_ego_vehicle)
         m_ego_vehicle = Vehicle::GetList().begin()->second;
 
-    auto pos = m_ego_vehicle->GetPosition().pos;
-    auto pos1 = pos + ChVector<>(30, -30, 100);
-    auto pos2 = pos + ChVector<>(30, +30, 100);
+    if (m_render) {
+        auto pos = m_ego_vehicle->GetPosition().pos;
+        auto pos1 = pos + ChVector<>(30, -30, 100);
+        auto pos2 = pos + ChVector<>(30, +30, 100);
 
-    m_app = new ChWheeledVehicleIrrApp(&m_ego_vehicle->GetVehicle(), &m_ego_vehicle->GetPowertrain(), L"Corridor Demo");
-    m_app->SetSkyBox();
-    m_app->AddTypicalLogo();
-    m_app->AddTypicalLights(irr::core::vector3df((irr::f32)pos1.x(), (irr::f32)pos1.y(), (irr::f32)pos1.z()),
-                            irr::core::vector3df((irr::f32)pos2.x(), (irr::f32)pos2.y(), (irr::f32)pos2.z()), 250, 130);
-    m_app->SetChaseCamera(ChVector<>(0.0, 0.0, .75), 6.0, 0.5);
-    m_app->SetTimestep(m_step);
+        m_app = new ChWheeledVehicleIrrApp(&m_ego_vehicle->GetVehicle(), &m_ego_vehicle->GetPowertrain(), L"Corridor Demo");
+        m_app->SetSkyBox();
+        m_app->AddTypicalLogo();
+        m_app->AddTypicalLights(irr::core::vector3df((irr::f32)pos1.x(), (irr::f32)pos1.y(), (irr::f32)pos1.z()),
+            irr::core::vector3df((irr::f32)pos2.x(), (irr::f32)pos2.y(), (irr::f32)pos2.z()), 250, 130);
+        m_app->SetChaseCamera(ChVector<>(0.0, 0.0, .75), 6.0, 0.5);
+        m_app->SetTimestep(m_step);
 
-    // Create scene visualization mesh
-    if (!m_render_coll) {
-        auto smanager = m_app->GetSceneManager();
-        auto imesh = smanager->getMesh(GetChronoDataFile(m_scene.m_vis_file).c_str());
+        // Create scene visualization mesh
+        if (!m_render_coll) {
+            auto smanager = m_app->GetSceneManager();
+            auto imesh = smanager->getMesh(GetChronoDataFile(m_scene.m_vis_file).c_str());
 
-        {
-            // Take care of left-handed frames in Irrlicht
+            {
+                // Take care of left-handed frames in Irrlicht
 
-            const irr::u32 bcount = imesh->getMeshBufferCount();
-            for (irr::u32 b = 0; b < bcount; ++b) {
-                irr::scene::IMeshBuffer* buffer = imesh->getMeshBuffer(b);
-                const irr::u32 idxcnt = buffer->getIndexCount();
-                irr::u16* idx = buffer->getIndices();
-                irr::s32 tmp;
+                const irr::u32 bcount = imesh->getMeshBufferCount();
+                for (irr::u32 b = 0; b < bcount; ++b) {
+                    irr::scene::IMeshBuffer* buffer = imesh->getMeshBuffer(b);
+                    const irr::u32 idxcnt = buffer->getIndexCount();
+                    irr::u16* idx = buffer->getIndices();
+                    irr::s32 tmp;
 
-                for (irr::u32 i = 0; i < idxcnt; i += 3) {
-                    tmp = idx[i + 1];
-                    idx[i + 1] = idx[i + 2];
-                    idx[i + 2] = tmp;
-                }
-                const irr::u32 vertcnt = buffer->getVertexCount();
-                for (irr::u32 i = 0; i < vertcnt; i++) {
-                    buffer->getPosition(i).X = -buffer->getPosition(i).X;  // mirror vertex
-                    irr::core::vector3df oldnorm = buffer->getNormal(i);
-                    buffer->getNormal(i).X = -oldnorm.X;  // mirrors normal on X
+                    for (irr::u32 i = 0; i < idxcnt; i += 3) {
+                        tmp = idx[i + 1];
+                        idx[i + 1] = idx[i + 2];
+                        idx[i + 2] = tmp;
+                    }
+                    const irr::u32 vertcnt = buffer->getVertexCount();
+                    for (irr::u32 i = 0; i < vertcnt; i++) {
+                        buffer->getPosition(i).X = -buffer->getPosition(i).X;  // mirror vertex
+                        irr::core::vector3df oldnorm = buffer->getNormal(i);
+                        buffer->getNormal(i).X = -oldnorm.X;  // mirrors normal on X
+                    }
                 }
             }
+
+            auto node = smanager->addMeshSceneNode(imesh, 0, -1, irr::core::vector3df(0, 0, 0),
+                                                   irr::core::vector3df(0, 0, 0), irr::core::vector3df(1, 1, 1));
         }
 
-        auto node = smanager->addMeshSceneNode(imesh, 0, -1, irr::core::vector3df(0, 0, 0),
-                                               irr::core::vector3df(0, 0, 0), irr::core::vector3df(1, 1, 1));
+        // Complete Irrlicht asset construction
+        m_app->AssetBindAll();
+        m_app->AssetUpdateAll();
     }
-
-    // Complete Irrlicht asset construction
-    m_app->AssetBindAll();
-    m_app->AssetUpdateAll();
 
     m_initialized = true;
 }
@@ -353,14 +365,18 @@ void Framework::Advance() {
     for (auto a : Agent::GetList()) {
         a.second->Synchronize(time);
     }
-    m_app->Synchronize("", m_ego_vehicle->m_steering, m_ego_vehicle->m_throttle, m_ego_vehicle->m_braking);
+    if (m_render) {
+        m_app->Synchronize("", m_ego_vehicle->m_steering, m_ego_vehicle->m_throttle, m_ego_vehicle->m_braking);
+    }
 
     // advance state of agents and other objects
     m_terrain->Advance(m_step);
     for (auto a : Agent::GetList()) {
         a.second->Advance(m_step);
     }
-    m_app->Advance(m_step);
+    if (m_render) {
+        m_app->Advance(m_step);
+    }
 
     // advance state of Chrono system
     m_system->DoStepDynamics(m_step);

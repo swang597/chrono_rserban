@@ -15,8 +15,6 @@
 //
 // =============================================================================
 
-#include "chrono/physics/ChSystemNSC.h"
-
 #include "chrono_vehicle/utils/ChVehiclePath.h"
 
 #include "framework.h"
@@ -31,6 +29,7 @@ int main(int argc, char* argv[]) {
     av::Framework framework(scene, false);
     framework.SetIntegrationStep(5e-3);
     framework.SetVerbose(true);
+    ////framework.SetRender(false);
 
     // Create paths
 
