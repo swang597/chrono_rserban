@@ -57,13 +57,6 @@ ChCoordsys<> Vehicle::GetPosition() const {
     return ChCoordsys<>(GetVehicle().GetVehiclePos(), GetVehicle().GetVehicleRot());
 }
 
-std::shared_ptr<Vehicle> Vehicle::Find(unsigned int id) {
-    auto it = m_vehicles.find(id);
-    if (it != m_vehicles.end())
-        return it->second;
-    return nullptr;
-}
-
 void Vehicle::SetupDriver(std::shared_ptr<chrono::ChBezierCurve> curve, bool closed, double target_speed) {
     m_steeringPID = new ChPathSteeringController(curve, closed);
     m_speedPID = new ChSpeedController();

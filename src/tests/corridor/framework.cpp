@@ -125,16 +125,18 @@ unsigned int Framework::AddVehicle(Vehicle::Type type,
     A.Set_A_axis(u, v, w);
 
     // Create vehicle at path node
-    std::cout << "Add vehicle" << std::endl;
-    std::cout << "  " << point.x() << "  " << point.y() << "  " << point.z() << std::endl;
-    auto id = AddVehicle(type, ChCoordsys<>(point + ChVector<>(0, 0, 0.5), A.Get_A_quaternion()));
-    if (id == -1)
-        return id;
+    if (m_verbose) {
+        std::cout << "Add vehicle" << std::endl;
+        std::cout << "  " << point.x() << "  " << point.y() << "  " << point.z() << std::endl;
+    }
+    auto vehicle = AddVehicle(type, ChCoordsys<>(point + ChVector<>(0, 0, 0.5), A.Get_A_quaternion()));
+    if (!vehicle)
+        return -1;
 
     // Set AV driver
-    Vehicle::Find(id)->SetupDriver(path->m_curve, path->m_closed, target_speed);
+    vehicle->SetupDriver(path->m_curve, path->m_closed, target_speed);
 
-    return id;
+    return vehicle->GetId();
 }
 
 unsigned int Framework::AddVehicle(Vehicle::Type type,
@@ -144,7 +146,7 @@ unsigned int Framework::AddVehicle(Vehicle::Type type,
     return AddVehicle(type, path_id, GetLocation(gps_loc), target_speed);
 }
 
-unsigned int Framework::AddVehicle(Vehicle::Type type, const ChCoordsys<>& pos) {
+std::shared_ptr<Vehicle> Framework::AddVehicle(Vehicle::Type type, const ChCoordsys<>& pos) {
     auto id = Agent::GenerateID();
     std::shared_ptr<Vehicle> vehicle;
 
@@ -160,19 +162,19 @@ unsigned int Framework::AddVehicle(Vehicle::Type type, const ChCoordsys<>& pos) 
             break;
         default:
             std::cout << "Unknown vehicle type" << std::endl;
-            return -1;
+            return vehicle;
     }
 
-    Vehicle::m_vehicles.insert(std::make_pair(id, vehicle));
+    Vehicle::m_vehicles.push_back(vehicle);
     Agent::m_agents.insert(std::make_pair(id, vehicle));
 
-    return id;
+    return vehicle;
 }
 
 unsigned int Framework::AddTrafficLight(const chrono::ChVector<>& center, double radius, const ChCoordsys<>& pos) {
     auto id = Agent::GenerateID();
     auto light = std::shared_ptr<TrafficLight>(new TrafficLight(this, id, center, radius, pos));
-    TrafficLight::m_traffic_lights.insert(std::make_pair(id, light));
+    TrafficLight::m_traffic_lights.push_back(light);
     Agent::m_agents.insert(std::make_pair(id, light));
 
     return id;
@@ -198,7 +200,7 @@ void Framework::SetAgentBroadcast(unsigned int id, double freq, double radius) {
 }
 
 void Framework::SetEgoVehicle(unsigned int id) {
-    m_ego_vehicle = Vehicle::Find(id);
+    m_ego_vehicle = std::dynamic_pointer_cast<Vehicle>(Agent::Find(id));
 }
 
 void Framework::Run(double time_end, int fps, bool real_time) {
@@ -280,25 +282,25 @@ void Framework::Initialize() {
 
     // Create visualization assets for all traffic lights
     for (auto t : TrafficLight::GetList()) {
-        auto origin = ChCoordsys<>(t.second->GetCenter() + ChVector<>(0, 0, 2 * m_vertical_offset), QUNIT);
-        auto circle_line = std::make_shared<geometry::ChLineArc>(origin, t.second->GetRadius());
+        auto origin = ChCoordsys<>(t->GetCenter() + ChVector<>(0, 0, 2 * m_vertical_offset), QUNIT);
+        auto circle_line = std::make_shared<geometry::ChLineArc>(origin, t->GetRadius());
         auto circle_asset = std::make_shared<ChLineShape>();
         circle_asset->SetColor(ChColor(1.0f, 0.0f, 0.0f));
-        circle_asset->SetName("circle_" + std::to_string(t.first));
+        circle_asset->SetName("circle_" + std::to_string(t->GetId()));
         circle_asset->SetLineGeometry(circle_line);
         road->AddAsset(circle_asset);
     }
 
     // Create Irrlicht visualization app
     if (!m_ego_vehicle)
-        m_ego_vehicle = Vehicle::GetList().begin()->second;
+        m_ego_vehicle = Vehicle::GetList()[0];
 
     if (m_render) {
         auto pos = m_ego_vehicle->GetPosition().pos;
         auto pos1 = pos + ChVector<>(30, -30, 100);
         auto pos2 = pos + ChVector<>(30, +30, 100);
 
-        m_app = new IrrApp(m_ego_vehicle);
+        m_app = new IrrApp(this);
 
         m_app->SetSkyBox();
         m_app->AddTypicalLogo();
@@ -367,7 +369,8 @@ void Framework::Advance() {
         a.second->Synchronize(time);
     }
     if (m_render) {
-        m_app->Synchronize("", m_ego_vehicle->m_steering, m_ego_vehicle->m_throttle, m_ego_vehicle->m_braking);
+        std::string msg = m_ego_vehicle->GetTypeName() + std::to_string(m_ego_vehicle->GetId());
+        m_app->Synchronize(msg, m_ego_vehicle->m_steering, m_ego_vehicle->m_throttle, m_ego_vehicle->m_braking);
     }
 
     // advance state of agents and other objects
@@ -387,14 +390,14 @@ void Framework::ListAgents() {
     std::cout << "\nList of traffic agents" << std::endl;
     std::cout << "  Vehicles" << std::endl;
     for (auto v : Vehicle::GetList()) {
-        auto pos = v.second->GetPosition().pos;
-        std::cout << "    " << v.first << "  " << pos.x() << " " << pos.y() << " " << pos.z() << std::endl;
+        auto pos = v->GetPosition().pos;
+        std::cout << "    " << v->GetId() << "  " << pos.x() << " " << pos.y() << " " << pos.z() << std::endl;
     }
 
     std::cout << "  Lights" << std::endl;
     for (auto l : TrafficLight::GetList()) {
-        auto pos = l.second->GetPosition().pos;
-        std::cout << "    " << l.first << "  " << pos.x() << " " << pos.y() << " " << pos.z() << std::endl;
+        auto pos = l->GetPosition().pos;
+        std::cout << "    " << l->GetId() << "  " << pos.x() << " " << pos.y() << " " << pos.z() << std::endl;
     }
 }
 

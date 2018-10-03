@@ -22,15 +22,21 @@
 
 namespace av {
 
+class Framework;
+class EventReceiver;
+
 class IrrApp : public chrono::vehicle::ChVehicleIrrApp {
   public:
-    IrrApp(std::shared_ptr<Vehicle> vehicle,
-           irr::core::dimension2d<irr::u32> dims = irr::core::dimension2d<irr::u32>(1000, 800));
+    IrrApp(Framework* framework, irr::core::dimension2d<irr::u32> dims = irr::core::dimension2d<irr::u32>(1000, 800));
 
   private:
+    void ChangeVehicle(int index);
     virtual void renderOtherStats(int left, int top) override;
 
-    std::shared_ptr<Vehicle> m_vehicle;
+    Framework* m_framework;
+    EventReceiver* m_evrec;
+
+    friend class EventReceiver;
 };
 
 }  // end namespace av

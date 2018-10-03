@@ -73,7 +73,7 @@ class Framework {
     void Initialize();
     void Advance();
 
-    unsigned int AddVehicle(Vehicle::Type type, const chrono::ChCoordsys<>& pos);
+    std::shared_ptr<Vehicle> AddVehicle(Vehicle::Type type, const chrono::ChCoordsys<>& pos);
 
     Scene m_scene;
     chrono::ChSystem* m_system;
@@ -94,6 +94,7 @@ class Framework {
     friend class VanAV;
     friend class SedanAV;
     friend class TrafficLight;
+    friend class IrrApp;
 };
 
 }  // end namespace av

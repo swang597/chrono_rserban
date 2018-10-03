@@ -32,7 +32,7 @@ namespace av {
 
 class Vehicle;
 
-typedef std::unordered_map<unsigned int, std::shared_ptr<Vehicle>> VehicleList;
+typedef std::vector<std::shared_ptr<Vehicle>> VehicleList;
 
 class Vehicle : public Agent {
   public:
@@ -55,7 +55,6 @@ class Vehicle : public Agent {
     virtual chrono::ChVector<> GetSteeringGainsPID() const = 0;
     virtual chrono::ChVector<> GetSpeedGainsPID() const = 0;
 
-    static std::shared_ptr<Vehicle> Find(unsigned int id);
     static VehicleList GetList() { return m_vehicles; }
 
   protected:

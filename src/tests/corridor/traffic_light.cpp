@@ -70,22 +70,15 @@ TrafficLight::TrafficLight(Framework* framework,
 
 TrafficLight::~TrafficLight() {}
 
-std::shared_ptr<TrafficLight> TrafficLight::Find(unsigned int id) {
-    auto it = m_traffic_lights.find(id);
-    if (it != m_traffic_lights.end())
-        return it->second;
-    return nullptr;
-}
-
 void TrafficLight::Broadcast(double time) {
     m_map_msg->time = static_cast<float>(time);
 
     m_spat_msg->time = static_cast<float>(time);
 
     for (auto v : Vehicle::GetList()) {
-        if ((GetPosition().pos - v.second->GetPosition().pos).Length() <= m_bcast_radius) {
-            Send(v.second, m_map_msg);
-            Send(v.second, m_spat_msg);
+        if ((GetPosition().pos - v->GetPosition().pos).Length() <= m_bcast_radius) {
+            Send(v, m_map_msg);
+            Send(v, m_spat_msg);
         }
     }
 }

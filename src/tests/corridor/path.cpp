@@ -32,12 +32,10 @@ Path::Path(Framework* framework, std::shared_ptr<chrono::ChBezierCurve> curve, b
 
 Path::Path(Framework* framework, const std::vector<GPScoord>& gps_points, double v_offset, bool closed)
     : m_closed(closed), m_color(0.0f, 0.8f, 0.0f) {
-    std::cout << "Add path from way points" << std::endl;
 
     std::vector<ChVector<>> pp;
     for (auto p : gps_points) {
         auto point = framework->GetLocation(p);
-        std::cout << "  " << point.x() << "  " << point.y() << "  " << point.z() << std::endl;
         point.z() += v_offset;
         pp.push_back(point);
     }

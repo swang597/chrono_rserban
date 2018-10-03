@@ -26,7 +26,7 @@ namespace av {
 
 class TrafficLight;
 
-typedef std::unordered_map<unsigned int, std::shared_ptr<TrafficLight>> TrafficLightList;
+typedef std::vector<std::shared_ptr<TrafficLight>> TrafficLightList;
 
 class TrafficLight : public Agent {
   public:
@@ -37,7 +37,6 @@ class TrafficLight : public Agent {
 
     virtual chrono::ChCoordsys<> GetPosition() const override { return m_pos; }
 
-    static std::shared_ptr<TrafficLight> Find(unsigned int id);
     static TrafficLightList GetList() { return m_traffic_lights; }
 
     virtual void Broadcast(double time) override;
