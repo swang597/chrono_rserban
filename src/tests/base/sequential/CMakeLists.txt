@@ -9,6 +9,7 @@ set(DEMOS
 	test_BASE_motors
     test_BASE_filesystem
     test_BASE_body_force_seq
+    test_BASE_collision_family
 )
 
 include_directories(${CH_IRRLICHTINC})

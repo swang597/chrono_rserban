@@ -17,13 +17,16 @@
 // =============================================================================
 
 #include "chrono/ChConfig.h"
-#include "chrono/physics/ChSystemSMC.h"
 #include "chrono/collision/ChCCollisionUtils.h"
+#include "chrono/physics/ChSystemSMC.h"
 
 #include "chrono_irrlicht/ChIrrApp.h"
 
 using namespace chrono;
 using namespace chrono::irrlicht;
+
+geometry::ChTriangleMeshConnected trimesh1;
+geometry::ChTriangleMeshConnected trimesh2;
 
 void AddWallBox(std::shared_ptr<ChBody> body, const ChVector<>& dim, const ChVector<>& loc) {
     body->GetCollisionModel()->AddBox(dim.x(), dim.y(), dim.z(), loc);
@@ -36,13 +39,14 @@ void AddWallBox(std::shared_ptr<ChBody> body, const ChVector<>& dim, const ChVec
     body->AddAsset(std::make_shared<ChColorAsset>(0.5f, 0.5f, 0.0f));
 }
 
-void AddWallMesh(std::shared_ptr<ChBody> body, const ChVector<>& dim, const ChVector<>& loc) {
-    geometry::ChTriangleMeshConnected trimesh;
-
-    std::vector<ChVector<> >& vertices = trimesh.getCoordsVertices();
-    std::vector<ChVector<> >& normals = trimesh.getCoordsNormals();
-    std::vector<ChVector<int> >& idx_vertices = trimesh.getIndicesVertexes();
-    std::vector<ChVector<int> >& idx_normals = trimesh.getIndicesNormals();
+void AddWallMesh(std::shared_ptr<ChBody> body,
+                 const ChVector<>& dim,
+                 const ChVector<>& loc,
+                 geometry::ChTriangleMeshConnected& trimesh) {
+    std::vector<ChVector<>>& vertices = trimesh.getCoordsVertices();
+    std::vector<ChVector<>>& normals = trimesh.getCoordsNormals();
+    std::vector<ChVector<int>>& idx_vertices = trimesh.getIndicesVertexes();
+    std::vector<ChVector<int>>& idx_normals = trimesh.getIndicesNormals();
 
     int num_vert = 8;
     int num_faces = 12;
@@ -59,21 +63,21 @@ void AddWallMesh(std::shared_ptr<ChBody> body, const ChVector<>& dim, const ChVe
     vertices[1] = ChVector<>(-dim.x(), +dim.y(), -dim.z()) + loc;
     vertices[2] = ChVector<>(+dim.x(), +dim.y(), -dim.z()) + loc;
     vertices[3] = ChVector<>(+dim.x(), -dim.y(), -dim.z()) + loc;
-    
-    normals[0] = ChVector<>(-1, -1, -1).Normalize();
-    normals[1] = ChVector<>(-1, +1, -1).Normalize();
-    normals[2] = ChVector<>(+1, +1, -1).Normalize();
-    normals[3] = ChVector<>(+1, -1, -1).Normalize();
+
+    normals[0] = ChVector<>(-1, -1, -1).GetNormalized();
+    normals[1] = ChVector<>(-1, +1, -1).GetNormalized();
+    normals[2] = ChVector<>(+1, +1, -1).GetNormalized();
+    normals[3] = ChVector<>(+1, -1, -1).GetNormalized();
 
     vertices[4] = ChVector<>(-dim.x(), -dim.y(), +dim.z()) + loc;
     vertices[5] = ChVector<>(-dim.x(), +dim.y(), +dim.z()) + loc;
     vertices[6] = ChVector<>(+dim.x(), +dim.y(), +dim.z()) + loc;
     vertices[7] = ChVector<>(+dim.x(), -dim.y(), +dim.z()) + loc;
 
-    normals[4] = ChVector<>(-1, -1, +1).Normalize();
-    normals[5] = ChVector<>(-1, +1, +1).Normalize();
-    normals[6] = ChVector<>(+1, +1, +1).Normalize();
-    normals[7] = ChVector<>(+1, -1, +1).Normalize();
+    normals[4] = ChVector<>(-1, -1, +1).GetNormalized();
+    normals[5] = ChVector<>(-1, +1, +1).GetNormalized();
+    normals[6] = ChVector<>(+1, +1, +1).GetNormalized();
+    normals[7] = ChVector<>(+1, -1, +1).GetNormalized();
 
     for (int i = 0; i < num_vert; i++) {
         trimesh.getCoordsColors()[i] = ChVector<float>(0, 0, 1);
@@ -95,7 +99,7 @@ void AddWallMesh(std::shared_ptr<ChBody> body, const ChVector<>& dim, const ChVe
     idx_vertices[11] = ChVector<int>(0, 5, 1);
 
     for (int i = 0; i < num_faces; i++)
-      idx_normals[i] = idx_vertices[i];
+        idx_normals[i] = idx_vertices[i];
 
     body->GetCollisionModel()->AddTriangleMesh(trimesh, true, true, loc);
 
@@ -129,52 +133,51 @@ void AddWallHull(std::shared_ptr<ChBody> body, const ChVector<>& dim, const ChVe
 }
 
 void BuildContainerBoxes(std::shared_ptr<ChBody> body, double hdimX, double hdimY, double hdimZ, double hthick) {
-  std::cout << "Using boxes for container" << std::endl;
+    std::cout << "Using boxes for container" << std::endl;
 
-  body->GetCollisionModel()->ClearModel();
+    body->GetCollisionModel()->ClearModel();
 
-  // Bottom box
-  AddWallBox(body, ChVector<>(hdimX, hthick, hdimY), ChVector<>(0, 0, 0));
+    // Bottom box
+    AddWallBox(body, ChVector<>(hdimX, hthick, hdimY), ChVector<>(0, 0, 0));
 
-  // Side box
-  AddWallBox(body, ChVector<>(hthick, hdimZ, hdimY), ChVector<>(hdimX - hthick, hdimZ, 0));
+    // Side box
+    AddWallBox(body, ChVector<>(hthick, hdimZ, hdimY), ChVector<>(hdimX - hthick, hdimZ, 0));
 
-  body->GetCollisionModel()->BuildModel();
+    body->GetCollisionModel()->BuildModel();
 }
 
 void BuildContainerMeshes(std::shared_ptr<ChBody> body, double hdimX, double hdimY, double hdimZ, double hthick) {
-  std::cout << "Using meshes for container" << std::endl;
+    std::cout << "Using meshes for container" << std::endl;
 
-  body->GetCollisionModel()->ClearModel();
+    body->GetCollisionModel()->ClearModel();
 
-  // Bottom mesh
-  AddWallMesh(body, ChVector<>(hdimX, hthick, hdimY), ChVector<>(0, 0, 0));
+    // Bottom mesh
+    AddWallMesh(body, ChVector<>(hdimX, hthick, hdimY), ChVector<>(0, 0, 0), trimesh1);
 
-  // Side mesh
-  AddWallMesh(body, ChVector<>(hthick, hdimZ, hdimY), ChVector<>(hdimX - hthick, hdimZ, 0));
+    // Side mesh
+    AddWallMesh(body, ChVector<>(hthick, hdimZ, hdimY), ChVector<>(hdimX - hthick, hdimZ, 0), trimesh2);
 
-  body->GetCollisionModel()->BuildModel();
+    body->GetCollisionModel()->BuildModel();
 }
 
 void BuildContainerHulls(std::shared_ptr<ChBody> body, double hdimX, double hdimY, double hdimZ, double hthick) {
-  std::cout << "Using convex hulls for container" << std::endl;
+    std::cout << "Using convex hulls for container" << std::endl;
 
-  body->GetCollisionModel()->ClearModel();
+    body->GetCollisionModel()->ClearModel();
 
-  // Bottom hull
-  AddWallHull(body, ChVector<>(hdimX, hthick, hdimY), ChVector<>(0, 0, 0));
+    // Bottom hull
+    AddWallHull(body, ChVector<>(hdimX, hthick, hdimY), ChVector<>(0, 0, 0));
 
-  // Side hull
-  AddWallHull(body, ChVector<>(hthick, hdimZ, hdimY), ChVector<>(hdimX - hthick, hdimZ, 0));
+    // Side hull
+    AddWallHull(body, ChVector<>(hthick, hdimZ, hdimY), ChVector<>(hdimX - hthick, hdimZ, 0));
 
-  body->GetCollisionModel()->BuildModel();
+    body->GetCollisionModel()->BuildModel();
 }
 
-
 int main(int argc, char* argv[]) {
-  // Simulation parameters
+    // Simulation parameters
     double gravity = -9.81;
-    double time_step = 1e-4;
+    double time_step = 1e-3;
 
     // Parameters for the falling ball
     int ballId = 100;
@@ -182,7 +185,7 @@ int main(int argc, char* argv[]) {
     double mass = 1000;
     ChVector<> pos(0.2, 2, 0.4);
     ChQuaternion<> rot(1, 0, 0, 0);
-    ChVector<> init_vel(1, 0, 0);
+    ChVector<> init_vel(0.5, 0, 0);
 
     // Parameters for the containing bin
     int binId = 200;
@@ -243,8 +246,8 @@ int main(int argc, char* argv[]) {
     bin->SetBodyFixed(true);
     bin->SetMaterialSurface(material);
 
-    //BuildContainerBoxes(bin, hdimX, hdimY, hdimZ, hthick);
-    //BuildContainerMeshes(bin, hdimX, hdimY, hdimZ, hthick);
+    // BuildContainerBoxes(bin, hdimX, hdimY, hdimZ, hthick);
+    // BuildContainerMeshes(bin, hdimX, hdimY, hdimZ, hthick);
     BuildContainerHulls(bin, hdimX, hdimY, hdimZ, hthick);
 
     msystem.AddBody(bin);
