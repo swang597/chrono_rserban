@@ -25,6 +25,7 @@
 #include "chrono_vehicle/utils/ChSpeedController.h"
 #include "chrono_vehicle/utils/ChSteeringController.h"
 
+#include "ChCollisionLidar.h"
 #include "agent.h"
 #include "message.h"
 
@@ -67,6 +68,8 @@ class Vehicle : public Agent {
     void SetupDriver(std::shared_ptr<chrono::ChBezierCurve> curve, bool closed, double target_speed);
     void AdvanceDriver(double step);
 
+    void SetupLidar(chrono::ChVector<> loc, chrono::ChQuaternion<> rot);
+
     double m_steering;
     double m_throttle;
     double m_braking;
@@ -75,6 +78,8 @@ class Vehicle : public Agent {
     Type m_vehicle_type;
 
     std::shared_ptr<MessageVEH> m_vehicle_msg;  ///< outgoing VEH message
+
+    std::shared_ptr<ChCollisionLidar> m_lidar;
 
     unsigned int m_MAP_id;   ///< current MAP intersection ID
     short int m_SPAT_phase;  ///< current SPaT signal phase

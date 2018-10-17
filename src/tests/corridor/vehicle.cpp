@@ -14,9 +14,9 @@
 //
 // =============================================================================
 
-#include "vehicle.h"
 #include "framework.h"
 #include "traffic_light.h"
+#include "vehicle.h"
 
 using namespace chrono;
 using namespace chrono::vehicle;
@@ -74,8 +74,32 @@ void Vehicle::SetupDriver(std::shared_ptr<chrono::ChBezierCurve> curve, bool clo
 }
 
 void Vehicle::AdvanceDriver(double step) {
+    // update the lidar and get the shortest distance
+    m_lidar->Update();
+
+    // following parameters
+    double stop_distance = 2;
+    double follow_time = 4;
+
+    double min_range = 100;
+    for (auto d : m_lidar->Ranges()) {
+        // TODO: account for lidar ray angle not being straight forward
+        if (d < min_range)
+            min_range = d;
+    }
+
+    // calculate target speed such that we have safe stopping distance (4 seconds?)
+    double target_speed = (min_range - stop_distance) / follow_time;
+    // if we are close to the vehicle/object in front, just stop
+    if (min_range < stop_distance)
+        target_speed = 0;
+
+    // use the minimum of the two target speeds (object detection, or cruising)
+    target_speed = std::min(target_speed, m_target_speed);
+    double out_speed = m_speedPID->Advance(GetVehicle(), target_speed, step);
+
     // Set the throttle and braking values based on the output from the speed controller.
-    double out_speed = m_speedPID->Advance(GetVehicle(), m_target_speed, step);
+    // double out_speed = m_speedPID->Advance(GetVehicle(), m_target_speed, step);
     ChClampValue(out_speed, -1.0, 1.0);
 
     if (out_speed > 0) {
@@ -96,6 +120,12 @@ void Vehicle::AdvanceDriver(double step) {
     double out_steering = m_steeringPID->Advance(GetVehicle(), step);
     ChClampValue(out_steering, -1.0, 1.0);
     m_steering = out_steering;
+}
+
+void Vehicle::SetupLidar(ChVector<> loc, ChQuaternion<> rot) {
+    // setup simple scanning lidar
+    m_lidar = std::make_shared<ChCollisionLidar>(GetVehicle().GetChassisBody(), 30, false);
+    m_lidar->Initialize(ChCoordsys<>(loc, rot), 1, 10, 0, 0, -.2, .2, .02, 100);
 }
 
 void Vehicle::Broadcast(double time) {
