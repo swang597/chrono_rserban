@@ -28,7 +28,7 @@ SedanAV::SedanAV(Framework* framework, unsigned int id, const chrono::ChCoordsys
     m_sedan = std::make_shared<Sedan>(framework->m_system);
 
     m_sedan->SetChassisFixed(false);
-    m_sedan->SetChassisCollisionType(ChassisCollisionType::NONE);
+    m_sedan->SetChassisCollisionType(ChassisCollisionType::MESH);
     m_sedan->SetTireType(TireModelType::RIGID);
     m_sedan->SetTireStepSize(framework->m_step);
     m_sedan->SetVehicleStepSize(framework->m_step);
@@ -46,7 +46,7 @@ SedanAV::~SedanAV() {
     //
 }
 
-ChVehicle& SedanAV::GetVehicle() const {
+ChWheeledVehicle& SedanAV::GetVehicle() const {
     return m_sedan->GetVehicle();
 }
 

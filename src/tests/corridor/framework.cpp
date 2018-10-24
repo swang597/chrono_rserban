@@ -133,10 +133,14 @@ unsigned int Framework::AddVehicle(Vehicle::Type type,
     if (!vehicle)
         return -1;
 
+    // Disable contact between vehicle chassis and other vehicle components
+    vehicle->GetVehicle().SetChassisVehicleCollide(false);
+
+    // Add lidar to vehicle
+    vehicle->SetupLidar();
+
     // Set AV driver
     vehicle->SetupDriver(path->m_curve, path->m_closed, target_speed);
-    // add lidar to vehicle
-    vehicle->SetupLidar({2, 0, 0}, {1, 0, 0, 0});
 
     return vehicle->GetId();
 }

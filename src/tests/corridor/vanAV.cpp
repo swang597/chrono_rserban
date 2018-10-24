@@ -28,7 +28,7 @@ VanAV::VanAV(Framework* framework, unsigned int id, const chrono::ChCoordsys<>& 
     m_uaz = std::make_shared<UAZBUS>(framework->m_system);
 
     m_uaz->SetChassisFixed(false);
-    m_uaz->SetChassisCollisionType(ChassisCollisionType::NONE);
+    m_uaz->SetChassisCollisionType(ChassisCollisionType::MESH);
     m_uaz->SetTireType(TireModelType::RIGID);
     m_uaz->SetTireStepSize(framework->m_step);
     m_uaz->SetVehicleStepSize(framework->m_step);
@@ -46,7 +46,7 @@ VanAV::~VanAV() {
     //
 }
 
-ChVehicle& VanAV::GetVehicle() const {
+ChWheeledVehicle& VanAV::GetVehicle() const {
     return m_uaz->GetVehicle();
 }
 

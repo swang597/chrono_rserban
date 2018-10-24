@@ -122,10 +122,10 @@ void Vehicle::AdvanceDriver(double step) {
     m_steering = out_steering;
 }
 
-void Vehicle::SetupLidar(ChVector<> loc, ChQuaternion<> rot) {
+void Vehicle::SetupLidar() {
     // setup simple scanning lidar
     m_lidar = std::make_shared<ChCollisionLidar>(GetVehicle().GetChassisBody(), 30, false);
-    m_lidar->Initialize(ChCoordsys<>(loc, rot), 1, 10, 0, 0, -.2, .2, .02, 100);
+    m_lidar->Initialize(GetLidarPosition(), 1, 10, 0, 0, -.2, .2, .02, 100);
 }
 
 void Vehicle::Broadcast(double time) {

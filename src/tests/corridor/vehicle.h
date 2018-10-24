@@ -20,7 +20,7 @@
 #include "chrono/core/ChBezierCurve.h"
 
 #include "chrono_vehicle/ChPowertrain.h"
-#include "chrono_vehicle/ChVehicle.h"
+#include "chrono_vehicle/wheeled_vehicle/ChWheeledVehicle.h"
 
 #include "chrono_vehicle/utils/ChSpeedController.h"
 #include "chrono_vehicle/utils/ChSteeringController.h"
@@ -49,12 +49,14 @@ class Vehicle : public Agent {
     virtual void Unicast(double time) override;
     virtual void ProcessMessages() override;
 
-    virtual chrono::vehicle::ChVehicle& GetVehicle() const = 0;
+    virtual chrono::vehicle::ChWheeledVehicle& GetVehicle() const = 0;
     virtual chrono::vehicle::ChPowertrain& GetPowertrain() const = 0;
 
     virtual double GetLookAheadDistance() const = 0;
     virtual chrono::ChVector<> GetSteeringGainsPID() const = 0;
     virtual chrono::ChVector<> GetSpeedGainsPID() const = 0;
+
+    virtual chrono::ChCoordsys<> GetLidarPosition() const = 0;
 
     static VehicleList GetList() { return m_vehicles; }
 
@@ -68,7 +70,7 @@ class Vehicle : public Agent {
     void SetupDriver(std::shared_ptr<chrono::ChBezierCurve> curve, bool closed, double target_speed);
     void AdvanceDriver(double step);
 
-    void SetupLidar(chrono::ChVector<> loc, chrono::ChQuaternion<> rot);
+    void SetupLidar();
 
     double m_steering;
     double m_throttle;

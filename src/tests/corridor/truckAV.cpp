@@ -28,7 +28,7 @@ TruckAV::TruckAV(Framework* framework, unsigned int id, const chrono::ChCoordsys
     m_hmmwv = std::make_shared<HMMWV_Reduced>(framework->m_system);
 
     m_hmmwv->SetChassisFixed(false);
-    m_hmmwv->SetChassisCollisionType(ChassisCollisionType::NONE);
+    m_hmmwv->SetChassisCollisionType(ChassisCollisionType::MESH);
     m_hmmwv->SetPowertrainType(PowertrainModelType::SIMPLE);
     m_hmmwv->SetDriveType(DrivelineType::RWD);
     m_hmmwv->SetTireType(TireModelType::RIGID);
@@ -48,7 +48,7 @@ TruckAV::~TruckAV() {
     //
 }
 
-ChVehicle& TruckAV::GetVehicle() const {
+ChWheeledVehicle& TruckAV::GetVehicle() const {
     return m_hmmwv->GetVehicle();
 }
 
