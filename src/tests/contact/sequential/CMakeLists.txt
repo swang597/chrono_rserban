@@ -10,6 +10,7 @@ set(PROGRAMS
     test_CTC_penalty
     test_CTC_box_collision_seq
     test_CTC_rolling_seq
+    test_CTC_sentinel
 )
 
 set(CXX_FLAGS "${CH_CXX_FLAGS} ${CH_IRRLICHT_CXX_FLAGS}")
