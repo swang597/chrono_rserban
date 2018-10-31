@@ -31,6 +31,9 @@
 
 using namespace chrono;
 
+bool report_contacts = true;
+bool report_aabb = true;
+
 // -----------------------------------------------------------------------------
 // Callback functor for contact reporting
 // -----------------------------------------------------------------------------
@@ -69,12 +72,15 @@ class ContactManager : public ChContactContainer::ReportContactCallback {
 // -------------------------------------------------------
 // Access contact information directly in the data manager
 // -------------------------------------------------------
-void ReportContacts(ChSystemParallel* system, unsigned int id) {
-    auto& bb = system->data_manager->host_data.bids_rigid_rigid;
-    auto& p1 = system->data_manager->host_data.cpta_rigid_rigid;
-    auto& p2 = system->data_manager->host_data.cptb_rigid_rigid;
+void ReportContacts(ChSystemParallel& system, unsigned int id) {
+    printf("  ------------\n");
+    printf("  Total number contacts: %d\n", system.GetNcontacts());
 
-    for (uint i = 0; i < system->data_manager->num_rigid_contacts; i++) {
+    auto& bb = system.data_manager->host_data.bids_rigid_rigid;
+    auto& p1 = system.data_manager->host_data.cpta_rigid_rigid;
+    auto& p2 = system.data_manager->host_data.cptb_rigid_rigid;
+
+    for (uint i = 0; i < system.data_manager->num_rigid_contacts; i++) {
         // IDs of bodies in contact
         int b1 = bb[i].x;
         int b2 = bb[i].y;
@@ -84,6 +90,44 @@ void ReportContacts(ChSystemParallel* system, unsigned int id) {
         } else if (id == b2) {
             printf("   %6.3f  %6.3f  %6.3f\n", p2[i].x, p2[i].y, p2[i].z);
         }
+    }
+}
+
+// -------------------------------------------------------
+// Access AABB information directly in the data manager
+// -------------------------------------------------------
+void ReportShapeAABB(ChSystemParallel& system) {
+    printf("  ------------\n");
+
+    auto& aabb_min = system.data_manager->host_data.aabb_min;
+    auto& aabb_max = system.data_manager->host_data.aabb_max;
+    auto& id_rigid = system.data_manager->shape_data.id_rigid;
+    auto& offset = system.data_manager->measures.collision.global_origin;
+
+    printf("  AABB offset: %6.3f %6.3f %6.3f\n", offset.x, offset.y, offset.z);
+    printf("  Number rigid shapes: %d\n", system.data_manager->num_rigid_shapes);
+
+    for (uint i = 0; i < system.data_manager->num_rigid_shapes; i++) {
+        auto min = aabb_min[i] + offset;
+        auto max = aabb_max[i] + offset;
+        printf("  shape %d (on body %d)   AABB (%6.3f %6.3f %6.3f) - (%6.3f %6.3f %6.3f)\n",  //
+               i, id_rigid[i], min.x, min.y, min.z, max.x, max.y, max.z);
+    }
+}
+
+// -------------------------------------------------------
+// Report body AABB
+// -------------------------------------------------------
+void ReportBodyAABB(ChSystemParallel& system) {
+    printf("  ------------\n");
+    printf("  Number rigid bodies: %d\n", system.GetNbodies());
+
+    ChVector<> min;
+    ChVector<> max;
+    for (auto b : system.Get_bodylist()) {
+        b->GetCollisionModel()->GetAABB(min, max);
+        printf("  body %d   AABB (%6.3f %6.3f %6.3f) - (%6.3f %6.3f %6.3f)\n",  //
+               b->GetId(), min.x(), min.y(), min.z(), max.x(), max.y(), max.z());
     }
 }
 
@@ -191,13 +235,23 @@ int main(int argc, char** argv) {
     ContactManager cmanager(box);
 
     while (system.GetChTime() < time_end) {
-        // Process contacts
-        std::cout << system.GetChTime() << "  " << system.GetNcontacts() << std::endl;
-        ReportContacts(&system, box->GetId());
-        system.GetContactContainer()->ReportAllContacts(&cmanager);
-
         // Advance dynamics
         system.DoStepDynamics(time_step);
+
+        std::cout << "\nTime: " << system.GetChTime() << std::endl;
+
+        // Process contacts
+        if (report_contacts && system.GetNcontacts() > 0) {
+            ReportContacts(system, box->GetId());
+            system.GetContactContainer()->ReportAllContacts(&cmanager);
+        }
+
+        // Display AABB information
+        if (report_aabb) {
+            ReportShapeAABB(system);
+            system.CalculateBodyAABB();
+            ReportBodyAABB(system);
+        }
 
 #ifdef CHRONO_OPENGL
         opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
