@@ -1,4 +1,4 @@
-message(STATUS "Test programs for VEHICLE module...")
+message(STATUS "Projects: Chrono::Vehicle module...")
 
 if(NOT ENABLE_MODULE_VEHICLE)
   return()

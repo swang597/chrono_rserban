@@ -1,5 +1,5 @@
 
-message(STATUS "Test programs for COSIMULATION...")
+message(STATUS "Projects: cosimulation...")
 
 add_subdirectory(cosimulation_tire)
 add_subdirectory(cosimulation_rig)

@@ -1,6 +1,8 @@
 # Miscellaneous tests with Chrono::Distributed
 # ------------------------------------------------------------------------------
 
+message(STATUS "Projects: Chrono::Distributed module...")
+
 if(NOT ENABLE_MODULE_PARALLEL OR NOT ENABLE_MODULE_DISTRIBUTED)
   return()
 endif()
@@ -50,8 +52,6 @@ endif()
 # ------------------------------------------------------------------------------
 # Add all executables
 # ------------------------------------------------------------------------------
-
-message(STATUS "Test programs for DISTRIBUTED module...")
 
 foreach(PROGRAM ${ALL_TESTS})
     message(STATUS "...add ${PROGRAM}")

@@ -1,3 +1,5 @@
+message(STATUS "Projects: granular dynamics...")
+
 if(NOT ENABLE_MODULE_PARALLEL)
   return()
 endif()  
@@ -5,8 +7,6 @@ endif()
 if(NOT ENABLE_MODULE_OPENGL)
   return()
 endif()    
-
-message(STATUS "Test programs for granular dynamics...")
 
 # ------------------------------------------------------------------------------
 

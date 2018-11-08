@@ -1,11 +1,11 @@
 # Various geomechanics tests
 # ------------------------------------------------------------------------------
 
+message(STATUS "Projects: geomechanics...")
+
 if(NOT ENABLE_MODULE_PARALLEL)
   return()
 endif()
-
-message(STATUS "Test programs for geomechanics...")
 
 # ------------------------------------------------------------------------------
 

@@ -1,8 +1,8 @@
+MESSAGE(STATUS "Projects: Chrono::FEA module...")
+
 if(NOT ENABLE_MODULE_FEA OR NOT ENABLE_MODULE_IRRLICHT OR NOT ENABLE_MODULE_MKL)
   return()
 endif()  
-
-MESSAGE(STATUS "Test programs for FEA module...")
 
 #--------------------------------------------------------------
 

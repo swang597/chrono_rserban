@@ -1,5 +1,5 @@
 
-message(STATUS "Test programs for visualization...")
+message(STATUS "Projects: visualization...")
 
 add_subdirectory(irrlicht)
 add_subdirectory(opengl)

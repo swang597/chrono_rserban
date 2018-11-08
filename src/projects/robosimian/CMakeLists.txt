@@ -1,6 +1,8 @@
 # Test programs for RoboSimian simulation
 # ------------------------------------------------------------------------------
 
+message(STATUS "Projects: RoboSimian...")
+
 if(NOT ENABLE_MODULE_PARALLEL OR NOT ENABLE_MODULE_VEHICLE)
   return()
 endif()
@@ -39,8 +41,6 @@ set(MODEL_FILES
 # ------------------------------------------------------------------------------
 # Add all executables
 # ------------------------------------------------------------------------------
-
-message(STATUS "Test programs for RoboSimian...")
 
 foreach(PROGRAM ${PROGRAMS})
     message(STATUS "...add ${PROGRAM}")

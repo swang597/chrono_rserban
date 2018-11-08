@@ -1,8 +1,8 @@
+message(STATUS "Projects: Chrono::Postprocess module...")
+
 if(NOT ENABLE_MODULE_POSTPROCESS)
   return()
 endif()  
-
-message(STATUS "Test programs for POSTPROCESS module...")
 
 #--------------------------------------------------------------
 

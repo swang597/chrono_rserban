@@ -1,4 +1,4 @@
-message(STATUS "Test programs for WVP...")
+message(STATUS "Projects: WVP benchmark...")
 
 if(NOT ENABLE_MODULE_VEHICLE)
   return()

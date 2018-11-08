@@ -1,6 +1,8 @@
 # Test programs for AV corridor simulation
 # ------------------------------------------------------------------------------
 
+message(STATUS "Projects: autonomous vehicles...")
+
 if(NOT ENABLE_MODULE_VEHICLE)
   return()
 endif()
@@ -55,8 +57,6 @@ set(MODEL_FILES
 # ------------------------------------------------------------------------------
 # Add all executables
 # ------------------------------------------------------------------------------
-
-message(STATUS "Test programs for AV corridor...")
 
 foreach(PROGRAM ${PROGRAMS})
     message(STATUS "...add ${PROGRAM}")
