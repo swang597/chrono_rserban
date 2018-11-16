@@ -10,6 +10,10 @@ if(NOT ENABLE_MODULE_MKL)
     return()
 endif()
 
+if(NOT ENABLE_MODULE_VEHICLE)
+    return()
+endif()
+    
 # ------------------------------------------------------------------------------
 
 set(COMPILER_FLAGS "${CH_CXX_FLAGS}")
@@ -25,6 +29,9 @@ set(COMPILER_FLAGS "${COMPILER_FLAGS} ${CH_MKL_CXX_FLAGS}")
 set(LINKER_FLAGS "${LINKER_FLAGS} ${CH_MKL_LINK_FLAGS}")
 list(APPEND LIBS "ChronoEngine_mkl")
 
+list(APPEND LIBS "ChronoEngine_vehicle")
+list(APPEND LIBS "ChronoModels_vehicle")
+
 #--------------------------------------------------------------
 
 include_directories(${PROJECT_SOURCE_DIR}/src/chrono_thirdparty/googletest/googletest/include)
@@ -36,7 +43,7 @@ list(APPEND LIBS benchmark_main)
 # ------------------------------------------------------------------------------
 
 set(TESTS
-	test_BM_pendulums
+	test_BM_hmmwv
 )
 
 foreach(PROGRAM ${TESTS})

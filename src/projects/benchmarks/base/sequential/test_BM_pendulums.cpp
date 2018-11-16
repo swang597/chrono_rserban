@@ -16,7 +16,7 @@
 //
 // =============================================================================
 
-#include "../../ChBenchmark.h"
+#include "ChBenchmark.h"
 
 #include "chrono/physics/ChBodyEasy.h"
 #include "chrono/physics/ChSystemNSC.h"
@@ -40,7 +40,7 @@ class Chain : public utils::ChBenchmarkTest {
     ChSystem* GetSystem() override { return m_system; }
     void ExecuteStep() override { m_system->DoStepDynamics(m_step); }
 
-    void SimulateVis(double tend, double step);
+    void SimulateVis();
 
   private:
     ChSystem* m_system;
@@ -138,7 +138,7 @@ Chain<N>::Chain() {
 }
 
 template <typename int N>
-void Chain<N>::SimulateVis(double tend, double step) {
+void Chain<N>::SimulateVis() {
     float offset = static_cast<float>(N * m_length);
 
     ChIrrApp application(m_system, L"Pendulum chain", irr::core::dimension2d<irr::u32>(800, 600), false, true);
@@ -150,10 +150,10 @@ void Chain<N>::SimulateVis(double tend, double step) {
     application.AssetBindAll();
     application.AssetUpdateAll();
 
-    while (m_system->GetChTime() <= tend && application.GetDevice()->run()) {
+    while (application.GetDevice()->run()) {
         application.BeginScene();
         application.DrawAll();
-        m_system->DoStepDynamics(step);
+        m_system->DoStepDynamics(m_step);
         application.EndScene();
     }
 }
@@ -163,11 +163,11 @@ void Chain<N>::SimulateVis(double tend, double step) {
 #define NUM_SKIP_STEPS 2000  // number of steps for hot start
 #define NUM_SIM_STEPS 1000   // number of simulation steps for each benchmark
 
-CH_BM_SIMULATION(Chain04, Chain<4>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
-CH_BM_SIMULATION(Chain08, Chain<8>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
-CH_BM_SIMULATION(Chain16, Chain<16>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
-CH_BM_SIMULATION(Chain32, Chain<32>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
-CH_BM_SIMULATION(Chain64, Chain<64>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
+CH_BM_SIMULATION(Chain04, Chain<4>,  NUM_SKIP_STEPS, NUM_SIM_STEPS, 20);
+CH_BM_SIMULATION(Chain08, Chain<8>,  NUM_SKIP_STEPS, NUM_SIM_STEPS, 20);
+CH_BM_SIMULATION(Chain16, Chain<16>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 20);
+CH_BM_SIMULATION(Chain32, Chain<32>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 20);
+CH_BM_SIMULATION(Chain64, Chain<64>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 20);
 
 // =============================================================================
 
@@ -176,7 +176,7 @@ int main(int argc, char* argv[]) {
 
     if (::benchmark::ReportUnrecognizedArguments(argc, argv)) {
         Chain<4> chain;
-        chain.SimulateVis(20, 1e-3);
+        chain.SimulateVis();
         return 0;
     }
 
