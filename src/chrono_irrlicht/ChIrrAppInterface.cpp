@@ -805,7 +805,7 @@ void ChIrrAppInterface::DrawAll() {
     str += " ms  \n\nCPU step (total)      =";
     str += (int)(1000 * system->GetTimerStep());
     str += " ms \n  CPU Collision time =";
-    str += (int)(1000 * system->GetTimerCollisionBroad());
+    str += (int)(1000 * system->GetTimerCollision());
     str += " ms \n  CPU Solver time         =";
     str += (int)(1000 * system->GetTimerSolver());
     str += " ms \n  CPU Update time      =";
