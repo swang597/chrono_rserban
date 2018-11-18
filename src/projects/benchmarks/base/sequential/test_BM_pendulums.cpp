@@ -32,10 +32,10 @@ using namespace chrono::irrlicht;
 // =============================================================================
 
 template <typename int N>
-class Chain : public utils::ChBenchmarkTest {
+class ChainTest : public utils::ChBenchmarkTest {
   public:
-    Chain();
-    ~Chain() { delete m_system; }
+    ChainTest();
+    ~ChainTest() { delete m_system; }
 
     ChSystem* GetSystem() override { return m_system; }
     void ExecuteStep() override { m_system->DoStepDynamics(m_step); }
@@ -44,18 +44,12 @@ class Chain : public utils::ChBenchmarkTest {
 
   private:
     ChSystem* m_system;
-    static const double m_length;
-    static const double m_step;
+    double m_length;
+    double m_step;
 };
 
 template <typename int N>
-const double Chain<N>::m_length = 0.25;
-
-template <typename int N>
-const double Chain<N>::m_step = 1e-3;
-
-template <typename int N>
-Chain<N>::Chain() {
+ChainTest<N>::ChainTest() : m_length(0.25), m_step(1e-3) {
     ChTimestepper::Type integrator_type = ChTimestepper::Type::EULER_IMPLICIT_LINEARIZED;
     ChSolver::Type solver_type = ChSolver::Type::SOR;
     ChMaterialSurface::ContactMethod contact_method = ChMaterialSurface::NSC;
@@ -138,7 +132,7 @@ Chain<N>::Chain() {
 }
 
 template <typename int N>
-void Chain<N>::SimulateVis() {
+void ChainTest<N>::SimulateVis() {
     float offset = static_cast<float>(N * m_length);
 
     ChIrrApp application(m_system, L"Pendulum chain", irr::core::dimension2d<irr::u32>(800, 600), false, true);
@@ -163,11 +157,11 @@ void Chain<N>::SimulateVis() {
 #define NUM_SKIP_STEPS 2000  // number of steps for hot start
 #define NUM_SIM_STEPS 1000   // number of simulation steps for each benchmark
 
-CH_BM_SIMULATION(Chain04, Chain<4>,  NUM_SKIP_STEPS, NUM_SIM_STEPS, 20);
-CH_BM_SIMULATION(Chain08, Chain<8>,  NUM_SKIP_STEPS, NUM_SIM_STEPS, 20);
-CH_BM_SIMULATION(Chain16, Chain<16>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 20);
-CH_BM_SIMULATION(Chain32, Chain<32>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 20);
-CH_BM_SIMULATION(Chain64, Chain<64>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 20);
+CH_BM_SIMULATION(Chain04, ChainTest<4>,  NUM_SKIP_STEPS, NUM_SIM_STEPS, 20);
+CH_BM_SIMULATION(Chain08, ChainTest<8>,  NUM_SKIP_STEPS, NUM_SIM_STEPS, 20);
+CH_BM_SIMULATION(Chain16, ChainTest<16>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 20);
+CH_BM_SIMULATION(Chain32, ChainTest<32>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 20);
+CH_BM_SIMULATION(Chain64, ChainTest<64>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 20);
 
 // =============================================================================
 
@@ -175,8 +169,8 @@ int main(int argc, char* argv[]) {
     ::benchmark::Initialize(&argc, argv);
 
     if (::benchmark::ReportUnrecognizedArguments(argc, argv)) {
-        Chain<4> chain;
-        chain.SimulateVis();
+        ChainTest<4> test;
+        test.SimulateVis();
         return 0;
     }
 

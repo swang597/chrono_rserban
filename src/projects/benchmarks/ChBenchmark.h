@@ -91,6 +91,8 @@ class ChBenchmarkFixture : public ::benchmark::Fixture {
         st.counters["Setup"] = m_test->m_timer_setup * 1e3;
         st.counters["Solve"] = m_test->m_timer_solver * 1e3;
         st.counters["Update"] = m_test->m_timer_update * 1e3;
+        st.counters["Broad"] = m_test->m_timer_collision_broad * 1e3;
+        st.counters["Narrow"] = m_test->m_timer_collision_narrow * 1e3;
     }
 
     TEST* m_test;
