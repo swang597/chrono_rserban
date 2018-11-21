@@ -62,7 +62,7 @@ void TimingOutput(chrono::ChSystem* mSys) {
     double STEP = mSys->GetTimerStep();
     double BROD = mSys->GetTimerCollisionBroad();
     double NARR = mSys->GetTimerCollisionNarrow();
-    double SOLVER = mSys->GetTimerSolver();
+    double SOLVER = mSys->GetTimerAdvance();
     double UPDT = mSys->GetTimerUpdate();
     int REQ_ITS = 0;
     int BODS = mSys->GetNbodies();
