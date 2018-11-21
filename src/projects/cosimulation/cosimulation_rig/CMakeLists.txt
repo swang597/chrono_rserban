@@ -5,7 +5,7 @@ if(NOT ENABLE_MODULE_VEHICLE)
   return()
 endif()
 
-if(NOT ENABLE_MODULE_FEA OR NOT ENABLE_MODULE_MKL)
+if(NOT ENABLE_MODULE_MKL)
   return()
 endif()
 
@@ -26,7 +26,6 @@ set(LIBRARIES
     ChronoEngine
     ChronoEngine_vehicle
     ChronoModels_vehicle
-    ChronoEngine_fea
     ChronoEngine_mkl
     ChronoEngine_parallel
 )

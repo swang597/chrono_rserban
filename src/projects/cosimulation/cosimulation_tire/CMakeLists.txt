@@ -1,4 +1,4 @@
-# REQUIRES: FEA, MKL, Vehicle, Irrlicht, OpenGL
+# REQUIRES: MKL, Vehicle, Irrlicht, OpenGL
 
 if(NOT ENABLE_MODULE_IRRLICHT OR NOT ENABLE_MODULE_OPENGL)
    return()
@@ -8,7 +8,7 @@ if(NOT ENABLE_MODULE_VEHICLE)
    return()
 endif()
 
-if(NOT ENABLE_MODULE_FEA OR NOT ENABLE_MODULE_MKL)
+if(NOT ENABLE_MODULE_MKL)
    return()
 endif()
 
@@ -24,7 +24,6 @@ SET(LIBRARIES
     ChronoEngine
     ChronoEngine_irrlicht
     ChronoEngine_opengl
-    ChronoEngine_fea
     ChronoEngine_mkl
     ChronoEngine_vehicle
 )

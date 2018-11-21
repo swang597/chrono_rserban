@@ -1,6 +1,6 @@
-MESSAGE(STATUS "Projects: Chrono::FEA module...")
+MESSAGE(STATUS "Projects: FEA module...")
 
-if(NOT ENABLE_MODULE_FEA OR NOT ENABLE_MODULE_IRRLICHT OR NOT ENABLE_MODULE_MKL)
+if(NOT ENABLE_MODULE_IRRLICHT OR NOT ENABLE_MODULE_MKL)
   return()
 endif()  
 
@@ -31,7 +31,6 @@ FOREACH(PROGRAM ${FEA_DEMOS_IRR_MKL})
     TARGET_LINK_LIBRARIES(${PROGRAM}
         ${CH_IRRLICHTLIB}
         ChronoEngine
-        ChronoEngine_fea
         ChronoEngine_mkl
         ChronoEngine_irrlicht)
 
