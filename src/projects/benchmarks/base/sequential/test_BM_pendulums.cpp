@@ -157,11 +157,11 @@ void ChainTest<N>::SimulateVis() {
 #define NUM_SKIP_STEPS 2000  // number of steps for hot start
 #define NUM_SIM_STEPS 1000   // number of simulation steps for each benchmark
 
-CH_BM_SIMULATION(Chain04, ChainTest<4>,  NUM_SKIP_STEPS, NUM_SIM_STEPS, 20);
-CH_BM_SIMULATION(Chain08, ChainTest<8>,  NUM_SKIP_STEPS, NUM_SIM_STEPS, 20);
-CH_BM_SIMULATION(Chain16, ChainTest<16>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 20);
-CH_BM_SIMULATION(Chain32, ChainTest<32>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 20);
-CH_BM_SIMULATION(Chain64, ChainTest<64>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 20);
+CH_BM_SIMULATION_LOOP(Chain04, ChainTest<4>,  NUM_SKIP_STEPS, NUM_SIM_STEPS, 20);
+CH_BM_SIMULATION_LOOP(Chain08, ChainTest<8>,  NUM_SKIP_STEPS, NUM_SIM_STEPS, 20);
+CH_BM_SIMULATION_LOOP(Chain16, ChainTest<16>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 20);
+CH_BM_SIMULATION_LOOP(Chain32, ChainTest<32>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 20);
+CH_BM_SIMULATION_LOOP(Chain64, ChainTest<64>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 20);
 
 // =============================================================================
 

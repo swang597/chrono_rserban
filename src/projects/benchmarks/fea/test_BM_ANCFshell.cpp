@@ -35,22 +35,21 @@ using namespace chrono::irrlicht;
 
 template <typename int N>
 class ANCFshell : public utils::ChBenchmarkTest {
-public:
+  public:
     ANCFshell();
     ~ANCFshell() { delete m_system; }
 
     ChSystem* GetSystem() override { return m_system; }
-    void ExecuteStep() override { m_system->DoStepDynamics(m_step); }
+    void ExecuteStep() override { m_system->DoStepDynamics(4e-4); }
 
     void SimulateVis();
 
-private:
+  private:
     ChSystemSMC* m_system;
-    double m_step;
 };
 
 template <typename int N>
-ANCFshell<N>::ANCFshell() : m_step(4e-4) {
+ANCFshell<N>::ANCFshell() {
     ChSolver::Type solver_type = ChSolver::Type::MINRES;
 
     m_system = new ChSystemSMC();
@@ -171,13 +170,13 @@ void ANCFshell<N>::SimulateVis() {
 
 // =============================================================================
 
-#define NUM_SKIP_STEPS 100   // number of steps for hot start
+#define NUM_SKIP_STEPS 100  // number of steps for hot start
 #define NUM_SIM_STEPS 100   // number of simulation steps for each benchmark
 
-CH_BM_SIMULATION(ANCFshell08, ANCFshell<8>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
-CH_BM_SIMULATION(ANCFshell16, ANCFshell<16>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
-CH_BM_SIMULATION(ANCFshell32, ANCFshell<32>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
-CH_BM_SIMULATION(ANCFshell64, ANCFshell<64>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
+CH_BM_SIMULATION_LOOP(ANCFshell08, ANCFshell<8>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
+CH_BM_SIMULATION_LOOP(ANCFshell16, ANCFshell<16>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
+CH_BM_SIMULATION_LOOP(ANCFshell32, ANCFshell<32>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
+CH_BM_SIMULATION_LOOP(ANCFshell64, ANCFshell<64>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
 
 // =============================================================================
 

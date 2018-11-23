@@ -143,7 +143,7 @@ void HmmwvAccTest::SimulateVis() {
 #define NUM_SKIP_STEPS 2000  // number of steps for hot start
 #define NUM_SIM_STEPS 1000   // number of simulation steps for each benchmark
 
-CH_BM_SIMULATION(HmmwvAcc, HmmwvAccTest, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
+CH_BM_SIMULATION_LOOP(HmmwvAcc, HmmwvAccTest, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
 
 // =============================================================================
 
