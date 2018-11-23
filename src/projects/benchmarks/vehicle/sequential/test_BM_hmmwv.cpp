@@ -16,7 +16,7 @@
 //
 // =============================================================================
 
-#include "ChBenchmark.h"
+#include "chrono/utils/ChBenchmark.h"
 
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"

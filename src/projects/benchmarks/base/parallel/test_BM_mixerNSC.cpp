@@ -16,11 +16,10 @@
 //
 // =============================================================================
 
-#include "ChBenchmark.h"
+#include "chrono/utils/ChBenchmark.h"
+#include "chrono/utils/ChUtilsCreators.h"
 
 #include "chrono_parallel/physics/ChSystemParallel.h"
-
-#include "chrono/utils/ChUtilsCreators.h"
 
 #include "chrono_opengl/ChOpenGLWindow.h"
 

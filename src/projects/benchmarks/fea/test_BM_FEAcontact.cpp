@@ -16,7 +16,7 @@
 //
 // =============================================================================
 
-#include "ChBenchmark.h"
+#include "chrono/utils/ChBenchmark.h"
 
 #include "chrono/physics/ChBodyEasy.h"
 #include "chrono/physics/ChSystemSMC.h"
