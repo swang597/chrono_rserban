@@ -31,7 +31,7 @@ using namespace chrono::irrlicht;
 
 // =============================================================================
 
-template <typename int N>
+template <int N>
 class ChainTest : public utils::ChBenchmarkTest {
   public:
     ChainTest();
@@ -48,7 +48,7 @@ class ChainTest : public utils::ChBenchmarkTest {
     double m_step;
 };
 
-template <typename int N>
+template <int N>
 ChainTest<N>::ChainTest() : m_length(0.25), m_step(1e-3) {
     ChTimestepper::Type integrator_type = ChTimestepper::Type::EULER_IMPLICIT_LINEARIZED;
     ChSolver::Type solver_type = ChSolver::Type::SOR;
@@ -131,7 +131,7 @@ ChainTest<N>::ChainTest() : m_length(0.25), m_step(1e-3) {
     }
 }
 
-template <typename int N>
+template <int N>
 void ChainTest<N>::SimulateVis() {
     float offset = static_cast<float>(N * m_length);
 

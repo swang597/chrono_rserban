@@ -29,7 +29,7 @@ using namespace chrono::collision;
 
 // =============================================================================
 
-template <typename int N>
+template <int N>
 class MixerTestNSC : public utils::ChBenchmarkTest {
   public:
     MixerTestNSC();
@@ -45,7 +45,7 @@ class MixerTestNSC : public utils::ChBenchmarkTest {
     double m_step;
 };
 
-template <typename int N>
+template <int N>
 MixerTestNSC<N>::MixerTestNSC() : m_system(new ChSystemParallelNSC()), m_step(1e-3) {
     m_system->Set_G_acc(ChVector<>(0, 0, -9.81));
 
@@ -129,7 +129,7 @@ MixerTestNSC<N>::MixerTestNSC() : m_system(new ChSystemParallelNSC()), m_step(1e
     }
 }
 
-template <typename int N>
+template <int N>
 void MixerTestNSC<N>::SimulateVis() {
     opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
     gl_window.Initialize(1280, 720, "Mixer NSC", m_system);
