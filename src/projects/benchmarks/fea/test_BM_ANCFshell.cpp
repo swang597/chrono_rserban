@@ -40,7 +40,7 @@ class ANCFshell : public utils::ChBenchmarkTest {
     ~ANCFshell() { delete m_system; }
 
     ChSystem* GetSystem() override { return m_system; }
-    void ExecuteStep() override { m_system->DoStepDynamics(4e-4); }
+    void ExecuteStep() override { m_system->DoStepDynamics(1e-4); }
 
     void SimulateVis();
 
@@ -170,8 +170,8 @@ void ANCFshell<N>::SimulateVis() {
 
 // =============================================================================
 
-#define NUM_SKIP_STEPS 100  // number of steps for hot start
-#define NUM_SIM_STEPS 100   // number of simulation steps for each benchmark
+#define NUM_SKIP_STEPS 10  // number of steps for hot start
+#define NUM_SIM_STEPS 100  // number of simulation steps for each benchmark
 
 CH_BM_SIMULATION_LOOP(ANCFshell08, ANCFshell<8>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
 CH_BM_SIMULATION_LOOP(ANCFshell16, ANCFshell<16>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
