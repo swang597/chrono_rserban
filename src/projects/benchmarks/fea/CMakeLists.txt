@@ -36,7 +36,8 @@ list(APPEND LIBS benchmark_main)
 # ------------------------------------------------------------------------------
 
 set(TESTS
-	test_BM_ANCFshell
+  test_BM_ANCFshell
+  test_BM_FEAcontact
 )
 
 foreach(PROGRAM ${TESTS})
