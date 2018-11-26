@@ -43,8 +43,9 @@ list(APPEND LIBS benchmark_main)
 # ------------------------------------------------------------------------------
 
 set(TESTS
-    test_BM_hmmwv
-    test_BM_m113
+    test_BM_hmmwvAcc
+    test_BM_m113Acc
+    test_BM_hmmwvDLC
 )
 
 foreach(PROGRAM ${TESTS})
