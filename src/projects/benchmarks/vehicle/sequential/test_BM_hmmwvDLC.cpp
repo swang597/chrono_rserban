@@ -128,8 +128,6 @@ void HmmwvDlcTest<EnumClass, TIRE_MODEL>::ExecuteStep() {
 
 template <typename EnumClass, EnumClass TIRE_MODEL>
 void HmmwvDlcTest<EnumClass, TIRE_MODEL>::SimulateVis() {
-    std::cout << "Tire model: " << static_cast<std::underlying_type<EnumClass>::type>(TIRE_MODEL) << std::endl;
-
     ChWheeledVehicleIrrApp app(&m_hmmwv->GetVehicle(), &m_hmmwv->GetPowertrain(), L"HMMWV acceleration test");
     app.SetSkyBox();
     app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
