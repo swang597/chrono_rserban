@@ -33,6 +33,7 @@ using namespace chrono::vehicle::m113;
 
 // =============================================================================
 
+template <typename EnumClass, EnumClass SHOE_TYPE>
 class M113AccTest : public utils::ChBenchmarkTest {
 public:
     M113AccTest();
@@ -55,15 +56,14 @@ private:
     double m_step;
 };
 
-M113AccTest::M113AccTest() : m_step(1e-3) {
+template <typename EnumClass, EnumClass SHOE_TYPE>
+M113AccTest<EnumClass, SHOE_TYPE>::M113AccTest() : m_step(1e-3) {
     ChMaterialSurface::ContactMethod contact_method = ChMaterialSurface::NSC;
     ChassisCollisionType chassis_collision_type = ChassisCollisionType::NONE;
-    TrackShoeType shoe_type = TrackShoeType::SINGLE_PIN;
-    double terrainLength = 500.0;
 
     // Create the M113 vehicle, set parameters, and initialize.
-    m_m113 = new M113_Vehicle(false, shoe_type, contact_method, chassis_collision_type);
-    m_m113->Initialize(ChCoordsys<>(ChVector<>(-terrainLength / 2 + 5, 0, 1.1), ChQuaternion<>(1, 0, 0, 0)));
+    m_m113 = new M113_Vehicle(false, SHOE_TYPE, contact_method, chassis_collision_type);
+    m_m113->Initialize(ChCoordsys<>(ChVector<>(-250 + 5, 0, 1.1), ChQuaternion<>(1, 0, 0, 0)));
 
     m_m113->SetChassisVisualizationType(VisualizationType::NONE);
     m_m113->SetSprocketVisualizationType(VisualizationType::PRIMITIVES);
@@ -78,15 +78,16 @@ M113AccTest::M113AccTest() : m_step(1e-3) {
 
     // Create the terrain
     m_terrain = new RigidTerrain(m_m113->GetSystem());
-    auto patch = m_terrain->AddPatch(ChCoordsys<>(ChVector<>(0, 0, -5), QUNIT), ChVector<>(terrainLength, 5, 10));
+    auto patch = m_terrain->AddPatch(ChCoordsys<>(ChVector<>(0, 0, -5), QUNIT), ChVector<>(500, 5, 10));
     patch->SetContactFrictionCoefficient(0.9f);
     patch->SetContactRestitutionCoefficient(0.01f);
     patch->SetContactMaterialProperties(2e7f, 0.3f);
-    patch->SetColor(ChColor(0.8f, 0.8f, 0.5f));
+    patch->SetColor(ChColor(0.8f, 0.8f, 0.8f));
+    patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 500, 5);
     m_terrain->Initialize();
 
     // Create the straight path and the driver system
-    auto path = StraightLinePath(ChVector<>(-terrainLength / 2, 0, 0.5), ChVector<>(terrainLength / 2, 0, 0.5), 1);
+    auto path = StraightLinePath(ChVector<>(-250, 0, 0.5), ChVector<>(250, 0, 0.5), 1);
     m_driver = new ChPathFollowerDriver(*m_m113, path, "my_path", 1000.0);
     m_driver->GetSteeringController().SetLookAheadDistance(5.0);
     m_driver->GetSteeringController().SetGains(0.5, 0, 0);
@@ -107,15 +108,23 @@ M113AccTest::M113AccTest() : m_step(1e-3) {
     m_shoeR.resize(m_m113->GetNumTrackShoes(RIGHT));
 }
 
-M113AccTest::~M113AccTest() {
+template <typename EnumClass, EnumClass SHOE_TYPE>
+M113AccTest<EnumClass, SHOE_TYPE>::~M113AccTest() {
     delete m_m113;
     delete m_powertrain;
     delete m_terrain;
     delete m_driver;
 }
 
-void M113AccTest::ExecuteStep() {
+template <typename EnumClass, EnumClass SHOE_TYPE>
+void M113AccTest<EnumClass, SHOE_TYPE>::ExecuteStep() {
     double time = m_m113->GetChTime();
+
+    if (time < 0.5) {
+        m_driver->SetDesiredSpeed(0);
+    } else {
+        m_driver->SetDesiredSpeed(1000);
+    }
 
     // Collect output data from modules (for inter-module communication)
     double throttle_input = m_driver->GetThrottle();
@@ -137,10 +146,11 @@ void M113AccTest::ExecuteStep() {
     m_powertrain->Advance(m_step);
 }
 
-void M113AccTest::SimulateVis() {
+template <typename EnumClass, EnumClass SHOE_TYPE>
+void M113AccTest<EnumClass, SHOE_TYPE>::SimulateVis() {
     ChTrackedVehicleIrrApp app(m_m113, m_powertrain, L"M113 acceleration test");
     app.SetSkyBox();
-    app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
+    app.AddTypicalLights(irr::core::vector3df(-200.f, -30.f, 100.f), irr::core::vector3df(-200.f, 50.f, 100.f), 250, 130);
     app.SetChaseCamera(ChVector<>(0.0, 0.0, 0.0), 6.0, 0.5);
 
     app.AssetBindAll();
@@ -158,10 +168,30 @@ void M113AccTest::SimulateVis() {
 
 // =============================================================================
 
-#define NUM_SKIP_STEPS 2000  // number of steps for hot start
-#define NUM_SIM_STEPS 1000   // number of simulation steps for each benchmark
+#define SKIP_STEPS 1000  // number of steps for hot start
+#define SIM_STEPS 1000   // number of simulation steps for each benchmark
+#define REPEATS 10
 
-CH_BM_SIMULATION_LOOP(M113Acc, M113AccTest, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
+// TODO: error using the macro CH_BM_SIMULATION_LOOP
+//CH_BM_SIMULATION_LOOP(M113Acc, M113AccTest<TrackShoeType,TrackShoeType::SINGLE_PIN>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
+
+using M113Acc_SP = chrono::utils::ChBenchmarkFixture<M113AccTest<TrackShoeType, TrackShoeType::SINGLE_PIN>, SKIP_STEPS>;
+BENCHMARK_DEFINE_F(M113Acc_SP, SimulateLoop)(benchmark::State& st) {
+    while (st.KeepRunning()) {
+        m_test->Simulate(SIM_STEPS);
+    }
+    Report(st);
+}
+BENCHMARK_REGISTER_F(M113Acc_SP, SimulateLoop)->Unit(benchmark::kMillisecond)->Repetitions(REPEATS);
+
+using M113Acc_DP = chrono::utils::ChBenchmarkFixture<M113AccTest<TrackShoeType, TrackShoeType::DOUBLE_PIN>, SKIP_STEPS>;
+BENCHMARK_DEFINE_F(M113Acc_DP, SimulateLoop)(benchmark::State& st) {
+    while (st.KeepRunning()) {
+        m_test->Simulate(SIM_STEPS);
+    }
+    Report(st);
+}
+BENCHMARK_REGISTER_F(M113Acc_DP, SimulateLoop)->Unit(benchmark::kMillisecond)->Repetitions(REPEATS);
 
 // =============================================================================
 
@@ -169,7 +199,8 @@ int main(int argc, char* argv[]) {
     ::benchmark::Initialize(&argc, argv);
 
     if (::benchmark::ReportUnrecognizedArguments(argc, argv)) {
-        M113AccTest test;
+        M113AccTest<TrackShoeType, TrackShoeType::SINGLE_PIN> test;
+        ////M113AccTest<TrackShoeType, TrackShoeType::DOUBLE_PIN> test;
         test.SimulateVis();
         return 0;
     }
