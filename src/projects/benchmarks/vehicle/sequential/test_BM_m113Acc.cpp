@@ -168,30 +168,16 @@ void M113AccTest<EnumClass, SHOE_TYPE>::SimulateVis() {
 
 // =============================================================================
 
-#define SKIP_STEPS 1000  // number of steps for hot start
-#define SIM_STEPS 1000   // number of simulation steps for each benchmark
+#define NUM_SKIP_STEPS 1000  // number of steps for hot start
+#define NUM_SIM_STEPS 1000   // number of simulation steps for each benchmark
 #define REPEATS 10
 
-// TODO: error using the macro CH_BM_SIMULATION_LOOP
-//CH_BM_SIMULATION_LOOP(M113Acc, M113AccTest<TrackShoeType,TrackShoeType::SINGLE_PIN>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
+// NOTE: trick to prevent erros in expanding macros due to types that contain a comma.
+typedef M113AccTest<TrackShoeType, TrackShoeType::SINGLE_PIN> sp_test_type;
+typedef M113AccTest<TrackShoeType, TrackShoeType::DOUBLE_PIN> dp_test_type;
 
-using M113Acc_SP = chrono::utils::ChBenchmarkFixture<M113AccTest<TrackShoeType, TrackShoeType::SINGLE_PIN>, SKIP_STEPS>;
-BENCHMARK_DEFINE_F(M113Acc_SP, SimulateLoop)(benchmark::State& st) {
-    while (st.KeepRunning()) {
-        m_test->Simulate(SIM_STEPS);
-    }
-    Report(st);
-}
-BENCHMARK_REGISTER_F(M113Acc_SP, SimulateLoop)->Unit(benchmark::kMillisecond)->Repetitions(REPEATS);
-
-using M113Acc_DP = chrono::utils::ChBenchmarkFixture<M113AccTest<TrackShoeType, TrackShoeType::DOUBLE_PIN>, SKIP_STEPS>;
-BENCHMARK_DEFINE_F(M113Acc_DP, SimulateLoop)(benchmark::State& st) {
-    while (st.KeepRunning()) {
-        m_test->Simulate(SIM_STEPS);
-    }
-    Report(st);
-}
-BENCHMARK_REGISTER_F(M113Acc_DP, SimulateLoop)->Unit(benchmark::kMillisecond)->Repetitions(REPEATS);
+CH_BM_SIMULATION_LOOP(M113Acc_SP, sp_test_type, NUM_SKIP_STEPS, NUM_SIM_STEPS, REPEATS);
+CH_BM_SIMULATION_LOOP(M113Acc_DP, dp_test_type, NUM_SKIP_STEPS, NUM_SIM_STEPS, REPEATS);
 
 // =============================================================================
 

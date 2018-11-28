@@ -161,52 +161,20 @@ void HmmwvDlcTest<EnumClass, TIRE_MODEL>::SimulateVis() {
 
 // =============================================================================
 
-#define SKIP_STEPS 2500  // number of steps for hot start (2e-3 * 2500 = 5s)
-#define SIM_STEPS 5000   // number of simulation steps for each benchmark (2e-3 * 5000 = 10s)
+#define NUM_SKIP_STEPS 2500  // number of steps for hot start (2e-3 * 2500 = 5s)
+#define NUM_SIM_STEPS 5000   // number of simulation steps for each benchmark (2e-3 * 5000 = 10s)
 #define REPEATS 10
 
-// TODO: error using the macro CH_BM_SIMULATION_ONCE
-//CH_BM_SIMULATION_ONCE(HmmwvDLC_TMEASY, HmmwvDlcTest<TireModelType, TireModelType::TMEASY>, SKIP_STEPS, SIM_STEPS, REPEATS);
+// NOTE: trick to prevent erros in expanding macros due to types that contain a comma.
+typedef HmmwvDlcTest<TireModelType, TireModelType::TMEASY> tmeasy_test_type;
+typedef HmmwvDlcTest<TireModelType, TireModelType::FIALA> fiala_test_type;
+typedef HmmwvDlcTest<TireModelType, TireModelType::RIGID> rigid_test_type;
+typedef HmmwvDlcTest<TireModelType, TireModelType::RIGID_MESH> rigidmesh_test_type;
 
-using HmmwvDLC_TMEASY = chrono::utils::ChBenchmarkFixture<HmmwvDlcTest<TireModelType, TireModelType::TMEASY>, 0>;
-BENCHMARK_DEFINE_F(HmmwvDLC_TMEASY, SimulateOnce)(benchmark::State& st) {
-    Reset(SKIP_STEPS);
-    while (st.KeepRunning()) {
-        m_test->Simulate(SIM_STEPS);
-    }
-    Report(st);
-}
-BENCHMARK_REGISTER_F(HmmwvDLC_TMEASY, SimulateOnce)->Unit(benchmark::kMillisecond)->Iterations(1)->Repetitions(REPEATS);
-
-using HmmwvDLC_FIALA = chrono::utils::ChBenchmarkFixture<HmmwvDlcTest<TireModelType, TireModelType::FIALA>, 0>;
-BENCHMARK_DEFINE_F(HmmwvDLC_FIALA, SimulateOnce)(benchmark::State& st) {
-    Reset(SKIP_STEPS);
-    while (st.KeepRunning()) {
-        m_test->Simulate(SIM_STEPS);
-    }
-    Report(st);
-}
-BENCHMARK_REGISTER_F(HmmwvDLC_FIALA, SimulateOnce)->Unit(benchmark::kMillisecond)->Iterations(1)->Repetitions(REPEATS);
-
-using HmmwvDLC_RIGID = chrono::utils::ChBenchmarkFixture<HmmwvDlcTest<TireModelType, TireModelType::RIGID>, 0>;
-BENCHMARK_DEFINE_F(HmmwvDLC_RIGID, SimulateOnce)(benchmark::State& st) {
-    Reset(SKIP_STEPS);
-    while (st.KeepRunning()) {
-        m_test->Simulate(SIM_STEPS);
-    }
-    Report(st);
-}
-BENCHMARK_REGISTER_F(HmmwvDLC_RIGID, SimulateOnce)->Unit(benchmark::kMillisecond)->Iterations(1)->Repetitions(REPEATS);
-
-using HmmwvDLC_RIGIDMESH = chrono::utils::ChBenchmarkFixture<HmmwvDlcTest<TireModelType, TireModelType::RIGID_MESH>, 0>;
-BENCHMARK_DEFINE_F(HmmwvDLC_RIGIDMESH, SimulateOnce)(benchmark::State& st) {
-    Reset(SKIP_STEPS);
-    while (st.KeepRunning()) {
-        m_test->Simulate(SIM_STEPS);
-    }
-    Report(st);
-}
-BENCHMARK_REGISTER_F(HmmwvDLC_RIGIDMESH, SimulateOnce)->Unit(benchmark::kMillisecond)->Iterations(1)->Repetitions(REPEATS);
+CH_BM_SIMULATION_ONCE(HmmwvDLC_TMEASY, tmeasy_test_type, NUM_SKIP_STEPS, NUM_SIM_STEPS, REPEATS);
+CH_BM_SIMULATION_ONCE(HmmwvDLC_FIALA, fiala_test_type, NUM_SKIP_STEPS, NUM_SIM_STEPS, REPEATS);
+CH_BM_SIMULATION_ONCE(HmmwvDLC_RIGID, rigid_test_type, NUM_SKIP_STEPS, NUM_SIM_STEPS, REPEATS);
+CH_BM_SIMULATION_ONCE(HmmwvDLC_RIGIDMESH, rigidmesh_test_type, NUM_SKIP_STEPS, NUM_SIM_STEPS, REPEATS);
 
 // =============================================================================
 
@@ -215,6 +183,9 @@ int main(int argc, char* argv[]) {
 
     if (::benchmark::ReportUnrecognizedArguments(argc, argv)) {
         HmmwvDlcTest<TireModelType, TireModelType::TMEASY> test;
+        ////HmmwvDlcTest<TireModelType, TireModelType::FIALA> test;
+        ////HmmwvDlcTest<TireModelType, TireModelType::RIGID> test;
+        ////HmmwvDlcTest<TireModelType, TireModelType::RIGID_MESH> test;
         test.SimulateVis();
         return 0;
     }
