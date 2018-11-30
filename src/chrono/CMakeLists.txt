@@ -34,7 +34,6 @@ include_directories(${CH_INCLUDES})
 set(ChronoEngine_core_SOURCES
     core/ChLog.cpp
     core/ChClassFactory.cpp
-    core/ChFileutils.cpp
     core/ChFilePS.cpp
     core/ChStream.cpp
     core/ChMathematics.cpp
@@ -71,7 +70,6 @@ set(ChronoEngine_core_HEADERS
     core/ChVectorDynamic.h
     core/ChPlatform.h
     core/ChQuaternion.h
-    core/ChFileutils.h
     core/ChRealtimeStep.h
     core/ChStream.h
     core/ChTimer.h
@@ -786,6 +784,7 @@ set(ChronoEngine_solver_SOURCES
     solver/ChConstraintThree.cpp
     solver/ChConstraintThreeGeneric.cpp
     solver/ChConstraintThreeBBShaft.cpp
+	solver/ChConstraintNgeneric.cpp
     solver/ChVariables.cpp
     solver/ChVariablesGeneric.cpp
     solver/ChVariablesGenericDiagonalMass.cpp
@@ -813,6 +812,7 @@ set(ChronoEngine_solver_HEADERS
     solver/ChConstraintTwoTuplesFrictionT.h
     solver/ChConstraintTwoTuplesRollingN.h
     solver/ChConstraintTwoTuplesRollingT.h
+	solver/ChConstraintNgeneric.h
     solver/ChSolver.h
     solver/ChIterativeSolver.h
     solver/ChSolverJacobi.h
@@ -837,7 +837,7 @@ set(ChronoEngine_solver_HEADERS
     solver/ChKblockGeneric.h
     solver/ChSolverSMC.h
     )
-
+	 
 source_group(solver FILES
     ${ChronoEngine_solver_SOURCES}
     ${ChronoEngine_solver_HEADERS})

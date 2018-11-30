@@ -84,6 +84,9 @@ class CH_MODELS_API HMMWV {
 
     void Initialize();
 
+    void LockAxleDifferential(int axle, bool lock) { m_vehicle->LockAxleDifferential(axle, lock); }
+    void LockCentralDifferential(int which, bool lock) { m_vehicle->LockCentralDifferential(which, lock); }
+
     void SetAerodynamicDrag(double Cd, double area, double air_density);
 
     void SetChassisVisualizationType(VisualizationType vis) { m_vehicle->SetChassisVisualizationType(vis); }
