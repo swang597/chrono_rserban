@@ -27,11 +27,11 @@
 #include <iostream>
 #include <string>
 
-#include "chrono/core/ChFileutils.h"
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/utils/ChVehiclePath.h"
 
 #include "chrono_thirdparty/SimpleOpt/SimpleOpt.h"
+#include "chrono_thirdparty/filesystem/path.h"
 
 #include "TerrainNodeDistr.h"
 #include "TireNode.h"
@@ -243,7 +243,7 @@ int main(int argc, char** argv) {
 
     // Prepare output directory.
     if (rank == 0) {
-        if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
+        if (!filesystem::create_directory(filesystem::path(out_dir))) {
             cout << "Error creating directory " << out_dir << endl;
             return 1;
         }

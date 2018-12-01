@@ -24,9 +24,6 @@
 // All units SI (CGS, i.e., centimeter - gram - second)
 // =============================================================================
 
-#include "core/ChFileutils.h"
-#include "core/ChStream.h"
-
 #include <cmath>
 #include <iostream>
 #include <sstream>
@@ -37,7 +34,6 @@
 #include "chrono_thirdparty/SimpleOpt/SimpleOpt.h"
 
 #include "chrono/ChConfig.h"
-#include "chrono/core/ChFileutils.h"
 #include "chrono/core/ChStream.h"
 #include "chrono/utils/ChUtilsCreators.h"
 #include "chrono/utils/ChUtilsGenerators.h"
@@ -45,6 +41,8 @@
 
 #include "chrono_parallel/physics/ChSystemParallel.h"
 #include "chrono_parallel/solver/ChSystemDescriptorParallel.h"
+
+#include "chrono_thirdparty/filesystem/path.h"
 
 // Control use of OpenGL run-time rendering
 // Note: CHRONO_OPENGL is defined in ChConfig.h
@@ -540,11 +538,11 @@ int main(int argc, char* argv[]) {
     pressed_ckpnt_file = out_dir + std::string("/pressed.dat") + press_i;
 
     // Create output directories.
-    if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
+    if (!filesystem::create_directory(filesystem::path(out_dir))) {
         cout << "Error creating directory " << out_dir << endl;
         return 1;
     }
-    if (ChFileutils::MakeDirectory(pov_dir.c_str()) < 0) {
+    if (!filesystem::create_directory(filesystem::path(pov_dir))) {
         cout << "Error creating directory " << pov_dir << endl;
         return 1;
     }

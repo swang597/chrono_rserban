@@ -20,13 +20,14 @@
 //
 // =============================================================================
 
-#include "chrono/core/ChFileutils.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
 #include "chrono_vehicle/ChConfigVehicle.h"
 #include "chrono_vehicle/ChVehicleModelData.h"
 
 #include "chrono_models/vehicle/wvp/WVP.h"
 #include "chrono_models/vehicle/wvp/WVP_Vehicle.h"
+
+#include "chrono_thirdparty/filesystem/path.h"
 
 #include <math.h>
 #include <chrono>
@@ -125,7 +126,7 @@ int main(int argc, char* argv[]) {
     WVP_Vehicle vehicle;
 
     if (data_output) {
-        if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
+        if (!filesystem::create_directory(filesystem::path(out_dir))) {
             std::cout << "Error creating directory " << out_dir << std::endl;
             return 1;
         }

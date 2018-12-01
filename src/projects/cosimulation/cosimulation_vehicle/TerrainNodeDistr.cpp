@@ -26,10 +26,11 @@
 
 #include "chrono/ChConfig.h"
 #include "chrono/assets/ChLineShape.h"
-#include "chrono/core/ChFileutils.h"
 #include "chrono/geometry/ChLineBezier.h"
 
 #include "chrono_parallel/solver/ChIterativeSolverParallel.h"
+
+#include "chrono_thirdparty/filesystem/path.h"
 
 #ifdef CHRONO_OPENGL
 #include "chrono_opengl/ChOpenGLWindow.h"
@@ -235,7 +236,7 @@ void TerrainNodeDistr::SetOutDir(const std::string& dir_name, const std::string&
     m_rank_out_dir = m_node_out_dir + "/results_" + rank_str;
 
     if (OnMaster()) {
-        if (ChFileutils::MakeDirectory(m_node_out_dir.c_str()) < 0) {
+        if (!filesystem::create_directory(filesystem::path(m_node_out_dir))) {
             std::cout << "Error creating directory " << m_node_out_dir << std::endl;
             MPI_Abort(MPI_COMM_WORLD, MPI_ERR_OTHER);
         }
@@ -249,7 +250,7 @@ void TerrainNodeDistr::SetOutDir(const std::string& dir_name, const std::string&
     m_outf << std::scientific;
 
     // Create separate frame output directories for each rank in intra-communicator
-    if (ChFileutils::MakeDirectory(m_rank_out_dir.c_str()) < 0) {
+    if (!filesystem::create_directory(filesystem::path(m_rank_out_dir))) {
         std::cout << "Error creating directory " << m_rank_out_dir << std::endl;
         MPI_Abort(MPI_COMM_WORLD, MPI_ERR_OTHER);
     }

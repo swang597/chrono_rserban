@@ -21,7 +21,6 @@
 #include <fstream>
 #include <vector>
 
-#include "chrono/core/ChFileutils.h"
 #include "chrono/utils/ChUtilsCreators.h"
 #include "chrono/utils/ChUtilsGenerators.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
@@ -33,6 +32,7 @@
 #include "chrono_opengl/ChOpenGLWindow.h"
 
 #include "chrono_thirdparty/SimpleOpt/SimpleOpt.h"
+#include "chrono_thirdparty/filesystem/path.h"
 
 #include "granular.h"
 #include "robosimian.h"
@@ -199,18 +199,18 @@ int main(int argc, char* argv[]) {
     std::string pov_dir = dir + "/POVRAY" + suffix;
     std::string out_dir = dir + "/RESULTS" + suffix;
 
-    if (ChFileutils::MakeDirectory(dir.c_str()) < 0) {
+    if (!filesystem::create_directory(filesystem::path(dir))) {
         cout << "Error creating directory " << dir << endl;
         return 1;
     }
     if (output) {
-        if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
+        if (!filesystem::create_directory(filesystem::path(out_dir))) {
             cout << "Error creating directory " << out_dir << endl;
             return 1;
         }
     }
     if (pov_output) {
-        if (ChFileutils::MakeDirectory(pov_dir.c_str()) < 0) {
+        if (!filesystem::create_directory(filesystem::path(pov_dir))) {
             cout << "Error creating directory " << pov_dir << endl;
             return 1;
         }

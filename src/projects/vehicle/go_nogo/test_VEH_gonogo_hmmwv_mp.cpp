@@ -29,7 +29,6 @@
 
 #include "chrono/ChConfig.h"
 #include "chrono/core/ChMathematics.h"
-#include "chrono/core/ChFileutils.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
 #include "chrono/utils/ChFilters.h"
 
@@ -46,7 +45,6 @@
 #endif
 
 #include "chrono_thirdparty/filesystem/path.h"
-#include "chrono_thirdparty/filesystem/resolver.h"
 
 #include "driver_model.h"
 
@@ -270,14 +268,14 @@ int main(int argc, char* argv[]) {
     std::string del("  ");
     std::string pov_dir;
 
-    if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
+    if (!filesystem::create_directory(filesystem::path(out_dir))) {
         cout << "Error creating directory " << out_dir << endl;
         return 1;
     }
 
     out_dir += "/" + stem;
 
-    if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
+    if (!filesystem::create_directory(filesystem::path(out_dir))) {
         cout << "Error creating directory " << out_dir << endl;
         return 1;
     }
@@ -296,7 +294,7 @@ int main(int argc, char* argv[]) {
     if (pov_output) {
         // Create directory for POV-Ray output files
         pov_dir = out_dir + "/POVRAY_" + std::to_string(line_number);
-        if (ChFileutils::MakeDirectory(pov_dir.c_str()) < 0) {
+        if (!filesystem::create_directory(filesystem::path(pov_dir))) {
             std::cout << "Error creating directory " << pov_dir << std::endl;
             return 1;
         }

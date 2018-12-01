@@ -25,7 +25,6 @@
 #include <vector>
 
 #include "chrono/ChConfig.h"
-#include "chrono/core/ChFileutils.h"
 #include "chrono/core/ChMathematics.h"
 #include "chrono/geometry/ChLineBezier.h"
 #include "chrono/solver/ChIterativeSolver.h"
@@ -49,7 +48,6 @@
 
 #include "chrono_thirdparty/SimpleOpt/SimpleOpt.h"
 #include "chrono_thirdparty/filesystem/path.h"
-#include "chrono_thirdparty/filesystem/resolver.h"
 
 using namespace chrono;
 using namespace chrono::vehicle;
@@ -242,14 +240,14 @@ int main(int argc, char* argv[]) {
     std::string del("  ");
 
     if (output) {
-        if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
+        if (!filesystem::create_directory(filesystem::path(out_dir))) {
             cout << "Error creating directory " << out_dir << endl;
             return 1;
         }
 
         out_dir += "/" + stem;
 
-        if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
+        if (!filesystem::create_directory(filesystem::path(out_dir))) {
             cout << "Error creating directory " << out_dir << endl;
             return 1;
         }

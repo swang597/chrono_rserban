@@ -29,7 +29,6 @@
 
 #include "chrono/ChConfig.h"
 #include "chrono/core/ChTimer.h"
-#include "chrono/core/ChFileutils.h"
 #include "chrono/core/ChStream.h"
 #include "chrono/utils/ChUtilsCreators.h"
 #include "chrono/utils/ChUtilsGenerators.h"
@@ -39,6 +38,8 @@
 #include "chrono_parallel/solver/ChIterativeSolverParallel.h"
 
 #include "chrono_opengl/ChOpenGLWindow.h"
+
+#include "chrono_thirdparty/filesystem/path.h"
 
 using namespace chrono;
 
@@ -428,11 +429,11 @@ int main(int argc, char** argv) {
 
     std::string pov_dir = out_dir + "/POVRAY";
 
-    if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
+    if (!filesystem::create_directory(filesystem::path(out_dir))) {
         std::cout << "Error creating directory " << out_dir << std::endl;
         return 1;
     }
-    if (ChFileutils::MakeDirectory(pov_dir.c_str()) < 0) {
+    if (!filesystem::create_directory(filesystem::path(pov_dir))) {
         std::cout << "Error creating directory " << pov_dir << std::endl;
         return 1;
     }

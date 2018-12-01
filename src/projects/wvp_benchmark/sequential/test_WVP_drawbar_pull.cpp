@@ -24,7 +24,6 @@
 #include <numeric>
 
 #include "chrono/utils/ChFilters.h"
-#include "chrono/core/ChFileutils.h"
 #include "chrono/motion_functions/ChFunction.h"
 #include "chrono/physics/ChLinkMotorLinearSpeed.h"
 #include "chrono/physics/ChLinkMotorRotationSpeed.h"
@@ -35,6 +34,8 @@
 #include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
 
 #include "chrono_models/vehicle/wvp/WVP.h"
+
+#include "chrono_thirdparty/filesystem/path.h"
 
 ////#define MAC_PATH_HACK
 
@@ -318,7 +319,7 @@ int main(int argc, char* argv[]) {
     // Prepare output
     // -------------
 
-    if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
+    if (!filesystem::create_directory(filesystem::path(out_dir))) {
         std::cout << "Error creating directory " << out_dir << std::endl;
         return 1;
     }

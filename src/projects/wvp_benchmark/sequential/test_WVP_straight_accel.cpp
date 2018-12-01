@@ -31,9 +31,10 @@
 #endif
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
-#include "chrono/core/ChFileutils.h"
 
 #include "chrono_models/vehicle/wvp/WVP.h"
+
+#include "chrono_thirdparty/filesystem/path.h"
 
 #include <chrono>
 #include <thread>
@@ -167,13 +168,13 @@ int main(int argc, char* argv[]) {
     // -------------
 
     if (data_output || povray_output) {
-        if (ChFileutils::MakeDirectory(out_dir.c_str()) < 0) {
+        if (!filesystem::create_directory(filesystem::path(out_dir))) {
             std::cout << "Error creating directory " << out_dir << std::endl;
             return 1;
         }
     }
     if (povray_output) {
-        if (ChFileutils::MakeDirectory(pov_dir.c_str()) < 0) {
+        if (!filesystem::create_directory(filesystem::path(pov_dir))) {
             std::cout << "Error creating directory " << pov_dir << std::endl;
             return 1;
         }
