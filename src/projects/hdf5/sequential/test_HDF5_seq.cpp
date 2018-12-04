@@ -17,6 +17,7 @@
 // =============================================================================
 
 #include <fstream>
+#include <iomanip>
 #include <sstream>
 
 #include "chrono/assets/ChTexture.h"
