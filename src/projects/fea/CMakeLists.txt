@@ -8,6 +8,7 @@ endif()
 
 SET(FEA_DEMOS_IRR_MKL
     test_FEA_ancf_cable
+    test_FEA_constraints
 )
 
 INCLUDE_DIRECTORIES(CMAKE_CURRENT_SOURCE_DIR)
