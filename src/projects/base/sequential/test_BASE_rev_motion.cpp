@@ -12,25 +12,20 @@
 // Authors: Radu Serban
 // =============================================================================
 //
-// Test for actuating a "revolute" joint using motion functions:
-// Use a ChLinkLockLock joint and specify motion axis and angle function.
+// Test for actuating a joint using motion functions specified either on the
+// joint or on an underlying joint marker.
+//
+// To replicate a driven revolute joint, use a ChLinkLockLock joint and specify
+// motion axis and angle function (see "Test 1" below).
 //
 // =============================================================================
 
-#include <omp.h>
-#include <cstdio>
-#include <vector>
-#include <cmath>
-
-#include "chrono/ChConfig.h"
-#include "chrono/utils/ChUtilsCreators.h"
 #include "chrono/physics/ChSystemNSC.h"
 
 #include "chrono_irrlicht/ChIrrApp.h"
 #include "chrono_irrlicht/ChIrrTools.h"
 
 using namespace chrono;
-using namespace chrono::collision;
 
 int main(int argc, char* argv[]) {
     // Create system
@@ -40,6 +35,7 @@ int main(int argc, char* argv[]) {
     // Create the bodies
     auto body1 = std::shared_ptr<ChBody>(my_sys.NewBody());
     body1->SetPos(ChVector<>(-0.5, 0, 0));
+    body1->SetBodyFixed(true);
     auto cyl1 = std::make_shared<ChCylinderShape>();
     cyl1->GetCylinderGeometry().p1 = ChVector<>(-0.5, 0, 0);
     cyl1->GetCylinderGeometry().p2 = ChVector<>(+0.5, 0, 0);
@@ -56,28 +52,96 @@ int main(int argc, char* argv[]) {
     body2->AddAsset(std::make_shared<ChColorAsset>(0.0f, 1.0f, 0.0f));
     my_sys.AddBody(body2);
 
-    // Create the joint and actuate rotation axis (driver constraint for revolute joint)
-    auto joint = std::make_shared<ChLinkLockLock>();
-    my_sys.AddLink(joint);
-    joint->Initialize(body1, body2, ChCoordsys<>(ChVector<>(0, 0, 0)));
+    // Create a sine function
+    std::shared_ptr<ChFunction_Sine> fun = std::make_shared<ChFunction_Sine>(0.0, 0.1, CH_C_PI_4);
 
-    std::shared_ptr<ChFunction_Sine> fun = std::make_shared<ChFunction_Sine>(0.0, 0.05, 1);
-    joint->SetMotion_axis(ChVector<>(0, 0, 1));
-    joint->SetMotion_ang(fun);
+    // ---------------------------------------------
 
-    ////auto joint = std::make_shared<ChLinkLockRevolute>();
-    ////my_sys.AddLink(joint);
-    ////joint->Initialize(body1, body2, ChCoordsys<>(ChVector<>(0, 0, 0)));
-    ////joint->GetMarker1()->SetMotion_ang(fun);
+    // Test 0
+    //   LockRevolute moving under gravity.
+    //   No actuation.
+    // Test 1
+    //   LockLock with one actuated rotation axis.
+    //   Equivalent to a driver constraint for revolute joint.
+    // Test 2
+    //   LockRevolute with rotation motion specified on the joint's DOF axis.
+    //   No effect on the relative body motion.
+    // Test 3
+    //   LockRevolute with rotation motion specified along an axis other than the joint's DOF axis.
+    //   This has the effect of rotating the joint's DOF axis.
+    //   To better illustrate this, we also set non-zero gravity.
+    // Test 4
+    //   LockRevolute with rotation motion applied to the underlying marker along the joint's DOF.
+    //   No effect on the relative body motion.
+    // Test 5
+    //   LockRevolute with rotation motion applied to underlying marker along an axis other than the joint's DOF.
+    //   Like in Test 3, this has the effect of rotating the joint's DOF axis.
+    //
+    // NOTES:
+    //   Body1 (red cylinder) fixed to ground
+    //   Default gravity set to [0, 0, 0]
+    //   Default motion axis is along Z, i.e. [0, 0, 1]
+
+    enum TestSelector { TEST0, TEST1, TEST2, TEST3, TEST4, TEST5 };
+    TestSelector test = TEST1;
+
+    switch (test) {
+        case TEST0: {
+            auto joint = std::make_shared<ChLinkLockRevolute>();
+            my_sys.AddLink(joint);
+            joint->Initialize(body1, body2, ChCoordsys<>(ChVector<>(0, 0, 0)));
+            my_sys.Set_G_acc(ChVector<>(0, -10, 0));
+            break;
+        }
+        case TEST1: {
+            auto joint = std::make_shared<ChLinkLockLock>();
+            my_sys.AddLink(joint);
+            joint->Initialize(body1, body2, ChCoordsys<>(ChVector<>(0, 0, 0)));
+            joint->SetMotion_axis(ChVector<>(0, 0, 1));
+            joint->SetMotion_ang(fun);
+            break;
+        }
+        case TEST2: {
+            auto joint = std::make_shared<ChLinkLockRevolute>();
+            my_sys.AddLink(joint);
+            joint->Initialize(body1, body2, ChCoordsys<>(ChVector<>(0, 0, 0)));
+            joint->SetMotion_ang(fun);
+            break;
+        }
+        case TEST3: {
+            auto joint = std::make_shared<ChLinkLockRevolute>();
+            my_sys.AddLink(joint);
+            joint->Initialize(body1, body2, ChCoordsys<>(ChVector<>(0, 0, 0)));
+            joint->SetMotion_axis(ChVector<>(0, 1, 0));
+            joint->SetMotion_ang(fun);
+            my_sys.Set_G_acc(ChVector<>(0, -10, 0));
+            break;
+        }
+        case TEST4: {
+            auto joint = std::make_shared<ChLinkLockRevolute>();
+            my_sys.AddLink(joint);
+            joint->Initialize(body1, body2, ChCoordsys<>(ChVector<>(0, 0, 0)));
+            joint->GetMarker1()->SetMotion_ang(fun);
+            break;
+        }
+        case TEST5: {
+            auto joint = std::make_shared<ChLinkLockRevolute>();
+            my_sys.AddLink(joint);
+            joint->Initialize(body1, body2, ChCoordsys<>(ChVector<>(0, 0, 0)));
+            joint->GetMarker1()->SetMotion_axis(ChVector<>(0, 1, 0));
+            joint->GetMarker1()->SetMotion_ang(fun);
+            break;
+        }
+    }
+
+    // ----------------------------------------------
 
     // Create the visualization window
     irrlicht::ChIrrApp application(&my_sys, L"Rev motion", irr::core::dimension2d<irr::u32>(800, 600), false, true);
     irrlicht::ChIrrWizard::add_typical_Logo(application.GetDevice());
     irrlicht::ChIrrWizard::add_typical_Sky(application.GetDevice());
-    irrlicht::ChIrrWizard::add_typical_Lights(application.GetDevice(), irr::core::vector3df(30.f, 100.f, 30.f),
-                                              irr::core::vector3df(30.f, 80.f, -30.f));
+    irrlicht::ChIrrWizard::add_typical_Lights(application.GetDevice());
     irrlicht::ChIrrWizard::add_typical_Camera(application.GetDevice(), irr::core::vector3df(0, 1, 2));
-
     application.AssetBindAll();
     application.AssetUpdateAll();
 
@@ -85,7 +149,7 @@ int main(int argc, char* argv[]) {
     while (application.GetDevice()->run()) {
         application.BeginScene();
         application.DrawAll();
-        irrlicht::ChIrrTools::drawAllCOGs(my_sys, application.GetVideoDriver(), 0.5);
+        ////irrlicht::ChIrrTools::drawAllCOGs(my_sys, application.GetVideoDriver(), 0.5);
         irrlicht::ChIrrTools::drawAllLinkframes(my_sys, application.GetVideoDriver(), 1);
         application.EndScene();
         my_sys.DoStepDynamics(1e-3);
