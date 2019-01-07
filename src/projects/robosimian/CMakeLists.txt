@@ -25,15 +25,30 @@ endif()
 
 # ------------------------------------------------------------------------------
 
-set(PROGRAMS
-    test_RS_robosimian
-    test_RS_robosimian_par
-    test_RS_terrain_par
+set(PROGRAMS_seq
+    test_RS_robosimian_Rigid
+    test_RS_robosimian_SCM
+)
+
+set(PROGRAMS_par
+    test_RS_robosimian_Granular
+    test_RS_terrain_Granular
 )
 
 set(MODEL_FILES
     robosimian.h
     robosimian.cpp
+    driver_cb.h
+)
+
+set(MODEL_FILES_seq
+    ${MODEL_FILES}
+    irrlicht_app.h
+    irrlicht_app.cpp
+)
+
+set(MODEL_FILES_par
+    ${MODEL_FILES}
     granular.h
     granular.cpp
 )
@@ -42,24 +57,35 @@ set(MODEL_FILES
 # Add all executables
 # ------------------------------------------------------------------------------
 
-foreach(PROGRAM ${PROGRAMS})
+foreach(PROGRAM ${PROGRAMS_seq})
     message(STATUS "...add ${PROGRAM}")
-
-    add_executable(${PROGRAM}  "${PROGRAM}.cpp" ${MODEL_FILES})
-    source_group(""  FILES "${PROGRAM}.cpp" ${MODEL_FILES})
+    add_executable(${PROGRAM} "${PROGRAM}.cpp" ${MODEL_FILES_seq})
+    source_group(""  FILES "${PROGRAM}.cpp" ${MODEL_FILES_seq})
 
     set_target_properties(${PROGRAM} PROPERTIES
         FOLDER tests
-        COMPILE_FLAGS "${CH_CXX_FLAGS} ${CH_PARALLEL_CXX_FLAGS} ${CH_IRRLICHT_CXX_FLAGS}"
-        LINK_FLAGS "${CH_LINKERFLAG_EXE}"
-    )
+        COMPILE_FLAGS "${CH_CXX_FLAGS} ${CH_IRRLICHT_CXX_FLAGS}"
+        LINK_FLAGS "${CH_LINKERFLAG_EXE}")
+
+    target_link_libraries(${PROGRAM}
+                          ChronoEngine
+                          ChronoEngine_vehicle
+                          ChronoEngine_opengl)
+endforeach()
+
+foreach(PROGRAM ${PROGRAMS_par})
+    message(STATUS "...add ${PROGRAM}")
+    add_executable(${PROGRAM} "${PROGRAM}.cpp" ${MODEL_FILES_par})
+    source_group(""  FILES "${PROGRAM}.cpp" ${MODEL_FILES_par})
+
+    set_target_properties(${PROGRAM} PROPERTIES
+        FOLDER tests
+        COMPILE_FLAGS "${CH_CXX_FLAGS} ${CH_PARALLEL_CXX_FLAGS}"
+        LINK_FLAGS "${CH_LINKERFLAG_EXE}")
 
     target_link_libraries(${PROGRAM}
                           ChronoEngine
                           ChronoEngine_parallel
                           ChronoEngine_vehicle
-                          ChronoEngine_irrlicht
                           ChronoEngine_opengl)
-
-endforeach(PROGRAM)
-
+endforeach()

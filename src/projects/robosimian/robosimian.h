@@ -397,11 +397,26 @@ class RoboSimian {
     /// Get a handle to the robot's chassis subsystem.
     std::shared_ptr<Chassis> GetChassis() const { return m_chassis; }
 
+    // Get a handle to the robot's chassis body.
+    std::shared_ptr<chrono::ChBodyAuxRef> GetChassisBody() const { return m_chassis->GetBody(); }
+
     /// Get location of the chassis body.
     const chrono::ChVector<>& GetChassisPos() const { return m_chassis->GetPos(); }
 
     /// Get orientation of the chassis body.
     const chrono::ChQuaternion<>& GetChassisRot() const { return m_chassis->GetRot(); }
+
+    /// Get a handle to the robot's sled subsystem.
+    std::shared_ptr<Sled> GetSled() const { return m_sled; }
+
+    /// Get a handle to the robot's sled body.
+    std::shared_ptr<chrono::ChBodyAuxRef> GetSledBody() const { return m_sled->GetBody(); }
+
+    /// Get a handle to the robot's specified limb subsystem.
+    std::shared_ptr<Limb> GetLimb(LimbID id) const { return m_limbs[id]; }
+
+    /// Get a handle to the wheel body for the specified limb.
+    std::shared_ptr<chrono::ChBodyAuxRef> GetWheelBody(LimbID id) const { return m_limbs[id]->GetWheelBody(); }
 
     /// Get location of the wheel body for the specified limb.
     const chrono::ChVector<>& GetWheelPos(LimbID id) const { return m_limbs[id]->GetWheelPos(); }

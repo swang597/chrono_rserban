@@ -34,6 +34,7 @@
 #include "chrono_thirdparty/SimpleOpt/SimpleOpt.h"
 #include "chrono_thirdparty/filesystem/path.h"
 
+#include "driver_cb.h"
 #include "granular.h"
 #include "robosimian.h"
 
@@ -106,41 +107,6 @@ bool GetProblemSpecs(int argc,
 
 // =============================================================================
 
-class RobotDriverCallback : public robosimian::Driver::PhaseChangeCallback {
-  public:
-    RobotDriverCallback(robosimian::RoboSimian* robot) : m_robot(robot), m_start_x(0), m_start_time(0) {}
-    virtual void OnPhaseChange(robosimian::Driver::Phase old_phase, robosimian::Driver::Phase new_phase) override;
-
-    double GetDistance() const { return m_robot->GetChassisPos().x() - m_start_x; }
-    double GetDuration() const { return m_robot->GetSystem()->GetChTime() - m_start_time; }
-    double GetAvgSpeed() const { return GetDistance() / GetDuration(); }
-
-    double m_start_x;
-    double m_start_time;
-
-  private:
-    robosimian::RoboSimian* m_robot;
-};
-
-void RobotDriverCallback::OnPhaseChange(robosimian::Driver::Phase old_phase, robosimian::Driver::Phase new_phase) {
-    if (new_phase == robosimian::Driver::HOLD) {
-        auto& fl = m_robot->GetWheelPos(robosimian::FL);
-        auto& fr = m_robot->GetWheelPos(robosimian::FR);
-        auto& rl = m_robot->GetWheelPos(robosimian::RL);
-        auto& rr = m_robot->GetWheelPos(robosimian::RR);
-        std::cout << "wheel FL: " << fl.x() << "  " << fl.y() << std::endl;
-        std::cout << "wheel FR: " << fr.x() << "  " << fr.y() << std::endl;
-        std::cout << "wheel RL: " << rl.x() << "  " << rl.y() << std::endl;
-        std::cout << "wheel RR: " << rr.x() << "  " << rr.y() << std::endl;
-    }
-    if (new_phase == robosimian::Driver::CYCLE && old_phase != robosimian::Driver::CYCLE) {
-        m_start_x = m_robot->GetChassisPos().x();
-        m_start_time = m_robot->GetSystem()->GetChTime();
-    }
-}
-
-// =============================================================================
-
 // Granular terrain parameters
 double r_g = 0.0075;
 double rho_g = 2000;
@@ -195,7 +161,7 @@ int main(int argc, char* argv[]) {
     // Initialize output directories
     // -----------------------------
 
-    const std::string dir = "../ROBOSIMIAN_PAR";
+    const std::string dir = "../ROBOSIMIAN_GRANULAR";
     std::string pov_dir = dir + "/POVRAY" + suffix;
     std::string out_dir = dir + "/RESULTS" + suffix;
 
@@ -390,7 +356,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    RobotDriverCallback cbk(&robot);
+    robosimian::RobotDriverCallback cbk(&robot);
     driver->RegisterPhaseChangeCallback(&cbk);
 
     driver->SetTimeOffsets(duration_pose, duration_hold);
@@ -402,7 +368,7 @@ int main(int argc, char* argv[]) {
 
     if (render) {
         opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-        gl_window.Initialize(1280, 720, "RoboSimian", sys);
+        gl_window.Initialize(1280, 720, "RoboSimian - Granular terrain", sys);
         gl_window.SetCamera(ChVector<>(2, -2, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1), 0.05f);
         gl_window.SetRenderMode(opengl::WIREFRAME);
     }

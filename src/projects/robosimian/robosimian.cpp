@@ -340,7 +340,7 @@ bool ContactManager::OnReportContact(const ChVector<>& pA,
 //   - as such, this functor class is only created when using NSC frictional contact
 //   - composite material properties are modified only for contacts involving the sled or one of the wheels
 //   - in these cases, the friction coefficient is set to the user-specified value
-//   - cohesion, restiturion, and compliance are set to 0
+//   - cohesion, restitution, and compliance are set to 0
 
 class ContactMaterial : public ChContactContainer::AddContactCallback {
   public:

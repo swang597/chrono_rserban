@@ -25,17 +25,16 @@
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/physics/ChSystemSMC.h"
 
-#include "chrono_irrlicht/ChIrrApp.h"
-#include "chrono_irrlicht/ChIrrTools.h"
-
 #include "chrono_thirdparty/filesystem/path.h"
 
+#include "driver_cb.h"
+#include "irrlicht_app.h"
 #include "robosimian.h"
 
 using namespace chrono;
 using namespace chrono::collision;
 
-double time_step = 1e-4;
+double time_step = 1e-3;
 
 // Drop the robot on rigid terrain
 bool drop = true;
@@ -50,195 +49,14 @@ double output_fps = 100;
 double render_fps = 60;
 
 // Output directories
-const std::string out_dir = "../ROBOSIMIAN";
+const std::string out_dir = "../ROBOSIMIAN_RIGID";
 const std::string pov_dir = out_dir + "/POVRAY";
 const std::string img_dir = out_dir + "/IMG";
 
-// POV-Ray amd/or IMG output
+// POV-Ray and/or IMG output
 bool data_output = true;
 bool povray_output = false;
 bool image_output = false;
-
-// =============================================================================
-
-class RobotGUIEventReceiver;
-
-class RobotIrrApp : public irrlicht::ChIrrApp {
-  public:
-    RobotIrrApp(robosimian::RoboSimian* robot,
-                robosimian::Driver* driver,
-                const wchar_t* title = 0,
-                irr::core::dimension2d<irr::u32> dims = irr::core::dimension2d<irr::u32>(1000, 800));
-
-    ~RobotIrrApp();
-
-    void EnableGrid(const ChCoordsys<>& csys, int nu, int nv);
-
-    virtual void DrawAll() override;
-
-  private:
-    void renderTextBox(const std::string& msg,
-                       int xpos,
-                       int ypos,
-                       int length = 120,
-                       int height = 15,
-                       irr::video::SColor color = irr::video::SColor(255, 20, 20, 20));
-
-  private:
-    robosimian::RoboSimian* m_robot;
-    robosimian::Driver* m_driver;
-
-    RobotGUIEventReceiver* m_erecv;
-
-    int m_HUD_x;  ///< x-coordinate of upper-left corner of HUD elements
-    int m_HUD_y;  ///< y-coordinate of upper-left corner of HUD elements
-
-    bool m_grid;
-    ChCoordsys<> m_gridCsys;
-    int m_gridNu;
-    int m_gridNv;
-
-    friend class RobotGUIEventReceiver;
-};
-
-class RobotGUIEventReceiver : public irr::IEventReceiver {
-  public:
-    RobotGUIEventReceiver(RobotIrrApp* app) : m_app(app), m_vis(robosimian::VisualizationType::COLLISION) {}
-
-    virtual bool OnEvent(const irr::SEvent& event) override;
-
-  private:
-    robosimian::VisualizationType m_vis;
-    RobotIrrApp* m_app;
-};
-
-RobotIrrApp::RobotIrrApp(robosimian::RoboSimian* robot,
-                         robosimian::Driver* driver,
-                         const wchar_t* title,
-                         irr::core::dimension2d<irr::u32> dims)
-    : ChIrrApp(robot->GetSystem(), title, dims, false, true, true, irr::video::EDT_OPENGL),
-      m_robot(robot),
-      m_driver(driver),
-      m_HUD_x(650),
-      m_HUD_y(20),
-      m_grid(false) {
-    m_erecv = new RobotGUIEventReceiver(this);
-    SetUserEventReceiver(m_erecv);
-}
-
-RobotIrrApp::~RobotIrrApp() {
-    delete m_erecv;
-}
-
-void RobotIrrApp::EnableGrid(const ChCoordsys<>& csys, int nu, int nv) {
-    m_gridCsys = csys;
-    m_gridNu = nu;
-    m_gridNv = nv;
-    m_grid = true;
-}
-
-void RobotIrrApp::renderTextBox(const std::string& msg,
-                                int xpos,
-                                int ypos,
-                                int length,
-                                int height,
-                                irr::video::SColor color) {
-    irr::core::rect<irr::s32> mclip(xpos, ypos, xpos + length, ypos + height);
-    GetVideoDriver()->draw2DRectangle(irr::video::SColor(90, 60, 60, 60),
-                                      irr::core::rect<irr::s32>(xpos, ypos, xpos + length, ypos + height), &mclip);
-    irr::gui::IGUIFont* font = GetIGUIEnvironment()->getBuiltInFont();
-    font->draw(msg.c_str(), irr::core::rect<irr::s32>(xpos + 3, ypos + 3, xpos + length, ypos + height), color);
-}
-
-void RobotIrrApp::DrawAll() {
-    ChIrrAppInterface::DrawAll();
-
-    if (m_grid) {
-        irrlicht::ChIrrTools::drawGrid(GetVideoDriver(), 0.1, 0.1, m_gridNu, m_gridNv, m_gridCsys,
-                                       irr::video::SColor(255, 255, 130, 80), true);
-    }
-
-    char msg[100];
-
-    sprintf(msg, "Time %.2f", m_robot->GetSystem()->GetChTime());
-    renderTextBox(msg, m_HUD_x, m_HUD_y, 120, 15, irr::video::SColor(255, 250, 200, 00));
-
-    sprintf(msg, "Driver phase: %s", m_driver->GetCurrentPhase().c_str());
-    renderTextBox(msg, m_HUD_x, m_HUD_y + 30, 120, 15, irr::video::SColor(255, 250, 200, 00));
-
-    sprintf(msg, "omega FR: %.2f", m_robot->GetWheelOmega(robosimian::FR));
-    renderTextBox(msg, m_HUD_x, m_HUD_y + 60, 120, 15, irr::video::SColor(255, 250, 200, 00));
-
-    sprintf(msg, "omega RR: %.2f", m_robot->GetWheelOmega(robosimian::RR));
-    renderTextBox(msg, m_HUD_x, m_HUD_y + 75, 120, 15, irr::video::SColor(255, 250, 200, 00));
-
-    sprintf(msg, "omega FL: %.2f", m_robot->GetWheelOmega(robosimian::FL));
-    renderTextBox(msg, m_HUD_x, m_HUD_y + 90, 120, 15, irr::video::SColor(255, 250, 200, 00));
-
-    sprintf(msg, "omega RL: %.2f", m_robot->GetWheelOmega(robosimian::RL));
-    renderTextBox(msg, m_HUD_x, m_HUD_y + 105, 120, 15, irr::video::SColor(255, 250, 200, 00));
-}
-
-bool RobotGUIEventReceiver::OnEvent(const irr::SEvent& event) {
-    if (event.EventType != irr::EET_KEY_INPUT_EVENT)
-        return false;
-
-    if (!event.KeyInput.PressedDown) {
-        switch (event.KeyInput.Key) {
-            case irr::KEY_KEY_C:
-                m_vis = (m_vis == robosimian::VisualizationType::MESH ? robosimian::VisualizationType::COLLISION
-                                                                      : robosimian::VisualizationType::MESH);
-
-                m_app->m_robot->SetVisualizationTypeChassis(m_vis);
-                m_app->m_robot->SetVisualizationTypeSled(m_vis);
-                m_app->m_robot->SetVisualizationTypeLimbs(m_vis);
-                m_app->m_robot->SetVisualizationTypeWheels(m_vis);
-
-                m_app->AssetBindAll();
-                m_app->AssetUpdateAll();
-
-                return true;
-        }
-    }
-    return false;
-}
-
-// =============================================================================
-
-class RobotDriverCallback : public robosimian::Driver::PhaseChangeCallback {
-  public:
-    RobotDriverCallback(robosimian::RoboSimian* robot) : m_robot(robot), m_start_x(0), m_start_time(0) {}
-    virtual void OnPhaseChange(robosimian::Driver::Phase old_phase, robosimian::Driver::Phase new_phase) override;
-
-    double GetDistance() const;
-    double GetDuration() const;
-    double GetAvgSpeed() const;
-
-    double m_start_x;
-    double m_start_time;
-
-  private:
-    robosimian::RoboSimian* m_robot;
-};
-
-void RobotDriverCallback::OnPhaseChange(robosimian::Driver::Phase old_phase, robosimian::Driver::Phase new_phase) {
-    if (new_phase == robosimian::Driver::CYCLE && old_phase != robosimian::Driver::CYCLE) {
-        m_start_x = m_robot->GetChassisPos().x();
-        m_start_time = m_robot->GetSystem()->GetChTime();
-    }
-}
-
-double RobotDriverCallback::GetDistance() const {
-    return m_robot->GetChassisPos().x() - m_start_x;
-}
-
-double RobotDriverCallback::GetDuration() const {
-    return m_robot->GetSystem()->GetChTime() - m_start_time;
-}
-
-double RobotDriverCallback::GetAvgSpeed() const {
-    return GetDistance() / GetDuration();
-}
 
 // =============================================================================
 
@@ -317,33 +135,64 @@ void CreateCamera(irrlicht::ChIrrApp& application,
 
 // =============================================================================
 
-std::shared_ptr<ChBody> CreateTerrain(ChSystem& sys, const ChVector<>& hdim, const ChVector<>& loc) {
-    auto ground = std::shared_ptr<ChBody>(sys.NewBody());
+std::shared_ptr<ChBody> CreateTerrain(ChSystem* sys, double length, double width, double height, double offset) {
+    auto ground = std::shared_ptr<ChBody>(sys->NewBody());
     ground->SetBodyFixed(true);
     ground->SetCollide(true);
 
     ground->GetCollisionModel()->ClearModel();
-    ground->GetCollisionModel()->AddBox(hdim.x(), hdim.y(), hdim.z(), loc);
+    ground->GetCollisionModel()->AddBox(length / 2, width / 2, 0.1, ChVector<>(offset, 0, height - 0.1));
     ground->GetCollisionModel()->BuildModel();
 
+    auto box = std::make_shared<ChBoxShape>();
+    box->GetBoxGeometry().Size = ChVector<>(length / 2, width / 2, 0.1);
+    box->GetBoxGeometry().Pos = ChVector<>(offset, 0, height - 0.1);
+    ground->AddAsset(box);
+
+    sys->AddBody(ground);
+
+    return ground;
+}
+
+void SetContactProperties(robosimian::RoboSimian* robot, std::shared_ptr<ChBody> ground) {
     float friction = 0.4f;
-    switch (ground->GetContactMethod()) {
+    float Y = 1e7f;
+    float cr = 0.0f;
+
+    switch (robot->GetSystem()->GetContactMethod()) {
         case ChMaterialSurface::NSC:
             ground->GetMaterialSurfaceNSC()->SetFriction(friction);
+            robot->GetSledBody()->GetMaterialSurfaceNSC()->SetFriction(friction);
+            robot->GetWheelBody(robosimian::LimbID::FR)->GetMaterialSurfaceNSC()->SetFriction(friction);
+            robot->GetWheelBody(robosimian::LimbID::FL)->GetMaterialSurfaceNSC()->SetFriction(friction);
+            robot->GetWheelBody(robosimian::LimbID::RR)->GetMaterialSurfaceNSC()->SetFriction(friction);
+            robot->GetWheelBody(robosimian::LimbID::RL)->GetMaterialSurfaceNSC()->SetFriction(friction);
+
             break;
         case ChMaterialSurface::SMC:
             ground->GetMaterialSurfaceSMC()->SetFriction(friction);
+            robot->GetSledBody()->GetMaterialSurfaceSMC()->SetFriction(friction);
+            robot->GetWheelBody(robosimian::LimbID::FR)->GetMaterialSurfaceSMC()->SetFriction(friction);
+            robot->GetWheelBody(robosimian::LimbID::FL)->GetMaterialSurfaceSMC()->SetFriction(friction);
+            robot->GetWheelBody(robosimian::LimbID::RR)->GetMaterialSurfaceSMC()->SetFriction(friction);
+            robot->GetWheelBody(robosimian::LimbID::RL)->GetMaterialSurfaceSMC()->SetFriction(friction);
+
+            ground->GetMaterialSurfaceSMC()->SetYoungModulus(Y);
+            robot->GetSledBody()->GetMaterialSurfaceSMC()->SetYoungModulus(Y);
+            robot->GetWheelBody(robosimian::LimbID::FR)->GetMaterialSurfaceSMC()->SetYoungModulus(Y);
+            robot->GetWheelBody(robosimian::LimbID::FL)->GetMaterialSurfaceSMC()->SetYoungModulus(Y);
+            robot->GetWheelBody(robosimian::LimbID::RR)->GetMaterialSurfaceSMC()->SetYoungModulus(Y);
+            robot->GetWheelBody(robosimian::LimbID::RL)->GetMaterialSurfaceSMC()->SetYoungModulus(Y);
+
+            ground->GetMaterialSurfaceSMC()->SetRestitution(cr);
+            robot->GetSledBody()->GetMaterialSurfaceSMC()->SetRestitution(cr);
+            robot->GetWheelBody(robosimian::LimbID::FR)->GetMaterialSurfaceSMC()->SetRestitution(cr);
+            robot->GetWheelBody(robosimian::LimbID::FL)->GetMaterialSurfaceSMC()->SetRestitution(cr);
+            robot->GetWheelBody(robosimian::LimbID::RR)->GetMaterialSurfaceSMC()->SetRestitution(cr);
+            robot->GetWheelBody(robosimian::LimbID::RL)->GetMaterialSurfaceSMC()->SetRestitution(cr);
+
             break;
     }
-
-    auto box = std::make_shared<ChBoxShape>();
-    box->GetBoxGeometry().Size = hdim;
-    box->GetBoxGeometry().Pos = loc;
-    ground->AddAsset(box);
-
-    sys.AddBody(ground);
-
-    return ground;
 }
 
 // =============================================================================
@@ -361,8 +210,8 @@ int main(int argc, char* argv[]) {
     // Create system
     // -------------
 
-    ////ChSystemSMC my_sys;
-    ChSystemNSC my_sys;
+    ChSystemSMC my_sys;
+    ////ChSystemNSC my_sys;
 
     my_sys.SetMaxItersSolverSpeed(200);
     if (my_sys.GetContactMethod() == ChMaterialSurface::NSC)
@@ -434,7 +283,7 @@ int main(int argc, char* argv[]) {
         GetChronoDataFile("robosimian/actuation/driving_stop.txt"),   // stop input file
         true);
 
-    RobotDriverCallback cbk(&robot);
+    robosimian::RobotDriverCallback cbk(&robot);
     driver->RegisterPhaseChangeCallback(&cbk);
 
     driver->SetTimeOffsets(duration_pose, duration_settle_robot);
@@ -445,14 +294,15 @@ int main(int argc, char* argv[]) {
     // -------------------------------
 
     ////RayCaster caster(&my_sys, ChFrame<>(ChVector<>(2, 0, -1), Q_from_AngY(-CH_C_PI_2)), ChVector2<>(2.5, 2.5),
-    ///0.02);
+    /// 0.02);
     RayCaster caster(&my_sys, ChFrame<>(ChVector<>(0, -2, -1), Q_from_AngX(-CH_C_PI_2)), ChVector2<>(2.5, 2.5), 0.02);
 
     // -------------------------------
     // Create the visualization window
     // -------------------------------
 
-    RobotIrrApp application(&robot, driver.get(), L"RoboSimian", irr::core::dimension2d<irr::u32>(800, 600));
+    robosimian::RobotIrrApp application(&robot, driver.get(), L"RoboSimian - Rigid terrain",
+                                        irr::core::dimension2d<irr::u32>(800, 600));
     irrlicht::ChIrrWizard::add_typical_Logo(application.GetDevice());
     irrlicht::ChIrrWizard::add_typical_Sky(application.GetDevice());
     irrlicht::ChIrrWizard::add_typical_Lights(application.GetDevice(), irr::core::vector3df(100.f, 100.f, 100.f),
@@ -510,12 +360,13 @@ int main(int argc, char* argv[]) {
             // Create terrain
             ChVector<> hdim(length / 2, width / 2, 0.1);
             ChVector<> loc(length / 4, 0, z - 0.1);
-            auto ground = CreateTerrain(my_sys, hdim, loc);
+            auto ground = CreateTerrain(&my_sys, length, width, z, length / 4);
+            SetContactProperties(&robot, ground);
             application.AssetBind(ground);
             application.AssetUpdate(ground);
 
             // Coordinate system for grid
-            ChCoordsys<> gridCsys =
+            auto gridCsys =
                 ChCoordsys<>(ChVector<>(length / 4, 0, z + 0.005), chrono::Q_from_AngAxis(-CH_C_PI_2, VECT_Z));
             int gridNu = static_cast<int>(width / 0.1);
             int gridNv = static_cast<int>(length / 0.1);
