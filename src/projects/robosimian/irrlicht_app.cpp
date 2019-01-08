@@ -59,31 +59,34 @@ void RobotIrrApp::renderTextBox(const std::string& msg,
 }
 
 void RobotIrrApp::DrawAll() {
-    ChIrrAppInterface::DrawAll();
-
     if (m_grid) {
         irrlicht::ChIrrTools::drawGrid(GetVideoDriver(), 0.1, 0.1, m_gridNu, m_gridNv, m_gridCsys,
                                        irr::video::SColor(255, 255, 130, 80), true);
     }
+
+    ChIrrAppInterface::DrawAll();
 
     char msg[100];
 
     sprintf(msg, "Time %.2f", m_robot->GetSystem()->GetChTime());
     renderTextBox(msg, m_HUD_x, m_HUD_y, 120, 15, irr::video::SColor(255, 250, 200, 00));
 
+    auto type = std::string("Contact method: ") + (m_robot->GetSystem()->GetContactMethod() == ChMaterialSurface::NSC ? "NSC" : "SMC");
+    renderTextBox(type.c_str(), m_HUD_x, m_HUD_y + 15, 120, 15, irr::video::SColor(255, 250, 200, 00));
+
     sprintf(msg, "Driver phase: %s", m_driver->GetCurrentPhase().c_str());
     renderTextBox(msg, m_HUD_x, m_HUD_y + 30, 120, 15, irr::video::SColor(255, 250, 200, 00));
 
-    sprintf(msg, "omega FR: %.2f", m_robot->GetWheelOmega(robosimian::FR));
+    sprintf(msg, "omega FR: %.2f", std::abs(m_robot->GetWheelOmega(robosimian::FR)));
     renderTextBox(msg, m_HUD_x, m_HUD_y + 60, 120, 15, irr::video::SColor(255, 250, 200, 00));
 
-    sprintf(msg, "omega RR: %.2f", m_robot->GetWheelOmega(robosimian::RR));
+    sprintf(msg, "omega RR: %.2f", std::abs(m_robot->GetWheelOmega(robosimian::RR)));
     renderTextBox(msg, m_HUD_x, m_HUD_y + 75, 120, 15, irr::video::SColor(255, 250, 200, 00));
 
-    sprintf(msg, "omega FL: %.2f", m_robot->GetWheelOmega(robosimian::FL));
+    sprintf(msg, "omega FL: %.2f", std::abs(m_robot->GetWheelOmega(robosimian::FL)));
     renderTextBox(msg, m_HUD_x, m_HUD_y + 90, 120, 15, irr::video::SColor(255, 250, 200, 00));
 
-    sprintf(msg, "omega RL: %.2f", m_robot->GetWheelOmega(robosimian::RL));
+    sprintf(msg, "omega RL: %.2f", std::abs(m_robot->GetWheelOmega(robosimian::RL)));
     renderTextBox(msg, m_HUD_x, m_HUD_y + 105, 120, 15, irr::video::SColor(255, 250, 200, 00));
 }
 

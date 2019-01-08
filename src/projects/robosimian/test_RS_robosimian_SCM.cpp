@@ -40,6 +40,9 @@ double time_step = 1e-3;
 // Drop the robot on SCM terrain
 bool drop = true;
 
+// Robot locomotion mode
+robosimian::LocomotionMode mode = robosimian::LocomotionMode::WALK;
+
 // Phase durations
 double duration_pose = 1.0;          // Interval to assume initial pose
 double duration_settle_robot = 0.5;  // Interval to allow robot settling on terrain
@@ -61,21 +64,41 @@ bool image_output = false;
 
 // =============================================================================
 
-void CreateCamera(irrlicht::ChIrrApp& application,
-                  const irr::core::vector3df& position,
-                  const irr::core::vector3df& target) {
-    irrlicht::RTSCamera* camera =
-        new irrlicht::RTSCamera(application.GetDevice(), application.GetSceneManager()->getRootSceneNode(),
-                                application.GetSceneManager(), -1, -160.0f, 1.0f, 0.003f);
+std::shared_ptr<vehicle::SCMDeformableTerrain> CreateTerrain(robosimian::RoboSimian* robot,
+                                                             double length,
+                                                             double width,
+                                                             double height,
+                                                             double offset) {
+    // Deformable terrain properties (LETE sand)
+    double Kphi = 5301e3;    // Bekker Kphi
+    double Kc = 102e3;       // Bekker Kc
+    double n = 0.793;        // Bekker n exponent
+    double coh = 1.3e3;      // Mohr cohesive limit (Pa)
+    double phi = 31.1;       // Mohr friction limit (degrees)
+    double K = 1.2e-2;       // Janosi shear coefficient (m)
+    double E_elastic = 2e8;  // Elastic stiffness (Pa/m), before plastic yeld
+    double damping = 3e4;    // Damping coefficient (Pa*s/m)
 
-    camera->setPosition(position);
-    camera->setTarget(target);
-    camera->setUpVector(irr::core::vector3df(0, 0, 1));
-    camera->setNearValue(0.1f);
-    camera->setMinZoom(0.6f);
+    // Initial number of divisions per unit (m)
+    double factor = 12;
+
+    // Mesh divisions
+    int ndivX = (int)std::ceil(length * factor);
+    int ndivY = (int)std::ceil(width * factor);
+
+    auto terrain = std::make_shared<vehicle::SCMDeformableTerrain>(robot->GetSystem());
+    terrain->SetPlane(ChCoordsys<>(ChVector<>(offset, 0, 0), Q_from_AngX(CH_C_PI_2)));
+    terrain->SetSoilParametersSCM(Kphi, Kc, n, coh, phi, K, E_elastic, damping);
+    terrain->SetPlotType(vehicle::SCMDeformableTerrain::PLOT_SINKAGE, 0, 0.15);
+    terrain->Initialize(height, length, width, ndivX, ndivY);
+    terrain->SetAutomaticRefinement(true);
+    terrain->SetAutomaticRefinementResolution(0.02);
+
+    // Enable moving patch feature
+    terrain->EnableMovingPatch(robot->GetChassisBody(), ChVector<>(0, 0, 0), 3.0, 2.0);
+
+    return terrain;
 }
-
-// =============================================================================
 
 void SetContactProperties(robosimian::RoboSimian* robot) {
     assert(robot->GetSystem()->GetContactMethod() == ChMaterialSurface::SMC);
@@ -103,42 +126,6 @@ void SetContactProperties(robosimian::RoboSimian* robot) {
     robot->GetWheelBody(robosimian::LimbID::RL)->GetMaterialSurfaceSMC()->SetRestitution(cr);
 }
 
-std::shared_ptr<vehicle::SCMDeformableTerrain> CreateTerrain(ChSystemSMC* sys,
-                                                             double length,
-                                                             double width,
-                                                             double height,
-                                                             double offset) {
-    // Deformable terrain properties (LETE sand)
-    double Kphi = 5301e3;    // Bekker Kphi
-    double Kc = 102e3;       // Bekker Kc
-    double n = 0.793;        // Bekker n exponent
-    double coh = 1.3e3;      // Mohr cohesive limit (Pa)
-    double phi = 31.1;       // Mohr friction limit (degrees)
-    double K = 1.2e-2;       // Janosi shear coefficient (m)
-    double E_elastic = 2e8;  // Elastic stiffness (Pa/m), before plastic yeld
-    double damping = 3e4;    // Damping coefficient (Pa*s/m)
-
-    // Initial number of divisions per unit (m)
-    double factor = 12;
-
-    // Mesh divisions
-    int ndivX = (int)std::ceil(length * factor);
-    int ndivY = (int)std::ceil(width * factor);
-
-    auto terrain = std::make_shared<vehicle::SCMDeformableTerrain>(sys);
-    terrain->SetPlane(ChCoordsys<>(ChVector<>(offset, 0, 0), Q_from_AngX(CH_C_PI_2)));
-    terrain->SetSoilParametersSCM(Kphi, Kc, n, coh, phi, K, E_elastic, damping);
-    terrain->SetPlotType(vehicle::SCMDeformableTerrain::PLOT_SINKAGE, 0, 0.15);
-    terrain->Initialize(height, length, width, ndivX, ndivY);
-    terrain->SetAutomaticRefinement(true);
-    terrain->SetAutomaticRefinementResolution(0.02);
-
-    // Enable moving patch feature
-    ////terrain.EnableMovingPatch(m113.GetChassisBody(), ChVector<>(-2, 0, 0), 6.5, 3.5);
-
-    return terrain;
-}
-
 // =============================================================================
 
 int main(int argc, char* argv[]) {
@@ -155,11 +142,8 @@ int main(int argc, char* argv[]) {
     // -------------
 
     ChSystemSMC my_sys;
-
     my_sys.SetMaxItersSolverSpeed(200);
-    if (my_sys.GetContactMethod() == ChMaterialSurface::NSC)
-        my_sys.SetSolverType(ChSolver::Type::BARZILAIBORWEIN);
-
+    my_sys.SetSolverType(ChSolver::Type::BARZILAIBORWEIN);
     my_sys.Set_G_acc(ChVector<double>(0, 0, -9.8));
     ////my_sys.Set_G_acc(ChVector<double>(0, 0, 0));
 
@@ -205,26 +189,37 @@ int main(int argc, char* argv[]) {
     // Create a driver and attach to robot
     // -----------------------------------
 
-    ////auto driver = std::make_shared<robosimian::Driver>(
-    ////    "",                                                           // start input file
-    ////    GetChronoDataFile("robosimian/actuation/walking_cycle.txt"),  // cycle input file
-    ////    "",                                                           // stop input file
-    ////    true);
-    ////auto driver = std::make_shared<robosimian::Driver>(
-    ////    GetChronoDataFile("robosimian/actuation/sculling_start.txt"),   // start input file
-    ////    GetChronoDataFile("robosimian/actuation/sculling_cycle2.txt"),  // cycle input file
-    ////    GetChronoDataFile("robosimian/actuation/sculling_stop.txt"),    // stop input file
-    ////    true);
-    ////auto driver = std::make_shared<robosimian::Driver>(
-    ////    GetChronoDataFile("robosimian/actuation/inchworming_start.txt"),  // start input file
-    ////    GetChronoDataFile("robosimian/actuation/inchworming_cycle.txt"),  // cycle input file
-    ////    GetChronoDataFile("robosimian/actuation/inchworming_stop.txt"),   // stop input file
-    ////    true);
-    auto driver = std::make_shared<robosimian::Driver>(
-        GetChronoDataFile("robosimian/actuation/driving_start.txt"),  // start input file
-        GetChronoDataFile("robosimian/actuation/driving_cycle.txt"),  // cycle input file
-        GetChronoDataFile("robosimian/actuation/driving_stop.txt"),   // stop input file
-        true);
+    std::shared_ptr<robosimian::Driver> driver;
+    switch (mode) {
+        case robosimian::LocomotionMode::WALK:
+            driver = std::make_shared<robosimian::Driver>(
+                "",                                                           // start input file
+                GetChronoDataFile("robosimian/actuation/walking_cycle.txt"),  // cycle input file
+                "",                                                           // stop input file
+                true);
+            break;
+        case robosimian::LocomotionMode::SCULL:
+            driver = std::make_shared<robosimian::Driver>(
+                GetChronoDataFile("robosimian/actuation/sculling_start.txt"),   // start input file
+                GetChronoDataFile("robosimian/actuation/sculling_cycle2.txt"),  // cycle input file
+                GetChronoDataFile("robosimian/actuation/sculling_stop.txt"),    // stop input file
+                true);
+            break;
+        case robosimian::LocomotionMode::INCHWORM:
+            driver = std::make_shared<robosimian::Driver>(
+                GetChronoDataFile("robosimian/actuation/inchworming_start.txt"),  // start input file
+                GetChronoDataFile("robosimian/actuation/inchworming_cycle.txt"),  // cycle input file
+                GetChronoDataFile("robosimian/actuation/inchworming_stop.txt"),   // stop input file
+                true);
+            break;
+        case robosimian::LocomotionMode::DRIVE:
+            driver = std::make_shared<robosimian::Driver>(
+                GetChronoDataFile("robosimian/actuation/driving_start.txt"),  // start input file
+                GetChronoDataFile("robosimian/actuation/driving_cycle.txt"),  // cycle input file
+                GetChronoDataFile("robosimian/actuation/driving_stop.txt"),   // stop input file
+                true);
+            break;
+    }
 
     robosimian::RobotDriverCallback cbk(&robot);
     driver->RegisterPhaseChangeCallback(&cbk);
@@ -238,12 +233,12 @@ int main(int argc, char* argv[]) {
 
     robosimian::RobotIrrApp application(&robot, driver.get(), L"RoboSimian - SCM terrain",
                                         irr::core::dimension2d<irr::u32>(800, 600));
-    irrlicht::ChIrrWizard::add_typical_Logo(application.GetDevice());
-    irrlicht::ChIrrWizard::add_typical_Sky(application.GetDevice());
-    irrlicht::ChIrrWizard::add_typical_Lights(application.GetDevice(), irr::core::vector3df(100.f, 100.f, 100.f),
-                                              irr::core::vector3df(100.f, -100.f, 80.f));
-    irrlicht::ChIrrWizard::add_typical_Camera(application.GetDevice(), irr::core::vector3df(1, -2.75f, 0.2f),
-                                              irr::core::vector3df(1, 0, 0));
+    application.AddTypicalLogo();
+    application.AddTypicalSky();
+    application.AddTypicalCamera(irr::core::vector3df(1, -2.75f, 0.2f), irr::core::vector3df(1, 0, 0));
+    application.AddTypicalLights(irr::core::vector3df(100.f, 100.f, 100.f), irr::core::vector3df(100.f, -100.f, 80.f));
+    application.AddLightWithShadow(irr::core::vector3df(10.0f, -6.0f, 3.0f), irr::core::vector3df(0, 0, 0), 3, -3, 7,
+                                   40, 512);
 
     application.AssetBindAll();
     application.AssetUpdateAll();
@@ -292,14 +287,14 @@ int main(int argc, char* argv[]) {
             double width = 2;
 
             // Create terrain
-            terrain = CreateTerrain(&my_sys, length, width, z, length / 4);
+            terrain = CreateTerrain(&robot, length, width, z, length / 4);
             SetContactProperties(&robot);
 
             application.AssetBindAll();
             application.AssetUpdateAll();
 
             // Release robot
-            robot.GetChassis()->GetBody()->SetBodyFixed(false);
+            robot.GetChassisBody()->SetBodyFixed(false);
 
             terrain_created = true;
         }

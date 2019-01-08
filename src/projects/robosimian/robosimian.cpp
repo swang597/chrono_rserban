@@ -358,7 +358,7 @@ class ContactMaterial : public ChContactContainer::AddContactCallback {
         auto contactableB = contactinfo.modelB->GetContactable();
 
         // Overwrite composite material properties if collision involves the sled body
-        auto sled = m_robot->m_sled->GetBody().get();
+        auto sled = m_robot->GetSledBody().get();
         if (contactableA == sled || contactableB == sled) {
             mat->static_friction = m_robot->m_sled_friction;
             mat->sliding_friction = m_robot->m_sled_friction;
@@ -369,10 +369,10 @@ class ContactMaterial : public ChContactContainer::AddContactCallback {
         }
 
         // Overwrite composite material properties if collision involves a wheel body
-        auto wheel0 = m_robot->m_limbs[0]->GetWheelBody().get();
-        auto wheel1 = m_robot->m_limbs[1]->GetWheelBody().get();
-        auto wheel2 = m_robot->m_limbs[2]->GetWheelBody().get();
-        auto wheel3 = m_robot->m_limbs[3]->GetWheelBody().get();
+        auto wheel0 = m_robot->GetWheelBody(FR).get();
+        auto wheel1 = m_robot->GetWheelBody(FL).get();
+        auto wheel2 = m_robot->GetWheelBody(RR).get();
+        auto wheel3 = m_robot->GetWheelBody(RL).get();
         if (contactableA == wheel0 || contactableB == wheel0 || contactableA == wheel1 || contactableB == wheel1 ||
             contactableA == wheel2 || contactableB == wheel2 || contactableA == wheel3 || contactableB == wheel3) {
             mat->static_friction = m_robot->m_wheel_friction;

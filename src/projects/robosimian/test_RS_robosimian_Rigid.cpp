@@ -39,6 +39,12 @@ double time_step = 1e-3;
 // Drop the robot on rigid terrain
 bool drop = true;
 
+// Robot locomotion mode
+robosimian::LocomotionMode mode = robosimian::LocomotionMode::WALK;
+
+// Contact method (system type)
+ChMaterialSurface::ContactMethod contact_method = ChMaterialSurface::SMC;
+
 // Phase durations
 double duration_pose = 1.0;          // Interval to assume initial pose
 double duration_settle_robot = 0.5;  // Interval to allow robot settling on terrain
@@ -119,24 +125,12 @@ void RayCaster::Update() {
 
 // =============================================================================
 
-void CreateCamera(irrlicht::ChIrrApp& application,
-                  const irr::core::vector3df& position,
-                  const irr::core::vector3df& target) {
-    irrlicht::RTSCamera* camera =
-        new irrlicht::RTSCamera(application.GetDevice(), application.GetSceneManager()->getRootSceneNode(),
-                                application.GetSceneManager(), -1, -160.0f, 1.0f, 0.003f);
-
-    camera->setPosition(position);
-    camera->setTarget(target);
-    camera->setUpVector(irr::core::vector3df(0, 0, 1));
-    camera->setNearValue(0.1f);
-    camera->setMinZoom(0.6f);
-}
-
-// =============================================================================
-
-std::shared_ptr<ChBody> CreateTerrain(ChSystem* sys, double length, double width, double height, double offset) {
-    auto ground = std::shared_ptr<ChBody>(sys->NewBody());
+std::shared_ptr<ChBody> CreateTerrain(robosimian::RoboSimian* robot,
+                                      double length,
+                                      double width,
+                                      double height,
+                                      double offset) {
+    auto ground = std::shared_ptr<ChBody>(robot->GetSystem()->NewBody());
     ground->SetBodyFixed(true);
     ground->SetCollide(true);
 
@@ -149,19 +143,25 @@ std::shared_ptr<ChBody> CreateTerrain(ChSystem* sys, double length, double width
     box->GetBoxGeometry().Pos = ChVector<>(offset, 0, height - 0.1);
     ground->AddAsset(box);
 
-    sys->AddBody(ground);
+    auto texture = std::make_shared<ChTexture>();
+    texture->SetTextureFilename(GetChronoDataFile("pinkwhite.png"));
+    texture->SetTextureScale(10 * (float)length, 10 * (float)width);
+    ground->AddAsset(texture);
+
+    ground->AddAsset(std::make_shared<ChColorAsset>(0.8f, 0.8f, 0.8f));
+
+    robot->GetSystem()->AddBody(ground);
 
     return ground;
 }
 
-void SetContactProperties(robosimian::RoboSimian* robot, std::shared_ptr<ChBody> ground) {
-    float friction = 0.4f;
+void SetContactProperties(robosimian::RoboSimian* robot) {
+    float friction = 0.8f;
     float Y = 1e7f;
     float cr = 0.0f;
 
     switch (robot->GetSystem()->GetContactMethod()) {
         case ChMaterialSurface::NSC:
-            ground->GetMaterialSurfaceNSC()->SetFriction(friction);
             robot->GetSledBody()->GetMaterialSurfaceNSC()->SetFriction(friction);
             robot->GetWheelBody(robosimian::LimbID::FR)->GetMaterialSurfaceNSC()->SetFriction(friction);
             robot->GetWheelBody(robosimian::LimbID::FL)->GetMaterialSurfaceNSC()->SetFriction(friction);
@@ -170,27 +170,41 @@ void SetContactProperties(robosimian::RoboSimian* robot, std::shared_ptr<ChBody>
 
             break;
         case ChMaterialSurface::SMC:
-            ground->GetMaterialSurfaceSMC()->SetFriction(friction);
             robot->GetSledBody()->GetMaterialSurfaceSMC()->SetFriction(friction);
             robot->GetWheelBody(robosimian::LimbID::FR)->GetMaterialSurfaceSMC()->SetFriction(friction);
             robot->GetWheelBody(robosimian::LimbID::FL)->GetMaterialSurfaceSMC()->SetFriction(friction);
             robot->GetWheelBody(robosimian::LimbID::RR)->GetMaterialSurfaceSMC()->SetFriction(friction);
             robot->GetWheelBody(robosimian::LimbID::RL)->GetMaterialSurfaceSMC()->SetFriction(friction);
 
-            ground->GetMaterialSurfaceSMC()->SetYoungModulus(Y);
             robot->GetSledBody()->GetMaterialSurfaceSMC()->SetYoungModulus(Y);
             robot->GetWheelBody(robosimian::LimbID::FR)->GetMaterialSurfaceSMC()->SetYoungModulus(Y);
             robot->GetWheelBody(robosimian::LimbID::FL)->GetMaterialSurfaceSMC()->SetYoungModulus(Y);
             robot->GetWheelBody(robosimian::LimbID::RR)->GetMaterialSurfaceSMC()->SetYoungModulus(Y);
             robot->GetWheelBody(robosimian::LimbID::RL)->GetMaterialSurfaceSMC()->SetYoungModulus(Y);
 
-            ground->GetMaterialSurfaceSMC()->SetRestitution(cr);
             robot->GetSledBody()->GetMaterialSurfaceSMC()->SetRestitution(cr);
             robot->GetWheelBody(robosimian::LimbID::FR)->GetMaterialSurfaceSMC()->SetRestitution(cr);
             robot->GetWheelBody(robosimian::LimbID::FL)->GetMaterialSurfaceSMC()->SetRestitution(cr);
             robot->GetWheelBody(robosimian::LimbID::RR)->GetMaterialSurfaceSMC()->SetRestitution(cr);
             robot->GetWheelBody(robosimian::LimbID::RL)->GetMaterialSurfaceSMC()->SetRestitution(cr);
 
+            break;
+    }
+}
+
+void SetContactProperties(std::shared_ptr<ChBody> ground) {
+    float friction = 0.8f;
+    float Y = 1e7f;
+    float cr = 0.0f;
+
+    switch (ground->GetContactMethod()) {
+        case ChMaterialSurface::NSC:
+            ground->GetMaterialSurfaceNSC()->SetFriction(friction);
+            break;
+        case ChMaterialSurface::SMC:
+            ground->GetMaterialSurfaceSMC()->SetFriction(friction);
+            ground->GetMaterialSurfaceSMC()->SetYoungModulus(Y);
+            ground->GetMaterialSurfaceSMC()->SetRestitution(cr);
             break;
     }
 }
@@ -210,21 +224,26 @@ int main(int argc, char* argv[]) {
     // Create system
     // -------------
 
-    ChSystemSMC my_sys;
-    ////ChSystemNSC my_sys;
+    ChSystem* my_sys;
+    switch (contact_method) {
+        case ChMaterialSurface::NSC:
+            my_sys = new ChSystemNSC;
+            break;
+        case ChMaterialSurface::SMC:
+            my_sys = new ChSystemSMC;
+            break;
+    }
 
-    my_sys.SetMaxItersSolverSpeed(200);
-    if (my_sys.GetContactMethod() == ChMaterialSurface::NSC)
-        my_sys.SetSolverType(ChSolver::Type::BARZILAIBORWEIN);
-
-    my_sys.Set_G_acc(ChVector<double>(0, 0, -9.8));
-    ////my_sys.Set_G_acc(ChVector<double>(0, 0, 0));
+    my_sys->SetMaxItersSolverSpeed(200);
+    my_sys->SetSolverType(ChSolver::Type::BARZILAIBORWEIN);
+    my_sys->Set_G_acc(ChVector<double>(0, 0, -9.8));
+    ////my_sys->Set_G_acc(ChVector<double>(0, 0, 0));
 
     // -----------------------
     // Create RoboSimian robot
     // -----------------------
 
-    robosimian::RoboSimian robot(&my_sys, true, true);
+    robosimian::RoboSimian robot(my_sys, true, true);
 
     // Set output directory
 
@@ -262,26 +281,37 @@ int main(int argc, char* argv[]) {
     // Create a driver and attach to robot
     // -----------------------------------
 
-    ////auto driver = std::make_shared<robosimian::Driver>(
-    ////    "",                                                           // start input file
-    ////    GetChronoDataFile("robosimian/actuation/walking_cycle.txt"),  // cycle input file
-    ////    "",                                                           // stop input file
-    ////    true);
-    ////auto driver = std::make_shared<robosimian::Driver>(
-    ////    GetChronoDataFile("robosimian/actuation/sculling_start.txt"),   // start input file
-    ////    GetChronoDataFile("robosimian/actuation/sculling_cycle2.txt"),  // cycle input file
-    ////    GetChronoDataFile("robosimian/actuation/sculling_stop.txt"),    // stop input file
-    ////    true);
-    ////auto driver = std::make_shared<robosimian::Driver>(
-    ////    GetChronoDataFile("robosimian/actuation/inchworming_start.txt"),  // start input file
-    ////    GetChronoDataFile("robosimian/actuation/inchworming_cycle.txt"),  // cycle input file
-    ////    GetChronoDataFile("robosimian/actuation/inchworming_stop.txt"),   // stop input file
-    ////    true);
-    auto driver = std::make_shared<robosimian::Driver>(
-        GetChronoDataFile("robosimian/actuation/driving_start.txt"),  // start input file
-        GetChronoDataFile("robosimian/actuation/driving_cycle.txt"),  // cycle input file
-        GetChronoDataFile("robosimian/actuation/driving_stop.txt"),   // stop input file
-        true);
+    std::shared_ptr<robosimian::Driver> driver;
+    switch (mode) {
+        case robosimian::LocomotionMode::WALK:
+            driver = std::make_shared<robosimian::Driver>(
+                "",                                                           // start input file
+                GetChronoDataFile("robosimian/actuation/walking_cycle.txt"),  // cycle input file
+                "",                                                           // stop input file
+                true);
+            break;
+        case robosimian::LocomotionMode::SCULL:
+            driver = std::make_shared<robosimian::Driver>(
+                GetChronoDataFile("robosimian/actuation/sculling_start.txt"),   // start input file
+                GetChronoDataFile("robosimian/actuation/sculling_cycle2.txt"),  // cycle input file
+                GetChronoDataFile("robosimian/actuation/sculling_stop.txt"),    // stop input file
+                true);
+            break;
+        case robosimian::LocomotionMode::INCHWORM:
+            driver = std::make_shared<robosimian::Driver>(
+                GetChronoDataFile("robosimian/actuation/inchworming_start.txt"),  // start input file
+                GetChronoDataFile("robosimian/actuation/inchworming_cycle.txt"),  // cycle input file
+                GetChronoDataFile("robosimian/actuation/inchworming_stop.txt"),   // stop input file
+                true);
+            break;
+        case robosimian::LocomotionMode::DRIVE:
+            driver = std::make_shared<robosimian::Driver>(
+                GetChronoDataFile("robosimian/actuation/driving_start.txt"),  // start input file
+                GetChronoDataFile("robosimian/actuation/driving_cycle.txt"),  // cycle input file
+                GetChronoDataFile("robosimian/actuation/driving_stop.txt"),   // stop input file
+                true);
+            break;
+    }
 
     robosimian::RobotDriverCallback cbk(&robot);
     driver->RegisterPhaseChangeCallback(&cbk);
@@ -293,9 +323,9 @@ int main(int argc, char* argv[]) {
     // Cast rays into collision models
     // -------------------------------
 
-    ////RayCaster caster(&my_sys, ChFrame<>(ChVector<>(2, 0, -1), Q_from_AngY(-CH_C_PI_2)), ChVector2<>(2.5, 2.5),
+    ////RayCaster caster(my_sys, ChFrame<>(ChVector<>(2, 0, -1), Q_from_AngY(-CH_C_PI_2)), ChVector2<>(2.5, 2.5),
     /// 0.02);
-    RayCaster caster(&my_sys, ChFrame<>(ChVector<>(0, -2, -1), Q_from_AngX(-CH_C_PI_2)), ChVector2<>(2.5, 2.5), 0.02);
+    RayCaster caster(my_sys, ChFrame<>(ChVector<>(0, -2, -1), Q_from_AngX(-CH_C_PI_2)), ChVector2<>(2.5, 2.5), 0.02);
 
     // -------------------------------
     // Create the visualization window
@@ -303,12 +333,12 @@ int main(int argc, char* argv[]) {
 
     robosimian::RobotIrrApp application(&robot, driver.get(), L"RoboSimian - Rigid terrain",
                                         irr::core::dimension2d<irr::u32>(800, 600));
-    irrlicht::ChIrrWizard::add_typical_Logo(application.GetDevice());
-    irrlicht::ChIrrWizard::add_typical_Sky(application.GetDevice());
-    irrlicht::ChIrrWizard::add_typical_Lights(application.GetDevice(), irr::core::vector3df(100.f, 100.f, 100.f),
-                                              irr::core::vector3df(100.f, -100.f, 80.f));
-    irrlicht::ChIrrWizard::add_typical_Camera(application.GetDevice(), irr::core::vector3df(1, -2.75f, 0.2f),
-                                              irr::core::vector3df(1, 0, 0));
+    application.AddTypicalLogo();
+    application.AddTypicalSky();
+    application.AddTypicalCamera(irr::core::vector3df(1, -2.75f, 0.2f), irr::core::vector3df(1, 0, 0));
+    application.AddTypicalLights(irr::core::vector3df(100.f, 100.f, 100.f), irr::core::vector3df(100.f, -100.f, 80.f));
+    application.AddLightWithShadow(irr::core::vector3df(10.0f, -6.0f, 3.0f), irr::core::vector3df(0, 0, 0), 3, -10, 10,
+                                   40, 512);
 
     application.AssetBindAll();
     application.AssetUpdateAll();
@@ -349,7 +379,7 @@ int main(int argc, char* argv[]) {
     while (application.GetDevice()->run()) {
         ////caster.Update();
 
-        if (drop && !terrain_created && my_sys.GetChTime() > time_create_terrain) {
+        if (drop && !terrain_created && my_sys->GetChTime() > time_create_terrain) {
             // Set terrain height
             double z = robot.GetWheelPos(robosimian::FR).z() - 0.15;
 
@@ -360,20 +390,22 @@ int main(int argc, char* argv[]) {
             // Create terrain
             ChVector<> hdim(length / 2, width / 2, 0.1);
             ChVector<> loc(length / 4, 0, z - 0.1);
-            auto ground = CreateTerrain(&my_sys, length, width, z, length / 4);
-            SetContactProperties(&robot, ground);
+            auto ground = CreateTerrain(&robot, length, width, z, length / 4);
+            SetContactProperties(&robot);
+            SetContactProperties(ground);
+
             application.AssetBind(ground);
             application.AssetUpdate(ground);
 
             // Coordinate system for grid
-            auto gridCsys =
-                ChCoordsys<>(ChVector<>(length / 4, 0, z + 0.005), chrono::Q_from_AngAxis(-CH_C_PI_2, VECT_Z));
-            int gridNu = static_cast<int>(width / 0.1);
-            int gridNv = static_cast<int>(length / 0.1);
-            application.EnableGrid(gridCsys, gridNu, gridNv);
+            ////auto gridCsys =
+            ////    ChCoordsys<>(ChVector<>(length / 4, 0, z + 0.005), chrono::Q_from_AngAxis(-CH_C_PI_2, VECT_Z));
+            ////int gridNu = static_cast<int>(width / 0.1);
+            ////int gridNv = static_cast<int>(length / 0.1);
+            ////application.EnableGrid(gridCsys, gridNu, gridNv);
 
             // Release robot
-            robot.GetChassis()->GetBody()->SetBodyFixed(false);
+            robot.GetChassisBody()->SetBodyFixed(false);
 
             terrain_created = true;
         }
@@ -390,7 +422,7 @@ int main(int argc, char* argv[]) {
             if (povray_output) {
                 char filename[100];
                 sprintf(filename, "%s/data_%04d.dat", pov_dir.c_str(), render_frame + 1);
-                utils::WriteShapesPovray(&my_sys, filename);
+                utils::WriteShapesPovray(my_sys, filename);
             }
             if (image_output) {
                 char filename[100];
@@ -405,7 +437,7 @@ int main(int argc, char* argv[]) {
             render_frame++;
         }
 
-        ////double time = my_sys.GetChTime();
+        ////double time = my_sys->GetChTime();
         ////double A = CH_C_PI / 6;
         ////double freq = 2;
         ////double val = 0.5 * A * (1 - std::cos(CH_C_2PI * freq * time));
@@ -414,7 +446,7 @@ int main(int argc, char* argv[]) {
 
         robot.DoStepDynamics(time_step);
 
-        ////if (my_sys.GetNcontacts() > 0) {
+        ////if (my_sys->GetNcontacts() > 0) {
         ////    robot.ReportContacts();
         ////}
 
@@ -425,5 +457,6 @@ int main(int argc, char* argv[]) {
 
     std::cout << "avg. speed: " << cbk.GetAvgSpeed() << std::endl;
 
+    delete my_sys;
     return 0;
 }
