@@ -20,15 +20,16 @@
 #include <cstdio>
 #include <vector>
 
-#include "chrono/utils/ChUtilsInputOutput.h"
-
 #include "chrono/physics/ChSystemSMC.h"
+#include "chrono/utils/ChUtilsInputOutput.h"
 
 #include "chrono_vehicle/terrain/SCMDeformableTerrain.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 
-#include "driver_cb.h"
+#include "chrono_thirdparty/SimpleOpt/SimpleOpt.h"
+#include "chrono_thirdparty/filesystem/path.h"
+
 #include "irrlicht_app.h"
 #include "robosimian.h"
 
@@ -39,9 +40,6 @@ double time_step = 1e-3;
 
 // Drop the robot on SCM terrain
 bool drop = true;
-
-// Robot locomotion mode
-robosimian::LocomotionMode mode = robosimian::LocomotionMode::WALK;
 
 // Phase durations
 double duration_pose = 1.0;          // Interval to assume initial pose
@@ -57,10 +55,104 @@ const std::string out_dir = "../ROBOSIMIAN_SCM";
 const std::string pov_dir = out_dir + "/POVRAY";
 const std::string img_dir = out_dir + "/IMG";
 
-// POV-Ray and/or IMG output
-bool data_output = true;
-bool povray_output = false;
-bool image_output = false;
+// =============================================================================
+
+void ShowUsage(const std::string& name);
+bool GetProblemSpecs(int argc,
+                     char** argv,
+                     robosimian::LocomotionMode& mode,
+                     int& num_cycles,
+                     double& dpb_incr,
+                     bool& render,
+                     bool& data_output,
+                     bool& image_output,
+                     bool& povray_output);
+
+// =============================================================================
+
+class DBPcontroller : public robosimian::Driver::PhaseChangeCallback {
+  public:
+    DBPcontroller(robosimian::RoboSimian* robot);
+    ~DBPcontroller() { delete m_csv; }
+
+    virtual void OnPhaseChange(robosimian::Driver::Phase old_phase, robosimian::Driver::Phase new_phase) override;
+
+    void SetCycleFreq(int freq) { m_cycle_freq = freq; }
+    void SetIncrement(double incr) { m_dbp_incr = incr; }
+    bool Stop() const { return m_avg_speed < 0; }
+    void WriteOutput(const std::string& filename) { m_csv->write_to_file(filename); }
+
+    double GetDistance() const { return m_robot->GetChassisPos().x() - m_start_x; }
+    double GetDuration() const { return m_robot->GetSystem()->GetChTime() - m_start_time; }
+    double GetAvgSpeed() const { return GetDistance() / GetDuration(); }
+
+  private:
+    robosimian::RoboSimian* m_robot;
+    std::shared_ptr<ChLoadBodyForce> m_load;
+
+    double m_weight;    // total robot weight
+    double m_dbp;       // DBP factor (ratio of robot weight)
+    double m_dbp_incr;  // DBP factor increment
+
+    int m_cycle_number;  // current cycle
+    int m_cycle_freq;    // number of cycles between DBP increases
+
+    double m_start_x;     // cached robot location
+    double m_start_time;  // cached time at last location
+    double m_avg_speed;   // average speed over last segment
+
+    utils::CSV_writer* m_csv;
+};
+
+DBPcontroller::DBPcontroller(robosimian::RoboSimian* robot)
+    : m_robot(robot),
+      m_dbp(0),
+      m_dbp_incr(0.04),
+      m_cycle_freq(2),
+      m_cycle_number(0),
+      m_start_x(0),
+      m_start_time(0),
+      m_avg_speed(0) {
+    // Cache robot weight
+    double mass = robot->GetMass();
+    double g = std::abs(robot->GetSystem()->Get_G_acc().z());
+    m_weight = mass * g;
+
+    // Create a body force load on the robot chassis.
+    // This is a horizontal force applied at the chassis center.
+    auto force_container = std::make_shared<ChLoadContainer>();
+    robot->GetSystem()->Add(force_container);
+    m_load = std::make_shared<ChLoadBodyForce>(robot->GetChassisBody(), VNULL, false, VNULL, true);
+    force_container->Add(m_load);
+
+    // Prepare CSV output
+    m_csv = new utils::CSV_writer(",");
+    *m_csv << "DBP_factor"
+           << "DBP_force"
+           << "Avg_speed" << std::endl;
+}
+
+void DBPcontroller::OnPhaseChange(robosimian::Driver::Phase old_phase, robosimian::Driver::Phase new_phase) {
+    if (new_phase == robosimian::Driver::CYCLE) {
+        if (m_cycle_number == 0) {
+            m_start_x = m_robot->GetChassisPos().x();
+            m_start_time = m_robot->GetSystem()->GetChTime();
+        } else if (m_cycle_number % m_cycle_freq == 0) {
+            // Save average speed at current DBP factor
+            m_avg_speed = GetAvgSpeed();
+            std::cout << "DBP: " << m_dbp << " force: " << m_dbp * m_weight << " avg. speed: " << m_avg_speed
+                      << std::endl;
+            *m_csv << m_dbp << m_dbp * m_weight << m_avg_speed << std::endl;
+            // Cache new start time and location
+            m_start_x = m_robot->GetChassisPos().x();
+            m_start_time = m_robot->GetSystem()->GetChTime();
+            // Increment DBP force
+            m_dbp += m_dbp_incr;
+            m_load->SetForce(ChVector<>(-m_dbp * m_weight, 0, 0), false);
+        }
+        m_cycle_number++;
+    }
+}
 
 // =============================================================================
 
@@ -70,12 +162,22 @@ std::shared_ptr<vehicle::SCMDeformableTerrain> CreateTerrain(robosimian::RoboSim
                                                              double height,
                                                              double offset) {
     // Deformable terrain properties (LETE sand)
-    double Kphi = 5301e3;    // Bekker Kphi
-    double Kc = 102e3;       // Bekker Kc
-    double n = 0.793;        // Bekker n exponent
-    double coh = 1.3e3;      // Mohr cohesive limit (Pa)
-    double phi = 31.1;       // Mohr friction limit (degrees)
-    double K = 1.2e-2;       // Janosi shear coefficient (m)
+    ////double Kphi = 5301e3;    // Bekker Kphi
+    ////double Kc = 102e3;       // Bekker Kc
+    ////double n = 0.793;        // Bekker n exponent
+    ////double coh = 1.3e3;      // Mohr cohesive limit (Pa)
+    ////double phi = 31.1;       // Mohr friction limit (degrees)
+    ////double K = 1.2e-2;       // Janosi shear coefficient (m)
+    ////double E_elastic = 2e8;  // Elastic stiffness (Pa/m), before plastic yeld
+    ////double damping = 3e4;    // Damping coefficient (Pa*s/m)
+
+    // Deformable terrain properties (CDT FGS dry - 6/29/2018)
+    double Kphi = 6259.1e3;  // Bekker Kphi
+    double Kc = 5085.6e3;    // Bekker Kc
+    double n = 1.42;         // Bekker n exponent
+    double coh = 1.58e3;     // Mohr cohesive limit (Pa)
+    double phi = 34.1;       // Mohr friction limit (degrees)
+    double K = 22.17e-3;     // Janosi shear coefficient (m)
     double E_elastic = 2e8;  // Elastic stiffness (Pa/m), before plastic yeld
     double damping = 3e4;    // Damping coefficient (Pa*s/m)
 
@@ -129,6 +231,23 @@ void SetContactProperties(robosimian::RoboSimian* robot) {
 // =============================================================================
 
 int main(int argc, char* argv[]) {
+    // ----------------------------
+    // Parse command line arguments
+    // ----------------------------
+    robosimian::LocomotionMode mode;
+    int num_cycles;
+    double dbp_incr;
+    bool render;
+    bool data_output;
+    bool povray_output;
+    bool image_output;
+
+    // Extract arguments
+    if (!GetProblemSpecs(argc, argv, mode, num_cycles, dbp_incr, render, data_output, image_output, povray_output)) {
+        std::cout << "-------------" << std::endl;
+        return 1;
+    }
+
     // ------------
     // Timed events
     // ------------
@@ -189,6 +308,7 @@ int main(int argc, char* argv[]) {
     // Create a driver and attach to robot
     // -----------------------------------
 
+    std::string mode_name;
     std::shared_ptr<robosimian::Driver> driver;
     switch (mode) {
         case robosimian::LocomotionMode::WALK:
@@ -197,6 +317,7 @@ int main(int argc, char* argv[]) {
                 GetChronoDataFile("robosimian/actuation/walking_cycle.txt"),  // cycle input file
                 "",                                                           // stop input file
                 true);
+            mode_name = "WALK";
             break;
         case robosimian::LocomotionMode::SCULL:
             driver = std::make_shared<robosimian::Driver>(
@@ -204,6 +325,7 @@ int main(int argc, char* argv[]) {
                 GetChronoDataFile("robosimian/actuation/sculling_cycle2.txt"),  // cycle input file
                 GetChronoDataFile("robosimian/actuation/sculling_stop.txt"),    // stop input file
                 true);
+            mode_name = "SCULL";
             break;
         case robosimian::LocomotionMode::INCHWORM:
             driver = std::make_shared<robosimian::Driver>(
@@ -211,6 +333,7 @@ int main(int argc, char* argv[]) {
                 GetChronoDataFile("robosimian/actuation/inchworming_cycle.txt"),  // cycle input file
                 GetChronoDataFile("robosimian/actuation/inchworming_stop.txt"),   // stop input file
                 true);
+            mode_name = "INCHWORM";
             break;
         case robosimian::LocomotionMode::DRIVE:
             driver = std::make_shared<robosimian::Driver>(
@@ -218,30 +341,44 @@ int main(int argc, char* argv[]) {
                 GetChronoDataFile("robosimian/actuation/driving_cycle.txt"),  // cycle input file
                 GetChronoDataFile("robosimian/actuation/driving_stop.txt"),   // stop input file
                 true);
+            mode_name = "DRIVE";
             break;
     }
 
-    robosimian::RobotDriverCallback cbk(&robot);
-    driver->RegisterPhaseChangeCallback(&cbk);
-
     driver->SetTimeOffsets(duration_pose, duration_settle_robot);
     robot.SetDriver(driver);
+
+    // -----------------------------------------------------
+    // Drawback pull setup (as phase-change callback object)
+    // -----------------------------------------------------
+
+    std::cout << "Locomotion mode: " << mode_name << std::endl;
+    std::cout << "RoboSimian total mass: " << robot.GetMass() << std::endl;
+
+    DBPcontroller DBP_controller(&robot);
+    DBP_controller.SetCycleFreq(num_cycles);
+    DBP_controller.SetIncrement(dbp_incr);
+    driver->RegisterPhaseChangeCallback(&DBP_controller);
 
     // -------------------------------
     // Create the visualization window
     // -------------------------------
 
-    robosimian::RobotIrrApp application(&robot, driver.get(), L"RoboSimian - SCM terrain",
-                                        irr::core::dimension2d<irr::u32>(800, 600));
-    application.AddTypicalLogo();
-    application.AddTypicalSky();
-    application.AddTypicalCamera(irr::core::vector3df(1, -2.75f, 0.2f), irr::core::vector3df(1, 0, 0));
-    application.AddTypicalLights(irr::core::vector3df(100.f, 100.f, 100.f), irr::core::vector3df(100.f, -100.f, 80.f));
-    application.AddLightWithShadow(irr::core::vector3df(10.0f, -6.0f, 3.0f), irr::core::vector3df(0, 0, 0), 3, -3, 7,
-                                   40, 512);
+    robosimian::RobotIrrApp* application = nullptr;
+    if (render) {
+        application = new robosimian::RobotIrrApp(&robot, driver.get(), L"RoboSimian - SCM terrain",
+                                                  irr::core::dimension2d<irr::u32>(800, 600));
+        application->AddTypicalLogo();
+        application->AddTypicalSky();
+        application->AddTypicalCamera(irr::core::vector3df(1, -2.75f, 0.2f), irr::core::vector3df(1, 0, 0));
+        application->AddTypicalLights(irr::core::vector3df(100.f, 100.f, 100.f),
+                                      irr::core::vector3df(100.f, -100.f, 80.f));
+        application->AddLightWithShadow(irr::core::vector3df(10.0f, -6.0f, 3.0f), irr::core::vector3df(0, 0, 0), 3, -3,
+                                        7, 40, 512);
 
-    application.AssetBindAll();
-    application.AssetUpdateAll();
+        application->AssetBindAll();
+        application->AssetUpdateAll();
+    }
 
     // -----------------------------
     // Initialize output directories
@@ -277,7 +414,15 @@ int main(int argc, char* argv[]) {
     std::shared_ptr<vehicle::SCMDeformableTerrain> terrain;
     bool terrain_created = false;
 
-    while (application.GetDevice()->run()) {
+    while (true) {
+        if (render && !application->GetDevice()->run()) {
+            break;
+        }
+
+        if (DBP_controller.Stop()) {
+            break;
+        }
+
         if (drop && !terrain_created && my_sys.GetChTime() > time_create_terrain) {
             // Set terrain height
             double z = robot.GetWheelPos(robosimian::FR).z() - 0.15;
@@ -290,8 +435,10 @@ int main(int argc, char* argv[]) {
             terrain = CreateTerrain(&robot, length, width, z, length / 4);
             SetContactProperties(&robot);
 
-            application.AssetBindAll();
-            application.AssetUpdateAll();
+            if (render) {
+                application->AssetBindAll();
+                application->AssetUpdateAll();
+            }
 
             // Release robot
             robot.GetChassisBody()->SetBodyFixed(false);
@@ -299,8 +446,10 @@ int main(int argc, char* argv[]) {
             terrain_created = true;
         }
 
-        application.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-        application.DrawAll();
+        if (render) {
+            application->BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
+            application->DrawAll();
+        }
 
         if (data_output && sim_frame % output_steps == 0) {
             robot.Output();
@@ -313,12 +462,12 @@ int main(int argc, char* argv[]) {
                 sprintf(filename, "%s/data_%04d.dat", pov_dir.c_str(), render_frame + 1);
                 utils::WriteShapesPovray(&my_sys, filename);
             }
-            if (image_output) {
+            if (render && image_output) {
                 char filename[100];
                 sprintf(filename, "%s/img_%04d.jpg", img_dir.c_str(), render_frame + 1);
-                irr::video::IImage* image = application.GetVideoDriver()->createScreenShot();
+                irr::video::IImage* image = application->GetVideoDriver()->createScreenShot();
                 if (image) {
-                    application.GetVideoDriver()->writeImageToFile(image, filename);
+                    application->GetVideoDriver()->writeImageToFile(image, filename);
                     image->drop();
                 }
             }
@@ -330,10 +479,139 @@ int main(int argc, char* argv[]) {
 
         sim_frame++;
 
-        application.EndScene();
+        if (render) {
+            application->EndScene();
+        }
     }
 
-    std::cout << "avg. speed: " << cbk.GetAvgSpeed() << std::endl;
+    DBP_controller.WriteOutput(out_dir + "/DBP_" + mode_name + ".csv");
 
+    delete application;
     return 0;
+}
+
+// =============================================================================
+// ID values to identify command line arguments
+enum { OPT_HELP, OPT_MODE, OPT_CYCLES, OPT_INCREMENT, OPT_NO_RENDER, OPT_DATA_OUT, OPT_IMG_OUT, OPT_POVRAY_OUT };
+
+// Table of CSimpleOpt::Soption structures. Each entry specifies:
+// - the ID for the option (returned from OptionId() during processing)
+// - the option as it should appear on the command line
+// - type of the option
+// The last entry must be SO_END_OF_OPTIONS
+CSimpleOptA::SOption g_options[] = {{OPT_MODE, "-m", SO_REQ_CMB},
+                                    {OPT_CYCLES, "-c", SO_REQ_CMB},
+                                    {OPT_INCREMENT, "-i", SO_REQ_CMB},
+                                    {OPT_NO_RENDER, "--no-render", SO_NONE},
+                                    {OPT_DATA_OUT, "--data-output", SO_NONE},
+                                    {OPT_IMG_OUT, "--image-output", SO_NONE},
+                                    {OPT_POVRAY_OUT, "--povray-output", SO_NONE},
+                                    {OPT_HELP, "-?", SO_NONE},
+                                    {OPT_HELP, "-h", SO_NONE},
+                                    {OPT_HELP, "--help", SO_NONE},
+                                    SO_END_OF_OPTIONS};
+
+void ShowUsage(const std::string& name) {
+    std::cout << "Usage: " << name << " -m=MODE -c=NUM_CYCLES -i=INCREMENT [OPTIONS]" << std::endl;
+    std::cout << " -m=MODE" << std::endl;
+    std::cout << "        Locomotion mode (default: DRIVE)" << std::endl;
+    std::cout << "        0: WALK, 1: SCULL, 2: INCHWORM, 3: DRIVE" << std::endl;
+    std::cout << " -c=NUM_CYCLES" << std::endl;
+    std::cout << "        Number of cycles for constant DBP force (default: 2)" << std::endl;
+    std::cout << " -i=INCREMENT" << std::endl;
+    std::cout << "        DBP factor increment (default: 0.04)" << std::endl;
+    std::cout << " --no-render" << std::endl;
+    std::cout << "        Disable run-time rendering" << std::endl;
+    std::cout << " --data-output" << std::endl;
+    std::cout << "        Enable data output to file (one file per limb)" << std::endl;
+    std::cout << " --image-output" << std::endl;
+    std::cout << "        Enable capture for Irrlicht (ignored if no rendering)" << std::endl;
+    std::cout << " --povray-output" << std::endl;
+    std::cout << "        Enable generation of Pov-Ray postprocessing files" << std::endl;
+    std::cout << " -? -h --help" << std::endl;
+    std::cout << "        Print this message and exit." << std::endl;
+    std::cout << std::endl;
+}
+
+bool GetProblemSpecs(int argc,
+                     char** argv,
+                     robosimian::LocomotionMode& mode,
+                     int& num_cycles,
+                     double& dpb_incr,
+                     bool& render,
+                     bool& data_output,
+                     bool& image_output,
+                     bool& povray_output) {
+    // Default values
+    render = true;
+    mode = robosimian::LocomotionMode::DRIVE;
+    num_cycles = 2;
+    dpb_incr = 0.04;
+    data_output = false;
+    povray_output = false;
+    image_output = false;
+
+    // Create the option parser and pass it the program arguments and the array of valid options.
+    CSimpleOptA args(argc, argv, g_options);
+
+    // Then loop for as long as there are arguments to be processed.
+    while (args.Next()) {
+        // Exit immediately if we encounter an invalid argument.
+        if (args.LastError() != SO_SUCCESS) {
+            std::cout << "Invalid argument: " << args.OptionText() << std::endl;
+            ShowUsage(argv[0]);
+            return false;
+        }
+
+        // Process the current argument.
+        switch (args.OptionId()) {
+            case OPT_HELP:
+                ShowUsage(argv[0]);
+                return false;
+            case OPT_MODE: {
+                auto mode_in = std::stoi(args.OptionArg());
+                switch (mode_in) {
+                    case 0:
+                        mode = robosimian::LocomotionMode::WALK;
+                        break;
+                    case 1:
+                        mode = robosimian::LocomotionMode::SCULL;
+                        break;
+                    case 2:
+                        mode = robosimian::LocomotionMode::INCHWORM;
+                        break;
+                    case 3:
+                        mode = robosimian::LocomotionMode::DRIVE;
+                        break;
+                    default:
+                        std::cout << "Invalid locomotion mode" << std::endl;
+                        ShowUsage(argv[0]);
+                        return false;
+                }
+                break;
+            }
+            case OPT_CYCLES:
+                num_cycles = std::stoi(args.OptionArg());
+                break;
+            case OPT_INCREMENT:
+                dpb_incr = std::stod(args.OptionArg());
+                break;
+            case OPT_NO_RENDER:
+                render = false;
+                break;
+            case OPT_DATA_OUT:
+                data_output = true;
+                break;
+            case OPT_IMG_OUT:
+                image_output = true;
+                break;
+            case OPT_POVRAY_OUT:
+                povray_output = true;
+                break;
+        }
+    }
+
+    image_output = image_output && render;
+
+    return true;
 }
