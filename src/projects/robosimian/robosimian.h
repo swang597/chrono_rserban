@@ -290,6 +290,9 @@ class Limb {
     /// Enable/disable collision for final wheel (default: true).
     void SetCollideWheel(bool state);
 
+    /// Get the total mass of this limb.
+    double GetMass() const;
+
     /// Get a handle to the wheel body.
     std::shared_ptr<chrono::ChBodyAuxRef> GetWheelBody() const { return m_wheel->GetBody(); }
 
@@ -394,10 +397,13 @@ class RoboSimian {
     /// Set output directory.
     void SetOutputDirectory(const std::string& outdir) { m_outdir = outdir; }
 
+    /// Get the total mass of the robot.
+    double GetMass() const;
+
     /// Get a handle to the robot's chassis subsystem.
     std::shared_ptr<Chassis> GetChassis() const { return m_chassis; }
 
-    // Get a handle to the robot's chassis body.
+    /// Get a handle to the robot's chassis body.
     std::shared_ptr<chrono::ChBodyAuxRef> GetChassisBody() const { return m_chassis->GetBody(); }
 
     /// Get location of the chassis body.

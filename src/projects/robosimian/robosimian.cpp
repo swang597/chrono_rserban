@@ -619,6 +619,12 @@ void RoboSimian::Output() {
     }
 }
 
+double RoboSimian::GetMass() const {
+    return GetChassisBody()->GetMass() + GetSledBody()->GetMass() +  //
+           m_limbs[FR]->GetMass() + m_limbs[FL]->GetMass() +         //
+           m_limbs[RR]->GetMass() + m_limbs[RL]->GetMass();
+}
+
 // =============================================================================
 
 class ax {
@@ -1183,6 +1189,13 @@ void Limb::Initialize(std::shared_ptr<ChBodyAuxRef> chassis,
             m_wheel_motor = joint;
         }
     }
+}
+
+double Limb::GetMass() const {
+    double mass = 0;
+    for (auto link : m_links)
+        mass += link.second->m_body->GetMass();
+    return mass;
 }
 
 void Limb::SetVisualizationType(VisualizationType vis) {
