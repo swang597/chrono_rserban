@@ -397,7 +397,8 @@ RoboSimian::RoboSimian(ChMaterialSurface::ContactMethod contact_method, bool has
       m_materials(nullptr),
       m_sled_friction(0.8f),
       m_wheel_friction(0.8f),
-      m_outdir("") {
+      m_outdir(""),
+      m_root("results") {
     m_system = (contact_method == ChMaterialSurface::NSC) ? static_cast<ChSystem*>(new ChSystemNSC)
                                                           : static_cast<ChSystem*>(new ChSystemSMC);
     m_system->Set_G_acc(ChVector<>(0, 0, -9.81));
@@ -424,7 +425,8 @@ RoboSimian::RoboSimian(ChSystem* system, bool has_sled, bool fixed)
       m_materials(nullptr),
       m_sled_friction(0.8f),
       m_wheel_friction(0.8f),
-      m_outdir("") {
+      m_outdir(""),
+      m_root("results") {
     Create(has_sled, fixed);
 
     //// TODO: currently, only NSC parallel systems support user override of composite materials
@@ -491,7 +493,7 @@ void RoboSimian::Initialize(const ChCoordsys<>& pos) {
 
     // Create output files
     for (int i = 0; i < 4; i++) {
-        m_outf[i].open(m_outdir + "/results_limb" + std::to_string(i) + ".dat");
+        m_outf[i].open(m_outdir + "/" + m_root + "_limb" + std::to_string(i) + ".dat");
         m_outf[i].precision(7);
         m_outf[i] << std::scientific;
     }
@@ -539,6 +541,11 @@ void RoboSimian::SetVisualizationTypeWheels(VisualizationType vis) {
 
 void RoboSimian::SetDriver(std::shared_ptr<Driver> driver) {
     m_driver = driver;
+}
+
+void RoboSimian::SetOutputDirectory(const std::string& outdir, const std::string& root) {
+    m_outdir = outdir;
+    m_root = root;
 }
 
 void RoboSimian::Activate(LimbID id, const std::string& motor_name, double time, double val) {

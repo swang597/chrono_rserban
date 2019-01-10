@@ -395,7 +395,7 @@ class RoboSimian {
     void SetVisualizationTypeWheels(VisualizationType vis);
 
     /// Set output directory.
-    void SetOutputDirectory(const std::string& outdir) { m_outdir = outdir; }
+    void SetOutputDirectory(const std::string& outdir, const std::string& root = "results");
 
     /// Get the total mass of the robot.
     double GetMass() const;
@@ -485,6 +485,7 @@ class RoboSimian {
     ContactMaterial* m_materials;
 
     std::string m_outdir;
+    std::string m_root;
     std::ofstream m_outf[4];
 
     friend class ContactMaterial;

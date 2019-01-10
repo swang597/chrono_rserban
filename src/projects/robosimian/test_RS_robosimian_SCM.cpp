@@ -36,8 +36,6 @@
 using namespace chrono;
 using namespace chrono::collision;
 
-double time_step = 1e-3;
-
 // Drop the robot on SCM terrain
 bool drop = true;
 
@@ -60,6 +58,7 @@ const std::string img_dir = out_dir + "/IMG";
 void ShowUsage(const std::string& name);
 bool GetProblemSpecs(int argc,
                      char** argv,
+                     double& time_step,
                      robosimian::LocomotionMode& mode,
                      int& num_cycles,
                      double& dpb_incr,
@@ -235,6 +234,7 @@ int main(int argc, char* argv[]) {
     // Parse command line arguments
     // ----------------------------
     robosimian::LocomotionMode mode;
+    double time_step;
     int num_cycles;
     double dbp_incr;
     bool render;
@@ -243,7 +243,7 @@ int main(int argc, char* argv[]) {
     bool image_output;
 
     // Extract arguments
-    if (!GetProblemSpecs(argc, argv, mode, num_cycles, dbp_incr, render, data_output, image_output, povray_output)) {
+    if (!GetProblemSpecs(argc, argv, time_step, mode, num_cycles, dbp_incr, render, data_output, image_output, povray_output)) {
         std::cout << "-------------" << std::endl;
         return 1;
     }
@@ -270,11 +270,27 @@ int main(int argc, char* argv[]) {
     // Create RoboSimian robot
     // -----------------------
 
+    std::string mode_name;
+    switch (mode) {
+        case robosimian::LocomotionMode::WALK:
+            mode_name = "walk";
+            break;
+        case robosimian::LocomotionMode::SCULL:
+            mode_name = "scull";
+            break;
+        case robosimian::LocomotionMode::INCHWORM:
+            mode_name = "inchworm";
+            break;
+        case robosimian::LocomotionMode::DRIVE:
+            mode_name = "drive";
+            break;
+    }
+
     robosimian::RoboSimian robot(&my_sys, true, true);
 
     // Set output directory
 
-    robot.SetOutputDirectory(out_dir);
+    robot.SetOutputDirectory(out_dir, mode_name);
 
     // Set actuation mode for wheel motors
 
@@ -308,7 +324,6 @@ int main(int argc, char* argv[]) {
     // Create a driver and attach to robot
     // -----------------------------------
 
-    std::string mode_name;
     std::shared_ptr<robosimian::Driver> driver;
     switch (mode) {
         case robosimian::LocomotionMode::WALK:
@@ -317,7 +332,6 @@ int main(int argc, char* argv[]) {
                 GetChronoDataFile("robosimian/actuation/walking_cycle.txt"),  // cycle input file
                 "",                                                           // stop input file
                 true);
-            mode_name = "WALK";
             break;
         case robosimian::LocomotionMode::SCULL:
             driver = std::make_shared<robosimian::Driver>(
@@ -325,7 +339,6 @@ int main(int argc, char* argv[]) {
                 GetChronoDataFile("robosimian/actuation/sculling_cycle2.txt"),  // cycle input file
                 GetChronoDataFile("robosimian/actuation/sculling_stop.txt"),    // stop input file
                 true);
-            mode_name = "SCULL";
             break;
         case robosimian::LocomotionMode::INCHWORM:
             driver = std::make_shared<robosimian::Driver>(
@@ -333,7 +346,6 @@ int main(int argc, char* argv[]) {
                 GetChronoDataFile("robosimian/actuation/inchworming_cycle.txt"),  // cycle input file
                 GetChronoDataFile("robosimian/actuation/inchworming_stop.txt"),   // stop input file
                 true);
-            mode_name = "INCHWORM";
             break;
         case robosimian::LocomotionMode::DRIVE:
             driver = std::make_shared<robosimian::Driver>(
@@ -341,7 +353,6 @@ int main(int argc, char* argv[]) {
                 GetChronoDataFile("robosimian/actuation/driving_cycle.txt"),  // cycle input file
                 GetChronoDataFile("robosimian/actuation/driving_stop.txt"),   // stop input file
                 true);
-            mode_name = "DRIVE";
             break;
     }
 
@@ -492,14 +503,25 @@ int main(int argc, char* argv[]) {
 
 // =============================================================================
 // ID values to identify command line arguments
-enum { OPT_HELP, OPT_MODE, OPT_CYCLES, OPT_INCREMENT, OPT_NO_RENDER, OPT_DATA_OUT, OPT_IMG_OUT, OPT_POVRAY_OUT };
+enum {
+    OPT_HELP,
+    OPT_STEP,
+    OPT_MODE,
+    OPT_CYCLES,
+    OPT_INCREMENT,
+    OPT_NO_RENDER,
+    OPT_DATA_OUT,
+    OPT_IMG_OUT,
+    OPT_POVRAY_OUT
+};
 
 // Table of CSimpleOpt::Soption structures. Each entry specifies:
 // - the ID for the option (returned from OptionId() during processing)
 // - the option as it should appear on the command line
 // - type of the option
 // The last entry must be SO_END_OF_OPTIONS
-CSimpleOptA::SOption g_options[] = {{OPT_MODE, "-m", SO_REQ_CMB},
+CSimpleOptA::SOption g_options[] = {{OPT_STEP, "-s", SO_REQ_CMB},
+                                    {OPT_MODE, "-m", SO_REQ_CMB},
                                     {OPT_CYCLES, "-c", SO_REQ_CMB},
                                     {OPT_INCREMENT, "-i", SO_REQ_CMB},
                                     {OPT_NO_RENDER, "--no-render", SO_NONE},
@@ -513,6 +535,8 @@ CSimpleOptA::SOption g_options[] = {{OPT_MODE, "-m", SO_REQ_CMB},
 
 void ShowUsage(const std::string& name) {
     std::cout << "Usage: " << name << " -m=MODE -c=NUM_CYCLES -i=INCREMENT [OPTIONS]" << std::endl;
+    std::cout << " -s=STEP" << std::endl;
+    std::cout << "        Integration step size (default: 1e-3)" << std::endl;
     std::cout << " -m=MODE" << std::endl;
     std::cout << "        Locomotion mode (default: DRIVE)" << std::endl;
     std::cout << "        0: WALK, 1: SCULL, 2: INCHWORM, 3: DRIVE" << std::endl;
@@ -535,6 +559,7 @@ void ShowUsage(const std::string& name) {
 
 bool GetProblemSpecs(int argc,
                      char** argv,
+                     double& time_step,
                      robosimian::LocomotionMode& mode,
                      int& num_cycles,
                      double& dpb_incr,
@@ -543,6 +568,7 @@ bool GetProblemSpecs(int argc,
                      bool& image_output,
                      bool& povray_output) {
     // Default values
+    time_step = 1e-3;
     render = true;
     mode = robosimian::LocomotionMode::DRIVE;
     num_cycles = 2;
@@ -590,6 +616,9 @@ bool GetProblemSpecs(int argc,
                 }
                 break;
             }
+            case OPT_STEP:
+                time_step = std::stod(args.OptionArg());
+                break;
             case OPT_CYCLES:
                 num_cycles = std::stoi(args.OptionArg());
                 break;
