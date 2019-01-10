@@ -295,9 +295,9 @@ int main(int argc, char* argv[]) {
     ////robot.SetVisualizationTypeLimb(robosimian::RL, robosimian::VisualizationType::COLLISION);
     ////robot.SetVisualizationTypeLimb(robosimian::RR, robosimian::VisualizationType::COLLISION);
     ////robot.SetVisualizationTypeLimbs(robosimian::VisualizationType::NONE);
-    ////robot.SetVisualizationTypeChassis(robosimian::VisualizationType::MESH);
-    ////robot.SetVisualizationTypeSled(robosimian::VisualizationType::MESH);
-    ////robot.SetVisualizationTypeLimbs(robosimian::VisualizationType::MESH);
+    robot.SetVisualizationTypeChassis(robosimian::VisualizationType::MESH);
+    robot.SetVisualizationTypeSled(robosimian::VisualizationType::MESH);
+    robot.SetVisualizationTypeLimbs(robosimian::VisualizationType::MESH);
 
     // Initialize Robosimian robot
 

@@ -71,7 +71,8 @@ void RobotIrrApp::DrawAll() {
     sprintf(msg, "Time %.2f", m_robot->GetSystem()->GetChTime());
     renderTextBox(msg, m_HUD_x, m_HUD_y, 120, 15, irr::video::SColor(255, 250, 200, 00));
 
-    auto type = std::string("Contact method: ") + (m_robot->GetSystem()->GetContactMethod() == ChMaterialSurface::NSC ? "NSC" : "SMC");
+    auto type = std::string("Contact method: ") +
+                (m_robot->GetSystem()->GetContactMethod() == ChMaterialSurface::NSC ? "NSC" : "SMC");
     renderTextBox(type.c_str(), m_HUD_x, m_HUD_y + 15, 120, 15, irr::video::SColor(255, 250, 200, 00));
 
     sprintf(msg, "Driver phase: %s", m_driver->GetCurrentPhase().c_str());
