@@ -6,6 +6,7 @@ endif()
 
 set(PROGRAMS_SEQ
     test_VIS_line
+    test_VIS_color_mesh
 )
 
 include_directories(${CH_IRRLICHTINC})
