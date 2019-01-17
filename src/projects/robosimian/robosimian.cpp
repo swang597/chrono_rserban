@@ -755,9 +755,9 @@ void Driver::Update(double time) {
                         LoadDataLine(m_time_1, m_actuations_1);
                         LoadDataLine(m_time_2, m_actuations_2);
                         m_offset = time;
+                        std::cout << "time = " << time << " New cycle" << std::endl;
                         if (m_callback)
                             m_callback->OnPhaseChange(CYCLE, CYCLE);
-                        std::cout << "time = " << time << " New cycle" << std::endl;
                     }
                     return;
                 }

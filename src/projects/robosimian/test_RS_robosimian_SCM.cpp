@@ -36,6 +36,9 @@
 using namespace chrono;
 using namespace chrono::collision;
 
+using std::cout;
+using std::endl;
+
 // Drop the robot on SCM terrain
 bool drop = true;
 
@@ -62,6 +65,7 @@ bool GetProblemSpecs(int argc,
                      robosimian::LocomotionMode& mode,
                      int& num_cycles,
                      double& dpb_incr,
+                     double& terrain_length,
                      bool& render,
                      bool& data_output,
                      bool& image_output,
@@ -101,6 +105,7 @@ class DBPcontroller : public robosimian::Driver::PhaseChangeCallback {
     double m_avg_speed;   // average speed over last segment
 
     utils::CSV_writer* m_csv;
+    ChTimer<> m_timer;
 };
 
 DBPcontroller::DBPcontroller(robosimian::RoboSimian* robot)
@@ -124,14 +129,22 @@ DBPcontroller::DBPcontroller(robosimian::RoboSimian* robot)
     m_load = std::make_shared<ChLoadBodyForce>(robot->GetChassisBody(), VNULL, false, VNULL, true);
     force_container->Add(m_load);
 
+    m_timer.reset();
+    m_timer.start();
+
     // Prepare CSV output
     m_csv = new utils::CSV_writer(",");
     *m_csv << "DBP_factor"
            << "DBP_force"
-           << "Avg_speed" << std::endl;
+           << "Avg_speed" << endl;
 }
 
 void DBPcontroller::OnPhaseChange(robosimian::Driver::Phase old_phase, robosimian::Driver::Phase new_phase) {
+    m_timer.stop();
+    cout << "Elapsed time: " << m_timer() << endl;
+    m_timer.reset();
+    m_timer.start();
+
     if (new_phase == robosimian::Driver::CYCLE) {
         if (m_cycle_number == 0) {
             m_start_x = m_robot->GetChassisPos().x();
@@ -139,9 +152,8 @@ void DBPcontroller::OnPhaseChange(robosimian::Driver::Phase old_phase, robosimia
         } else if (m_cycle_number % m_cycle_freq == 0) {
             // Save average speed at current DBP factor
             m_avg_speed = GetAvgSpeed();
-            std::cout << "DBP: " << m_dbp << " force: " << m_dbp * m_weight << " avg. speed: " << m_avg_speed
-                      << std::endl;
-            *m_csv << m_dbp << m_dbp * m_weight << m_avg_speed << std::endl;
+            cout << "*** DBP: " << m_dbp << " force: " << m_dbp * m_weight << " avg. speed: " << m_avg_speed << endl;
+            *m_csv << m_dbp << m_dbp * m_weight << m_avg_speed << endl;
             // Cache new start time and location
             m_start_x = m_robot->GetChassisPos().x();
             m_start_time = m_robot->GetSystem()->GetChTime();
@@ -149,6 +161,12 @@ void DBPcontroller::OnPhaseChange(robosimian::Driver::Phase old_phase, robosimia
             m_dbp += m_dbp_incr;
             m_load->SetForce(ChVector<>(-m_dbp * m_weight, 0, 0), false);
         }
+
+        cout << "  FL wheel location:  " << m_robot->GetWheelPos(robosimian::LimbID::FL).x() << endl;
+        cout << "  FR wheel location:  " << m_robot->GetWheelPos(robosimian::LimbID::FR).x() << endl;
+        cout << "  Chassis location:   " << m_robot->GetChassisPos().x() << endl;
+        cout << "  Distance travelled: " << GetDistance() << endl;
+
         m_cycle_number++;
     }
 }
@@ -181,19 +199,19 @@ std::shared_ptr<vehicle::SCMDeformableTerrain> CreateTerrain(robosimian::RoboSim
     double damping = 3e4;    // Damping coefficient (Pa*s/m)
 
     // Initial number of divisions per unit (m)
-    double factor = 12;
+    double factor = 8;
 
     // Mesh divisions
     int ndivX = (int)std::ceil(length * factor);
     int ndivY = (int)std::ceil(width * factor);
 
     auto terrain = std::make_shared<vehicle::SCMDeformableTerrain>(robot->GetSystem());
-    terrain->SetPlane(ChCoordsys<>(ChVector<>(offset, 0, 0), Q_from_AngX(CH_C_PI_2)));
+    terrain->SetPlane(ChCoordsys<>(ChVector<>(length / 2 - offset, 0, 0), Q_from_AngX(CH_C_PI_2)));
     terrain->SetSoilParametersSCM(Kphi, Kc, n, coh, phi, K, E_elastic, damping);
     terrain->SetPlotType(vehicle::SCMDeformableTerrain::PLOT_SINKAGE, 0, 0.15);
     terrain->Initialize(height, length, width, ndivX, ndivY);
     terrain->SetAutomaticRefinement(true);
-    terrain->SetAutomaticRefinementResolution(0.02);
+    terrain->SetAutomaticRefinementResolution(1.0 / 64);
 
     // Enable moving patch feature
     terrain->EnableMovingPatch(robot->GetChassisBody(), ChVector<>(0, 0, 0), 3.0, 2.0);
@@ -237,16 +255,21 @@ int main(int argc, char* argv[]) {
     double time_step;
     int num_cycles;
     double dbp_incr;
+    double terrain_length;
     bool render;
     bool data_output;
     bool povray_output;
     bool image_output;
 
     // Extract arguments
-    if (!GetProblemSpecs(argc, argv, time_step, mode, num_cycles, dbp_incr, render, data_output, image_output, povray_output)) {
-        std::cout << "-------------" << std::endl;
+    if (!GetProblemSpecs(argc, argv, time_step, mode, num_cycles, dbp_incr, terrain_length, render, data_output,
+                         image_output, povray_output)) {
+        cout << "-------------" << endl;
         return 1;
     }
+
+    double terrain_width = 2.0;
+    double location_offset = 2.0;
 
     // ------------
     // Timed events
@@ -363,8 +386,17 @@ int main(int argc, char* argv[]) {
     // Drawback pull setup (as phase-change callback object)
     // -----------------------------------------------------
 
-    std::cout << "Locomotion mode: " << mode_name << std::endl;
-    std::cout << "RoboSimian total mass: " << robot.GetMass() << std::endl;
+    cout << "Problem parameters" << endl;
+    cout << "  Locomotion mode:       " << mode_name << endl;
+    cout << "  Integration step size: " << time_step << endl;
+    cout << "  Number cycles:         " << num_cycles << endl;
+    cout << "  DBP increment:         " << dbp_incr << endl;
+    cout << "  Terrain length:        " << terrain_length << endl;
+    cout << "  Render?        " << (render ? "YES" : "NO") << endl;
+    cout << "  Data output?   " << (data_output ? "YES" : "NO") << endl;
+    cout << "  Image output?  " << (image_output ? "YES" : "NO") << endl;
+    cout << "  PovRay output? " << (povray_output ? "YES" : "NO") << endl;
+    cout << "RoboSimian total mass: " << robot.GetMass() << endl;
 
     DBPcontroller DBP_controller(&robot);
     DBP_controller.SetCycleFreq(num_cycles);
@@ -396,18 +428,18 @@ int main(int argc, char* argv[]) {
     // -----------------------------
 
     if (!filesystem::create_directory(filesystem::path(out_dir))) {
-        std::cout << "Error creating directory " << out_dir << std::endl;
+        cout << "Error creating directory " << out_dir << endl;
         return 1;
     }
     if (povray_output) {
         if (!filesystem::create_directory(filesystem::path(pov_dir))) {
-            std::cout << "Error creating directory " << pov_dir << std::endl;
+            cout << "Error creating directory " << pov_dir << endl;
             return 1;
         }
     }
     if (image_output) {
         if (!filesystem::create_directory(filesystem::path(img_dir))) {
-            std::cout << "Error creating directory " << img_dir << std::endl;
+            cout << "Error creating directory " << img_dir << endl;
             return 1;
         }
     }
@@ -434,16 +466,19 @@ int main(int argc, char* argv[]) {
             break;
         }
 
+        if (robot.GetChassisPos().x() > terrain_length - 2 * location_offset) {
+            cout << "Reached end of terrain patch!" << endl;
+            cout << "  time = " << my_sys.GetChTime() << endl;
+            cout << "  Chassis location: " << robot.GetChassisPos().x() << endl;
+            break;
+        }
+
         if (drop && !terrain_created && my_sys.GetChTime() > time_create_terrain) {
             // Set terrain height
             double z = robot.GetWheelPos(robosimian::FR).z() - 0.15;
 
-            // Rigid terrain parameters
-            double length = 8;
-            double width = 2;
-
             // Create terrain
-            terrain = CreateTerrain(&robot, length, width, z, length / 4);
+            terrain = CreateTerrain(&robot, terrain_length, terrain_width, z, location_offset);
             SetContactProperties(&robot);
 
             if (render) {
@@ -509,6 +544,7 @@ enum {
     OPT_MODE,
     OPT_CYCLES,
     OPT_INCREMENT,
+    OPT_LENGTH,
     OPT_NO_RENDER,
     OPT_DATA_OUT,
     OPT_IMG_OUT,
@@ -524,6 +560,7 @@ CSimpleOptA::SOption g_options[] = {{OPT_STEP, "-s", SO_REQ_CMB},
                                     {OPT_MODE, "-m", SO_REQ_CMB},
                                     {OPT_CYCLES, "-c", SO_REQ_CMB},
                                     {OPT_INCREMENT, "-i", SO_REQ_CMB},
+                                    {OPT_LENGTH, "-l", SO_REQ_CMB},
                                     {OPT_NO_RENDER, "--no-render", SO_NONE},
                                     {OPT_DATA_OUT, "--data-output", SO_NONE},
                                     {OPT_IMG_OUT, "--image-output", SO_NONE},
@@ -534,27 +571,29 @@ CSimpleOptA::SOption g_options[] = {{OPT_STEP, "-s", SO_REQ_CMB},
                                     SO_END_OF_OPTIONS};
 
 void ShowUsage(const std::string& name) {
-    std::cout << "Usage: " << name << " -m=MODE -c=NUM_CYCLES -i=INCREMENT [OPTIONS]" << std::endl;
-    std::cout << " -s=STEP" << std::endl;
-    std::cout << "        Integration step size (default: 1e-3)" << std::endl;
-    std::cout << " -m=MODE" << std::endl;
-    std::cout << "        Locomotion mode (default: DRIVE)" << std::endl;
-    std::cout << "        0: WALK, 1: SCULL, 2: INCHWORM, 3: DRIVE" << std::endl;
-    std::cout << " -c=NUM_CYCLES" << std::endl;
-    std::cout << "        Number of cycles for constant DBP force (default: 2)" << std::endl;
-    std::cout << " -i=INCREMENT" << std::endl;
-    std::cout << "        DBP factor increment (default: 0.04)" << std::endl;
-    std::cout << " --no-render" << std::endl;
-    std::cout << "        Disable run-time rendering" << std::endl;
-    std::cout << " --data-output" << std::endl;
-    std::cout << "        Enable data output to file (one file per limb)" << std::endl;
-    std::cout << " --image-output" << std::endl;
-    std::cout << "        Enable capture for Irrlicht (ignored if no rendering)" << std::endl;
-    std::cout << " --povray-output" << std::endl;
-    std::cout << "        Enable generation of Pov-Ray postprocessing files" << std::endl;
-    std::cout << " -? -h --help" << std::endl;
-    std::cout << "        Print this message and exit." << std::endl;
-    std::cout << std::endl;
+    cout << "Usage: " << name << " -m=MODE -c=NUM_CYCLES -i=INCREMENT [OPTIONS]" << endl;
+    cout << " -s=STEP" << endl;
+    cout << "        Integration step size (default: 1e-3)" << endl;
+    cout << " -m=MODE" << endl;
+    cout << "        Locomotion mode (default: DRIVE)" << endl;
+    cout << "        0: WALK, 1: SCULL, 2: INCHWORM, 3: DRIVE" << endl;
+    cout << " -c=NUM_CYCLES" << endl;
+    cout << "        Number of cycles for constant DBP force (default: 2)" << endl;
+    cout << " -i=INCREMENT" << endl;
+    cout << "        DBP factor increment (default: 0.04)" << endl;
+    cout << " -l=LENGTH" << endl;
+    cout << "        Length of terrain patch (default: 8.0)" << endl;
+    cout << " --no-render" << endl;
+    cout << "        Disable run-time rendering" << endl;
+    cout << " --data-output" << endl;
+    cout << "        Enable data output to file (one file per limb)" << endl;
+    cout << " --image-output" << endl;
+    cout << "        Enable capture for Irrlicht (ignored if no rendering)" << endl;
+    cout << " --povray-output" << endl;
+    cout << "        Enable generation of Pov-Ray postprocessing files" << endl;
+    cout << " -? -h --help" << endl;
+    cout << "        Print this message and exit." << endl;
+    cout << endl;
 }
 
 bool GetProblemSpecs(int argc,
@@ -563,6 +602,7 @@ bool GetProblemSpecs(int argc,
                      robosimian::LocomotionMode& mode,
                      int& num_cycles,
                      double& dpb_incr,
+                     double& terrain_length,
                      bool& render,
                      bool& data_output,
                      bool& image_output,
@@ -573,6 +613,7 @@ bool GetProblemSpecs(int argc,
     mode = robosimian::LocomotionMode::DRIVE;
     num_cycles = 2;
     dpb_incr = 0.04;
+    terrain_length = 8.0;
     data_output = false;
     povray_output = false;
     image_output = false;
@@ -584,7 +625,7 @@ bool GetProblemSpecs(int argc,
     while (args.Next()) {
         // Exit immediately if we encounter an invalid argument.
         if (args.LastError() != SO_SUCCESS) {
-            std::cout << "Invalid argument: " << args.OptionText() << std::endl;
+            cout << "Invalid argument: " << args.OptionText() << endl;
             ShowUsage(argv[0]);
             return false;
         }
@@ -610,7 +651,7 @@ bool GetProblemSpecs(int argc,
                         mode = robosimian::LocomotionMode::DRIVE;
                         break;
                     default:
-                        std::cout << "Invalid locomotion mode" << std::endl;
+                        cout << "Invalid locomotion mode" << endl;
                         ShowUsage(argv[0]);
                         return false;
                 }
@@ -624,6 +665,9 @@ bool GetProblemSpecs(int argc,
                 break;
             case OPT_INCREMENT:
                 dpb_incr = std::stod(args.OptionArg());
+                break;
+            case OPT_LENGTH:
+                terrain_length = std::stod(args.OptionArg());
                 break;
             case OPT_NO_RENDER:
                 render = false;
