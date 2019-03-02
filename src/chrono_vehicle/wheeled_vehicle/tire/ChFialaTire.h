@@ -86,12 +86,20 @@ class CH_VEHICLE_API ChFialaTire : public ChTire {
     /// Get visualization width.
     virtual double GetVisualizationWidth() const { return m_width; }
 
-    /// Get the tire slip angle.
-    virtual double GetSlipAngle() const override { return m_states.alpha; }
+    /// Get the tire slip angle computed internally by the Fiala model (in radians).
+    /// The reported value will be similar to that reported by ChTire::GetSlipAngle.
+    double GetSlipAngle_internal() const { return m_states.alpha; }
 
-    /// Get the tire longitudinal slip.
-    virtual double GetLongitudinalSlip() const override { return m_states.kappa; }
-    
+    /// Get the tire longitudinal slip computed internally by the Fiala model.
+    /// The reported value will be different from that reported by ChTire::GetLongitudinalSlip
+    /// because ChFialaTire uses the loaded tire radius for its calculation.
+    double GetLongitudinalSlip_internal() const { return m_states.kappa; }
+
+    /// Get the camber angle for the Fiala tire model (in radians).
+    /// ChFialaTire does not calculate its own camber angle. This value is the same as that
+    /// reported by ChTire::GetCamberAngle.
+    double GetCamberAngle_internal() { return GetCamberAngle(); }
+
     /// Generate basic tire plots.
     /// This function creates a Gnuplot script file with the specified name.
     void WritePlots(const std::string& plFileName, const std::string& plTireFormat);

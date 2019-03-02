@@ -16,12 +16,12 @@
 //
 // =============================================================================
 
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
-#include <algorithm>
 
-#include "chrono/physics/ChGlobal.h"
 #include "chrono/core/ChTimer.h"
+#include "chrono/physics/ChGlobal.h"
 
 #include "chrono_vehicle/wheeled_vehicle/tire/ChPacejkaTire.h"
 
@@ -429,7 +429,7 @@ void ChPacejkaTire::update_W_frame(const ChTerrain& terrain) {
     ChCoordsys<> contact_frame;
     double depth;
     m_in_contact =
-        disc_terrain_contact(terrain, m_tireState.pos, m_tireState.rot.GetYaxis(), m_R0, contact_frame, depth);
+        DiscTerrainCollision(terrain, m_tireState.pos, m_tireState.rot.GetYaxis(), m_R0, contact_frame, depth);
 
     // set the depth if there is contact with terrain
     m_depth = (m_in_contact) ? depth : 0;
@@ -754,15 +754,11 @@ void ChPacejkaTire::evaluate_reactions(bool write_violations, bool enforce_thres
     bool output_slip_to_console = false;
 
     if (std::abs(m_FM_combined.force.x()) > Fx_thresh) {
-        // GetLog() << "\n ***  !!!  ***  Fx exceeded threshold, tire " << m_name << ", = " << m_FM_combined.force.x() <<
-        // "\n";
         output_slip_to_console = true;
         if (enforce_threshold)
             m_FM_combined.force.x() = m_FM_combined.force.x() * (Fx_thresh / std::abs(m_FM_combined.force.x()));
     }
     if (std::abs(m_FM_combined.force.y()) > Fy_thresh) {
-        // GetLog() << "\n ***  !!!  ***  Fy exceeded threshold, tire " << m_name << ", = " << m_FM_combined.force.y() <<
-        // "\n";
         output_slip_to_console = true;
         if (enforce_threshold)
             m_FM_combined.force.y() = m_FM_combined.force.y() * (Fy_thresh / std::abs(m_FM_combined.force.y()));
@@ -771,21 +767,17 @@ void ChPacejkaTire::evaluate_reactions(bool write_violations, bool enforce_thres
     //  m_Fz, the Fz input to the tire model, must be limited based on the Fz_threshold
     // e.g., should never need t;his
     if (std::abs(m_Fz) > Fz_thresh) {
-        GetLog() << "\n ***  !!!  ***  Fz exceeded threshold:, tire " << m_name << ", = " << m_Fz << "\n";
+        ////GetLog() << "\n ***  !!!  ***  Fz exceeded threshold:, tire " << m_name << ", = " << m_Fz << "\n";
         output_slip_to_console = true;
     }
 
     if (std::abs(m_FM_combined.moment.x()) > Mx_thresh) {
-        // GetLog() << " ***  !!!  ***  Mx exceeded threshold, tire " << m_name << ", = " << m_FM_combined.moment.x() <<
-        // "\n";
         if (enforce_threshold)
             m_FM_combined.moment.x() = m_FM_combined.moment.x() * (Mx_thresh / std::abs(m_FM_combined.moment.x()));
         output_slip_to_console = true;
     }
 
     if (std::abs(m_FM_combined.moment.y()) > My_thresh) {
-        // GetLog() << " ***  !!!  ***  My exceeded threshold, tire " << m_name << ", = " << m_FM_combined.moment.y() <<
-        // "\n";
         if (enforce_threshold)
             m_FM_combined.moment.y() = m_FM_combined.moment.y() * (My_thresh / std::abs(m_FM_combined.moment.y()));
         output_slip_to_console = true;
@@ -795,8 +787,8 @@ void ChPacejkaTire::evaluate_reactions(bool write_violations, bool enforce_thres
         if (enforce_threshold)
             m_FM_combined.moment.z() = m_FM_combined.moment.z() * (Mz_thresh / std::abs(m_FM_combined.moment.z()));
 
-        GetLog() << " ***  !!!  ***  Mz exceeded threshold, tire " << m_name << ", = " << m_FM_combined.moment.z()
-                 << "\n";
+        ////GetLog() << " ***  !!!  ***  Mz exceeded threshold, tire " << m_name << ", = " << m_FM_combined.moment.z()
+        ////         << "\n";
         output_slip_to_console = true;
     }
 
@@ -966,16 +958,17 @@ void ChPacejkaTire::slip_from_uv(bool use_besselink, double bessel_Cx, double be
 // e.g., positive alpha = turn wheel toward vehicle centerline
 // e.g., positive gamma = wheel vertical axis top pointing toward vehicle center
 void ChPacejkaTire::pureSlipReactions() {
-    if (m_in_contact) {
-        // calculate Fx, pure long. slip condition
-        m_FM_pure.force.x() = Fx_pureLong(m_slip->gammaP, m_slip->kappaP);
+    if (!m_in_contact)
+        return;
 
-        // calc. Fy, pure lateral slip.
-        m_FM_pure.force.y() = m_sameSide * Fy_pureLat(m_slip->alphaP, m_slip->gammaP);
+    // calculate Fx, pure long. slip condition
+    m_FM_pure.force.x() = Fx_pureLong(m_slip->gammaP, m_slip->kappaP);
 
-        // calc Mz, pure lateral slip. Negative y-input force, and also the output Mz.
-        m_FM_pure.moment.z() = m_sameSide * Mz_pureLat(m_slip->alphaP, m_slip->gammaP, m_sameSide * m_FM_pure.force.y());
-    }
+    // calc. Fy, pure lateral slip.
+    m_FM_pure.force.y() = m_sameSide * Fy_pureLat(m_slip->alphaP, m_slip->gammaP);
+
+    // calc Mz, pure lateral slip. Negative y-input force, and also the output Mz.
+    m_FM_pure.moment.z() = m_sameSide * Mz_pureLat(m_slip->alphaP, m_slip->gammaP, m_sameSide * m_FM_pure.force.y());
 }
 
 // combined slip reactions, if the tire is in contact with the ground
@@ -984,19 +977,20 @@ void ChPacejkaTire::pureSlipReactions() {
 // e.g., positive alpha = turn wheel toward vehicle centerline
 // e.g., positive gamma = wheel vertical axis top pointing toward vehicle center
 void ChPacejkaTire::combinedSlipReactions() {
-    if (m_in_contact) {
-        // calculate Fx for combined slip
-        m_FM_combined.force.x() = Fx_combined(m_slip->alphaP, m_slip->gammaP, m_slip->kappaP, m_FM_pure.force.x());
+    if (!m_in_contact)
+        return;
 
-        // calc Fy for combined slip.
-        m_FM_combined.force.y() =
-            m_sameSide * Fy_combined(m_slip->alphaP, m_slip->gammaP, m_slip->kappaP, m_sameSide * m_FM_pure.force.y());
+    // calculate Fx for combined slip
+    m_FM_combined.force.x() = Fx_combined(m_slip->alphaP, m_slip->gammaP, m_slip->kappaP, m_FM_pure.force.x());
 
-        // calc Mz for combined slip
-        m_FM_combined.moment.z() =
-            m_sameSide * Mz_combined(m_pureTorque->alpha_r, m_pureTorque->alpha_t, m_slip->gammaP, m_slip->kappaP,
-                                     m_FM_combined.force.x(), m_sameSide * m_FM_combined.force.y());
-    }
+    // calc Fy for combined slip.
+    m_FM_combined.force.y() =
+        m_sameSide * Fy_combined(m_slip->alphaP, m_slip->gammaP, m_slip->kappaP, m_sameSide * m_FM_pure.force.y());
+
+    // calc Mz for combined slip
+    m_FM_combined.moment.z() =
+        m_sameSide * Mz_combined(m_pureTorque->alpha_r, m_pureTorque->alpha_t, m_slip->gammaP, m_slip->kappaP,
+                                 m_FM_combined.force.x(), m_sameSide * m_FM_combined.force.y());
 }
 
 void ChPacejkaTire::relaxationLengths() {
@@ -1096,8 +1090,9 @@ double ChPacejkaTire::Fy_pureLat(double alpha, double gamma) {
     double E_y = (m_params->lateral.pey1 + m_params->lateral.pey2 * m_dF_z) *
                  (1.0 - (m_params->lateral.pey3 + m_params->lateral.pey4 * gamma) * sign_alpha) *
                  m_params->scaling.ley;  // + p_Ey5 * pow(gamma,2)
-    double S_Vy = m_Fz * ((m_params->lateral.pvy1 + m_params->lateral.pvy2 * m_dF_z) * m_params->scaling.lvy +
-                          (m_params->lateral.pvy3 + m_params->lateral.pvy4 * m_dF_z) * gamma) *
+    double S_Vy = m_Fz *
+                  ((m_params->lateral.pvy1 + m_params->lateral.pvy2 * m_dF_z) * m_params->scaling.lvy +
+                   (m_params->lateral.pvy3 + m_params->lateral.pvy4 * m_dF_z) * gamma) *
                   m_params->scaling.lmuy * m_zeta->z2;
 
     double F_y =
@@ -1132,8 +1127,9 @@ double ChPacejkaTire::Mz_pureLat(double alpha, double gamma, double Fy_pureSlip)
     // m_dF_z)*gamma*m_params->scaling.lgaz*m_zeta->z0) * m_slip->cosPrime_alpha*m_params->scaling.lmuy*sign_Vx +
     // m_zeta->z8 - 1.0;
     // reference
-    double D_r = m_Fz * m_R0 * ((m_params->aligning.qdz6 + m_params->aligning.qdz7 * m_dF_z) * m_params->scaling.lres +
-                                (m_params->aligning.qdz8 + m_params->aligning.qdz9 * m_dF_z) * gamma) *
+    double D_r = m_Fz * m_R0 *
+                     ((m_params->aligning.qdz6 + m_params->aligning.qdz7 * m_dF_z) * m_params->scaling.lres +
+                      (m_params->aligning.qdz8 + m_params->aligning.qdz9 * m_dF_z) * gamma) *
                      m_params->scaling.lmuy * m_slip->cosPrime_alpha * sign_Vx +
                  m_zeta->z8 - 1.0;
     // qbz4 is not in Pacejka
@@ -1149,9 +1145,8 @@ double ChPacejkaTire::Mz_pureLat(double alpha, double gamma, double Fy_pureSlip)
                  m_zeta->z5 * m_params->scaling.ltr;
     double E_t =
         (m_params->aligning.qez1 + m_params->aligning.qez2 * m_dF_z + m_params->aligning.qez3 * pow(m_dF_z, 2)) *
-        (1.0 +
-         (m_params->aligning.qez4 + m_params->aligning.qez5 * gamma) * (2.0 / chrono::CH_C_PI) *
-             std::atan(B_t * C_t * alpha_t));
+        (1.0 + (m_params->aligning.qez4 + m_params->aligning.qez5 * gamma) * (2.0 / chrono::CH_C_PI) *
+                   std::atan(B_t * C_t * alpha_t));
     double t = D_t * std::cos(C_t * std::atan(B_t * alpha_t - E_t * (B_t * alpha_t - std::atan(B_t * alpha_t)))) *
                m_slip->cosPrime_alpha;
 
@@ -1162,23 +1157,9 @@ double ChPacejkaTire::Mz_pureLat(double alpha, double gamma, double Fy_pureSlip)
 
     // hold onto coefs
     {
-        pureTorqueCoefs tmp = {S_Hf,
-                               alpha_r,
-                               S_Ht,
-                               alpha_t,
-                               m_slip->cosPrime_alpha,
-                               m_pureLat->K_y,
-                               B_r,
-                               C_r,
-                               D_r,
-                               B_t,
-                               C_t,
-                               D_t0,
-                               D_t,
-                               E_t,
-                               t,
-                               MP_z,
-                               M_zr};
+        pureTorqueCoefs tmp = {
+            S_Hf, alpha_r, S_Ht, alpha_t, m_slip->cosPrime_alpha, m_pureLat->K_y, B_r, C_r, D_r, B_t, C_t, D_t0, D_t,
+            E_t,  t,       MP_z, M_zr};
         *m_pureTorque = tmp;
     }
 
@@ -1242,8 +1223,8 @@ double ChPacejkaTire::Fy_combined(double alpha, double gamma, double kappa, doub
     double F_y = G_yKappa * Fy_pureSlip + S_VyKappa;
 
     {
-        combinedLatCoefs tmp = {
-            S_HyKappa, kappa_S, B_yKappa, C_yKappa, E_yKappa, D_VyKappa, S_VyKappa, G_yKappa0, G_yKappa};
+        combinedLatCoefs tmp = {S_HyKappa, kappa_S,   B_yKappa,  C_yKappa, E_yKappa,
+                                D_VyKappa, S_VyKappa, G_yKappa0, G_yKappa};
         *m_combinedLat = tmp;
     }
 
@@ -1257,8 +1238,9 @@ double ChPacejkaTire::Mz_combined(double alpha_r,
                                   double Fx_combined,
                                   double Fy_combined) {
     double FP_y = Fy_combined - m_combinedLat->S_VyKappa;
-    double s = m_R0 * (m_params->aligning.ssz1 + m_params->aligning.ssz2 * (Fy_combined / m_params->vertical.fnomin) +
-                       (m_params->aligning.ssz3 + m_params->aligning.ssz4 * m_dF_z) * gamma) *
+    double s = m_R0 *
+               (m_params->aligning.ssz1 + m_params->aligning.ssz2 * (Fy_combined / m_params->vertical.fnomin) +
+                (m_params->aligning.ssz3 + m_params->aligning.ssz4 * m_dF_z) * gamma) *
                m_params->scaling.ls;
     int sign_alpha_t = (alpha_t >= 0) ? 1 : -1;
     int sign_alpha_r = (alpha_r >= 0) ? 1 : -1;
@@ -1293,8 +1275,9 @@ double ChPacejkaTire::calc_Mx(double gamma, double Fy_combined) {
     double M_x = 0;
     if (m_in_contact) {
         // according to Pacejka
-        M_x = m_Fz * m_R0 * (m_params->overturning.qsx1 - m_params->overturning.qsx2 * gamma +
-                             m_params->overturning.qsx3 * (Fy_combined / m_params->vertical.fnomin)) *
+        M_x = m_Fz * m_R0 *
+              (m_params->overturning.qsx1 - m_params->overturning.qsx2 * gamma +
+               m_params->overturning.qsx3 * (Fy_combined / m_params->vertical.fnomin)) *
               m_params->scaling.lmx;
     }
 
@@ -1305,8 +1288,9 @@ double ChPacejkaTire::calc_My(double Fx_combined) {
     double M_y = 0;
     if (m_in_contact) {
         double V_r = m_tireState.omega * m_R_eff;
-        M_y = -m_Fz * m_R0 * (m_params->rolling.qsy1 * std::atan(V_r / m_params->model.longvl) +
-                              m_params->rolling.qsy2 * (Fx_combined / m_params->vertical.fnomin)) *
+        M_y = -m_Fz * m_R0 *
+              (m_params->rolling.qsy1 * std::atan(V_r / m_params->model.longvl) +
+               m_params->rolling.qsy2 * (Fx_combined / m_params->vertical.fnomin)) *
               m_params->scaling.lmy;
         // reference calc
         // M_y = m_R0*m_Fz * (m_params->rolling.qsy1 + m_params->rolling.qsy2*Fx_combined/m_params->vertical.fnomin +
@@ -1787,7 +1771,8 @@ void ChPacejkaTire::WriteOutData(double time, const std::string& outFilename) {
             // write the headers, Fx, Fy are pure forces, Fxc and Fyc are the combined forces
             oFile << "time,kappa,alpha,gamma,kappaP,alphaP,gammaP,Vx,Vy,omega,Fx,Fy,Fz,Mx,My,Mz,Fxc,Fyc,Mzc,Mzx,Mzy,M_"
                      "zrc,contact,m_Fz,m_dF_z,u,valpha,vgamma,vphi,du,dvalpha,dvgamma,dvphi,R0,R_l,Reff,MP_z,M_zr,t,s,"
-                     "FX,FY,FZ,MX,MY,MZ,u_Bessel,u_sigma,v_Bessel,v_sigma" << std::endl;
+                     "FX,FY,FZ,MX,MY,MZ,u_Bessel,u_sigma,v_Bessel,v_sigma"
+                  << std::endl;
             m_Num_WriteOutData++;
             oFile.close();
         }

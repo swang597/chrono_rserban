@@ -40,8 +40,7 @@ namespace vehicle {
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-ChPac89Tire::ChPac89Tire(const std::string& name)
-    : ChTire(name), m_kappa(0), m_alpha(0), m_gamma(0), m_gamma_limit(3) {
+ChPac89Tire::ChPac89Tire(const std::string& name) : ChTire(name), m_kappa(0), m_alpha(0), m_gamma(0), m_gamma_limit(3) {
     m_tireforce.force = ChVector<>(0, 0, 0);
     m_tireforce.point = ChVector<>(0, 0, 0);
     m_tireforce.moment = ChVector<>(0, 0, 0);
@@ -111,7 +110,7 @@ void ChPac89Tire::Synchronize(double time, const WheelState& wheel_state, const 
 
     // Assuming the tire is a disc, check contact with terrain
     m_data.in_contact =
-        disc_terrain_contact(terrain, wheel_state.pos, disc_normal, m_unloaded_radius, m_data.frame, m_data.depth);
+        DiscTerrainCollision(terrain, wheel_state.pos, disc_normal, m_unloaded_radius, m_data.frame, m_data.depth);
     if (m_data.in_contact) {
         // Wheel velocity in the ISO-C Frame
         ChVector<> vel = wheel_state.lin_vel;
@@ -158,7 +157,7 @@ void ChPac89Tire::Advance(double step) {
         return;
 
     if (m_states.vx != 0) {
-        m_states.cp_long_slip = -m_states.vsx / m_states.vx;        
+        m_states.cp_long_slip = -m_states.vsx / m_states.vx;
     } else {
         m_states.cp_long_slip = 0;
     }

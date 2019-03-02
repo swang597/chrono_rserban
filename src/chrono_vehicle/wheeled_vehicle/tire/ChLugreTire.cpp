@@ -131,7 +131,7 @@ void ChLugreTire::Synchronize(double time, const WheelState& wheel_state, const 
 
         // Check contact with terrain and calculate contact points.
         m_data[id].in_contact =
-            disc_terrain_contact(terrain, disc_center, disc_normal, disc_radius, m_data[id].frame, depth);
+            DiscTerrainCollision(terrain, disc_center, disc_normal, disc_radius, m_data[id].frame, depth);
         if (!m_data[id].in_contact)
             continue;
 

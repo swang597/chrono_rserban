@@ -85,26 +85,24 @@ class CH_VEHICLE_API ChPac89Tire : public ChTire {
     /// Get the width of the tire.
     double GetWidth() const { return m_width; }
 
+    /// Get the tire deflection
+    virtual double GetDeflection() const override { return m_data.depth; }
+
     /// Get visualization width.
     virtual double GetVisualizationWidth() const { return m_width; }
 
-    /// Get the tire slip angle.
-    virtual double GetSlipAngle() const override { return m_states.cp_side_slip; }
+    /// Get the slip angle used in Pac89 (expressed in radians).
+    /// The reported value will have opposite sign to that reported by ChTire::GetSlipAngle
+    /// because ChPac89 uses internally a different frame convention.
+    double GetSlipAngle_internal() const { return m_states.cp_side_slip; }
 
-    /// Get the tire longitudinal slip.
-    virtual double GetLongitudinalSlip() const override { return m_states.cp_long_slip; }
+    /// Get the longitudinal slip used in Pac89.
+    /// The reported value will be similar to that reported by ChTire::GetLongitudinalSlip.
+    double GetLongitudinalSlip_internal() const { return m_states.cp_long_slip; }
 
-	/// Get the longitudinal slip used in Pac89 (expressed as a percentage).
-    double GetKappa() const { return m_kappa; }
-	
-    /// Get the slip angle used in Pac89 (expressed in degrees).
-    double GetAlpha() const { return m_alpha; }
-
-    /// Get the camber angle used in Pac89 (expressed in degrees).
-	double GetGamma() { return m_gamma; }
-	
-	/// Get the tire deflection
-	virtual double GetDeflection() const override { return m_data.depth; }
+    /// Get the camber angle used in Pac89 (expressed in radians).
+    /// The reported value will be similar to that reported by ChTire::GetCamberAngle.
+    double GetCamberAngle_internal() { return m_gamma * CH_C_DEG_TO_RAD; }
   
   protected:
     /// Return the vertical tire stiffness contribution to the normal force.

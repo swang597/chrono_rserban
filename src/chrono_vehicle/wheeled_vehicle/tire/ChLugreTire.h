@@ -21,12 +21,12 @@
 
 #include <vector>
 
-#include "chrono/physics/ChBody.h"
 #include "chrono/assets/ChCylinderShape.h"
 #include "chrono/assets/ChTexture.h"
+#include "chrono/physics/ChBody.h"
 
-#include "chrono_vehicle/wheeled_vehicle/ChTire.h"
 #include "chrono_vehicle/ChTerrain.h"
+#include "chrono_vehicle/wheeled_vehicle/ChTire.h"
 
 namespace chrono {
 namespace vehicle {
@@ -38,7 +38,7 @@ namespace vehicle {
 class CH_VEHICLE_API ChLugreTire : public ChTire {
   public:
     ChLugreTire(const std::string& name  ///< [in] name of this tire system
-                );
+    );
 
     virtual ~ChLugreTire() {}
 
