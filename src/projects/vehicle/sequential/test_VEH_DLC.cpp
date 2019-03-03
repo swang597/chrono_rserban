@@ -37,7 +37,7 @@ using namespace chrono::vehicle::hmmwv;
 // =============================================================================
 
 // Type of tire model (FIALA, PACEJKA, PAC89, or TMEASY)
-TireModelType tire_model = TireModelType::TMEASY;
+TireModelType tire_model = TireModelType::FIALA;
 
 // Simulation step size
 double step_size = 2e-3;
@@ -110,7 +110,7 @@ int main(int argc, char* argv[]) {
     // Parameterized ISO double lane change (to left)
     auto path = DoubleLaneChangePath(ChVector<>(-75, 0, 0.1), 13.5, 4.0, 11.0, 50.0, true);
     auto npoints = path->getNumPoints();
-    double x_max = path->getPoint(npoints-1).x();
+    double x_max = path->getPoint(npoints - 1).x();
 
     // Parameterized NATO double lane change (to right)
     ////auto path = DoubleLaneChangePath(ChVector<>(-125, 0, 0.1), 28.93, 3.6105, 25.0, 50.0, false);
