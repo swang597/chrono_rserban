@@ -1,0 +1,27 @@
+{
+    "Name": "Converted Fiala Tire",
+    "Type": "Tire",
+    "Template": "FialaTire",
+    "Mass": 37.6,
+    "Inertia": [
+        3.84,
+        6.69,
+        3.84
+    ],
+    "Fiala Parameters": {
+        "Unloaded Radius": 0.461,
+        "Width": 0.254,
+        "Vertical Stiffness": 2100000.0,
+        "Vertical Damping": 1000.0,
+        "Rolling Resistance": 0.015,
+        "CSLIP": 76507.54618712094,
+        "CALPHA": 69872.1916633556,
+        "UMIN": 1.09339875,
+        "UMAX": 1.2148875,
+        "X Relaxation Length": 0.0,
+        "Y Relaxation Length": 0.0
+    },
+    "Visualization": {
+        "Width": 0.254
+    }
+}

@@ -1,0 +1,103 @@
+{
+    "Name": "Truck Tire Parameter Set",
+    "Type": "Tire",
+    "Template": "TMeasyTire",
+    "Design": {
+        "Unloaded Radius [m]": 0.461,
+        "Mass [kg]": 37.6,
+        "Inertia [kg.m2]": [
+            3.86,
+            7.6,
+            3.86
+        ],
+        "Width [m]": 0.254,
+        "Rim Radius [m]": 0.19,
+        "Roundness of Cross Section": 0.1
+    },
+    "Coeficient of Friction": 0.8,
+    "Rolling Resistance Coefficients": [
+        0.015,
+        0.015
+    ],
+    "Parameters": {
+        "Tire Load": {
+            "Nominal Vertical Force [N]": 4850.0,
+            "Maximum Vertical Force [N]": 16975.0
+        },
+        "Tire Stiffness": {
+            "Longitudinal [N/m]": 1890000.0,
+            "Lateral [N/m]": 1680000.0,
+            "Vertical N/m": [
+                2100000.0,
+                2100000.0
+            ]
+        },
+        "Dynamic Radius Weighting Coefficients": [
+            0.375,
+            0.75
+        ],
+        "Tire Damping": {
+            "Longitudinal [Ns/m]": 842.9946619048071,
+            "Lateral [Ns/m]": 794.7829892492667,
+            "Vertical [Ns/m]": 888.5943956609225
+        },
+        "Longitudinal": {
+            "Initial Slopes dFx/dsx [N]": [
+                58586.83648765172,
+                132536.09659230014
+            ],
+            "Maximum Fx Load [N]": [
+                3087.328958772521,
+                5777.479962740269
+            ],
+            "Sliding Fx Load [N": [
+                2536.7328974264676,
+                4704.8995275843
+            ],
+            "Slip sx at Maximum Fx": [
+                0.20386022373056948,
+                0.17178943125207678
+            ],
+            "Slip sx where sliding begins": [
+                0.9599985016600422,
+                0.9598887226642808
+            ]
+        },
+        "Lateral": {
+            "Initial Slopes dFy/dsy [N]": [
+                59684.66842917369,
+                102853.09895764225
+            ],
+            "Maximum Fy Load [N]": [
+                2783.364064782115,
+                5133.195493025024
+            ],
+            "Sliding Fy Load [N]": [
+                2531.9329497591149,
+                4693.486644135216
+            ],
+            "Slip sy at Maximum Fy": [
+                0.15675734633231665,
+                0.1744399648204057
+            ],
+            "Slip sy where sliding begins": [
+                0.9319424935279153,
+                0.936477415591362
+            ]
+        },
+        "Aligning": {
+            "Normalized Trail at Zero Slip sy": [
+                0.13,
+                0.167
+            ],
+            "Slip sy where Trail Changes Sign": [
+                0.16459521364893249,
+                0.18316196306142597
+            ],
+            "Slip sy where Trail Tends to Zero": [
+                0.5622968576544873,
+                0.5715253428628533
+            ]
+        }
+    }
+}
