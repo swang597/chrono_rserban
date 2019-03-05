@@ -13,6 +13,7 @@ set(DEMOS
     test_BASE_rev_motion
     test_BASE_equilibrium
     test_BASE_archive
+    test_BASE_lock_lock
 )
 
 include_directories(${CH_IRRLICHTINC})
