@@ -25,6 +25,7 @@ SET(DEMOS
     test_VEH_steering_compliance
     test_VEH_steering_input
     test_VEH_DLC
+    test_VEH_friction
 )
 
 # ------------------------------------------------------------------------------

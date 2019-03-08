@@ -47,7 +47,7 @@ double tire_step_size = 1e-3;
 double debug_fps = 50;
 
 // Output directories
-const std::string out_dir = "DLC_TIRE_TEST";
+const std::string out_dir = "../DLC_TIRE_TEST";
 
 // =============================================================================
 
