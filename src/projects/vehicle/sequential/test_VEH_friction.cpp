@@ -51,7 +51,7 @@ float friction_1 = 0.6f;
 float friction_2 = 0.9f;
 
 // Simulation step size, end time
-double step_size = 1e-3;
+double step_size = 2e-3;
 double tire_step_size = 1e-3;
 
 // Output
@@ -188,14 +188,15 @@ int main(int argc, char* argv[]) {
     while (app.GetDevice()->run()) {
         double time = sys.GetChTime();
 
+        double veh_pos_1 = hmmwv_1.GetVehicle().GetVehiclePos().x();
+        double veh_pos_2 = hmmwv_2.GetVehicle().GetVehiclePos().x();
+
         // Extract output
         if (output && sim_frame % out_steps == 0) {
-            double veh_pos_1 = hmmwv_1.GetVehicle().GetVehiclePos().x();
             double veh_speed_1 = hmmwv_1.GetVehicle().GetVehicleSpeed();
             double fr_omega_1 = hmmwv_1.GetVehicle().GetWheelOmega(FRONT_RIGHT);
             double rr_omega_1 = hmmwv_1.GetVehicle().GetWheelOmega(REAR_RIGHT);
 
-            double veh_pos_2 = hmmwv_2.GetVehicle().GetVehiclePos().x();
             double veh_speed_2 = hmmwv_2.GetVehicle().GetVehicleSpeed();
             double fr_omega_2 = hmmwv_2.GetVehicle().GetWheelOmega(FRONT_RIGHT);
             double rr_omega_2 = hmmwv_2.GetVehicle().GetWheelOmega(REAR_RIGHT);
@@ -204,6 +205,11 @@ int main(int argc, char* argv[]) {
             csv << veh_pos_1 << veh_speed_1 << fr_omega_1 << rr_omega_1;
             csv << veh_pos_2 << veh_speed_2 << fr_omega_2 << rr_omega_2;
             csv << std::endl;
+        }
+
+        // Stop befoe end of terrain patches
+        if (veh_pos_1 > 80 || veh_pos_2 > 80) {
+            break;
         }
 
         // Render scene
