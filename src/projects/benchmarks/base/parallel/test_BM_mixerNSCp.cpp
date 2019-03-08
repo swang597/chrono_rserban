@@ -12,10 +12,11 @@
 // Authors: Radu Serban
 // =============================================================================
 //
-// Benchmark test for parallel simulation using SMC contact.
+// Benchmark test for parallel simulation using NSC contact.
 //
 // =============================================================================
 
+#include "chrono/physics/ChLinkMotorRotationAngle.h"
 #include "chrono/utils/ChBenchmark.h"
 #include "chrono/utils/ChUtilsCreators.h"
 
@@ -29,10 +30,10 @@ using namespace chrono::collision;
 // =============================================================================
 
 template <int N>
-class MixerTestSMC : public utils::ChBenchmarkTest {
+class MixerTestNSC : public utils::ChBenchmarkTest {
   public:
-    MixerTestSMC();
-    ~MixerTestSMC() { delete m_system; }
+    MixerTestNSC();
+    ~MixerTestNSC() { delete m_system; }
 
     ChSystem* GetSystem() override { return m_system; }
     void ExecuteStep() override { m_system->DoStepDynamics(m_step); }
@@ -40,12 +41,12 @@ class MixerTestSMC : public utils::ChBenchmarkTest {
     void SimulateVis();
 
   private:
-    ChSystemParallelSMC* m_system;
+    ChSystemParallelNSC* m_system;
     double m_step;
 };
 
 template <int N>
-MixerTestSMC<N>::MixerTestSMC() : m_system(new ChSystemParallelSMC()), m_step(5e-4) {
+MixerTestNSC<N>::MixerTestNSC() : m_system(new ChSystemParallelNSC()), m_step(1e-3) {
     m_system->Set_G_acc(ChVector<>(0, 0, -9.81));
 
     // Set number of threads.
@@ -54,9 +55,17 @@ MixerTestSMC<N>::MixerTestSMC() : m_system(new ChSystemParallelSMC()), m_step(5e
     CHOMPfunctions::SetNumThreads(threads);
 
     // Set solver parameters
+    m_system->GetSettings()->solver.solver_mode = SolverMode::SLIDING;
+    m_system->GetSettings()->solver.max_iteration_normal = 0;
+    m_system->GetSettings()->solver.max_iteration_sliding = 50;
+    m_system->GetSettings()->solver.max_iteration_spinning = 0;
     m_system->GetSettings()->solver.max_iteration_bilateral = 10;
     m_system->GetSettings()->solver.tolerance = 1e-3;
+    m_system->GetSettings()->solver.alpha = 0;
+    m_system->GetSettings()->solver.contact_recovery_speed = 10000;
+    m_system->ChangeSolverType(SolverType::APGD);
     m_system->GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
+    m_system->GetSettings()->collision.collision_envelope = 0.01;
     m_system->GetSettings()->collision.bins_per_axis = vec3(10, 10, 10);
 
     // Balls created in layesr of 25 = 5x5
@@ -64,10 +73,8 @@ MixerTestSMC<N>::MixerTestSMC() : m_system(new ChSystemParallelSMC()), m_step(5e
     int num_layers = (N + 24) / 25;
 
     // Create a common material
-    auto mat = std::make_shared<ChMaterialSurfaceSMC>();
+    auto mat = std::make_shared<ChMaterialSurfaceNSC>();
     mat->SetFriction(0.4f);
-    mat->SetYoungModulus(2e5f);
-    mat->SetRestitution(0.1f);
 
     // Create container bin
     auto bin = utils::CreateBoxContainer(m_system, -100, mat, ChVector<>(1, 1, 0.1 + 0.4 * num_layers * radius), 0.1);
@@ -86,11 +93,10 @@ MixerTestSMC<N>::MixerTestSMC() : m_system(new ChSystemParallelSMC()), m_step(5e
     mixer->GetCollisionModel()->BuildModel();
     m_system->AddBody(mixer);
 
-    // Create an engine between the two bodies, constrained to rotate at 90 deg/s
-    auto motor = std::make_shared<ChLinkEngine>();
-    motor->Initialize(mixer, bin, ChCoordsys<>(ChVector<>(0, 0, 0), ChQuaternion<>(1, 0, 0, 0)));
-    motor->Set_eng_mode(ChLinkEngine::ENG_MODE_ROTATION);
-    motor->Set_rot_funct(std::make_shared<ChFunction_Ramp>(0, CH_C_PI / 2));
+    // Create a motor between the two bodies, constrained to rotate at 90 deg/s
+    auto motor = std::make_shared<ChLinkMotorRotationAngle>();
+    motor->Initialize(mixer, bin, ChFrame<>(ChVector<>(0, 0, 0), ChQuaternion<>(1, 0, 0, 0)));
+    motor->SetAngleFunction(std::make_shared<ChFunction_Ramp>(0, CH_C_PI / 2));
     m_system->AddLink(motor);
 
     // Create the balls
@@ -123,9 +129,9 @@ MixerTestSMC<N>::MixerTestSMC() : m_system(new ChSystemParallelSMC()), m_step(5e
 }
 
 template <int N>
-void MixerTestSMC<N>::SimulateVis() {
+void MixerTestNSC<N>::SimulateVis() {
     opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-    gl_window.Initialize(1280, 720, "Mixer SMC", m_system);
+    gl_window.Initialize(1280, 720, "Mixer NSC", m_system);
     gl_window.SetCamera(ChVector<>(0, -2, 3), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1));
     gl_window.SetRenderMode(opengl::WIREFRAME);
 
@@ -140,11 +146,11 @@ void MixerTestSMC<N>::SimulateVis() {
 #define NUM_SKIP_STEPS 2000  // number of steps for hot start
 #define NUM_SIM_STEPS 1000   // number of simulation steps for each benchmark
 
-CH_BM_SIMULATION_LOOP(MixerSMC032, MixerTestSMC<32>,  NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
-CH_BM_SIMULATION_LOOP(MixerSMC064, MixerTestSMC<64>,  NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
-CH_BM_SIMULATION_LOOP(MixerSMC128, MixerTestSMC<128>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
-CH_BM_SIMULATION_LOOP(MixerSMC256, MixerTestSMC<256>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
-CH_BM_SIMULATION_LOOP(MixerSMC512, MixerTestSMC<512>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
+CH_BM_SIMULATION_LOOP(MixerNSC032, MixerTestNSC<32>,  NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
+CH_BM_SIMULATION_LOOP(MixerNSC064, MixerTestNSC<64>,  NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
+CH_BM_SIMULATION_LOOP(MixerNSC128, MixerTestNSC<128>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
+CH_BM_SIMULATION_LOOP(MixerNSC256, MixerTestNSC<256>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
+CH_BM_SIMULATION_LOOP(MixerNSC512, MixerTestNSC<512>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
 
 // =============================================================================
 
@@ -152,7 +158,7 @@ int main(int argc, char* argv[]) {
     ::benchmark::Initialize(&argc, argv);
 
     if (::benchmark::ReportUnrecognizedArguments(argc, argv)) {
-        MixerTestSMC<512> test;
+        MixerTestNSC<256> test;
         test.SimulateVis();
         return 0;
     }

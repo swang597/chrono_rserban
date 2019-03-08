@@ -38,6 +38,7 @@ list(APPEND LIBS benchmark_main)
 set(TESTS
 	test_BM_pendulums
 	test_BM_joints
+	test_BM_mixerNSCs
 )
 
 foreach(PROGRAM ${TESTS})

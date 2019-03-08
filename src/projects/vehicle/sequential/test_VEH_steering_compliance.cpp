@@ -23,6 +23,7 @@
 
 #include "chrono/core/ChRealtimeStep.h"
 
+#include "chrono/physics/ChShaftsBody.h"
 #include "chrono/physics/ChShaftsGear.h"
 #include "chrono/physics/ChShaftsMotorAngle.h"
 #include "chrono/physics/ChShaftsTorsionSpring.h"

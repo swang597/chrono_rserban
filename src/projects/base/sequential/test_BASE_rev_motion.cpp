@@ -64,25 +64,18 @@ int main(int argc, char* argv[]) {
     //   LockLock with one actuated rotation axis.
     //   Equivalent to a driver constraint for revolute joint.
     // Test 2
-    //   LockRevolute with rotation motion specified on the joint's DOF axis.
-    //   No effect on the relative body motion.
-    // Test 3
-    //   LockRevolute with rotation motion specified along an axis other than the joint's DOF axis.
-    //   This has the effect of rotating the joint's DOF axis.
-    //   To better illustrate this, we also set non-zero gravity.
-    // Test 4
     //   LockRevolute with rotation motion applied to the underlying marker along the joint's DOF.
     //   No effect on the relative body motion.
-    // Test 5
+    // Test 3
     //   LockRevolute with rotation motion applied to underlying marker along an axis other than the joint's DOF.
-    //   Like in Test 3, this has the effect of rotating the joint's DOF axis.
+    //   This has the effect of rotating the joint's DOF axis.
     //
     // NOTES:
     //   Body1 (red cylinder) fixed to ground
     //   Default gravity set to [0, 0, 0]
     //   Default motion axis is along Z, i.e. [0, 0, 1]
 
-    enum TestSelector { TEST0, TEST1, TEST2, TEST3, TEST4, TEST5 };
+    enum TestSelector { TEST0, TEST1, TEST2, TEST3 };
     TestSelector test = TEST1;
 
     switch (test) {
@@ -105,26 +98,10 @@ int main(int argc, char* argv[]) {
             auto joint = std::make_shared<ChLinkLockRevolute>();
             my_sys.AddLink(joint);
             joint->Initialize(body1, body2, ChCoordsys<>(ChVector<>(0, 0, 0)));
-            joint->SetMotion_ang(fun);
-            break;
-        }
-        case TEST3: {
-            auto joint = std::make_shared<ChLinkLockRevolute>();
-            my_sys.AddLink(joint);
-            joint->Initialize(body1, body2, ChCoordsys<>(ChVector<>(0, 0, 0)));
-            joint->SetMotion_axis(ChVector<>(0, 1, 0));
-            joint->SetMotion_ang(fun);
-            my_sys.Set_G_acc(ChVector<>(0, -10, 0));
-            break;
-        }
-        case TEST4: {
-            auto joint = std::make_shared<ChLinkLockRevolute>();
-            my_sys.AddLink(joint);
-            joint->Initialize(body1, body2, ChCoordsys<>(ChVector<>(0, 0, 0)));
             joint->GetMarker1()->SetMotion_ang(fun);
             break;
         }
-        case TEST5: {
+        case TEST3: {
             auto joint = std::make_shared<ChLinkLockRevolute>();
             my_sys.AddLink(joint);
             joint->Initialize(body1, body2, ChCoordsys<>(ChVector<>(0, 0, 0)));
