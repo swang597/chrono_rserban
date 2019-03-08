@@ -24,6 +24,7 @@
 #include "chrono/core/ChRealtimeStep.h"
 
 #include "chrono/physics/ChLinkMotorRotationAngle.h"
+#include "chrono/physics/ChShaftsBody.h"
 #include "chrono/physics/ChShaftsMotorAngle.h"
 #include "chrono/physics/ChSystemNSC.h"
 
@@ -49,9 +50,8 @@ using std::endl;
 // =============================================================================
 
 enum Model {
-    LINK_ENGINE,  // revolute between chassis and arm
-    LINK_MOTOR,   // revolute between chassis and arm
-    SHAFT_MOTOR   // shaft attached to arm and shaft attached to chassis
+    LINK_MOTOR,  // revolute between chassis and arm
+    SHAFT_MOTOR  // shaft attached to arm and shaft attached to chassis
 };
 
 Model model = SHAFT_MOTOR;
@@ -92,12 +92,6 @@ class SteeringFunction : public ChFunction {
 double GetSteering(double time) {
     double freq = 0.5;
     return std::sin(2 * CH_C_PI * freq * time);
-}
-
-// Steering input applied to the LinkEngine
-void ApplySteering(double time, double steering, std::shared_ptr<ChLinkEngine> element) {
-    auto fun = std::static_pointer_cast<SteeringFunction>(element->Get_rot_funct());
-    fun->Update(time, steering);
 }
 
 // Steering input applied to the LinkMotor
@@ -206,13 +200,6 @@ int main(int argc, char* argv[]) {
 
     double max_angle = 50.0 * (CH_C_PI / 180);
 
-    auto revolute_engine = std::make_shared<ChLinkEngine>();
-    revolute_engine->Set_shaft_mode(ChLinkEngine::ENG_SHAFT_LOCK);
-    revolute_engine->Set_eng_mode(ChLinkEngine::ENG_MODE_ROTATION);
-    revolute_engine->Initialize(chassis, arm, ChCoordsys<>(ChVector<>(0, 0.249, 0), QUNIT));
-    auto engine_fun = std::make_shared<SteeringFunction>(max_angle);
-    revolute_engine->Set_rot_funct(engine_fun);
-
     auto revolute_motor = std::make_shared<ChLinkMotorRotationAngle>();
     revolute_motor->Initialize(chassis, arm, ChFrame<>(ChVector<>(0, 0.249, 0), QUNIT));
     auto motor_fun = std::make_shared<ChFunction_Setpoint>();
@@ -233,9 +220,6 @@ int main(int argc, char* argv[]) {
     shaft_motor->SetAngleFunction(motor_fun);
 
     switch (model) {
-        case LINK_ENGINE:
-            sys.AddLink(revolute_engine);
-            break;
         case LINK_MOTOR:
             sys.AddLink(revolute_motor);
             break;
@@ -285,9 +269,6 @@ int main(int argc, char* argv[]) {
     std::string out_dir = "../TEST_steering_input";
     std::string out_file;
     switch (model) {
-        case LINK_ENGINE:
-            out_file = out_dir + "/out_LinkEngine.txt";
-            break;
         case LINK_MOTOR:
             out_file = out_dir + "/out_LinkMotor.txt";
             break;
@@ -326,9 +307,6 @@ int main(int argc, char* argv[]) {
         double time = sys.GetChTime();
         double steering = GetSteering(time);
         switch (model) {
-            case LINK_ENGINE:
-                ApplySteering(time, steering, revolute_engine);
-                break;
             case LINK_MOTOR:
                 ApplySteering(time, steering, revolute_motor);
                 break;
