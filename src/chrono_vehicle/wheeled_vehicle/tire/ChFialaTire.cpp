@@ -20,7 +20,7 @@
 // =============================================================================
 // Authors: Radu Serban, Mike Taylor
 // =============================================================================
-// 
+//
 // Fiala tire model.
 //
 // =============================================================================
@@ -277,12 +277,10 @@ void ChFialaTire::WritePlots(const std::string& plFileName, const std::string& p
         std::cout << "Fiala Tire Object is not yet initialized! No Plots available." << std::endl;
         return;
     }
+    const double Fz_nom = 1.0;
 
-    if (m_Fz_nom == 0) {
-        m_Fz_nom = 2000.0;
-    }
-    std::vector<double> kappa, Fx1, Fx2;
-    std::vector<double> alpha, Fy1, Fy2, Mz1, Mz2;
+    std::vector<double> kappa, Fx1;
+    std::vector<double> alpha, Fy1;
     const double step = 0.005;
     for (int i = 0; i < 201; i++) {
         kappa.push_back(step * double(i));
@@ -292,21 +290,15 @@ void ChFialaTire::WritePlots(const std::string& plFileName, const std::string& p
     for (int i = 0; i < kappa.size(); i++) {
         double adum = 0.0;
         double fxt, fyt, mzt;
-        FialaPatchForces(fxt, fyt, mzt, kappa[i], adum, m_Fz_nom / 2.0);
+        FialaPatchForces(fxt, fyt, mzt, kappa[i], adum, Fz_nom);
         Fx1.push_back(fxt);
-        FialaPatchForces(fxt, fyt, mzt, kappa[i], adum, m_Fz_nom);
-        Fx2.push_back(fxt);
     }
 
     for (int i = 0; i < alpha.size(); i++) {
         double kdum = 0.0;
         double fxt, fyt, mzt;
-        FialaPatchForces(fxt, fyt, mzt, kdum, alpha[i], m_Fz_nom / 2.0);
+        FialaPatchForces(fxt, fyt, mzt, kdum, alpha[i], Fz_nom);
         Fy1.push_back(fyt);
-        Mz1.push_back(mzt);
-        FialaPatchForces(fxt, fyt, mzt, kdum, alpha[i], m_Fz_nom);
-        Fy2.push_back(fyt);
-        Mz2.push_back(mzt);
     }
 
     std::string titleName = std::string("Fiala Tire ") + this->GetName() + ": ";
@@ -315,7 +307,6 @@ void ChFialaTire::WritePlots(const std::string& plFileName, const std::string& p
 
     plot << "Mu     = " << m_mu << std::endl;
     plot << "Mu_0   = " << m_mu_0 << std::endl;
-    plot << "FZNOM  = " << m_Fz_nom << std::endl;
     plot << "RADIUS = " << m_unloaded_radius << std::endl;
     plot << "WIDTH  = " << m_width << std::endl;
     plot << "CSLIP  = " << m_c_slip << std::endl;
@@ -324,39 +315,28 @@ void ChFialaTire::WritePlots(const std::string& plFileName, const std::string& p
     plot << "UMAX   = " << m_u_max << std::endl;
     plot << "$Fx << EOD" << std::endl;
     for (int i = 0; i < kappa.size(); i++) {
-        plot << kappa[i] << "\t" << Fx1[i] << "\t" << Fx2[i] << std::endl;
+        plot << kappa[i] << "\t" << Fx1[i] << std::endl;
     }
     plot << "EOD" << std::endl;
 
     plot << "$FyMz << EOD" << std::endl;
     for (int i = 0; i < alpha.size(); i++) {
-        plot << alpha[i] << "\t" << Fy1[i] << "\t" << Fy2[i] << "\t" << Mz1[i] << "\t" << Mz2[i] << std::endl;
+        plot << alpha[i] << "\t" << Fy1[i] << std::endl;
     }
     plot << "EOD" << std::endl;
     plot << "set title '" << titleName.c_str() << "'" << std::endl;
     plot << "set xlabel 'Longitudinal Slip Kappa []'" << std::endl;
-    plot << "set ylabel 'Longitudinal Force Fx [N]'" << std::endl;
+    plot << "set ylabel 'Longitudinal Friction Coefficient Mux []'" << std::endl;
     plot << "set xrange [0:1]" << std::endl;
-    plot << "plot $Fx u 1:2 t 'Fz = " << m_Fz_nom / 2 << " N' with lines, \\" << std::endl;
-    plot << "     $Fx u 1:3 t 'Fz = " << m_Fz_nom << " N' with lines" << std::endl;
+    plot << "plot $Fx u 1:2 with lines" << std::endl;
 
     plot << "pause -1" << std::endl;
 
     plot << "set title '" << titleName.c_str() << "'" << std::endl;
     plot << "set xlabel 'Slip Angle Alpha [rad]'" << std::endl;
-    plot << "set ylabel 'Lateral Force Fy [N]'" << std::endl;
+    plot << "set ylabel 'Lateral Friction Coefficient Muy []'" << std::endl;
     plot << "set xrange [0:1]" << std::endl;
-    plot << "plot $FyMz u 1:2 t 'Fz = " << m_Fz_nom / 2 << " N' with lines, \\" << std::endl;
-    plot << "     $FyMz u 1:3 t 'Fz = " << m_Fz_nom << " N' with lines" << std::endl;
-
-    plot << "pause -1" << std::endl;
-
-    plot << "set title '" << titleName.c_str() << "'" << std::endl;
-    plot << "set xlabel 'Slip Angle Alpha [rad]'" << std::endl;
-    plot << "set ylabel 'Aligning Torque Mz [Nm]'" << std::endl;
-    plot << "set xrange [0:1]" << std::endl;
-    plot << "plot $FyMz u 1:4 t 'Fz = " << m_Fz_nom / 2 << " N' with lines, \\" << std::endl;
-    plot << "     $FyMz u 1:5 t 'Fz = " << m_Fz_nom << " N' with lines" << std::endl;
+    plot << "plot $FyMz u 1:2 with lines" << std::endl;
 
     plot << "pause -1" << std::endl;
 

@@ -8,6 +8,7 @@
         6.69,
         3.84
     ],
+    "Coefficient of Friction": 0.8,
     "Fiala Parameters": {
         "Unloaded Radius": 0.461,
         "Width": 0.254,
