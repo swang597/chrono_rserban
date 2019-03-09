@@ -111,9 +111,20 @@ void ChFialaTire::Synchronize(double time,
     ChMatrix33<> A(wheel_state.rot);
     ChVector<> disc_normal = A.Get_A_Yaxis();
 
+    double dum_cam = 0;
     // Assuming the tire is a disc, check contact with terrain
-    m_data.in_contact =
-        DiscTerrainCollision(terrain, wheel_state.pos, disc_normal, m_unloaded_radius, m_data.frame, m_data.depth);
+    switch (collision_type) {
+        case ChTire::CollisionType::SINGLE_POINT:
+            m_data.in_contact = DiscTerrainCollision(terrain, wheel_state.pos, disc_normal, m_unloaded_radius,
+                                                     m_data.frame, m_data.depth);
+            break;
+        case ChTire::CollisionType::FOUR_POINTS:
+            m_data.in_contact = DiscTerrainCollision4pt(terrain, wheel_state.pos, disc_normal, m_unloaded_radius,
+                                                        m_width, m_data.frame, m_data.depth, dum_cam);
+            break;
+        case ChTire::CollisionType::ENVELOPE:
+            break;
+    }
 
     if (m_data.in_contact) {
         // Wheel velocity in the ISO-C Frame

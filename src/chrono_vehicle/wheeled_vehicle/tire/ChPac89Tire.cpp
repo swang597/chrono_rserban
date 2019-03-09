@@ -40,7 +40,8 @@ namespace vehicle {
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-ChPac89Tire::ChPac89Tire(const std::string& name) : ChTire(name), m_kappa(0), m_alpha(0), m_gamma(0), m_gamma_limit(3) {
+ChPac89Tire::ChPac89Tire(const std::string& name)
+    : ChTire(name), m_kappa(0), m_alpha(0), m_gamma(0), m_gamma_limit(3), m_mu(0), m_mu0(0.8) {
     m_tireforce.force = ChVector<>(0, 0, 0);
     m_tireforce.point = ChVector<>(0, 0, 0);
     m_tireforce.moment = ChVector<>(0, 0, 0);
@@ -98,7 +99,9 @@ void ChPac89Tire::Synchronize(double time,
                               const ChTerrain& terrain,
                               CollisionType collision_type) {
     // Invoke the base class function.
-    ChTire::Synchronize(time, wheel_state, terrain);
+    ChTire::Synchronize(time, wheel_state, terrain, collision_type);
+
+    m_mu = terrain.GetCoefficientFriction(m_tireforce.point.x(), m_tireforce.point.y());
 
     ChCoordsys<> contact_frame;
     // Clear the force accumulators and set the application point to the wheel
@@ -111,9 +114,21 @@ void ChPac89Tire::Synchronize(double time,
     ChMatrix33<> A(wheel_state.rot);
     ChVector<> disc_normal = A.Get_A_Yaxis();
 
+    double dum_cam;
+
     // Assuming the tire is a disc, check contact with terrain
-    m_data.in_contact =
-        DiscTerrainCollision(terrain, wheel_state.pos, disc_normal, m_unloaded_radius, m_data.frame, m_data.depth);
+    switch (collision_type) {
+        case ChTire::CollisionType::SINGLE_POINT:
+            m_data.in_contact = DiscTerrainCollision(terrain, wheel_state.pos, disc_normal, m_unloaded_radius,
+                                                     m_data.frame, m_data.depth);
+            break;
+        case ChTire::CollisionType::FOUR_POINTS:
+            m_data.in_contact = DiscTerrainCollision4pt(terrain, wheel_state.pos, disc_normal, m_unloaded_radius,
+                                                        m_width, m_data.frame, m_data.depth, dum_cam);
+            break;
+        case ChTire::CollisionType::ENVELOPE:
+            break;
+    }
     if (m_data.in_contact) {
         // Wheel velocity in the ISO-C Frame
         ChVector<> vel = wheel_state.lin_vel;
@@ -175,6 +190,8 @@ void ChPac89Tire::Advance(double step) {
     // Ensure that cp_side_slip stays between -pi()/2 & pi()/2 (a little less to prevent tan from going to infinity)
     ChClampValue(m_states.cp_side_slip, -CH_C_PI_2 + 0.001, CH_C_PI_2 - 0.001);
 
+    double mu_scale = m_mu / m_mu0;
+
     // Calculate the new force and moment values (normal force and moment have already been accounted for in
     // Synchronize()).
     // Express Fz in kN (note that all other forces and moments are in N and Nm).
@@ -206,7 +223,7 @@ void ChPac89Tire::Advance(double step) {
         double X1 = (m_kappa + Sh);
         double E = (m_PacCoeff.B6 * std::pow(Fz, 2) + m_PacCoeff.B7 * Fz + m_PacCoeff.B8);
 
-        Fx = (D * std::sin(C * std::atan(B * X1 - E * (B * X1 - std::atan(B * X1))))) + Sv;
+        Fx = mu_scale * (D * std::sin(C * std::atan(B * X1 - E * (B * X1 - std::atan(B * X1))))) + Sv;
     }
 
     // Lateral Force
@@ -224,7 +241,7 @@ void ChPac89Tire::Advance(double step) {
         // Ensure that X1 stays within +/-90 deg minus a little bit
         ChClampValue(X1, -89.5, 89.5);
 
-        Fy = (D * std::sin(C * std::atan(B * X1 - E * (B * X1 - std::atan(B * X1))))) + Sv;
+        Fy = mu_scale * (D * std::sin(C * std::atan(B * X1 - E * (B * X1 - std::atan(B * X1))))) + Sv;
     }
 
     // Self-Aligning Torque
@@ -244,7 +261,7 @@ void ChPac89Tire::Advance(double step) {
         // Ensure that X1 stays within +/-90 deg minus a little bit
         ChClampValue(X1, -89.5, 89.5);
 
-        Mz = (D * std::sin(C * std::atan(B * X1 - E * (B * X1 - std::atan(B * X1))))) + Sv;
+        Mz = mu_scale * (D * std::sin(C * std::atan(B * X1 - E * (B * X1 - std::atan(B * X1))))) + Sv;
     }
 
     // Overturning Moment

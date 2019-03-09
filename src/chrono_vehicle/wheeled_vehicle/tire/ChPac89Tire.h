@@ -121,6 +121,11 @@ class CH_VEHICLE_API ChPac89Tire : public ChTire {
 
     double m_gamma_limit;  ///< limit camber angle (degrees)
 
+    /// Road friction
+    double m_mu;
+    /// Tire reference friction
+    double m_mu0;
+
     /// Pac89 tire model parameters
     double m_unloaded_radius;
     double m_width;
