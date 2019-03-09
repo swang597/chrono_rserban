@@ -20,7 +20,6 @@
 // =============================================================================
 
 #include "chrono/physics/ChSystemNSC.h"
-#include "chrono/physics/ChSystemSMC.h"
 
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"
@@ -33,7 +32,6 @@
 #include "chrono_thirdparty/filesystem/path.h"
 
 using namespace chrono;
-using namespace chrono::geometry;
 using namespace chrono::vehicle;
 using namespace chrono::vehicle::hmmwv;
 
@@ -238,7 +236,7 @@ int main(int argc, char* argv[]) {
         hmmwv_1.Synchronize(time, steering_input_1, braking_input_1, throttle_input_1, terrain);
         hmmwv_2.Synchronize(time, steering_input_2, braking_input_2, throttle_input_2, terrain);
         terrain.Synchronize(time);
-        app.Synchronize(modelname, steering_input_1, throttle_input_1, braking_input_1);
+        app.Synchronize(modelname, steering_input_2, throttle_input_2, braking_input_2);
 
         // Advance simulation for one timestep for all modules.
         driver_1.Advance(step_size);
