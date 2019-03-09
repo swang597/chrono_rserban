@@ -253,7 +253,10 @@ TerrainForce ChPacejkaTire::GetTireForce_combinedSlip(const bool local) const {
 // quantities calculated here will be kept constant until the next call to the
 // Synchronize() function.
 // -----------------------------------------------------------------------------
-void ChPacejkaTire::Synchronize(double time, const WheelState& state, const ChTerrain& terrain) {
+void ChPacejkaTire::Synchronize(double time,
+                                const WheelState& state,
+                                const ChTerrain& terrain,
+                                CollisionType collision_type) {
     //// TODO: This must be removed from here.  A tire with unspecified or
     ////       incorrect parameters should have been invalidate at initialization.
     // Check that input tire model parameters are defined
@@ -1090,9 +1093,8 @@ double ChPacejkaTire::Fy_pureLat(double alpha, double gamma) {
     double E_y = (m_params->lateral.pey1 + m_params->lateral.pey2 * m_dF_z) *
                  (1.0 - (m_params->lateral.pey3 + m_params->lateral.pey4 * gamma) * sign_alpha) *
                  m_params->scaling.ley;  // + p_Ey5 * pow(gamma,2)
-    double S_Vy = m_Fz *
-                  ((m_params->lateral.pvy1 + m_params->lateral.pvy2 * m_dF_z) * m_params->scaling.lvy +
-                   (m_params->lateral.pvy3 + m_params->lateral.pvy4 * m_dF_z) * gamma) *
+    double S_Vy = m_Fz * ((m_params->lateral.pvy1 + m_params->lateral.pvy2 * m_dF_z) * m_params->scaling.lvy +
+                          (m_params->lateral.pvy3 + m_params->lateral.pvy4 * m_dF_z) * gamma) *
                   m_params->scaling.lmuy * m_zeta->z2;
 
     double F_y =
@@ -1127,9 +1129,8 @@ double ChPacejkaTire::Mz_pureLat(double alpha, double gamma, double Fy_pureSlip)
     // m_dF_z)*gamma*m_params->scaling.lgaz*m_zeta->z0) * m_slip->cosPrime_alpha*m_params->scaling.lmuy*sign_Vx +
     // m_zeta->z8 - 1.0;
     // reference
-    double D_r = m_Fz * m_R0 *
-                     ((m_params->aligning.qdz6 + m_params->aligning.qdz7 * m_dF_z) * m_params->scaling.lres +
-                      (m_params->aligning.qdz8 + m_params->aligning.qdz9 * m_dF_z) * gamma) *
+    double D_r = m_Fz * m_R0 * ((m_params->aligning.qdz6 + m_params->aligning.qdz7 * m_dF_z) * m_params->scaling.lres +
+                                (m_params->aligning.qdz8 + m_params->aligning.qdz9 * m_dF_z) * gamma) *
                      m_params->scaling.lmuy * m_slip->cosPrime_alpha * sign_Vx +
                  m_zeta->z8 - 1.0;
     // qbz4 is not in Pacejka
@@ -1145,8 +1146,9 @@ double ChPacejkaTire::Mz_pureLat(double alpha, double gamma, double Fy_pureSlip)
                  m_zeta->z5 * m_params->scaling.ltr;
     double E_t =
         (m_params->aligning.qez1 + m_params->aligning.qez2 * m_dF_z + m_params->aligning.qez3 * pow(m_dF_z, 2)) *
-        (1.0 + (m_params->aligning.qez4 + m_params->aligning.qez5 * gamma) * (2.0 / chrono::CH_C_PI) *
-                   std::atan(B_t * C_t * alpha_t));
+        (1.0 +
+         (m_params->aligning.qez4 + m_params->aligning.qez5 * gamma) * (2.0 / chrono::CH_C_PI) *
+             std::atan(B_t * C_t * alpha_t));
     double t = D_t * std::cos(C_t * std::atan(B_t * alpha_t - E_t * (B_t * alpha_t - std::atan(B_t * alpha_t)))) *
                m_slip->cosPrime_alpha;
 
@@ -1238,9 +1240,8 @@ double ChPacejkaTire::Mz_combined(double alpha_r,
                                   double Fx_combined,
                                   double Fy_combined) {
     double FP_y = Fy_combined - m_combinedLat->S_VyKappa;
-    double s = m_R0 *
-               (m_params->aligning.ssz1 + m_params->aligning.ssz2 * (Fy_combined / m_params->vertical.fnomin) +
-                (m_params->aligning.ssz3 + m_params->aligning.ssz4 * m_dF_z) * gamma) *
+    double s = m_R0 * (m_params->aligning.ssz1 + m_params->aligning.ssz2 * (Fy_combined / m_params->vertical.fnomin) +
+                       (m_params->aligning.ssz3 + m_params->aligning.ssz4 * m_dF_z) * gamma) *
                m_params->scaling.ls;
     int sign_alpha_t = (alpha_t >= 0) ? 1 : -1;
     int sign_alpha_r = (alpha_r >= 0) ? 1 : -1;
@@ -1275,9 +1276,8 @@ double ChPacejkaTire::calc_Mx(double gamma, double Fy_combined) {
     double M_x = 0;
     if (m_in_contact) {
         // according to Pacejka
-        M_x = m_Fz * m_R0 *
-              (m_params->overturning.qsx1 - m_params->overturning.qsx2 * gamma +
-               m_params->overturning.qsx3 * (Fy_combined / m_params->vertical.fnomin)) *
+        M_x = m_Fz * m_R0 * (m_params->overturning.qsx1 - m_params->overturning.qsx2 * gamma +
+                             m_params->overturning.qsx3 * (Fy_combined / m_params->vertical.fnomin)) *
               m_params->scaling.lmx;
     }
 
@@ -1288,9 +1288,8 @@ double ChPacejkaTire::calc_My(double Fx_combined) {
     double M_y = 0;
     if (m_in_contact) {
         double V_r = m_tireState.omega * m_R_eff;
-        M_y = -m_Fz * m_R0 *
-              (m_params->rolling.qsy1 * std::atan(V_r / m_params->model.longvl) +
-               m_params->rolling.qsy2 * (Fx_combined / m_params->vertical.fnomin)) *
+        M_y = -m_Fz * m_R0 * (m_params->rolling.qsy1 * std::atan(V_r / m_params->model.longvl) +
+                              m_params->rolling.qsy2 * (Fx_combined / m_params->vertical.fnomin)) *
               m_params->scaling.lmy;
         // reference calc
         // M_y = m_R0*m_Fz * (m_params->rolling.qsy1 + m_params->rolling.qsy2*Fx_combined/m_params->vertical.fnomin +

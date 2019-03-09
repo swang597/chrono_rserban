@@ -64,6 +64,9 @@ std::string simplepowertrain_file("generic/powertrain/SimplePowertrain.json");
 // JSON files tire models
 std::string tmeasytire_file("hmmwv/tire/HMMWV_TMeasyTire.json");
 
+// Tire collision type
+ChTire::CollisionType collisionType = ChTire::CollisionType::FOUR_POINTS;
+
 std::string path_file("paths/straightOrigin.txt");
 std::string steering_controller_file("hmmwv/SteeringController.json");
 std::string speed_controller_file("hmmwv/SpeedController.json");
@@ -217,7 +220,7 @@ int main(int argc, char* argv[]) {
         vehicle.Synchronize(time, steering_input, braking_input, powertrain_torque, tire_forces);
         terrain.Synchronize(time);
         for (int i = 0; i < num_wheels; i++)
-            tires[i]->Synchronize(time, wheel_states[i], terrain);
+            tires[i]->Synchronize(time, wheel_states[i], terrain, collisionType);
         // app.Synchronize(driver.GetInputModeAsString(), steering_input, throttle_input, braking_input);
 
         // Advance simulation for one timestep for all modules

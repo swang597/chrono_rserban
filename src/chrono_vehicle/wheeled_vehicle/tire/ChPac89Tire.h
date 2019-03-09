@@ -37,7 +37,7 @@ namespace vehicle {
 /// Pacjeka 89 tire model.
 class CH_VEHICLE_API ChPac89Tire : public ChTire {
   public:
-      ChPac89Tire(const std::string& name  ///< [in] name of this tire system
+    ChPac89Tire(const std::string& name  ///< [in] name of this tire system
                 );
 
     virtual ~ChPac89Tire() {}
@@ -73,7 +73,8 @@ class CH_VEHICLE_API ChPac89Tire : public ChTire {
     /// The tire system is provided the current state of its associated wheel.
     virtual void Synchronize(double time,                    ///< [in] current time
                              const WheelState& wheel_state,  ///< [in] current state of associated wheel body
-                             const ChTerrain& terrain        ///< [in] reference to the terrain system
+                             const ChTerrain& terrain,       ///< [in] reference to the terrain system
+                             CollisionType collision_type = CollisionType::SINGLE_POINT  ///< [in] collision type
                              ) override;
 
     /// Advance the state of this tire by the specified time step.
@@ -103,7 +104,7 @@ class CH_VEHICLE_API ChPac89Tire : public ChTire {
     /// Get the camber angle used in Pac89 (expressed in radians).
     /// The reported value will be similar to that reported by ChTire::GetCamberAngle.
     double GetCamberAngle_internal() { return m_gamma * CH_C_DEG_TO_RAD; }
-  
+
   protected:
     /// Return the vertical tire stiffness contribution to the normal force.
     virtual double GetNormalStiffnessForce(double depth) const = 0;

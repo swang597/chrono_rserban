@@ -91,7 +91,10 @@ void ChFialaTire::RemoveVisualizationAssets() {
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-void ChFialaTire::Synchronize(double time, const WheelState& wheel_state, const ChTerrain& terrain) {
+void ChFialaTire::Synchronize(double time,
+                              const WheelState& wheel_state,
+                              const ChTerrain& terrain,
+                              CollisionType collision_type) {
     // Invoke the base class function.
     ChTire::Synchronize(time, wheel_state, terrain);
 

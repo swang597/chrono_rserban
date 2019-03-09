@@ -42,6 +42,13 @@ namespace vehicle {
 /// moments to be applied to the wheel body.
 class CH_VEHICLE_API ChTire : public ChPart {
   public:
+      enum class CollisionType {
+          SINGLE_POINT,
+          FOUR_POINTS,
+          ENVELOPE
+      };
+
+
     ChTire(const std::string& name  ///< [in] name of this tire system
     );
 
@@ -59,7 +66,8 @@ class CH_VEHICLE_API ChTire : public ChPart {
     /// a handle to the terrain system.
     virtual void Synchronize(double time,                    ///< [in] current time
                              const WheelState& wheel_state,  ///< [in] current state of associated wheel body
-                             const ChTerrain& terrain        ///< [in] reference to the terrain system
+                             const ChTerrain& terrain,       ///< [in] reference to the terrain system
+                             CollisionType collision_type = CollisionType::SINGLE_POINT  ///< [in] collision method
     ) {
         CalculateKinematics(time, wheel_state, terrain);
     }

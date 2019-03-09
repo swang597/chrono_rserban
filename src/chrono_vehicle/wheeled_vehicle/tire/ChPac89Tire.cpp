@@ -93,7 +93,10 @@ void ChPac89Tire::RemoveVisualizationAssets() {
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-void ChPac89Tire::Synchronize(double time, const WheelState& wheel_state, const ChTerrain& terrain) {
+void ChPac89Tire::Synchronize(double time,
+                              const WheelState& wheel_state,
+                              const ChTerrain& terrain,
+                              CollisionType collision_type) {
     // Invoke the base class function.
     ChTire::Synchronize(time, wheel_state, terrain);
 

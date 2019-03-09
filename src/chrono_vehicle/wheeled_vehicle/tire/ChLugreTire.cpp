@@ -104,7 +104,10 @@ double ChLugreTire::GetWidth() const {
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-void ChLugreTire::Synchronize(double time, const WheelState& wheel_state, const ChTerrain& terrain) {
+void ChLugreTire::Synchronize(double time,
+                              const WheelState& wheel_state,
+                              const ChTerrain& terrain,
+                              CollisionType collision_type) {
     // Invoke the base class function.
     ChTire::Synchronize(time, wheel_state, terrain);
 

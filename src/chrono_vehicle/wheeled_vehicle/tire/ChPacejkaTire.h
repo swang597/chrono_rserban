@@ -60,14 +60,14 @@ class CH_VEHICLE_API ChPacejkaTire : public ChTire {
     /// chrono can suggest a time step for use with the ODE slips
     ChPacejkaTire(const std::string& name,              ///< [in] name of this tire
                   const std::string& pacTire_paramFile  ///< [in] name of the parameter file
-    );
+                  );
 
     /// Construct a Pacejka tire with specified vertical load, for testing purposes
     ChPacejkaTire(const std::string& name,               ///< [in] name of this tire
                   const std::string& pacTire_paramFile,  ///< [in] name of the parameter file
                   double Fz_override,                    ///< [in] prescribed vertical load
                   bool use_transient_slip = true         ///< [in] indicate if using transient slip model
-    );
+                  );
 
     ~ChPacejkaTire();
 
@@ -115,7 +115,8 @@ class CH_VEHICLE_API ChPacejkaTire : public ChTire {
     /// Set the PacTire spindle state data from the global wheel body state.
     virtual void Synchronize(double time,                    ///< [in] current time
                              const WheelState& wheel_state,  ///< [in] current state of associated wheel body
-                             const ChTerrain& terrain        ///< [in] reference to the terrain system
+                             const ChTerrain& terrain,       ///< [in] reference to the terrain system
+                             CollisionType collision_type = CollisionType::SINGLE_POINT  ///< [in] collision type
                              ) override;
 
     /// Get the tire slip angle computed internally by the Pacejka model (in radians).
@@ -148,7 +149,7 @@ class CH_VEHICLE_API ChPacejkaTire : public ChTire {
                                  double alpha,  ///< [in] ...
                                  double gamma,  ///< [in] ...
                                  double Vx      ///< [in] tire forward velocity x-dir
-    );
+                                 );
 
     /// Get the average simulation time per step spent in advance()
     double get_average_Advance_time() { return m_sum_Advance_time / (double)m_num_Advance_calls; }
