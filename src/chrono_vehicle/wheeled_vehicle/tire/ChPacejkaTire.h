@@ -222,7 +222,7 @@ class CH_VEHICLE_API ChPacejkaTire : public ChTire {
 
     /// update the tire contact coordinate system, TYDEX W-Axis
     /// checks for contact, sets m_in_contact and m_depth
-    void update_W_frame(const ChTerrain& terrain);
+    void update_W_frame(const ChTerrain& terrain, CollisionType collisionType);
 
     // update the vertical load, tire deflection, and tire rolling radius
     void update_verticalLoad(double step);
@@ -415,6 +415,12 @@ class CH_VEHICLE_API ChPacejkaTire : public ChTire {
     combinedTorqueCoefs* m_combinedTorque;
 
     zetaCoefs* m_zeta;
+
+    // road friction coefficient
+    double m_mu;
+
+    // tire reference friction coeffient
+    double m_mu0;
 
     // for transient contact point tire model
     relaxationL* m_relaxation;

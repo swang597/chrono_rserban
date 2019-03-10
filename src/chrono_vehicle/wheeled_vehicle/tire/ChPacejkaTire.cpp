@@ -59,7 +59,8 @@ ChPacejkaTire::ChPacejkaTire(const std::string& name, const std::string& pacTire
       m_params_defined(false),
       m_use_transient_slip(true),
       m_use_Fz_override(false),
-      m_driven(false) {}
+      m_driven(false),
+      m_mu0(0.8) {}
 
 ChPacejkaTire::ChPacejkaTire(const std::string& name,
                              const std::string& pacTire_paramFile,
@@ -71,7 +72,8 @@ ChPacejkaTire::ChPacejkaTire(const std::string& name,
       m_use_transient_slip(use_transient_slip),
       m_use_Fz_override(Fz_override > 0),
       m_Fz_override(Fz_override),
-      m_driven(false) {}
+      m_driven(false),
+      m_mu0(0.8) {}
 
 // -----------------------------------------------------------------------------
 // Destructor
@@ -271,7 +273,7 @@ void ChPacejkaTire::Synchronize(double time,
     // Cache the wheel state and update the tire coordinate system.
     m_tireState = state;
     m_simTime = time;
-    update_W_frame(terrain);
+    update_W_frame(terrain, collision_type);
 
     // If not using the transient slip model, check that the tangential forward
     // velocity is not too small.
@@ -427,12 +429,27 @@ void ChPacejkaTire::advance_tire(double step) {
 // Local frame transforms output forces/moments to global frame, to be applied
 //  to the wheel body CM.
 // Pacejka (2006), Fig 2.3, all forces are calculated at the contact point "C"
-void ChPacejkaTire::update_W_frame(const ChTerrain& terrain) {
+void ChPacejkaTire::update_W_frame(const ChTerrain& terrain, CollisionType collision_type) {
     // Check contact with terrain, using a disc of radius R0.
     ChCoordsys<> contact_frame;
+
+    m_mu = terrain.GetCoefficientFriction(m_tireState.pos.x(), m_tireState.pos.y());
+
     double depth;
-    m_in_contact =
-        DiscTerrainCollision(terrain, m_tireState.pos, m_tireState.rot.GetYaxis(), m_R0, contact_frame, depth);
+    double dum_cam;
+    switch (collision_type) {
+        case CollisionType::SINGLE_POINT:
+            m_in_contact =
+                DiscTerrainCollision(terrain, m_tireState.pos, m_tireState.rot.GetYaxis(), m_R0, contact_frame, depth);
+            break;
+        case CollisionType::FOUR_POINTS:
+            m_in_contact = DiscTerrainCollision4pt(terrain, m_tireState.pos, m_tireState.rot.GetYaxis(), m_R0,
+                                                   m_params->dimension.width, contact_frame, depth, dum_cam);
+            break;
+        case CollisionType::ENVELOPE:
+            // to do
+            break;
+    }
 
     // set the depth if there is contact with terrain
     m_depth = (m_in_contact) ? depth : 0;
@@ -964,11 +981,13 @@ void ChPacejkaTire::pureSlipReactions() {
     if (!m_in_contact)
         return;
 
+    double mu_scale = m_mu / m_mu0;
+
     // calculate Fx, pure long. slip condition
-    m_FM_pure.force.x() = Fx_pureLong(m_slip->gammaP, m_slip->kappaP);
+    m_FM_pure.force.x() = mu_scale * Fx_pureLong(m_slip->gammaP, m_slip->kappaP);
 
     // calc. Fy, pure lateral slip.
-    m_FM_pure.force.y() = m_sameSide * Fy_pureLat(m_slip->alphaP, m_slip->gammaP);
+    m_FM_pure.force.y() = m_sameSide * mu_scale * Fy_pureLat(m_slip->alphaP, m_slip->gammaP);
 
     // calc Mz, pure lateral slip. Negative y-input force, and also the output Mz.
     m_FM_pure.moment.z() = m_sameSide * Mz_pureLat(m_slip->alphaP, m_slip->gammaP, m_sameSide * m_FM_pure.force.y());
