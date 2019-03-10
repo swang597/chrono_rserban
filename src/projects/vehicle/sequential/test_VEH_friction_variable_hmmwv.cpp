@@ -70,7 +70,7 @@ int main(int argc, char* argv[]) {
 
     // Create and initialize the vehicle
     HMMWV_Full hmmwv(&sys);
-    hmmwv.SetInitPosition(ChCoordsys<>(ChVector<>(-90, 0, 1.0), QUNIT));
+    hmmwv.SetInitPosition(ChCoordsys<>(ChVector<>(-90, 0, 0.7), QUNIT));
     hmmwv.SetPowertrainType(PowertrainModelType::SHAFTS);
     hmmwv.SetDriveType(DrivelineType::RWD);
     hmmwv.SetTireType(tire_model);
@@ -85,15 +85,20 @@ int main(int argc, char* argv[]) {
 
     // Create the terrain
     RigidTerrain terrain(&sys);
+
     auto patch = terrain.AddPatch(ChCoordsys<>(ChVector<>(0, 0, -0.1), QUNIT), ChVector<>(200, 10, 0.2));
+    patch->SetContactFrictionCoefficient(0.9f);
     patch->SetContactRestitutionCoefficient(0.01f);
     patch->SetContactMaterialProperties(2e7f, 0.3f);
     patch->SetColor(ChColor(0.8f, 0.8f, 1.0f));
     patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 10);
-    terrain.Initialize();
 
     MyFrictionFunctor ffun;
     terrain.RegisterFrictionFunctor(&ffun);
+    terrain.EnableFrictionFunctor(true);
+
+    terrain.Initialize();
+
 
     std::string modelname;
     switch (tire_model) {

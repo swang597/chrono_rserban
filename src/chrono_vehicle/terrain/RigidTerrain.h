@@ -113,7 +113,7 @@ class CH_VEHICLE_API RigidTerrain : public ChTerrain {
                  const std::string& filename  ///< [in] name of the JSON specification file
     );
 
-    ~RigidTerrain() {}
+    ~RigidTerrain();
 
     /// Add a terrain patch represented by a rigid box.
     /// If tiled = true, multiple side-by-side boxes are used.
@@ -157,6 +157,15 @@ class CH_VEHICLE_API RigidTerrain : public ChTerrain {
     /// Get the terrain height at the specified (x,y) location.
     virtual ChVector<> GetNormal(double x, double y) const override;
 
+    /// Enable use of location-dependent coefficient of friction.
+    /// This assumes that a non-trivial functor (of type ChTerrain::FrictionFunctor) was defined
+    /// and registered with the terrain subsystem. Enable this only if simulating a system that
+    /// has contacts with the terrain that must be resolved using the underlying Chrono contact
+    /// mechanism (e.g., for rigid tires, FEA tires, tracked vehicles, etc). Note that this feature
+    /// requires a relatively expensive traversal of all contacts at each simulation step.
+    /// By default, this option is disabled.  This function must be called before Initialize.
+    void EnableFrictionFunctor(bool val) { m_enable_functor = val; }
+
     /// Get the terrain coefficient of friction at the specified (x,y) location.
     /// This coefficient of friction value may be used by certain tire models to modify
     /// the tire characteristics, but it will have no effect on the interaction of the terrain
@@ -167,13 +176,14 @@ class CH_VEHICLE_API RigidTerrain : public ChTerrain {
     virtual float GetCoefficientFriction(double x, double y) const override;
 
     /// Export all patch meshes as macros in PovRay include files.
-    void ExportMeshPovray(const std::string& out_dir  ///< [in] output directory
-    );
+    void ExportMeshPovray(const std::string& out_dir);
 
   private:
     ChSystem* m_system;
     int m_num_patches;
     std::vector<std::shared_ptr<Patch>> m_patches;
+    bool m_enable_functor;
+    ChContactContainer::AddContactCallback* m_callback;
 
     std::shared_ptr<Patch> AddPatch(const ChCoordsys<>& position);
     void LoadPatch(const rapidjson::Value& a);
