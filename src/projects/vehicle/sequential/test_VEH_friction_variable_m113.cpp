@@ -19,41 +19,37 @@
 //
 // =============================================================================
 
-#include "chrono/physics/ChSystemNSC.h"
 #include "chrono/physics/ChSystemSMC.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
 
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/terrain/RigidTerrain.h"
-#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
+#include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleIrrApp.h"
 
-#include "chrono_models/vehicle/hmmwv/HMMWV.h"
+#include "chrono_models/vehicle/m113/M113_SimplePowertrain.h"
+#include "chrono_models/vehicle/m113/M113_Vehicle.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 
 using namespace chrono;
 using namespace chrono::vehicle;
-using namespace chrono::vehicle::hmmwv;
+using namespace chrono::vehicle::m113;
 
 // =============================================================================
 
-// Type of tire model (RIGID, TMEASY, FIALA, PAC89, or PACEJKA)
-TireModelType tire_model = TireModelType::TMEASY;
-
 // Simulation step size, end time
-double step_size = 2e-3;
-double tire_step_size = 1e-3;
+double step_size = 1e-3;
 
 // Output
-bool output = true;
+bool output = false;
 double out_fps = 50;
-const std::string out_dir = "../HMMWV_FRICTION_VARIABLE";
+const std::string out_dir = "../M113_FRICTION_VARIABLE";
 
 // =============================================================================
 
 class MyFrictionFunctor : public ChTerrain::FrictionFunctor {
   public:
-    MyFrictionFunctor() : m_friction_left(0.2f), m_friction_right(0.9f) {}
+    MyFrictionFunctor() : m_friction_left(0.1f), m_friction_right(0.9f) {}
     virtual float operator()(double x, double y) { return y > 0 ? m_friction_left : m_friction_right; }
     float m_friction_left;
     float m_friction_right;
@@ -63,7 +59,6 @@ class MyFrictionFunctor : public ChTerrain::FrictionFunctor {
 
 int main(int argc, char* argv[]) {
     // Chrono system
-    ////ChSystemNSC sys;
     ChSystemSMC sys;
     sys.Set_G_acc(ChVector<>(0, 0, -9.81));
     sys.SetMaxItersSolverSpeed(150);
@@ -71,19 +66,21 @@ int main(int argc, char* argv[]) {
     sys.SetSolverType(ChSolver::Type::BARZILAIBORWEIN);
 
     // Create and initialize the vehicle
-    HMMWV_Full hmmwv(&sys);
-    hmmwv.SetInitPosition(ChCoordsys<>(ChVector<>(-90, 0, 0.7), QUNIT));
-    hmmwv.SetPowertrainType(PowertrainModelType::SHAFTS);
-    hmmwv.SetDriveType(DrivelineType::RWD);
-    hmmwv.SetTireType(tire_model);
-    hmmwv.SetTireStepSize(tire_step_size);
-    hmmwv.SetVehicleStepSize(step_size);
-    hmmwv.Initialize();
-    hmmwv.SetChassisVisualizationType(VisualizationType::NONE);
-    hmmwv.SetSuspensionVisualizationType(VisualizationType::PRIMITIVES);
-    hmmwv.SetSteeringVisualizationType(VisualizationType::PRIMITIVES);
-    hmmwv.SetWheelVisualizationType(VisualizationType::NONE);
-    hmmwv.SetTireVisualizationType(VisualizationType::PRIMITIVES);
+    M113_Vehicle vehicle(false, TrackShoeType::SINGLE_PIN, &sys, ChassisCollisionType::NONE);
+    vehicle.Initialize(ChCoordsys<>(ChVector<>(-90.0, 0.0, 1.0), QUNIT));
+    vehicle.SetChassisVisualizationType(VisualizationType::NONE);
+    vehicle.SetSprocketVisualizationType(VisualizationType::PRIMITIVES);
+    vehicle.SetIdlerVisualizationType(VisualizationType::PRIMITIVES);
+    vehicle.SetRoadWheelAssemblyVisualizationType(VisualizationType::PRIMITIVES);
+    vehicle.SetRoadWheelVisualizationType(VisualizationType::PRIMITIVES);
+    vehicle.SetTrackShoeVisualizationType(VisualizationType::PRIMITIVES);
+
+    // Control steering type (enable crossdrive capability)
+    vehicle.GetDriveline()->SetGyrationMode(true);
+
+    // Create and initialize the powertrain system
+    M113_SimplePowertrain powertrain("Powertrain");
+    powertrain.Initialize(vehicle.GetChassisBody(), vehicle.GetDriveshaft());
 
     // Create the terrain
     RigidTerrain terrain(&sys);
@@ -101,31 +98,12 @@ int main(int argc, char* argv[]) {
 
     terrain.Initialize();
 
-    std::string modelname;
-    switch (tire_model) {
-        case TireModelType::TMEASY:
-            modelname = "tmeasy";
-            break;
-        case TireModelType::FIALA:
-            modelname = "fiala";
-            break;
-        case TireModelType::PAC89:
-            modelname = "pac89";
-            break;
-        case TireModelType::PACEJKA:
-            modelname = "pacejka";
-            break;
-        case TireModelType::RIGID:
-            modelname = "rigid";
-            break;
-    }
-
     // Create the vehicle Irrlicht interface
-    ChWheeledVehicleIrrApp app(&hmmwv.GetVehicle(), &hmmwv.GetPowertrain(), L"Terrain friction test");
+    ChTrackedVehicleIrrApp app(&vehicle, &powertrain, L"M113 friction test");
     app.SetSkyBox();
     app.AddTypicalLogo();
     app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
-    app.SetChaseCamera(ChVector<>(0.0, 0.0, .75), 6.0, 0.5);
+    app.SetChaseCamera(ChVector<>(0.0, 0.0, 0.0), 6.0, 0.5);
     app.SetTimestep(step_size);
 
     // Finalize construction of visualization assets
@@ -148,6 +126,15 @@ int main(int argc, char* argv[]) {
     // Simulation loop
     // ---------------
 
+    // Inter-module communication data
+    BodyStates shoe_states_left(vehicle.GetNumTrackShoes(LEFT));
+    BodyStates shoe_states_right(vehicle.GetNumTrackShoes(RIGHT));
+    TerrainForces shoe_forces_left(vehicle.GetNumTrackShoes(LEFT));
+    TerrainForces shoe_forces_right(vehicle.GetNumTrackShoes(RIGHT));
+    double driveshaft_speed;
+    double powertrain_torque;
+
+    // Output interval
     double out_step_size = 1 / out_fps;
     int out_steps = (int)std::ceil(out_step_size / step_size);
     int sim_frame = 0;
@@ -155,18 +142,13 @@ int main(int argc, char* argv[]) {
     while (app.GetDevice()->run()) {
         double time = sys.GetChTime();
 
-        auto veh_pos = hmmwv.GetVehicle().GetVehiclePos();
+        auto veh_pos = vehicle.GetVehiclePos();
 
         // Extract output
         if (output && sim_frame % out_steps == 0) {
-            double veh_speed = hmmwv.GetVehicle().GetVehicleSpeed();
-            double fl_omega = hmmwv.GetVehicle().GetWheelOmega(FRONT_LEFT);
-            double fr_omega = hmmwv.GetVehicle().GetWheelOmega(FRONT_RIGHT);
-            double rl_omega = hmmwv.GetVehicle().GetWheelOmega(REAR_LEFT);
-            double rr_omega = hmmwv.GetVehicle().GetWheelOmega(REAR_RIGHT);
+            double veh_speed = vehicle.GetVehicleSpeed();
 
-            csv << time << veh_pos.x() << veh_speed;
-            csv << fl_omega << fr_omega << rl_omega << rr_omega << std::endl;
+            csv << time << veh_pos.x() << veh_speed << std::endl;
         }
 
         // Stop before end of terrain patch
@@ -189,14 +171,23 @@ int main(int argc, char* argv[]) {
         else if (time > 2)
             throttle_input = 0.75;
 
+        // Collect output data from sub-systems
+        powertrain_torque = powertrain.GetOutputTorque();
+        driveshaft_speed = vehicle.GetDriveshaftSpeed();
+        vehicle.GetTrackShoeStates(LEFT, shoe_states_left);
+        vehicle.GetTrackShoeStates(RIGHT, shoe_states_right);
+
         // Update modules (process inputs from other modules)
-        hmmwv.Synchronize(time, steering_input, braking_input, throttle_input, terrain);
+        powertrain.Synchronize(time, throttle_input, driveshaft_speed);
+        vehicle.Synchronize(time, steering_input, braking_input, powertrain_torque, shoe_forces_left,
+                            shoe_forces_right);
         terrain.Synchronize(time);
-        app.Synchronize(modelname, steering_input, throttle_input, braking_input);
+        app.Synchronize("", steering_input, throttle_input, braking_input);
 
         // Advance simulation for one timestep for all modules.
-        hmmwv.Advance(step_size);
+        powertrain.Advance(step_size);
         terrain.Advance(step_size);
+        vehicle.Advance(step_size);
         app.Advance(step_size);
 
         // Advance state of entire system
@@ -207,7 +198,7 @@ int main(int argc, char* argv[]) {
     }
 
     if (output) {
-        csv.write_to_file(out_dir + "/" + modelname + ".out");
+        csv.write_to_file(out_dir + "/m113.out");
     }
 
     return 0;
