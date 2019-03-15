@@ -13,7 +13,9 @@
 // =============================================================================
 //
 // Main driver function for a vehicle specified through JSON files + example for
-// obtaining ride quality results presented by ISO 2631-1
+// obtaining shock effect results presented by ISO 2631-5
+//
+// Ramp shaped obstacles
 //
 // If using the Irrlicht interface, driver inputs are obtained from the keyboard.
 //
@@ -21,33 +23,38 @@
 // Y pointing to the left.
 //
 // =============================================================================
-
 #include <vector>
 
-#include "chrono/core/ChRealtimeStep.h"
 #include "chrono/core/ChStream.h"
-#include "chrono/physics/ChLinkDistance.h"
+#include "chrono/core/ChRealtimeStep.h"
 #include "chrono/utils/ChFilters.h"
+#include "chrono/physics/ChLinkDistance.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
 
 #include "chrono_vehicle/ChConfigVehicle.h"
 #include "chrono_vehicle/ChVehicleModelData.h"
 
+#include "chrono_vehicle/powertrain/SimplePowertrain.h"
 #include "chrono_vehicle/driver/ChDataDriver.h"
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"
-#include "chrono_vehicle/powertrain/SimplePowertrain.h"
 #include "chrono_vehicle/terrain/RigidTerrain.h"
+#include "chrono_vehicle/wheeled_vehicle/vehicle/WheeledVehicle.h"
 #include "chrono_vehicle/wheeled_vehicle/tire/RigidTire.h"
 #include "chrono_vehicle/wheeled_vehicle/tire/TMeasyTire.h"
-#include "chrono_vehicle/wheeled_vehicle/vehicle/WheeledVehicle.h"
 
 #include "chrono_vehicle/ChConfigVehicle.h"
 
+#include "chrono_thirdparty/filesystem/path.h"
+
+// If Irrlicht support is available...
+#ifdef CHRONO_IRRLICHT
+// ...include additional headers
 #include "chrono_vehicle/driver/ChIrrGuiDriver.h"
 #include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
 
-// Specify whether the demo should actually use Irrlicht
+// ...and specify whether the demo should actually use Irrlicht
 #define USE_IRRLICHT
+#endif
 
 // =============================================================================
 
@@ -61,68 +68,84 @@ std::string vehicle_file("hmmwv/vehicle/HMMWV_Vehicle.json");
 // JSON file for powertrain (simple)
 std::string simplepowertrain_file("generic/powertrain/SimplePowertrain.json");
 
-// JSON files tire models
+// JSON files tire models (rigid)
+std::string rigidtire_file("hmmwv/tire/HMMWV_RigidTire.json");
+
+// JSON files tire models (TMeasy)
 std::string tmeasytire_file("hmmwv/tire/HMMWV_TMeasyTire.json");
+// std::string tmeasytire_file("hmmwv/tire/HMMWV_TMeasy_converted.json");
 
 // Tire collision type
 ChTire::CollisionType collisionType = ChTire::CollisionType::ENVELOPE;
+
+// Driver input file (if not using Irrlicht)
+std::string driver_file("generic/driver/Sample_Maneuver.txt");
 
 std::string path_file("paths/straightOrigin.txt");
 std::string steering_controller_file("hmmwv/SteeringController.json");
 std::string speed_controller_file("hmmwv/SpeedController.json");
 
 // Initial vehicle position
-ChVector<> initLoc(0, 0, 0.6);
+ChVector<> initLoc(90, 0, 0.6);
 
 // Initial vehicle orientation
 ChQuaternion<> initRot(1, 0, 0, 0);
 
-// Simulation step size
-double step_size = 2e-3;
+// Simulation step size (should not be too high!)
+double step_size = 1e-3;
+
+// Time interval between two render frames
+double render_step_size = 1.0 / 50;  // FPS = 50
 
 // Point on chassis tracked by the camera (Irrlicht only)
 ChVector<> trackPoint(0.0, 0.0, 1.75);
+
+// Simulation length (Povray only)
+double tend = 20.0;
+
+// Output directories (Povray only)
+const std::string out_dir = GetChronoOutputPath() + "WHEELED_JSON";
+const std::string pov_dir = out_dir + "/POVRAY";
 
 // =============================================================================
 
 int main(int argc, char* argv[]) {
     GetLog() << "Copyright (c) 2018 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
 
-    const int rmsVals[5] = {0, 10, 20, 30, 40};
-    int iTerrain = 1;
-    double target_speed = 15.0;
+    const int heightVals[7] = {0, 1000, 2000, 3000, 4000, 5000, 6000};
+    int iObstacle = 1;
+    double target_speed = 5.0;
     // JSON files for terrain
-    std::string rigidterrain_file("terrain/RigidRandom1.json");
+    std::string rigidterrain_file("terrain/RigidRamp1.json");
 
     switch (argc) {
         default:
         case 1:
-            GetLog() << "usage: demo_VEH_Ride [TerrainNumber [Speed]]\n\n";
+            GetLog() << "usage: demo_VEH_ShockRamp [ObstacleNumber [Speed]]\n\n";
             GetLog() << "Using standard values for simulation:\n"
-                     << "Terrain No. = " << iTerrain << " (" << rmsVals[iTerrain] << " mm RMS)\n"
+                     << "Terrain No. = " << iObstacle << " (" << heightVals[iObstacle] << " mm Obstacle Height)\n"
                      << "Speed       = " << target_speed << " m/s\n";
             break;
         case 2:
-            if (atoi(argv[1]) >= 1 && atoi(argv[1]) <= 4) {
-                iTerrain = atoi(argv[1]);
-                rigidterrain_file = "terrain/RigidRandom" + std::to_string(iTerrain) + ".json";
+            if (atoi(argv[1]) >= 1 && atoi(argv[1]) <= 6) {
+                iObstacle = atoi(argv[1]);
+                rigidterrain_file = "terrain/RigidRamp" + std::to_string(iObstacle) + ".json";
             }
             GetLog() << "Using values for simulation:\n"
-                     << "Terrain No. = " << iTerrain << " (" << rmsVals[iTerrain] << " mm RMS)\n"
+                     << "Terrain No. = " << iObstacle << " (" << heightVals[iObstacle] << " mm Obstacle Height)\n"
                      << "Speed       = " << target_speed << " m/s\n";
             break;
         case 3:
-            if (atoi(argv[1]) >= 1 && atoi(argv[1]) <= 4) {
-                iTerrain = atoi(argv[1]);
-                rigidterrain_file = "terrain/RigidRandom" + std::to_string(iTerrain) + ".json";
+            if (atoi(argv[1]) >= 1 && atoi(argv[1]) <= 6) {
+                iObstacle = atoi(argv[1]);
+                rigidterrain_file = "terrain/RigidRamp" + std::to_string(iObstacle) + ".json";
             }
             target_speed = atof(argv[2]);
             GetLog() << "Using values for simulation:\n"
-                     << "Terrain No. = " << iTerrain << " (" << rmsVals[iTerrain] << " mm RMS)\n"
+                     << "Terrain No. = " << iObstacle << " (" << heightVals[iObstacle] << " mm Obstacle Height)\n"
                      << "Speed       = " << target_speed << " m/s\n";
             break;
     }
-
     // --------------------------
     // Create the various modules
     // --------------------------
@@ -149,20 +172,41 @@ int main(int argc, char* argv[]) {
     // Create and initialize the tires
     int num_axles = vehicle.GetNumberAxles();
     int num_wheels = 2 * num_axles;
+#ifdef USE_RIGID_TIRE
+    // leads to poor results - much too high!
+    std::vector<std::shared_ptr<RigidTire> > tires(num_wheels);
+#else
+    // handling tire works, but sill too high sesults
+    // a validated flexible tire model would be the best choice
     std::vector<std::shared_ptr<TMeasyTire> > tires(num_wheels);
+    GetLog() << "TMeasy Tire selected\n";
+#endif
     for (int i = 0; i < num_wheels; i++) {
+#ifdef USE_RIGID_TIRE
+        tires[i] = std::make_shared<RigidTire>(vehicle::GetDataFile(rigidtire_file));
+#else
         tires[i] = std::make_shared<TMeasyTire>(vehicle::GetDataFile(tmeasytire_file));
+        if (tires[i] == nullptr) {
+            GetLog() << "Bad tire problem\n";
+        }
+#endif
         tires[i]->Initialize(vehicle.GetWheelBody(i), VehicleSide(i % 2));
         tires[i]->SetVisualizationType(VisualizationType::MESH);
     }
 
-    ChISO2631_Vibration_SeatCushionLogger seat_logger(step_size);
+    ChISO2631_Shock_SeatCushionLogger seat_logger(step_size);
 
 #ifdef USE_IRRLICHT
 
-    // Create the visualization application
-    std::wstring windowTitle = L"Vehicle Ride Quality Demo - " + std::to_wstring(rmsVals[iTerrain]) + L" mm RMS";
+#ifdef USE_RIGID_TIRE
+    std::wstring windowTitle =
+        L"Vehicle Shock Test Demo (Rigid Tire) - " + std::to_wstring(heightVals[iObstacle]) + L" mm Obstacle Height";
     ChVehicleIrrApp app(&vehicle, &powertrain, windowTitle.c_str());
+#else
+    std::wstring windowTitle =
+        L"Vehicle Shock Test Demo (TMeasy Tire) - " + std::to_wstring(heightVals[iObstacle]) + L" mm Obstacle Height";
+    ChVehicleIrrApp app(&vehicle, &powertrain, windowTitle.c_str());
+#endif
 
     app.SetSkyBox();
     app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
@@ -173,13 +217,39 @@ int main(int argc, char* argv[]) {
     app.AssetBindAll();
     app.AssetUpdateAll();
 
-#endif
-
-    // Create the driver
+    // ChIrrGuiDriver driver(app);
+    // create the driver
     auto path = ChBezierCurve::read(vehicle::GetDataFile(path_file));
     ChPathFollowerDriver driver(vehicle, vehicle::GetDataFile(steering_controller_file),
                                 vehicle::GetDataFile(speed_controller_file), path, "my_path", target_speed, false);
+
+#else
+
+    auto path = ChBezierCurve::read(vehicle::GetDataFile(path_file));
+    ChPathFollowerDriver driver(vehicle, vehicle::GetDataFile(steering_controller_file),
+                                vehicle::GetDataFile(speed_controller_file), path, "my_path", target_speed, false);
+
+#endif
+
     driver.Initialize();
+
+    // -----------------
+    // Initialize output
+    // -----------------
+
+    if (!filesystem::create_directory(filesystem::path(out_dir))) {
+        std::cout << "Error creating directory " << out_dir << std::endl;
+        return 1;
+    }
+    if (!filesystem::create_directory(filesystem::path(pov_dir))) {
+        std::cout << "Error creating directory " << pov_dir << std::endl;
+        return 1;
+    }
+
+    // Generate JSON information with available output channels
+    std::string out_json = vehicle.ExportComponentList();
+    std::cout << out_json << std::endl;
+    vehicle.ExportComponentList(out_dir + "/component_list.json");
 
     // ---------------
     // Simulation loop
@@ -188,11 +258,20 @@ int main(int argc, char* argv[]) {
     // Inter-module communication data
     TerrainForces tire_forces(num_wheels);
     WheelStates wheel_states(num_wheels);
+    double driveshaft_speed;
+    double powertrain_torque;
+    double throttle_input;
+    double steering_input;
+    double braking_input;
 
-    // Logging of seat acceleration data on flat road surface is useless and would lead to distorted results
+    // Initialize simulation frame counter and simulation time
+    int step_number = 0;
+    double time = 0;
+
+    // Logging of seat acceleration data on flat road surface is useless
     double xstart = 100.0;  // start logging when the vehicle crosses this x position
-    double xend = 400.0;    // end logging here, this also the end of our world
-
+    // double xend = 160.0;    // end logging here, this also the end of our world
+    double xend = 180;
 #ifdef USE_IRRLICHT
 
     ChRealtimeStepTimer realtime_timer;
@@ -203,18 +282,18 @@ int main(int argc, char* argv[]) {
         app.DrawAll();
 
         // Collect output data from modules (for inter-module communication)
-        double throttle_input = driver.GetThrottle();
-        double steering_input = driver.GetSteering();
-        double braking_input = driver.GetBraking();
-        double powertrain_torque = powertrain.GetOutputTorque();
-        double driveshaft_speed = vehicle.GetDriveshaftSpeed();
+        throttle_input = driver.GetThrottle();
+        steering_input = driver.GetSteering();
+        braking_input = driver.GetBraking();
+        powertrain_torque = powertrain.GetOutputTorque();
+        driveshaft_speed = vehicle.GetDriveshaftSpeed();
         for (int i = 0; i < num_wheels; i++) {
             tire_forces[i] = tires[i]->GetTireForce();
             wheel_states[i] = vehicle.GetWheelState(i);
         }
 
         // Update modules (process inputs from other modules)
-        double time = vehicle.GetSystem()->GetChTime();
+        time = vehicle.GetSystem()->GetChTime();
         driver.Synchronize(time);
         powertrain.Synchronize(time, throttle_input, driveshaft_speed);
         vehicle.Synchronize(time, steering_input, braking_input, powertrain_torque, tire_forces);
@@ -240,29 +319,51 @@ int main(int argc, char* argv[]) {
         if (xpos >= xstart) {
             double speed = vehicle.GetVehicleSpeed();
             ChVector<> seat_acc = vehicle.GetVehicleAcceleration(vehicle.GetChassis()->GetLocalDriverCoordsys().pos);
-            seat_logger.AddData(speed, seat_acc);
+            seat_logger.AddData(seat_acc);
         }
+
+        // Increment frame number
+        step_number++;
 
         app.EndScene();
     }
 
 #else
 
-    double xpos;
-    while ((xpos = vehicle.GetWheelPos(0).x()) < xend) {
+    // Number of simulation steps between two 3D view render frames
+    int render_steps = (int)std::ceil(render_step_size / step_size);
+
+    int render_frame = 0;
+    char filename[100];
+
+    double v_pos;
+    while ((v_pos = vehicle.GetWheelPos(0).x()) < xend) {
+        if (step_number % render_steps == 0) {
+            // Output render data
+            sprintf(filename, "%s/data_%03d.dat", pov_dir.c_str(), render_frame + 1);
+            utils::WriteShapesPovray(vehicle.GetSystem(), filename);
+            std::cout << "Output frame:   " << render_frame << std::endl;
+            std::cout << "Sim frame:      " << step_number << std::endl;
+            std::cout << "Time:           " << time << std::endl;
+            std::cout << "   throttle: " << driver.GetThrottle() << "   steering: " << driver.GetSteering()
+                      << "   braking:  " << driver.GetBraking() << std::endl;
+            std::cout << std::endl;
+            render_frame++;
+        }
+
         // Collect output data from modules (for inter-module communication)
-        double throttle_input = driver.GetThrottle();
-        double steering_input = driver.GetSteering();
-        double braking_input = driver.GetBraking();
-        double powertrain_torque = powertrain.GetOutputTorque();
-        double driveshaft_speed = vehicle.GetDriveshaftSpeed();
+        throttle_input = driver.GetThrottle();
+        steering_input = driver.GetSteering();
+        braking_input = driver.GetBraking();
+        powertrain_torque = powertrain.GetOutputTorque();
+        driveshaft_speed = vehicle.GetDriveshaftSpeed();
         for (int i = 0; i < num_wheels; i++) {
             tire_forces[i] = tires[i]->GetTireForce();
             wheel_states[i] = vehicle.GetWheelState(i);
         }
 
         // Update modules (process inputs from other modules)
-        double time = vehicle.GetSystem()->GetChTime();
+        time = vehicle.GetSystem()->GetChTime();
         driver.Synchronize(time);
         powertrain.Synchronize(time, throttle_input, driveshaft_speed);
         vehicle.Synchronize(time, steering_input, braking_input, powertrain_torque, tire_forces);
@@ -278,46 +379,40 @@ int main(int argc, char* argv[]) {
         for (int i = 0; i < num_wheels; i++)
             tires[i]->Advance(step_size);
 
-        if (xpos >= xstart) {
+        if (v_pos >= xstart) {
             double speed = vehicle.GetVehicleSpeed();
             ChVector<> seat_acc = vehicle.GetVehicleAcceleration(vehicle.GetChassis()->GetLocalDriverCoordsys().pos);
-            seat_logger.AddData(speed, seat_acc);
+            seat_logger.AddData(seat_acc);
         }
+        // Increment frame number
+        step_number++;
     }
 
 #endif
 
-    double ride_limit = 2.0;
-    double avg_speed = seat_logger.GetAVGSpeed();
-    double cf = seat_logger.GetCrestFactor();
-    double awv = seat_logger.GetAW_V();
-    double vdv = seat_logger.GetVDV();
-    double svdv = seat_logger.GetSeverityVDV();
-    double ap = seat_logger.GetAbsorbedPowerVertical();
+    double se_low = 0.5;
+    double se_high = 0.8;
+    double se = seat_logger.GetSe();
 
-    GetLog() << "Ride Quality Results #1 (ISO 2631-1):\n";
-    GetLog() << "  Average Speed                = " << avg_speed << " m/s\n";
-    GetLog() << "  Weighted Acceleration        = " << awv << " m/s^2\n";
-    GetLog() << "  Vibration Dose Value         = " << vdv << " m/s^1.75\n";
-    GetLog() << "  Vibration Exposure Time      = " << seat_logger.GetExposureTime() << " s\n";
-    GetLog() << "  Crest Factor                 = " << cf << "\n";
-    GetLog() << "  VDV based Severity Criterion = " << svdv << "\n";
-    if (svdv < 1.75) {
-        GetLog() << "\nVDV Severitiy < 1.75: the Weighted Acceleration AWV ist the prefered result\n";
-        if (awv <= ride_limit) {
-            GetLog() << "  AWV <= " << ride_limit << "m/s^2 (ok)\n";
-        } else {
-            GetLog() << "  AWV > " << ride_limit << "m/s^2 (above limit)\n";
-        }
+    double az_limit = 2.5;
+    double az = seat_logger.GetLegacyAz();
+
+    GetLog() << "Shock Simulation Results #1 (ISO 2631-5 Method):\n";
+    GetLog() << "  Significant Speed                        Vsig = " << target_speed << " m/s\n";
+    GetLog() << "  Equivalent Static Spine Compressive Stress Se = " << se << " MPa\n";
+    if (se <= se_low) {
+        GetLog() << "Se <= " << se_low << " MPa (ok) - low risc of health effect, below limit for average occupants\n";
+    } else if (se >= se_high) {
+        GetLog() << "Se >= " << se_high << " MPa - severe risc of health effect!\n";
     } else {
-        GetLog() << "\nVDV Severitiy >= 1.75: the Vibration Dose Value VDV ist the prefered result\n";
-        if (vdv <= ride_limit) {
-            GetLog() << "  VDV <= " << ride_limit << "m/s^1.75 (ok)\n";
-        } else {
-            GetLog() << "  VDV > " << ride_limit << "m/s^1.75 (above limit)\n";
-        }
+        GetLog() << "Se is between [" << se_low << ";" << se_high << "] - risc of health effects, above limit!\n";
     }
-    GetLog() << "\nRide Quality Results #2 (Absorbed Power Method):\n";
-    GetLog() << "  Absorbed Power                = " << ap << " W\n";
+    GetLog() << "\nShock Simulation Results #2 (Traditional NRMM Method):\n";
+    GetLog() << "  Maximum Vertical Seat Acceleration = " << az << " g\n";
+    if (az <= az_limit) {
+        GetLog() << "Az <= " << az_limit << " g (ok)\n";
+    } else {
+        GetLog() << "Az > " << az_limit << " g - severe risk for average occupant!\n";
+    }
     return 0;
 }

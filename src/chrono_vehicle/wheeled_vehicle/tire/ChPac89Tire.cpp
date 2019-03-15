@@ -127,6 +127,8 @@ void ChPac89Tire::Synchronize(double time,
                                                         m_width, m_data.frame, m_data.depth, dum_cam);
             break;
         case ChTire::CollisionType::ENVELOPE:
+            m_data.in_contact = DiscTerrainCollisionEnvelope(terrain, wheel_state.pos, disc_normal, m_unloaded_radius,
+                                                             m_data.frame, m_data.depth, m_areaDep);
             break;
     }
     if (m_data.in_contact) {

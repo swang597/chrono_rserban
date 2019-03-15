@@ -447,7 +447,8 @@ void ChPacejkaTire::update_W_frame(const ChTerrain& terrain, CollisionType colli
                                                    m_params->dimension.width, contact_frame, depth, dum_cam);
             break;
         case CollisionType::ENVELOPE:
-            // to do
+            m_in_contact = DiscTerrainCollisionEnvelope(terrain, m_tireState.pos, m_tireState.rot.GetYaxis(), m_R0,
+                                                        contact_frame, depth, m_areaDep);
             break;
     }
 

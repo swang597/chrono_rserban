@@ -13,7 +13,9 @@
 // =============================================================================
 //
 // Main driver function for a vehicle specified through JSON files + example for
-// obtaining ride quality results presented by ISO 2631-1
+// obtaining shock effect results presented by ISO 2631-5
+//
+// Halfround shaped obstacles
 //
 // If using the Irrlicht interface, driver inputs are obtained from the keyboard.
 //
@@ -71,9 +73,10 @@ std::string rigidtire_file("hmmwv/tire/HMMWV_RigidTire.json");
 
 // JSON files tire models (TMeasy)
 std::string tmeasytire_file("hmmwv/tire/HMMWV_TMeasyTire.json");
+// std::string tmeasytire_file("hmmwv/tire/HMMWV_TMeasy_converted.json");
 
 // Tire collision type
-ChTire::CollisionType collisionType = ChTire::CollisionType::FOUR_POINTS;
+ChTire::CollisionType collisionType = ChTire::CollisionType::ENVELOPE;
 
 // Driver input file (if not using Irrlicht)
 std::string driver_file("generic/driver/Sample_Maneuver.txt");
@@ -176,12 +179,16 @@ int main(int argc, char* argv[]) {
     // handling tire works, but sill too high sesults
     // a validated flexible tire model would be the best choice
     std::vector<std::shared_ptr<TMeasyTire> > tires(num_wheels);
+    GetLog() << "TMeasy Tire selected\n";
 #endif
     for (int i = 0; i < num_wheels; i++) {
 #ifdef USE_RIGID_TIRE
         tires[i] = std::make_shared<RigidTire>(vehicle::GetDataFile(rigidtire_file));
 #else
         tires[i] = std::make_shared<TMeasyTire>(vehicle::GetDataFile(tmeasytire_file));
+        if (tires[i] == nullptr) {
+            GetLog() << "Bad tire problem\n";
+        }
 #endif
         tires[i]->Initialize(vehicle.GetWheelBody(i), VehicleSide(i % 2));
         tires[i]->SetVisualizationType(VisualizationType::MESH);

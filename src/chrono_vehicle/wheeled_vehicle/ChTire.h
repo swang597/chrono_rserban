@@ -25,7 +25,7 @@
 #include "chrono/core/ChCoordsys.h"
 #include "chrono/core/ChQuaternion.h"
 #include "chrono/core/ChVector.h"
-
+#include "chrono/motion_functions/ChFunction_Recorder.h"
 #include "chrono_vehicle/ChApiVehicle.h"
 #include "chrono_vehicle/ChPart.h"
 #include "chrono_vehicle/ChTerrain.h"
@@ -42,15 +42,10 @@ namespace vehicle {
 /// moments to be applied to the wheel body.
 class CH_VEHICLE_API ChTire : public ChPart {
   public:
-      enum class CollisionType {
-          SINGLE_POINT,
-          FOUR_POINTS,
-          ENVELOPE
-      };
-
+    enum class CollisionType { SINGLE_POINT, FOUR_POINTS, ENVELOPE };
 
     ChTire(const std::string& name  ///< [in] name of this tire system
-    );
+           );
 
     virtual ~ChTire() {}
 
@@ -59,7 +54,7 @@ class CH_VEHICLE_API ChTire : public ChPart {
     /// inertia to the wheel body. A derived class must first call this base implementation.
     virtual void Initialize(std::shared_ptr<ChBody> wheel,  ///< [in] associated wheel body
                             VehicleSide side                ///< [in] left/right vehicle side
-    );
+                            );
 
     /// Update the state of this tire system at the current time.
     /// The tire system is provided the current state of its associated wheel and
@@ -68,7 +63,7 @@ class CH_VEHICLE_API ChTire : public ChPart {
                              const WheelState& wheel_state,  ///< [in] current state of associated wheel body
                              const ChTerrain& terrain,       ///< [in] reference to the terrain system
                              CollisionType collision_type = CollisionType::SINGLE_POINT  ///< [in] collision method
-    ) {
+                             ) {
         CalculateKinematics(time, wheel_state, terrain);
     }
 
@@ -124,7 +119,7 @@ class CH_VEHICLE_API ChTire : public ChPart {
     double GetLongitudinalSlip() const { return m_longitudinal_slip; }
 
     /// Return the tire camber angle calculated based on the current state of the associated
-    /// wheel body. The return value is in radians. 
+    /// wheel body. The return value is in radians.
     /// (positive sign = upper side tipping to the left, negative sign = upper side tipping to the right)
     double GetCamberAngle() const { return m_camber_angle; }
 
@@ -136,7 +131,7 @@ class CH_VEHICLE_API ChTire : public ChPart {
                                       double rim_diameter,  ///< rim diameter [in]
                                       double tire_mass,     ///< mass of the tire [kg]
                                       double t_factor = 2   ///< tread to sidewall thickness factor
-    );
+                                      );
 
     /// Report the tire deflection.
     virtual double GetDeflection() const { return 0; }
@@ -158,7 +153,7 @@ class CH_VEHICLE_API ChTire : public ChPart {
         double disc_radius,             ///< [in] disc radius
         ChCoordsys<>& contact,          ///< [out] contact coordinate system (relative to the global frame)
         double& depth                   ///< [out] penetration depth (positive if contact occurred)
-    );
+        );
 
     /// Perform disc-terrain collision detection considering the curvature of the road
     /// surface. The surface normal is calculated based on 4 different height values below
@@ -181,7 +176,22 @@ class CH_VEHICLE_API ChTire : public ChPart {
         ChCoordsys<>& contact,          ///< [out] contact coordinate system (relative to the global frame)
         double& depth,                  ///< [out] penetration depth (positive if contact occurred)
         double& camber_angle            ///< [out] tire camber angle
-    );
+        );
+
+    ChFunction_Recorder
+        m_areaDep;  // can contain lookup table for estimation of penetration depth from intersection area
+
+    /// Collsion algorithm based on a paper of J. Shane Sui and John A. Hirshey II:
+    /// "A New Analytical Tire Model for Vehicle Dynamic Analysis" presented at 2001 MSC User Meeting
+    static bool DiscTerrainCollisionEnvelope(
+        const ChTerrain& terrain,       ///< [in] reference to terrain system
+        const ChVector<>& disc_center,  ///< [in] global location of the disc center
+        const ChVector<>& disc_normal,  ///< [in] disc normal, expressed in the global frame
+        double disc_radius,             ///< [in] disc radius
+        ChCoordsys<>& contact,          ///< [out] contact coordinate system (relative to the global frame)
+        double& depth,                  ///< [out] penetration depth (positive if contact occurred)
+        ChFunction_Recorder& areaDep    ///< [in] lookup table to calculate depth from intersection area
+        );
 
     VehicleSide m_side;               ///< tire mounted on left/right side
     std::shared_ptr<ChBody> m_wheel;  ///< associated wheel body
@@ -193,7 +203,7 @@ class CH_VEHICLE_API ChTire : public ChPart {
     void CalculateKinematics(double time,                    ///< [in] current time
                              const WheelState& wheel_state,  ///< [in] current state of associated wheel body
                              const ChTerrain& terrain        ///< [in] reference to the terrain system
-    );
+                             );
 
     double m_slip_angle;
     double m_longitudinal_slip;
