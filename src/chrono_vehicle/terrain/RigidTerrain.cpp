@@ -43,13 +43,13 @@ namespace vehicle {
 // Default constructor.
 // -----------------------------------------------------------------------------
 RigidTerrain::RigidTerrain(ChSystem* system)
-    : m_system(system), m_num_patches(0), m_enable_functor(false), m_callback(nullptr) {}
+    : m_system(system), m_num_patches(0), m_use_friction_functor(false), m_contact_callback(nullptr) {}
 
 // -----------------------------------------------------------------------------
 // Constructor from JSON file
 // -----------------------------------------------------------------------------
 RigidTerrain::RigidTerrain(ChSystem* system, const std::string& filename)
-    : m_system(system), m_num_patches(0), m_enable_functor(false), m_callback(nullptr) {
+    : m_system(system), m_num_patches(0), m_use_friction_functor(false), m_contact_callback(nullptr) {
     // Open the JSON file and read data
     FILE* fp = fopen(filename.c_str(), "r");
 
@@ -79,7 +79,7 @@ RigidTerrain::RigidTerrain(ChSystem* system, const std::string& filename)
 }
 
 RigidTerrain::~RigidTerrain() {
-    delete m_callback;
+    delete m_contact_callback;
 }
 
 void RigidTerrain::LoadPatch(const rapidjson::Value& d) {
@@ -489,14 +489,13 @@ class RTContactCallback : public ChContactContainer::AddContactCallback {
   public:
     virtual void OnAddContact(const collision::ChCollisionInfo& contactinfo,
                               ChMaterialComposite* const material) override {
-
         //// TODO: also accomodate terrain contact with FEA meshes.
 
         // Loop over all patch bodies and check if this contact involves one of them.
         ChBody* body_other = nullptr;
         bool process = false;
-        for (auto body : m_terrain_bodies) {
-            auto model = body->GetCollisionModel().get();
+        for (auto patch : m_terrain->GetPatches()) {
+            auto model = patch->GetGroundBody()->GetCollisionModel().get();
             if (model == contactinfo.modelA) {
                 body_other = dynamic_cast<ChBody*>(contactinfo.modelB->GetContactable());
                 process = true;
@@ -516,7 +515,7 @@ class RTContactCallback : public ChContactContainer::AddContactCallback {
 
         // Find the terrain coefficient of friction at the location of current contact.
         // Arbitrarily use the collision point on modelA.
-        auto friction_terrain = (*m_functor)(contactinfo.vpA.x(), contactinfo.vpA.y());
+        auto friction_terrain = (*m_friction_fun)(contactinfo.vpA.x(), contactinfo.vpA.y());
 
         // Get the current combination strategy for composite materials.
         auto& strategy = body_other->GetSystem()->GetMaterialCompositionStrategy();
@@ -543,14 +542,14 @@ class RTContactCallback : public ChContactContainer::AddContactCallback {
         }
     }
 
-    std::vector<std::shared_ptr<ChBody>> m_terrain_bodies;
-    ChTerrain::FrictionFunctor* m_functor;
+    ChTerrain::FrictionFunctor* m_friction_fun;
+    RigidTerrain* m_terrain;
 };
 
 void RigidTerrain::Initialize() {
     if (!m_friction_fun)
-        m_enable_functor = false;
-    if (!m_enable_functor)
+        m_use_friction_functor = false;
+    if (!m_use_friction_functor)
         return;
     if (m_patches.empty())
         return;
@@ -558,11 +557,10 @@ void RigidTerrain::Initialize() {
     // Create and register a custom callback functor of type ChContactContainer::AddContactCallback
     // and pass to it a list of patch bodies as well as the location-dependent friction functor.
     auto callback = new RTContactCallback;
-    callback->m_functor = m_friction_fun;
-    for (auto patch : m_patches)
-        callback->m_terrain_bodies.push_back(patch->m_body);
-    m_callback = callback;
-    m_patches[0]->m_body->GetSystem()->GetContactContainer()->RegisterAddContactCallback(m_callback);
+    callback->m_terrain = this;
+    callback->m_friction_fun = m_friction_fun;
+    m_contact_callback = callback;
+    m_patches[0]->m_body->GetSystem()->GetContactContainer()->RegisterAddContactCallback(m_contact_callback);
 }
 
 // -----------------------------------------------------------------------------

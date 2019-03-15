@@ -151,28 +151,32 @@ class CH_VEHICLE_API RigidTerrain : public ChTerrain {
     /// Initialize all defined terrain patches.
     void Initialize();
 
+    /// Get the terrain patches currently added to the rigid terrain system.
+    const std::vector<std::shared_ptr<Patch>>& GetPatches() const { return m_patches; }
+
     /// Get the terrain height at the specified (x,y) location.
     virtual double GetHeight(double x, double y) const override;
 
     /// Get the terrain height at the specified (x,y) location.
     virtual ChVector<> GetNormal(double x, double y) const override;
 
-    /// Enable use of location-dependent coefficient of friction.
+    /// Enable use of location-dependent coefficient of friction in terrain-solid contacts.
     /// This assumes that a non-trivial functor (of type ChTerrain::FrictionFunctor) was defined
     /// and registered with the terrain subsystem. Enable this only if simulating a system that
     /// has contacts with the terrain that must be resolved using the underlying Chrono contact
-    /// mechanism (e.g., for rigid tires, FEA tires, tracked vehicles, etc). Note that this feature
+    /// mechanism (e.g., for rigid tires, FEA tires, tracked vehicles). Note that this feature
     /// requires a relatively expensive traversal of all contacts at each simulation step.
     /// By default, this option is disabled.  This function must be called before Initialize.
-    void EnableFrictionFunctor(bool val) { m_enable_functor = val; }
+    void UseLocationDependentFriction(bool val) { m_use_friction_functor = val; }
 
     /// Get the terrain coefficient of friction at the specified (x,y) location.
-    /// This coefficient of friction value may be used by certain tire models to modify
-    /// the tire characteristics, but it will have no effect on the interaction of the terrain
-    /// with other objects (including tire models that do not explicitly use it).
     /// For RigidTerrain, this function defers to the user-provided functor object of type
     /// ChTerrain::FrictionFunctor, if one was specified. Otherwise, it returns the constant
     /// value from the appropriate patch, as specified through SetContactFrictionCoefficient.
+    /// Note that this function may be used by tire models to appropriately modify the tire
+    /// characteristics, but it will have no effect on the interaction of the terrain with
+    /// other objects (including tire models that do not explicitly use it).
+    /// See UseLocationDependentFriction.
     virtual float GetCoefficientFriction(double x, double y) const override;
 
     /// Export all patch meshes as macros in PovRay include files.
@@ -182,8 +186,8 @@ class CH_VEHICLE_API RigidTerrain : public ChTerrain {
     ChSystem* m_system;
     int m_num_patches;
     std::vector<std::shared_ptr<Patch>> m_patches;
-    bool m_enable_functor;
-    ChContactContainer::AddContactCallback* m_callback;
+    bool m_use_friction_functor;
+    ChContactContainer::AddContactCallback* m_contact_callback;
 
     std::shared_ptr<Patch> AddPatch(const ChCoordsys<>& position);
     void LoadPatch(const rapidjson::Value& a);
