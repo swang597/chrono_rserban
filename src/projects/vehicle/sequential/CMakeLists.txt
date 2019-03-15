@@ -27,6 +27,8 @@ SET(DEMOS
     test_VEH_DLC_hmmwv
     test_VEH_friction_hmmwv
     test_VEH_friction_variable_hmmwv
+    test_VEH_friction_m113
+    test_VEH_friction_variable_m113
 )
 
 # ------------------------------------------------------------------------------
