@@ -54,6 +54,10 @@ void ChPac89Tire::Initialize(std::shared_ptr<ChBody> wheel, VehicleSide side) {
 
     SetPac89Params();
 
+    // Build the lookup table for penetration depth as function of intersection area
+    // (used only with the ChTire::ENVELOPE method for terrain-tire collision detection)
+    ConstructAreaDepthTable(m_unloaded_radius, m_areaDep);
+
     // Initialize contact patch state variables to 0;
     m_states.cp_long_slip = 0;
     m_states.cp_side_slip = 0;
@@ -128,7 +132,7 @@ void ChPac89Tire::Synchronize(double time,
             break;
         case ChTire::CollisionType::ENVELOPE:
             m_data.in_contact = DiscTerrainCollisionEnvelope(terrain, wheel_state.pos, disc_normal, m_unloaded_radius,
-                                                             m_data.frame, m_data.depth, m_areaDep);
+                                                             m_areaDep, m_data.frame, m_data.depth);
             break;
     }
     if (m_data.in_contact) {

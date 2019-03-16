@@ -318,6 +318,8 @@ class CH_VEHICLE_API ChTMeasyTire : public ChTire {
         ChVector<> disc_normal;  // (temporary for debug)
     };
 
+    ChFunction_Recorder m_areaDep;  // lookup table for estimation of penetration depth from intersection area
+
     ContactData m_data;
     TireStates m_states;
 

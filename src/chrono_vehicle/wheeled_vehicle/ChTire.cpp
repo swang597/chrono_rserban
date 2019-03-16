@@ -97,7 +97,9 @@ void ChTire::CalculateKinematics(double time, const WheelState& state, const ChT
 // Otherwise, they set the contact points on the disc (ptD) and on the terrain (ptT),
 // the normal contact direction, and the resulting penetration depth (a positive value).
 //
+// The first version uses a single point on the terrain (below the wheel center).
 // The second version uses the average of four terrain heights below the wheel center.
+// The third version uses the collision algorithm of Sui and Hirshey.
 //
 // NOTE: uses terrain normal at disc center for approximative calculation.
 // Hence only valid for terrains with constant slope. A completely accurate
@@ -150,108 +152,6 @@ bool ChTire::DiscTerrainCollision(
 
     depth = Vdot(ChVector<>(0, 0, hp - ptD.z()), normal);
     assert(depth > 0);
-
-    return true;
-}
-
-bool ChTire::DiscTerrainCollisionEnvelope(
-    const ChTerrain& terrain,       // [in] reference to terrain system
-    const ChVector<>& disc_center,  // [in] global location of the disc center
-    const ChVector<>& disc_normal,  // [in] disc normal, expressed in the global frame
-    double disc_radius,             // [in] disc radius
-    ChCoordsys<>& contact,          // [out] contact coordinate system (relative to the global frame)
-    double& depth,                  // [out] penetration depth (positive if contact occurred)
-    ChFunction_Recorder& areaDep    // [in] lookup table to calculate penetration depth from intersection area
-    ) {
-    // lookup table already setup?
-    const size_t n_lookup = 30;
-    if (areaDep.GetPoints().size() != 30) {
-        double depMax = disc_radius;  // should be high enough to avoid extrapolation
-        double depStep = depMax / double(n_lookup - 1);
-        for (size_t i = 0; i < n_lookup; i++) {
-            double dep = depStep * double(i);
-            double alpha = 2.0 * acos(1.0 - dep / disc_radius);
-            double area = 0.5 * disc_radius * disc_radius * (alpha - sin(alpha));
-            areaDep.AddPoint(area, dep);
-        }
-    }
-    // Approximate the terrain with a plane. Define the projection of the lowest
-    // point onto this plane as the contact point on the terrain. We don't know
-    // where the equivalent contact point exactly is, so we employ the intersection
-    // area to decide if there is contact or not.
-    // First guess:
-    ChVector<> normal = terrain.GetNormal(disc_center.x(), disc_center.y());
-    ChVector<> longitudinal = Vcross(disc_normal, normal);
-    longitudinal.Normalize();
-    const size_t n_con_pts = 31;
-    double x_step = 2.0 * disc_radius / double(n_con_pts - 1);
-    // ChVectorDynamic<> q(n_con_pts);  // road surface height values along 'longitudinal'
-    // ChVectorDynamic<> x(n_con_pts);  // x values along disc_center + x*longitudinal
-    double A = 0;   // overlapping area of tire disc and road surface contour
-    double Xc = 0;  // relative x coordinate of area A centroid
-    double Zc = 0;  // relative z (rsp. to road height) height of area A centroid, actually unused
-    for (size_t i = 0; i < n_con_pts; i++) {
-        double x = -disc_radius + x_step * double(i);
-        ChVector<> pTest = disc_center + x * longitudinal;
-        double q = terrain.GetHeight(pTest.x(), pTest.y());
-        double a = pTest.z() - sqrt(disc_radius * disc_radius - x * x);
-        double Q1 = q - a;
-        double Q2 = q + a;
-        if (Q1 < 0) {
-            Q1 = 0;
-        }
-        if (i == 0 || i == (n_con_pts - 1)) {
-            A += 0.5 * Q1;
-            Xc += 0.5 * Q1 * x;
-            // Zc += 0.5 * Q1 * Q2 / 2.0;
-        } else {
-            A += Q1;
-            Xc += Q1 * x;
-            // Zc += Q1 * Q2 / 2.0;
-        }
-    }
-    A *= x_step;
-    Xc *= x_step / A;
-    // Zc *= x_step / A;
-    if (A == 0) {
-        return false;
-    }
-
-    // Xc = negative means area centroid is in front of the disc_center
-    ChVector<> pXc = disc_center - Xc * longitudinal;
-
-    // Zc relative to q(x)
-    // Zc = terrain.GetHeight(disc_center.x(), disc_center.y()) + Zc;
-
-    // GetLog() << "A = " << A << "  Xc = " << Xc << "  Yc = " << Yc << "\n";
-
-    // calculate equivalent depth from A
-    depth = areaDep.Get_y(A);
-    // Find the lowest point on the disc. There is no contact if the disc is
-    // (almost) horizontal.
-    // ChVector<> nhelp = terrain.GetNormal(disc_center.x(), disc_center.y());
-    ChVector<> nhelp = terrain.GetNormal(pXc.x(), pXc.y());
-    ChVector<> dir1 = Vcross(disc_normal, nhelp);
-    double sinTilt2 = dir1.Length2();
-
-    if (sinTilt2 < 1e-3)
-        return false;
-
-    // Contact point (lowest point on disc).
-    ChVector<> ptD = disc_center + (disc_radius - depth) * Vcross(disc_normal, dir1 / sqrt(sinTilt2));
-
-    // Find terrain height at lowest point. No contact if lowest point is above
-    // the terrain.
-
-    normal = terrain.GetNormal(ptD.x(), ptD.y());
-    longitudinal = Vcross(disc_normal, normal);
-    longitudinal.Normalize();
-    ChVector<> lateral = Vcross(normal, longitudinal);
-    ChMatrix33<> rot;
-    rot.Set_A_axis(longitudinal, lateral, normal);
-
-    contact.pos = ptD;
-    contact.rot = rot.Get_A_quaternion();
 
     return true;
 }
@@ -333,6 +233,108 @@ bool ChTire::DiscTerrainCollision4pt(
 
     depth = disc_radius - da;
     assert(depth > 0);
+
+    return true;
+}
+
+void ChTire::ConstructAreaDepthTable(double disc_radius, ChFunction_Recorder& areaDep) {
+    const size_t n_lookup = 30;
+    double depMax = disc_radius;  // should be high enough to avoid extrapolation
+    double depStep = depMax / double(n_lookup - 1);
+    for (size_t i = 0; i < n_lookup; i++) {
+        double dep = depStep * double(i);
+        double alpha = 2.0 * acos(1.0 - dep / disc_radius);
+        double area = 0.5 * disc_radius * disc_radius * (alpha - sin(alpha));
+        areaDep.AddPoint(area, dep);
+    }
+}
+
+bool ChTire::DiscTerrainCollisionEnvelope(
+    const ChTerrain& terrain,            // [in] reference to terrain system
+    const ChVector<>& disc_center,       // [in] global location of the disc center
+    const ChVector<>& disc_normal,       // [in] disc normal, expressed in the global frame
+    double disc_radius,                  // [in] disc radius
+    const ChFunction_Recorder& areaDep,  // [in] lookup table to calculate depth from intersection area
+    ChCoordsys<>& contact,               // [out] contact coordinate system (relative to the global frame)
+    double& depth                        // [out] penetration depth (positive if contact occurred)
+) {
+    // Approximate the terrain with a plane. Define the projection of the lowest
+    // point onto this plane as the contact point on the terrain. We don't know
+    // where the equivalent contact point exactly is, so we employ the intersection
+    // area to decide if there is contact or not.
+    // First guess:
+    ChVector<> normal = terrain.GetNormal(disc_center.x(), disc_center.y());
+    ChVector<> longitudinal = Vcross(disc_normal, normal);
+    longitudinal.Normalize();
+    const size_t n_con_pts = 31;
+    double x_step = 2.0 * disc_radius / double(n_con_pts - 1);
+    // ChVectorDynamic<> q(n_con_pts);  // road surface height values along 'longitudinal'
+    // ChVectorDynamic<> x(n_con_pts);  // x values along disc_center + x*longitudinal
+    double A = 0;   // overlapping area of tire disc and road surface contour
+    double Xc = 0;  // relative x coordinate of area A centroid
+    double Zc = 0;  // relative z (rsp. to road height) height of area A centroid, actually unused
+    for (size_t i = 0; i < n_con_pts; i++) {
+        double x = -disc_radius + x_step * double(i);
+        ChVector<> pTest = disc_center + x * longitudinal;
+        double q = terrain.GetHeight(pTest.x(), pTest.y());
+        double a = pTest.z() - sqrt(disc_radius * disc_radius - x * x);
+        double Q1 = q - a;
+        double Q2 = q + a;
+        if (Q1 < 0) {
+            Q1 = 0;
+        }
+        if (i == 0 || i == (n_con_pts - 1)) {
+            A += 0.5 * Q1;
+            Xc += 0.5 * Q1 * x;
+            // Zc += 0.5 * Q1 * Q2 / 2.0;
+        } else {
+            A += Q1;
+            Xc += Q1 * x;
+            // Zc += Q1 * Q2 / 2.0;
+        }
+    }
+    A *= x_step;
+    Xc *= x_step / A;
+    // Zc *= x_step / A;
+    if (A == 0) {
+        return false;
+    }
+
+    // Xc = negative means area centroid is in front of the disc_center
+    ChVector<> pXc = disc_center - Xc * longitudinal;
+
+    // Zc relative to q(x)
+    // Zc = terrain.GetHeight(disc_center.x(), disc_center.y()) + Zc;
+
+    // GetLog() << "A = " << A << "  Xc = " << Xc << "  Yc = " << Yc << "\n";
+
+    // calculate equivalent depth from A
+    depth = areaDep.Get_y(A);
+    // Find the lowest point on the disc. There is no contact if the disc is
+    // (almost) horizontal.
+    // ChVector<> nhelp = terrain.GetNormal(disc_center.x(), disc_center.y());
+    ChVector<> nhelp = terrain.GetNormal(pXc.x(), pXc.y());
+    ChVector<> dir1 = Vcross(disc_normal, nhelp);
+    double sinTilt2 = dir1.Length2();
+
+    if (sinTilt2 < 1e-3)
+        return false;
+
+    // Contact point (lowest point on disc).
+    ChVector<> ptD = disc_center + (disc_radius - depth) * Vcross(disc_normal, dir1 / sqrt(sinTilt2));
+
+    // Find terrain height at lowest point. No contact if lowest point is above
+    // the terrain.
+
+    normal = terrain.GetNormal(ptD.x(), ptD.y());
+    longitudinal = Vcross(disc_normal, normal);
+    longitudinal.Normalize();
+    ChVector<> lateral = Vcross(normal, longitudinal);
+    ChMatrix33<> rot;
+    rot.Set_A_axis(longitudinal, lateral, normal);
+
+    contact.pos = ptD;
+    contact.rot = rot.Get_A_quaternion();
 
     return true;
 }

@@ -416,11 +416,10 @@ class CH_VEHICLE_API ChPacejkaTire : public ChTire {
 
     zetaCoefs* m_zeta;
 
-    // road friction coefficient
-    double m_mu;
+    double m_mu;   // current road friction coefficient
+    double m_mu0;  // tire reference friction coeffient
 
-    // tire reference friction coeffient
-    double m_mu0;
+    ChFunction_Recorder m_areaDep;  // lookup table for estimation of penetration depth from intersection area
 
     // for transient contact point tire model
     relaxationL* m_relaxation;

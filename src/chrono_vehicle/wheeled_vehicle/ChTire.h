@@ -178,20 +178,21 @@ class CH_VEHICLE_API ChTire : public ChPart {
         double& camber_angle            ///< [out] tire camber angle
         );
 
-    ChFunction_Recorder
-        m_areaDep;  // can contain lookup table for estimation of penetration depth from intersection area
-
     /// Collsion algorithm based on a paper of J. Shane Sui and John A. Hirshey II:
     /// "A New Analytical Tire Model for Vehicle Dynamic Analysis" presented at 2001 MSC User Meeting
     static bool DiscTerrainCollisionEnvelope(
-        const ChTerrain& terrain,       ///< [in] reference to terrain system
-        const ChVector<>& disc_center,  ///< [in] global location of the disc center
-        const ChVector<>& disc_normal,  ///< [in] disc normal, expressed in the global frame
-        double disc_radius,             ///< [in] disc radius
-        ChCoordsys<>& contact,          ///< [out] contact coordinate system (relative to the global frame)
-        double& depth,                  ///< [out] penetration depth (positive if contact occurred)
-        ChFunction_Recorder& areaDep    ///< [in] lookup table to calculate depth from intersection area
-        );
+        const ChTerrain& terrain,            ///< [in] reference to terrain system
+        const ChVector<>& disc_center,       ///< [in] global location of the disc center
+        const ChVector<>& disc_normal,       ///< [in] disc normal, expressed in the global frame
+        double disc_radius,                  ///< [in] disc radius
+        const ChFunction_Recorder& areaDep,  ///< [in] lookup table to calculate depth from intersection area
+        ChCoordsys<>& contact,               ///< [out] contact coordinate system (relative to the global frame)
+        double& depth                        ///< [out] penetration depth (positive if contact occurred)
+    );
+
+    /// Utility function to construct a loopkup table for penetration depth as function of intersection area,
+    /// for a given tire radius.  The return map can be used in DiscTerrainCollisionEnvelope.
+    static void ConstructAreaDepthTable(double disc_radius, ChFunction_Recorder& areaDep);
 
     VehicleSide m_side;               ///< tire mounted on left/right side
     std::shared_ptr<ChBody> m_wheel;  ///< associated wheel body

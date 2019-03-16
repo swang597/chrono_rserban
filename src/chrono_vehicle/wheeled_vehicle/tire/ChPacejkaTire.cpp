@@ -156,6 +156,10 @@ void ChPacejkaTire::Initialize(std::shared_ptr<ChBody> wheel, VehicleSide side) 
     double rho = (m_R0 - m_R_l) * exp(-qV1 * m_R0 * pow(1.05 * m_params->model.longvl / m_params->model.longvl, 2));
     m_R_eff = m_R0 - rho;
 
+    // Build the lookup table for penetration depth as function of intersection area
+    // (used only with the ChTire::ENVELOPE method for terrain-tire collision detection)
+    ConstructAreaDepthTable(m_R0, m_areaDep);
+
     m_Fz = 0;
     m_dF_z = 0;
 
@@ -448,7 +452,7 @@ void ChPacejkaTire::update_W_frame(const ChTerrain& terrain, CollisionType colli
             break;
         case CollisionType::ENVELOPE:
             m_in_contact = DiscTerrainCollisionEnvelope(terrain, m_tireState.pos, m_tireState.rot.GetYaxis(), m_R0,
-                                                        contact_frame, depth, m_areaDep);
+                                                        m_areaDep, contact_frame, depth);
             break;
     }
 

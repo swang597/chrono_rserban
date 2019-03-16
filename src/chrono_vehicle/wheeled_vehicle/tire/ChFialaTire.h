@@ -158,8 +158,10 @@ class CH_VEHICLE_API ChFialaTire : public ChTire {
         double omega;   // Wheel angular velocity about its spin axis (temporary for debug)
         double Fx_l;
         double Fy_l;
-        ChVector<> disc_normal;  //(temporary for debug)
+        ChVector<> disc_normal;  // temporary for debug
     };
+
+    ChFunction_Recorder m_areaDep;  // lookup table for estimation of penetration depth from intersection area
 
     ContactData m_data;
     TireStates m_states;

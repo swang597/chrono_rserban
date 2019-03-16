@@ -51,7 +51,11 @@ void ChFialaTire::Initialize(std::shared_ptr<ChBody> wheel, VehicleSide side) {
 
     SetFialaParams();
 
-    // Initialize contact patch state variables to 0;
+    // Build the lookup table for penetration depth as function of intersection area
+    // (used only with the ChTire::ENVELOPE method for terrain-tire collision detection)
+    ConstructAreaDepthTable(m_unloaded_radius, m_areaDep);
+
+    // Initialize contact patch state variables to 0
     m_states.kappa = 0;
     m_states.alpha = 0;
 }
@@ -124,7 +128,7 @@ void ChFialaTire::Synchronize(double time,
             break;
         case ChTire::CollisionType::ENVELOPE:
             m_data.in_contact = DiscTerrainCollisionEnvelope(terrain, wheel_state.pos, disc_normal, m_unloaded_radius,
-                                                             m_data.frame, m_data.depth, m_areaDep);
+                                                             m_areaDep, m_data.frame, m_data.depth);
             break;
     }
 
