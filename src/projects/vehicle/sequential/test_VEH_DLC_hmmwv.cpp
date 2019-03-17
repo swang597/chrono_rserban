@@ -26,6 +26,10 @@
 #include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
 
 #include "chrono_models/vehicle/hmmwv/HMMWV.h"
+#include "chrono_vehicle/wheeled_vehicle/tire/ChTMeasyTire.h"
+#include "chrono_vehicle/wheeled_vehicle/tire/ChFialaTire.h"
+#include "chrono_vehicle/wheeled_vehicle/tire/ChPac89Tire.h"
+#include "chrono_vehicle/wheeled_vehicle/tire/ChPacejkaTire.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 
