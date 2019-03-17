@@ -12,7 +12,6 @@ ENDIF()
 SET(DEMOS
     demo_VEH_Ride
     demo_VEH_Shock
-    demo_VEH_ShockRamp
 )
 
 #--------------------------------------------------------------

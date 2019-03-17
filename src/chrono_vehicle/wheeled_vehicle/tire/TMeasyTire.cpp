@@ -57,11 +57,9 @@ void TMeasyTire::Create(const rapidjson::Document& d) {
     ChPart::Create(d);
 
     // Read design parameters (required)
-    GetLog() << "TMeasy assert begin\n";
     assert(d.HasMember("Design"));
     assert(d.HasMember("Coefficient of Friction"));
     assert(d.HasMember("Rolling Resistance Coefficients"));
-    GetLog() << "TMeasy assert end\n";
 
     m_mass = d["Design"]["Mass [kg]"].GetDouble();
     m_inertia = LoadVectorJSON(d["Design"]["Inertia [kg.m2]"]);
@@ -69,7 +67,6 @@ void TMeasyTire::Create(const rapidjson::Document& d) {
     m_rim_radius = d["Design"]["Rim Radius [m]"].GetDouble();
     m_width = d["Design"]["Width [m]"].GetDouble();
     m_roundness = d["Design"]["Roundness of Cross Section"].GetDouble();
-    GetLog() << "TMeasy design end\n";
 
     double p_li = 1.0;
     double p_use = 1.0;
