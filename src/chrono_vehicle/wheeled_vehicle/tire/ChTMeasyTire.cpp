@@ -50,12 +50,13 @@ ChTMeasyTire::ChTMeasyTire(const std::string& name)
       m_gamma(0),
       m_gamma_limit(5),
       m_begin_start_transition(0.1),
-      m_end_start_transition(0.5) {
+      m_end_start_transition(0.25) {
     m_tireforce.force = ChVector<>(0, 0, 0);
     m_tireforce.point = ChVector<>(0, 0, 0);
     m_tireforce.moment = ChVector<>(0, 0, 0);
 
     m_TMeasyCoeff.pn = 0.0;
+    m_TMeasyCoeff.mu_0 = 0.8;
 }
 
 // -----------------------------------------------------------------------------

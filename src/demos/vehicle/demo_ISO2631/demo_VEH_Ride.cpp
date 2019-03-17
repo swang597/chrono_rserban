@@ -38,7 +38,9 @@
 #include "chrono_vehicle/powertrain/SimplePowertrain.h"
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 #include "chrono_vehicle/wheeled_vehicle/tire/RigidTire.h"
+#include "chrono_vehicle/wheeled_vehicle/tire/FialaTire.h"
 #include "chrono_vehicle/wheeled_vehicle/tire/TMeasyTire.h"
+#include "chrono_models/vehicle/hmmwv/HMMWV_Pac02Tire.h"
 #include "chrono_vehicle/wheeled_vehicle/vehicle/WheeledVehicle.h"
 
 #include "chrono_vehicle/ChConfigVehicle.h"
@@ -62,7 +64,12 @@ std::string vehicle_file("hmmwv/vehicle/HMMWV_Vehicle.json");
 std::string simplepowertrain_file("generic/powertrain/SimplePowertrain.json");
 
 // JSON files tire models
-std::string tmeasytire_file("hmmwv/tire/HMMWV_TMeasyTire.json");
+// std::string tmeasytire_file("hmmwv/tire/HMMWV_TMeasyTire.json");
+std::string tmeasy_tire_file("hmmwv/tire/HMMWV_TMeasy_converted.json");
+
+std::string fiala_tire_file("hmmwv/tire/HMMWV_Fiala_converted.json");
+
+std::string pacejka_tire_file("hmmwv/tire/HMMWV_pacejka.json");
 
 // Tire collision type
 ChTire::CollisionType collisionType = ChTire::CollisionType::ENVELOPE;
@@ -88,9 +95,12 @@ ChVector<> trackPoint(0.0, 0.0, 1.75);
 int main(int argc, char* argv[]) {
     GetLog() << "Copyright (c) 2018 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
 
+    int iTire = 1;
+
     const int rmsVals[5] = {0, 10, 20, 30, 40};
     int iTerrain = 1;
     double target_speed = 15.0;
+
     // JSON files for terrain
     std::string rigidterrain_file("terrain/RigidRandom1.json");
 
@@ -100,7 +110,8 @@ int main(int argc, char* argv[]) {
             GetLog() << "usage: demo_VEH_Ride [TerrainNumber [Speed]]\n\n";
             GetLog() << "Using standard values for simulation:\n"
                      << "Terrain No. = " << iTerrain << " (" << rmsVals[iTerrain] << " mm RMS)\n"
-                     << "Speed       = " << target_speed << " m/s\n";
+                     << "Speed       = " << target_speed << " m/s\n"
+                     << "Tire Code (1=TMeasy, 2=Fiala, 3=Pacejka) = " << iTire << "\n";
             break;
         case 2:
             if (atoi(argv[1]) >= 1 && atoi(argv[1]) <= 4) {
@@ -109,7 +120,8 @@ int main(int argc, char* argv[]) {
             }
             GetLog() << "Using values for simulation:\n"
                      << "Terrain No. = " << iTerrain << " (" << rmsVals[iTerrain] << " mm RMS)\n"
-                     << "Speed       = " << target_speed << " m/s\n";
+                     << "Speed       = " << target_speed << " m/s\n"
+                     << "Tire Code (1=TMeasy, 2=Fiala, 3=Pacejka) = " << iTire << "\n";
             break;
         case 3:
             if (atoi(argv[1]) >= 1 && atoi(argv[1]) <= 4) {
@@ -119,7 +131,22 @@ int main(int argc, char* argv[]) {
             target_speed = atof(argv[2]);
             GetLog() << "Using values for simulation:\n"
                      << "Terrain No. = " << iTerrain << " (" << rmsVals[iTerrain] << " mm RMS)\n"
-                     << "Speed       = " << target_speed << " m/s\n";
+                     << "Speed       = " << target_speed << " m/s\n"
+                     << "Tire Code (1=TMeasy, 2=Fiala, 3=Pacejka) = " << iTire << "\n";
+            break;
+        case 4:
+            if (atoi(argv[1]) >= 1 && atoi(argv[1]) <= 4) {
+                iTerrain = atoi(argv[1]);
+                rigidterrain_file = "terrain/RigidRandom" + std::to_string(iTerrain) + ".json";
+            }
+            target_speed = atof(argv[2]);
+            if (atoi(argv[3]) >= 1 && atoi(argv[3]) <= 3) {
+                iTire = atoi(argv[3]);
+            }
+            GetLog() << "Using values for simulation:\n"
+                     << "Terrain No. = " << iTerrain << " (" << rmsVals[iTerrain] << " mm RMS)\n"
+                     << "Speed       = " << target_speed << " m/s\n"
+                     << "Tire Code (1=TMeasy, 2=Fiala, 3=Pacejka) = " << iTire << "\n";
             break;
     }
 
@@ -149,11 +176,29 @@ int main(int argc, char* argv[]) {
     // Create and initialize the tires
     int num_axles = vehicle.GetNumberAxles();
     int num_wheels = 2 * num_axles;
-    std::vector<std::shared_ptr<TMeasyTire> > tires(num_wheels);
+    std::vector<std::shared_ptr<FialaTire> > fiala_tires(num_wheels);
+    std::vector<std::shared_ptr<TMeasyTire> > tmeasy_tires(num_wheels);
+    std::vector<std::shared_ptr<chrono::vehicle::hmmwv::HMMWV_Pac02Tire> > pacejka_tires(num_wheels);
     for (int i = 0; i < num_wheels; i++) {
-        tires[i] = std::make_shared<TMeasyTire>(vehicle::GetDataFile(tmeasytire_file));
-        tires[i]->Initialize(vehicle.GetWheelBody(i), VehicleSide(i % 2));
-        tires[i]->SetVisualizationType(VisualizationType::MESH);
+        switch (iTire) {
+            default:
+            case 1:
+                tmeasy_tires[i] = std::make_shared<TMeasyTire>(vehicle::GetDataFile(tmeasy_tire_file));
+                tmeasy_tires[i]->Initialize(vehicle.GetWheelBody(i), VehicleSide(i % 2));
+                tmeasy_tires[i]->SetVisualizationType(VisualizationType::MESH);
+                break;
+            case 2:
+                fiala_tires[i] = std::make_shared<FialaTire>(vehicle::GetDataFile(fiala_tire_file));
+                fiala_tires[i]->Initialize(vehicle.GetWheelBody(i), VehicleSide(i % 2));
+                fiala_tires[i]->SetVisualizationType(VisualizationType::MESH);
+                break;
+            case 3:
+                pacejka_tires[i] =
+                    std::make_shared<chrono::vehicle::hmmwv::HMMWV_Pac02Tire>(vehicle::GetDataFile(pacejka_tire_file));
+                pacejka_tires[i]->Initialize(vehicle.GetWheelBody(i), VehicleSide(i % 2));
+                pacejka_tires[i]->SetVisualizationType(VisualizationType::MESH);
+                break;
+        }
     }
 
     ChISO2631_Vibration_SeatCushionLogger seat_logger(step_size);
@@ -209,7 +254,18 @@ int main(int argc, char* argv[]) {
         double powertrain_torque = powertrain.GetOutputTorque();
         double driveshaft_speed = vehicle.GetDriveshaftSpeed();
         for (int i = 0; i < num_wheels; i++) {
-            tire_forces[i] = tires[i]->GetTireForce();
+            switch (iTire) {
+                default:
+                case 1:
+                    tire_forces[i] = tmeasy_tires[i]->GetTireForce();
+                    break;
+                case 2:
+                    tire_forces[i] = fiala_tires[i]->GetTireForce();
+                    break;
+                case 3:
+                    tire_forces[i] = pacejka_tires[i]->GetTireForce();
+                    break;
+            }
             wheel_states[i] = vehicle.GetWheelState(i);
         }
 
@@ -219,8 +275,20 @@ int main(int argc, char* argv[]) {
         powertrain.Synchronize(time, throttle_input, driveshaft_speed);
         vehicle.Synchronize(time, steering_input, braking_input, powertrain_torque, tire_forces);
         terrain.Synchronize(time);
-        for (int i = 0; i < num_wheels; i++)
-            tires[i]->Synchronize(time, wheel_states[i], terrain, collisionType);
+        for (int i = 0; i < num_wheels; i++) {
+            switch (iTire) {
+                default:
+                case 1:
+                    tmeasy_tires[i]->Synchronize(time, wheel_states[i], terrain, collisionType);
+                    break;
+                case 2:
+                    fiala_tires[i]->Synchronize(time, wheel_states[i], terrain, collisionType);
+                    break;
+                case 3:
+                    pacejka_tires[i]->Synchronize(time, wheel_states[i], terrain, collisionType);
+                    break;
+            }
+        }
         // app.Synchronize(driver.GetInputModeAsString(), steering_input, throttle_input, braking_input);
 
         // Advance simulation for one timestep for all modules
@@ -229,8 +297,20 @@ int main(int argc, char* argv[]) {
         powertrain.Advance(step);
         vehicle.Advance(step);
         terrain.Advance(step);
-        for (int i = 0; i < num_wheels; i++)
-            tires[i]->Advance(step);
+        for (int i = 0; i < num_wheels; i++) {
+            switch (iTire) {
+                default:
+                case 1:
+                    tmeasy_tires[i]->Advance(step);
+                    break;
+                case 2:
+                    fiala_tires[i]->Advance(step);
+                    break;
+                case 3:
+                    pacejka_tires[i]->Advance(step);
+                    break;
+            }
+        }
         app.Advance(step);
 
         double xpos = vehicle.GetWheelPos(0).x();
@@ -257,7 +337,18 @@ int main(int argc, char* argv[]) {
         double powertrain_torque = powertrain.GetOutputTorque();
         double driveshaft_speed = vehicle.GetDriveshaftSpeed();
         for (int i = 0; i < num_wheels; i++) {
-            tire_forces[i] = tires[i]->GetTireForce();
+            switch (iTire) {
+                default:
+                case 1:
+                    tire_forces[i] = tmeasy_tires[i]->GetTireForce();
+                    break;
+                case 2:
+                    tire_forces[i] = fiala_tires[i]->GetTireForce();
+                    break;
+                case 3:
+                    tire_forces[i] = pacejka_tires[i]->GetTireForce();
+                    break;
+            }
             wheel_states[i] = vehicle.GetWheelState(i);
         }
 
@@ -267,16 +358,40 @@ int main(int argc, char* argv[]) {
         powertrain.Synchronize(time, throttle_input, driveshaft_speed);
         vehicle.Synchronize(time, steering_input, braking_input, powertrain_torque, tire_forces);
         terrain.Synchronize(time);
-        for (int i = 0; i < num_wheels; i++)
-            tires[i]->Synchronize(time, wheel_states[i], terrain);
+        for (int i = 0; i < num_wheels; i++) {
+            switch (iTire) {
+                default:
+                case 1:
+                    tmeasy_tires[i]->Synchronize(time, wheel_states[i], terrain);
+                    break;
+                case 2:
+                    fiala_tires[i]->Synchronize(time, wheel_states[i], terrain);
+                    break;
+                case 3:
+                    pacejka_tires[i]->Synchronize(time, wheel_states[i], terrain);
+                    break;
+            }
+        }
 
         // Advance simulation for one timestep for all modules
         driver.Advance(step_size);
         powertrain.Advance(step_size);
         vehicle.Advance(step_size);
         terrain.Advance(step_size);
-        for (int i = 0; i < num_wheels; i++)
-            tires[i]->Advance(step_size);
+        for (int i = 0; i < num_wheels; i++) {
+            switch (iTire) {
+                default:
+                case 1:
+                    tmeasy_tires[i]->Advance(step_size);
+                    break;
+                case 2:
+                    fiala_tires[i]->Advance(step_size);
+                    break;
+                case 3:
+                    pacejka_tires[i]->Advance(step_size);
+                    break;
+            }
+        }
 
         if (xpos >= xstart) {
             double speed = vehicle.GetVehicleSpeed();
