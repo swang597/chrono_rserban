@@ -52,6 +52,8 @@ set(MODEL_FILES
     ChCollisionLidar.cpp
     ChCollisionLidarRay.h
     ChCollisionLidarRay.cpp
+    ChMAPMessage.h
+    ChMAPMessage.cpp
 )
 
 # ------------------------------------------------------------------------------
