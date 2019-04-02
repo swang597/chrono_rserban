@@ -23,8 +23,8 @@
 #include <list>
 #include <vector>
 
-#include "rapidjson/document.h"
-#include "rapidjson/istreamwrapper.h"
+#include "chrono_thirdparty/rapidjson/document.h"
+#include "chrono_thirdparty/rapidjson/istreamwrapper.h"
 
 class ChMAPMessage {
 public:
