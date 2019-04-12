@@ -36,6 +36,7 @@
                 "connections": [
                   {
                     "remoteID": "",
+                    "fromLane": "",
                     "toLane": "",
                     "signal_id": "",
                     "maneuvers": []
@@ -174,6 +175,7 @@
                 "connections": [
                   {
                     "remoteID": "",
+                    "fromLane": "",
                     "toLane": "",
                     "signal_id": "",
                     "maneuvers": []
@@ -233,6 +235,7 @@
                 "connections": [
                   {
                     "remoteID": "",
+                    "fromLane": "",
                     "toLane": "",
                     "signal_id": "",
                     "maneuvers": []
@@ -292,6 +295,7 @@
                 "connections": [
                   {
                     "remoteID": "",
+                    "fromLane": "",
                     "toLane": "",
                     "signal_id": "",
                     "maneuvers": []
@@ -358,6 +362,7 @@
                 "connections": [
                   {
                     "remoteID": "",
+                    "fromLane": "",
                     "toLane": "",
                     "signal_id": "",
                     "maneuvers": []
@@ -417,6 +422,7 @@
                 "connections": [
                   {
                     "remoteID": "",
+                    "fromLane": "",
                     "toLane": "",
                     "signal_id": "",
                     "maneuvers": []
@@ -469,6 +475,7 @@
                 "connections": [
                   {
                     "remoteID": "",
+                    "fromLane": "",
                     "toLane": "",
                     "signal_id": "",
                     "maneuvers": []
@@ -941,6 +948,7 @@
                 "connections": [
                   {
                     "remoteID": "",
+                    "fromLane": "",
                     "toLane": "",
                     "signal_id": "",
                     "maneuvers": []
@@ -980,6 +988,7 @@
                 "connections": [
                   {
                     "remoteID": "",
+                    "fromLane": "",
                     "toLane": "",
                     "signal_id": "",
                     "maneuvers": []
@@ -1019,6 +1028,7 @@
                 "connections": [
                   {
                     "remoteID": "",
+                    "fromLane": "",
                     "toLane": "",
                     "signal_id": "",
                     "maneuvers": []
@@ -1058,6 +1068,7 @@
                 "connections": [
                   {
                     "remoteID": "",
+                    "fromLane": "",
                     "toLane": "",
                     "signal_id": "",
                     "maneuvers": []

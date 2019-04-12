@@ -29,7 +29,7 @@
 class ChMAPMessage {
 public:
     ChMAPMessage();
-    bool ParseFromFile(std::string filename);
+    std::string ParseFromFile(std::string filename);
 
     class intersectionGeometry {
     public:
@@ -43,7 +43,7 @@ public:
             double referenceLon;
             std::string referenceElevation;
 
-            bool ParseFromObject(rapidjson::Value& object);
+            std::string ParseFromObject(rapidjson::Value& object, std::string path);
         };
 
         class verifiedPoint {
@@ -55,7 +55,7 @@ public:
             std::string verifiedSurveyedLon;
             std::string verifiedSurveyedElevation;
 
-            bool ParseFromObject(rapidjson::Value& object);
+            std::string ParseFromObject(rapidjson::Value& object, std::string path);
         };
 
         class approach {
@@ -70,7 +70,7 @@ public:
                     std::string signal_id;
                     std::list<std::string> maneuvers;
 
-                    bool ParseFromObject(rapidjson::Value& object);
+                    std::string ParseFromObject(rapidjson::Value& object, std::string path, int k);
                 };
 
                 class laneNode {
@@ -81,7 +81,7 @@ public:
                     double nodeElev;
                     double laneWidthDelta;
 
-                    bool ParseFromObject(rapidjson::Value& object);
+                    std::string ParseFromObject(rapidjson::Value& object, std::string path, int k);
                 };
 
                 std::string laneID;
@@ -93,10 +93,10 @@ public:
                 std::vector<int> laneManeuvers;
                 std::vector<laneNode> laneNodes;
 
-                bool ParseFromObject(rapidjson::Value& object);
+                std::string ParseFromObject(rapidjson::Value& object, std::string path, int j);
             };
 
-            bool ParseFromObject(rapidjson::Value& object);
+            std::string ParseFromObject(rapidjson::Value& object, std::string path, int i);
 
         private:
             std::string approachType;
@@ -104,7 +104,7 @@ public:
             std::vector<lane> lanes;
         };
 
-        bool ParseFromObject(rapidjson::Value& object);
+        std::string ParseFromObject(rapidjson::Value& object, std::string path);
 
     private:
         referencePoint refPoint;
