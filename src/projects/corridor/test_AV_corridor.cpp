@@ -18,12 +18,22 @@
 #include "chrono_vehicle/utils/ChVehiclePath.h"
 
 #include "framework.h"
+#include "ChMAPMessage.h"
+#include "chrono_vehicle/ChVehicleModelData.h"
 
 using namespace chrono;
 
 int main(int argc, char* argv[]) {
     std::string vis_file("corridor/park_visual.obj");
     std::string coll_file("corridor/park_collision.obj");
+
+    // Load MAP messasage
+    ChMAPMessage message;
+    auto res = message.ParseFromFile(vehicle::GetDataFile("univ_park_map_info.json"));
+    if (res != "") {
+        std::cout << "Unable to parse MAP data. Error in field " << res << '\n';
+        return 1;
+    }
 
     av::Scene scene(av::GPScoord(43.072172, -89.400391), vis_file, coll_file);
     av::Framework framework(scene, false);
@@ -117,9 +127,18 @@ int main(int argc, char* argv[]) {
                                             av::GPScoord(43.0723306, -89.4006454)};
     auto gps_loop_path = framework.AddPath(gps_points, true);
 
+    std::vector<std::vector<av::GPScoord>> MAPPoints;
+    std::vector<unsigned int> MAPPaths;
+    message.MakeLanePoints(MAPPoints);
+
+    for (auto p : MAPPoints)
+        MAPPaths.push_back(framework.AddPath(p, false));
+
     framework.SetPathColor(circle_path, ChColor(0.6f, 0.6f, 0.0f));
     framework.SetPathColor(loop_path, ChColor(0.0f, 0.6f, 0.0f));
     framework.SetPathColor(gps_loop_path, ChColor(0.0f, 0.0f, 0.6f));
+    for (auto p : MAPPaths)
+        framework.SetPathColor(p, ChColor(0.6f, 0.0f, 0.6f));
 
     // Create vehicles
 

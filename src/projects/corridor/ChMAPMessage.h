@@ -25,11 +25,13 @@
 
 #include "chrono_thirdparty/rapidjson/document.h"
 #include "chrono_thirdparty/rapidjson/istreamwrapper.h"
+#include "framework.h"
 
 class ChMAPMessage {
 public:
     ChMAPMessage();
     std::string ParseFromFile(std::string filename);
+    bool MakeLanePoints(std::vector<std::vector<av::GPScoord>>& lanePoints);
 
     class intersectionGeometry {
     public:
@@ -97,7 +99,8 @@ public:
             };
 
             std::string ParseFromObject(rapidjson::Value& object, std::string path, int i);
-
+            const std::vector<lane>& GetLanes();
+            
         private:
             std::string approachType;
             std::string approachID;
@@ -105,6 +108,7 @@ public:
         };
 
         std::string ParseFromObject(rapidjson::Value& object, std::string path);
+        const std::vector<approach>& GetLaneList();
 
     private:
         referencePoint refPoint;

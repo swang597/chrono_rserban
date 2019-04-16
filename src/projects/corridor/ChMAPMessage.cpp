@@ -418,3 +418,24 @@ std::string ChMAPMessage::intersectionGeometry::approach::lane::laneNode::ParseF
 
     return "";
 }
+
+const std::vector<ChMAPMessage::intersectionGeometry::approach>& ChMAPMessage::intersectionGeometry::GetLaneList() {
+    return laneList;
+}
+
+const std::vector<ChMAPMessage::intersectionGeometry::approach::lane>& ChMAPMessage::intersectionGeometry::approach::GetLanes() {
+    return lanes;
+}
+
+bool ChMAPMessage::MakeLanePoints(std::vector<std::vector<av::GPScoord>>& lanePoints){
+    for (auto approach : geometry.GetLaneList()) {
+        for (auto lane : approach.GetLanes()) {
+            lanePoints.emplace_back();
+            auto& points = lanePoints.back();
+            for (auto node : lane.laneNodes) {
+                points.push_back(av::GPScoord(node.nodeLat, node.nodeLong));
+            }
+        }
+    }
+    return true;
+}
