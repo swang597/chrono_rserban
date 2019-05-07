@@ -21,8 +21,8 @@
 #include <fstream>
 #include <vector>
 
+#include "chrono/core/ChMatrixDynamic.h"
 #include "chrono_vehicle/utils/ChVehiclePath.h"
-
 #include "chrono_thirdparty/filesystem/path.h"
 
 using namespace chrono;
