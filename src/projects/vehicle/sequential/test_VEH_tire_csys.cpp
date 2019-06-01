@@ -164,7 +164,7 @@ TerrainForce ConvertForce_ISO_to_YUP(const TerrainForce& tf_ISO) {
     return tf_YUP;
 
     /*
-    // Alternatively,using the iso_X_yup transform...
+    // Alternatively, using the iso_X_yup transform...
     ChFrame<> iso_X_yup(VNULL, Q_from_AngX(CH_C_PI_2));
     TerrainForce tf_YUP;
     tf_YUP.point = iso_X_yup.TransformPointParentToLocal(tf_ISO.point);
@@ -176,8 +176,29 @@ TerrainForce ConvertForce_ISO_to_YUP(const TerrainForce& tf_ISO) {
 }
 
 ChVector<> ConvertInertia_ISO_to_YUP(const ChVector<>& inertia_ISO) {
-    /// Hardcoded for now
+    // Coordinate transforms
+    ChMatrix33<> iso_R_yup(Q_from_AngX(+CH_C_PI_2));
+    ChMatrix33<> yup_R_iso(Q_from_AngX(-CH_C_PI_2));
+
+    // Moments of inertia in YUP frame
+    ChMatrix33<> J_ISO(inertia_ISO);
+    ChMatrix33<> J_YUP = yup_R_iso * J_ISO * iso_R_yup;
+    ChVector<> inertia_YUP = J_YUP.Get_Diag();
+
+    /*
+    // Alternatively, using the iso_X_yup transform...
+    ChFrame<> iso_X_yup(VNULL, Q_from_AngX(CH_C_PI_2));
+    ChFrame<> yup_X_iso = iso_X_yup.GetInverse();
+    ChMatrix33<> J_ISO(inertia_ISO);
+    ChMatrix33<> J_YUP = (yup_X_iso.GetA() * J_ISO) * iso_X_yup.GetA();
+    ChVector<> inertia_YUP = J_YUP.Get_Diag();
+    */
+
+    /*
+    // Alternatively, just flip elements (for the particular case of YUP frame)
     ChVector<> inertia_YUP(inertia_ISO.x(), inertia_ISO.z(), inertia_ISO.y());
+    */
+
     return inertia_YUP;
 }
 
@@ -243,14 +264,17 @@ MechanismYUP::MechanismYUP(ChSystem* sys) : m_sys(sys) {
     // IMPORTANT: override wheel body inertia!
     m_wheel->SetInertiaXX(ChVector<>(wheel_I2, wheel_I2, wheel_I1) + ConvertInertia_ISO_to_YUP(m_tire->GetInertia()));
 
-    // Cannot use tire visualization (incorrect rotation)
+    // Cannot directly use tire visualization (incorrect rotation)
     m_tire->SetVisualizationType(VisualizationType::NONE);
     {
-        auto cyl = std::make_shared<ChCylinderShape>();
-        cyl->GetCylinderGeometry().rad = 0.99* m_tire->GetRadius();
-        cyl->GetCylinderGeometry().p1 = ChVector<>(0, 0, -0.15);
-        cyl->GetCylinderGeometry().p2 = ChVector<>(0, 0, +0.15);
-        m_wheel->AddAsset(cyl);
+        auto trimesh = std::make_shared<geometry::ChTriangleMeshConnected>();
+        trimesh->LoadWavefrontMesh(vehicle::GetDataFile("hmmwv/hmmwv_tire.obj"), false, false);
+        trimesh->Transform(VNULL, ChMatrix33<>(Q_from_AngX(-CH_C_PI_2)));
+        auto trimesh_shape = std::make_shared<ChTriangleMeshShape>();
+        trimesh_shape->SetMesh(trimesh);
+        trimesh_shape->SetName("hmmwv_tire_POV_geom");
+        trimesh_shape->SetStatic(true);
+        m_wheel->AddAsset(trimesh_shape);
     }
 }
 
@@ -369,14 +393,15 @@ int main(int argc, char* argv[]) {
     appYUP.AssetBindAll();
     appYUP.AssetUpdateAll();
 
-
     while (appISO.GetDevice()->run()) {
         appISO.BeginScene();
         appISO.DrawAll();
+        irrlicht::ChIrrTools::drawAllCOGs(sysISO, appISO.GetVideoDriver(), 1);
         appISO.EndScene();
 
         appYUP.BeginScene();
         appYUP.DrawAll();
+        irrlicht::ChIrrTools::drawAllCOGs(sysYUP, appYUP.GetVideoDriver(), 1);
         appYUP.EndScene();
 
         mISO.Advance(step_size);
