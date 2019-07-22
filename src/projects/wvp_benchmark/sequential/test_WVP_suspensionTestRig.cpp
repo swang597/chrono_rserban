@@ -51,6 +51,7 @@
 
 #include "chrono_models/vehicle/wvp/WVP_Vehicle.h"
 #include "chrono_models/vehicle/wvp/WVP_RigidTire.h"
+#include "chrono_models/vehicle/wvp/WVP_TMeasyTire.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 
@@ -64,9 +65,6 @@ using namespace chrono::vehicle::wvp;
 
 // Simulation step size
 double step_size = 1e-3;
-
-// Time interval between two render frames (1/FPS)
-double render_step_size = 1.0 / 50;
 
 // Axle index
 int axle_index = 0;
@@ -92,12 +90,15 @@ int main(int argc, char* argv[]) {
     vehicle.Initialize(ChCoordsys<>(ChVector<>(0, 0, 0), ChQuaternion<>(1, 0, 0, 0)));
 
     // Use rigid wheels to actuate suspension.
-    auto tire_L = std::make_shared<WVP_RigidTire>("Left", true);
-    auto tire_R = std::make_shared<WVP_RigidTire>("Right", true);
+    ////auto tire_L = std::make_shared<WVP_RigidTire>("Left", true);
+    ////auto tire_R = std::make_shared<WVP_RigidTire>("Right", true);
+    auto tire_L = std::make_shared<WVP_TMeasyTire>("Left");
+    auto tire_R = std::make_shared<WVP_TMeasyTire>("Right");
 
     // Create and intialize the suspension test rig.
     ChSuspensionTestRig rig(vehicle, axle_index, post_limit, tire_L, tire_R);
-    rig.Initialize(ChCoordsys<>());
+
+    rig.SetInitialRideHeight(0.5);
 
     rig.SetSuspensionVisualizationType(VisualizationType::PRIMITIVES);
     rig.SetWheelVisualizationType(VisualizationType::PRIMITIVES);
@@ -112,25 +113,27 @@ int main(int argc, char* argv[]) {
     app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
     app.SetChaseCamera(0.5 * (rig.GetWheelPos(LEFT) + rig.GetWheelPos(RIGHT)), 2.0, 1.0);
     app.SetTimestep(step_size);
-    app.AssetBindAll();
-    app.AssetUpdateAll();
 
     // Create and initialize the driver system.
     std::unique_ptr<ChDriverSTR> driver;
     if (use_data_driver) {
         // Driver with inputs from file
-        auto data_driver = new ChDataDriverSTR(rig, vehicle::GetDataFile(driver_file));
+        auto data_driver = new ChDataDriverSTR(vehicle::GetDataFile(driver_file));
         driver = std::unique_ptr<ChDriverSTR>(data_driver);
     } else {
         // Interactive driver
         auto irr_driver = new ChIrrGuiDriverSTR(app);
         double steering_time = 1.0;      // time to go from 0 to max
         double displacement_time = 2.0;  // time to go from 0 to max applied post motion
-        irr_driver->SetSteeringDelta(render_step_size / steering_time);
-        irr_driver->SetDisplacementDelta(render_step_size / displacement_time);
         driver = std::unique_ptr<ChDriverSTR>(irr_driver);
     }
-    driver->Initialize();
+    rig.SetDriver(std::move(driver));
+
+    // Initialize suspension test rig.
+    rig.Initialize();
+
+    app.AssetBindAll();
+    app.AssetUpdateAll();
 
     // Initialize output
     if (!filesystem::create_directory(filesystem::path(out_dir))) {
@@ -144,52 +147,36 @@ int main(int argc, char* argv[]) {
     // Simulation loop
     // ---------------
 
-    // Number of simulation steps between two 3D view render frames
-    int render_steps = (int)std::ceil(render_step_size / step_size);
-
     // Number of simulation steps between two data collection frames
     int out_steps = (int)std::ceil(out_step_size / step_size);
 
     // Initialize simulation frame counter
     int step_number = 0;
-    ChRealtimeStepTimer realtime_timer;
 
     while (app.GetDevice()->run()) {
         // Render scene
-        if (step_number % render_steps == 0) {
-            app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-            app.DrawAll();
-            app.EndScene();
-        }
-
-        // Collect output data from modules
-        double steering_input = driver->GetSteering();
-        double left_input = driver->GetDisplacementLeft();
-        double right_input = driver->GetDisplacementRight();
-
-        // Update modules (process inputs from other modules)
-        double time = rig.GetChTime();
-        driver->Synchronize(time);
-        rig.Synchronize(time, steering_input, left_input, right_input);
-        app.Synchronize("", steering_input, 0, 0);
+        app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
+        app.DrawAll();
+        app.EndScene();
 
         // Write output data
         if (collect_output && step_number % out_steps == 0) {
             // Current tire forces
-            auto tire_force_L = tire_L->ReportTireForce(nullptr);
-            auto tire_force_R = tire_R->ReportTireForce(nullptr);
-            out_csv << time << left_input << right_input << steering_input;
+            auto tire_force_L = rig.GetTireForce(VehicleSide::LEFT);
+            auto tire_force_R = rig.GetTireForce(VehicleSide::RIGHT);
+            out_csv << rig.GetDisplacementLeftInput() << rig.GetDisplacementRightInput() << rig.GetSteeringInput();
             out_csv << rig.GetActuatorDisp(VehicleSide::LEFT) << rig.GetActuatorDisp(VehicleSide::RIGHT);
             out_csv << tire_force_L.point << tire_force_L.force << tire_force_L.moment;
             out_csv << tire_force_R.point << tire_force_R.force << tire_force_R.moment;
             out_csv << std::endl;
         }
 
-        // Advance simulation for one timestep for all modules
-        double step = realtime_timer.SuggestSimulationStep(step_size);
-        driver->Advance(step);
-        rig.Advance(step);
-        app.Advance(step);
+        // Advance simulation of the rig
+        rig.Advance(step_size);
+
+        // Update visualization app
+        app.Synchronize(tire_L->GetTemplateName(), rig.GetSteeringInput(), 0, 0);
+        app.Advance(step_size);
 
         // Increment frame number
         step_number++;
