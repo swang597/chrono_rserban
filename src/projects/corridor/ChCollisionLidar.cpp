@@ -76,7 +76,7 @@ void ChCollisionLidar::UpdateRays(){
 
 void ChCollisionLidar::AddRay(const chrono::ChVector<double> &start,
 		const chrono::ChVector<double> &end){
-	std::shared_ptr<ChCollisionLidarRay> ray = std::make_shared<ChCollisionLidarRay>(m_parent, m_visualize);
+	std::shared_ptr<ChCollisionLidarRay> ray = chrono_types::make_shared<ChCollisionLidarRay>(m_parent, m_visualize);
 
 	ray->SetPoints(start, end);
 	m_rays.push_back(ray);

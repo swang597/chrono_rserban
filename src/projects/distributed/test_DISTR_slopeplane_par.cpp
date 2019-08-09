@@ -62,12 +62,12 @@ double tolerance = 1e-4;           // not relevant here (SMC, no joints)
 std::shared_ptr<ChBoundary> AddSlopedWall(ChSystemParallel* sys) {
     int binId = -200;
 
-    auto mat = std::make_shared<ChMaterialSurfaceSMC>();
+    auto mat = chrono_types::make_shared<ChMaterialSurfaceSMC>();
     mat->SetYoungModulus(Y);
     mat->SetFriction(mu);
     mat->SetRestitution(cr);
 
-    auto container = std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
+    auto container = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
     container->SetMaterialSurface(mat);
     container->SetIdentifier(binId);
     container->SetMass(1);
@@ -95,7 +95,7 @@ size_t AddFallingBalls(ChSystemParallel* sys) {
     utils::HCPSampler<> sampler(spacing);
     auto points = sampler.SampleBox(box_center, ChVector<>(hx, hy, hz));
 
-    auto ballMat = std::make_shared<ChMaterialSurfaceSMC>();
+    auto ballMat = chrono_types::make_shared<ChMaterialSurfaceSMC>();
     ballMat->SetYoungModulus(Y);
     ballMat->SetFriction(mu);
     ballMat->SetRestitution(cr);
@@ -103,7 +103,7 @@ size_t AddFallingBalls(ChSystemParallel* sys) {
 
     int ballId = 0;
     for (int i = 0; i < points.size(); i++) {
-        auto ball = std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
+        auto ball = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
         ball->SetMaterialSurface(ballMat);
 
         ball->SetIdentifier(ballId++);

@@ -153,7 +153,7 @@ WVP_ShockForce::WVP_ShockForce(int axle_index, double rest_length)
     : m_axle_index(axle_index), m_rest_length(rest_length) {
     // add single damping table
 
-    std::shared_ptr<ChFunction_Recorder> m_single_damp_map1 = std::make_shared<ChFunction_Recorder>();
+    std::shared_ptr<ChFunction_Recorder> m_single_damp_map1 = chrono_types::make_shared<ChFunction_Recorder>();
     m_single_damp_map1->AddPoint(-127.8e-3, -1.27e5);
     m_single_damp_map1->AddPoint(-90e-3, -1.27e5);
     m_single_damp_map1->AddPoint(-80e-3, -1.26e5);
@@ -169,7 +169,7 @@ WVP_ShockForce::WVP_ShockForce(int axle_index, double rest_length)
     m_single_damp_map1->AddPoint(170e-3, -8.99e4);
     m_single_damp_map1->AddPoint(227.2e-3, -8.99e4);
 
-	std::shared_ptr<ChFunction_Recorder> m_single_damp_map75 = std::make_shared<ChFunction_Recorder>();
+	std::shared_ptr<ChFunction_Recorder> m_single_damp_map75 = chrono_types::make_shared<ChFunction_Recorder>();
     m_single_damp_map75->AddPoint(-127.8e-3, -8.71e4);
     m_single_damp_map75->AddPoint(-90e-3, -8.71e4);
     m_single_damp_map75->AddPoint(-80e-3, -8.60e4);
@@ -185,7 +185,7 @@ WVP_ShockForce::WVP_ShockForce(int axle_index, double rest_length)
     m_single_damp_map75->AddPoint(170e-3, -4.91e4);
     m_single_damp_map75->AddPoint(227.2e-3, -4.91e4);
 
-	std::shared_ptr<ChFunction_Recorder> m_single_damp_map5 = std::make_shared<ChFunction_Recorder>();
+	std::shared_ptr<ChFunction_Recorder> m_single_damp_map5 = chrono_types::make_shared<ChFunction_Recorder>();
     m_single_damp_map5->AddPoint(-127.8e-3, -6.00e4);
     m_single_damp_map5->AddPoint(-90e-3, -6.00e4);
     m_single_damp_map5->AddPoint(-80e-3, -5.89e4);
@@ -201,7 +201,7 @@ WVP_ShockForce::WVP_ShockForce(int axle_index, double rest_length)
     m_single_damp_map5->AddPoint(170e-3, -2.18e4);
     m_single_damp_map5->AddPoint(227.2e-3, -2.18e4);
 
-	std::shared_ptr<ChFunction_Recorder> m_single_damp_map25 = std::make_shared<ChFunction_Recorder>();
+	std::shared_ptr<ChFunction_Recorder> m_single_damp_map25 = chrono_types::make_shared<ChFunction_Recorder>();
     m_single_damp_map25->AddPoint(-127.8e-3, -4.41e4);
     m_single_damp_map25->AddPoint(-90e-3, -4.41e4);
     m_single_damp_map25->AddPoint(-80e-3, -4.10e4);
@@ -217,7 +217,7 @@ WVP_ShockForce::WVP_ShockForce(int axle_index, double rest_length)
     m_single_damp_map25->AddPoint(170e-3, -3.90e3);
     m_single_damp_map25->AddPoint(227.2e-3, -3.90e3);
 
-	std::shared_ptr<ChFunction_Recorder> m_single_damp_map_0 = std::make_shared<ChFunction_Recorder>();
+	std::shared_ptr<ChFunction_Recorder> m_single_damp_map_0 = chrono_types::make_shared<ChFunction_Recorder>();
     m_single_damp_map_0->AddPoint(-127.8e-3, 0);
     m_single_damp_map_0->AddPoint(-90e-3, 0);
     m_single_damp_map_0->AddPoint(-80e-3, 0);
@@ -233,7 +233,7 @@ WVP_ShockForce::WVP_ShockForce(int axle_index, double rest_length)
     m_single_damp_map_0->AddPoint(170e-3, 0);
     m_single_damp_map_0->AddPoint(227.2e-3, 0);
 
-	std::shared_ptr<ChFunction_Recorder> m_single_damp_map_5 = std::make_shared<ChFunction_Recorder>();
+	std::shared_ptr<ChFunction_Recorder> m_single_damp_map_5 = chrono_types::make_shared<ChFunction_Recorder>();
     m_single_damp_map_5->AddPoint(-127.8e-3, 1.79e4);
     m_single_damp_map_5->AddPoint(-90e-3, 1.79e4);
     m_single_damp_map_5->AddPoint(-80e-3, 1.79e4);
@@ -249,7 +249,7 @@ WVP_ShockForce::WVP_ShockForce(int axle_index, double rest_length)
     m_single_damp_map_5->AddPoint(170e-3, 7.16e4);
     m_single_damp_map_5->AddPoint(227.2e-3, 7.16e4);
 
-	std::shared_ptr<ChFunction_Recorder> m_single_damp_map_1 = std::make_shared<ChFunction_Recorder>();
+	std::shared_ptr<ChFunction_Recorder> m_single_damp_map_1 = chrono_types::make_shared<ChFunction_Recorder>();
     m_single_damp_map_1->AddPoint(-127.8e-3, 7.62e4);
     m_single_damp_map_1->AddPoint(-90e-3, 7.62e4);
     m_single_damp_map_1->AddPoint(-80e-3, 7.62e4);
@@ -265,7 +265,7 @@ WVP_ShockForce::WVP_ShockForce(int axle_index, double rest_length)
     m_single_damp_map_1->AddPoint(170e-3, 2.92e5);
     m_single_damp_map_1->AddPoint(227.2e-3, 2.92e5);
 
-	std::shared_ptr<ChFunction_Recorder> m_single_damp_map_15 = std::make_shared<ChFunction_Recorder>();
+	std::shared_ptr<ChFunction_Recorder> m_single_damp_map_15 = chrono_types::make_shared<ChFunction_Recorder>();
     m_single_damp_map_15->AddPoint(-127.8e-3, 1.65e5);
     m_single_damp_map_15->AddPoint(-90e-3, 1.65e5);
     m_single_damp_map_15->AddPoint(-80e-3, 1.65e5);
@@ -281,7 +281,7 @@ WVP_ShockForce::WVP_ShockForce(int axle_index, double rest_length)
     m_single_damp_map_15->AddPoint(170e-3, 6.44e5);
     m_single_damp_map_15->AddPoint(227.2e-3, 6.44e5);
 
-	std::shared_ptr<ChFunction_Recorder> m_single_damp_map_2 = std::make_shared<ChFunction_Recorder>();
+	std::shared_ptr<ChFunction_Recorder> m_single_damp_map_2 = chrono_types::make_shared<ChFunction_Recorder>();
     m_single_damp_map_2->AddPoint(-127.8e-3, 2.86e5);
     m_single_damp_map_2->AddPoint(-90e-3, 2.86e5);
     m_single_damp_map_2->AddPoint(-80e-3, 2.86e5);
@@ -309,7 +309,7 @@ WVP_ShockForce::WVP_ShockForce(int axle_index, double rest_length)
     m_single_damp_map.insert({-1.0, m_single_damp_map1});
 
     // add parallel daping table
-	std::shared_ptr<ChFunction_Recorder> m_para_damp_map1 = std::make_shared<ChFunction_Recorder>();
+	std::shared_ptr<ChFunction_Recorder> m_para_damp_map1 = chrono_types::make_shared<ChFunction_Recorder>();
     m_para_damp_map1->AddPoint(-127.8e-3, -8.99e4);
     m_para_damp_map1->AddPoint(110e-3, -8.99e4);
     m_para_damp_map1->AddPoint(120e-3, -8.99e4);
@@ -320,7 +320,7 @@ WVP_ShockForce::WVP_ShockForce(int axle_index, double rest_length)
     m_para_damp_map1->AddPoint(170e-3, -8.99e4);
     m_para_damp_map1->AddPoint(227.2e-3, -8.99e4);
 
-	std::shared_ptr<ChFunction_Recorder> m_para_damp_map75 = std::make_shared<ChFunction_Recorder>();
+	std::shared_ptr<ChFunction_Recorder> m_para_damp_map75 = chrono_types::make_shared<ChFunction_Recorder>();
     m_para_damp_map75->AddPoint(-127.8e-3, -4.91e4);
     m_para_damp_map75->AddPoint(110e-3, -4.91e4);
     m_para_damp_map75->AddPoint(120e-3, -4.91e4);
@@ -331,7 +331,7 @@ WVP_ShockForce::WVP_ShockForce(int axle_index, double rest_length)
     m_para_damp_map75->AddPoint(170e-3, -4.91e4);
     m_para_damp_map75->AddPoint(227.2e-3, -4.91e4);
 
-	std::shared_ptr<ChFunction_Recorder> m_para_damp_map5 = std::make_shared<ChFunction_Recorder>();
+	std::shared_ptr<ChFunction_Recorder> m_para_damp_map5 = chrono_types::make_shared<ChFunction_Recorder>();
     m_para_damp_map5->AddPoint(-127.8e-3, -2.18e4);
     m_para_damp_map5->AddPoint(110e-3, -2.18e4);
     m_para_damp_map5->AddPoint(120e-3, -2.18e4);
@@ -342,7 +342,7 @@ WVP_ShockForce::WVP_ShockForce(int axle_index, double rest_length)
     m_para_damp_map5->AddPoint(170e-3, -2.18e4);
     m_para_damp_map5->AddPoint(227.2e-3, -2.18e4);
 
-	std::shared_ptr<ChFunction_Recorder> m_para_damp_map25 = std::make_shared<ChFunction_Recorder>();
+	std::shared_ptr<ChFunction_Recorder> m_para_damp_map25 = chrono_types::make_shared<ChFunction_Recorder>();
     m_para_damp_map25->AddPoint(-127.8e-3, -3.90e3);
     m_para_damp_map25->AddPoint(110e-3, -3.90e3);
     m_para_damp_map25->AddPoint(120e-3, -3.90e3);
@@ -353,7 +353,7 @@ WVP_ShockForce::WVP_ShockForce(int axle_index, double rest_length)
     m_para_damp_map25->AddPoint(170e-3, -3.90e3);
     m_para_damp_map25->AddPoint(227.2e-3, -3.90e3);
 
-	std::shared_ptr<ChFunction_Recorder> m_para_damp_map_0 = std::make_shared<ChFunction_Recorder>();
+	std::shared_ptr<ChFunction_Recorder> m_para_damp_map_0 = chrono_types::make_shared<ChFunction_Recorder>();
     m_para_damp_map_0->AddPoint(-127.8e-3, 0);
     m_para_damp_map_0->AddPoint(110e-3, 0);
     m_para_damp_map_0->AddPoint(120e-3, 0);
@@ -364,7 +364,7 @@ WVP_ShockForce::WVP_ShockForce(int axle_index, double rest_length)
     m_para_damp_map_0->AddPoint(170e-3, 0);
     m_para_damp_map_0->AddPoint(227.2e-3, 0);
 
-	std::shared_ptr<ChFunction_Recorder> m_para_damp_map_5 = std::make_shared<ChFunction_Recorder>();
+	std::shared_ptr<ChFunction_Recorder> m_para_damp_map_5 = chrono_types::make_shared<ChFunction_Recorder>();
     m_para_damp_map_5->AddPoint(-127.8e-3, 1.79e4);
     m_para_damp_map_5->AddPoint(110e-3, 1.79e4);
     m_para_damp_map_5->AddPoint(120e-3, 1.79e4);
@@ -375,7 +375,7 @@ WVP_ShockForce::WVP_ShockForce(int axle_index, double rest_length)
     m_para_damp_map_5->AddPoint(170e-3, 7.16e4);
     m_para_damp_map_5->AddPoint(227.2e-3, 7.16e4);
 
-	std::shared_ptr<ChFunction_Recorder> m_para_damp_map_1 = std::make_shared<ChFunction_Recorder>();
+	std::shared_ptr<ChFunction_Recorder> m_para_damp_map_1 = chrono_types::make_shared<ChFunction_Recorder>();
     m_para_damp_map_1->AddPoint(-127.8e-3, 7.26e4);
     m_para_damp_map_1->AddPoint(110e-3, 7.26e4);
     m_para_damp_map_1->AddPoint(120e-3, 7.26e4);
@@ -386,7 +386,7 @@ WVP_ShockForce::WVP_ShockForce(int axle_index, double rest_length)
     m_para_damp_map_1->AddPoint(170e-3, 2.92e5);
     m_para_damp_map_1->AddPoint(227.2e-3, 2.92e5);
 
-	std::shared_ptr<ChFunction_Recorder> m_para_damp_map_15 = std::make_shared<ChFunction_Recorder>();
+	std::shared_ptr<ChFunction_Recorder> m_para_damp_map_15 = chrono_types::make_shared<ChFunction_Recorder>();
     m_para_damp_map_15->AddPoint(-127.8e-3, 1.65e5);
     m_para_damp_map_15->AddPoint(110e-3, 1.65e5);
     m_para_damp_map_15->AddPoint(120e-3, 1.65e5);
@@ -397,7 +397,7 @@ WVP_ShockForce::WVP_ShockForce(int axle_index, double rest_length)
     m_para_damp_map_15->AddPoint(170e-3, 6.44e5);
     m_para_damp_map_15->AddPoint(227.2e-3, 6.44e5);
 
-	std::shared_ptr<ChFunction_Recorder> m_para_damp_map_2 = std::make_shared<ChFunction_Recorder>();
+	std::shared_ptr<ChFunction_Recorder> m_para_damp_map_2 = chrono_types::make_shared<ChFunction_Recorder>();
     m_para_damp_map_2->AddPoint(-127.8e-3, 2.86e5);
     m_para_damp_map_2->AddPoint(110e-3, 2.86e5);
     m_para_damp_map_2->AddPoint(120e-3, 2.86e5);

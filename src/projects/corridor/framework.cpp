@@ -67,7 +67,7 @@ ChVector<> Framework::GetLocation(const GPScoord& gps) const {
     return ChVector<>(loc.x(), loc.y(), h);
 }
 
-// Note: cannot use std::make_shared because the various constructors are not public.
+// Note: cannot use chrono_types::make_shared because the various constructors are not public.
 
 unsigned int Framework::AddPath(std::shared_ptr<chrono::ChBezierCurve> curve, bool closed) {
     auto id = Agent::GenerateID();
@@ -259,7 +259,7 @@ void Framework::CreateTerrain() {
     std::cout << "  " << bbmax.x() << "  " << bbmax.y() << "  " << bbmax.z() << std::endl;
 
     if (m_render_coll) {
-        auto texture = std::make_shared<ChTexture>();
+        auto texture = chrono_types::make_shared<ChTexture>();
         texture->SetTextureFilename(GetChronoDataFile("concrete.jpg"));
         texture->SetTextureScale(1, 1);
         patch->GetGroundBody()->AddAsset(texture);
@@ -278,8 +278,8 @@ void Framework::Initialize() {
     m_system->AddBody(road);
     for (auto p : Path::GetList()) {
         auto n = static_cast<unsigned int>(p.second->m_curve->getNumPoints());
-        auto path_asset = std::make_shared<ChLineShape>();
-        path_asset->SetLineGeometry(std::make_shared<geometry::ChLineBezier>(p.second->m_curve));
+        auto path_asset = chrono_types::make_shared<ChLineShape>();
+        path_asset->SetLineGeometry(chrono_types::make_shared<geometry::ChLineBezier>(p.second->m_curve));
         path_asset->SetColor(p.second->m_color);
         path_asset->SetName("path_" + std::to_string(p.first));
         path_asset->SetNumRenderPoints(std::max<unsigned int>(2 * n, 400));
@@ -289,8 +289,8 @@ void Framework::Initialize() {
     // Create visualization assets for all traffic lights
     for (auto t : TrafficLight::GetList()) {
         auto origin = ChCoordsys<>(t->GetCenter() + ChVector<>(0, 0, 2 * m_vertical_offset), QUNIT);
-        auto circle_line = std::make_shared<geometry::ChLineArc>(origin, t->GetRadius());
-        auto circle_asset = std::make_shared<ChLineShape>();
+        auto circle_line = chrono_types::make_shared<geometry::ChLineArc>(origin, t->GetRadius());
+        auto circle_asset = chrono_types::make_shared<ChLineShape>();
         circle_asset->SetColor(ChColor(1.0f, 0.0f, 0.0f));
         circle_asset->SetName("circle_" + std::to_string(t->GetId()));
         circle_asset->SetLineGeometry(circle_line);

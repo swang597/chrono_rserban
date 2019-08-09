@@ -49,7 +49,7 @@ TireNode::TireNode() {
 
 
     // Solver settings
-    auto mkl_solver = std::make_shared<ChSolverMKL<>>();
+    auto mkl_solver = chrono_types::make_shared<ChSolverMKL<>>();
     mkl_solver->SetSparsityPatternLock(true);
     m_sys->SetSolver(mkl_solver);
 
@@ -76,12 +76,12 @@ TireNode::TireNode() {
     m_rim->SetPos_dt(ChVector<>(0, 0, 0));
     m_rim->SetWvel_loc(ChVector<>(0, 0, 0));
 
-    auto sphere = std::make_shared<ChSphereShape>();
+    auto sphere = chrono_types::make_shared<ChSphereShape>();
     sphere->GetSphereGeometry().rad = 0.1;
     m_rim->AddAsset(sphere);
 
     // Create the tire
-    m_tire = std::make_shared<vehicle::ANCFTire>(vehicle::GetDataFile("hmmwv/tire/HMMWV_ANCFTire.json"));
+    m_tire = chrono_types::make_shared<vehicle::ANCFTire>(vehicle::GetDataFile("hmmwv/tire/HMMWV_ANCFTire.json"));
     m_tire->EnablePressure(true);
     m_tire->EnableContact(true);
     m_tire->EnableRimConnection(true);
@@ -93,7 +93,7 @@ TireNode::TireNode() {
 
     // Create a mesh load for contact forces and add it to the tire's load container
     auto contact_surface = std::static_pointer_cast<fea::ChContactSurfaceMesh>(m_tire->GetContactSurface());
-    m_contact_load = std::make_shared<fea::ChLoadContactSurfaceMesh>(contact_surface);
+    m_contact_load = chrono_types::make_shared<fea::ChLoadContactSurfaceMesh>(contact_surface);
     m_tire->GetLoadContainer()->Add(m_contact_load);
 
     // Create Irrlicht visualization app

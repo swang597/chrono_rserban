@@ -40,13 +40,13 @@ int main(int argc, char* argv[]) {
     mphysicalSystem.Set_G_acc(ChVector<>(0.01, 0.0, 0.0));
 
     // Ground body
-    auto ground = std::make_shared<ChBody>();
+    auto ground = chrono_types::make_shared<ChBody>();
     ground->SetIdentifier(-1);
     ground->SetBodyFixed(true);
     mphysicalSystem.Add(ground);
 
     // FEA mesh
-    auto msection_cable = std::make_shared<fea::ChBeamSectionCable>();
+    auto msection_cable = chrono_types::make_shared<fea::ChBeamSectionCable>();
     msection_cable->SetDiameter(0.002);
     msection_cable->SetYoungModulus(5e3);
     msection_cable->SetDensity(2000);
@@ -57,7 +57,7 @@ int main(int argc, char* argv[]) {
     int num_elements = 4;
     double delta = 0.1;
 
-    auto my_mesh = std::make_shared<fea::ChMesh>();
+    auto my_mesh = chrono_types::make_shared<fea::ChMesh>();
     fea::ChBuilderBeamANCF builder;
     std::vector<std::shared_ptr<fea::ChNodeFEAxyzD>> base_nodes;
     std::vector<std::shared_ptr<fea::ChNodeFEAxyzD>> tip_nodes;
@@ -82,11 +82,11 @@ int main(int argc, char* argv[]) {
     for (auto node : base_nodes) {
         node->SetFixed(true);
 
-        ////auto pos_const = std::make_shared<fea::ChLinkPointFrame>();
+        ////auto pos_const = chrono_types::make_shared<fea::ChLinkPointFrame>();
         ////pos_const->Initialize(node, ground);
         ////mphysicalSystem.Add(pos_const);
 
-        ////auto dir_const = std::make_shared<fea::ChLinkDirFrame>();
+        ////auto dir_const = chrono_types::make_shared<fea::ChLinkDirFrame>();
         ////dir_const->Initialize(node, ground);
         ////dir_const->SetDirectionInAbsoluteCoords(node->D);
         ////mphysicalSystem.Add(dir_const);
@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
     mphysicalSystem.Add(my_mesh);
 
     // Mesh visualization
-    auto mvisualizebeamA = std::make_shared<fea::ChVisualizationFEAmesh>(*my_mesh);
+    auto mvisualizebeamA = chrono_types::make_shared<fea::ChVisualizationFEAmesh>(*my_mesh);
     mvisualizebeamA->SetFEMdataType(fea::ChVisualizationFEAmesh::E_PLOT_ANCF_BEAM_BD);
     mvisualizebeamA->SetColorscaleMinMax(-20, 20);
     mvisualizebeamA->SetSmoothFaces(true);
@@ -121,7 +121,7 @@ int main(int argc, char* argv[]) {
     // Solver settings
     // ---------------
     if (use_MKL) {
-        auto mkl_solver = std::make_shared<ChSolverMKL<>>();
+        auto mkl_solver = chrono_types::make_shared<ChSolverMKL<>>();
         mkl_solver->SetSparsityPatternLock(true);
         mphysicalSystem.SetSolver(mkl_solver);
     } else {

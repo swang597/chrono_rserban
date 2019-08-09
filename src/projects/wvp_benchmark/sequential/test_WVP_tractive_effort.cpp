@@ -195,16 +195,16 @@ int main(int argc, char* argv[]) {
     // forceFunct.AddPoint(3,0);
     // forceFunct.AddPoint(13,-fullForce);
 
-    auto drawForce = std::make_shared<ChForce>();
+    auto drawForce = chrono_types::make_shared<ChForce>();
     wvp.GetVehicle().GetChassisBody()->AddForce(drawForce);
     drawForce->SetMode(ChForce::ForceType::FORCE); // force or torque
     drawForce->SetFrame(ChForce::ReferenceFrame::BODY);
     drawForce->SetAlign(ChForce::AlignmentFrame::WORLD_DIR);
     drawForce->SetVrelpoint(wvp.GetChassis()->GetLocalPosCOM());
-    drawForce->SetF_x(std::make_shared<ChFunction_Recorder>(forceFunct));
+    drawForce->SetF_x(chrono_types::make_shared<ChFunction_Recorder>(forceFunct));
 
-    drawForce->SetF_y(std::make_shared<ChFunction_Const>(0));
-    drawForce->SetF_z(std::make_shared<ChFunction_Const>(0));
+    drawForce->SetF_y(chrono_types::make_shared<ChFunction_Const>(0));
+    drawForce->SetF_z(chrono_types::make_shared<ChFunction_Const>(0));
 
 
 

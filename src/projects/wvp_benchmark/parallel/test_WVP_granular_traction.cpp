@@ -355,7 +355,7 @@ int main(int argc, char* argv[]) {
     // Recorder function
     // -----------------
 
-    auto forceFunct = std::make_shared<ChFunction_Recorder>();
+    auto forceFunct = chrono_types::make_shared<ChFunction_Recorder>();
     forceFunct->AddPoint(0, 0);
     forceFunct->AddPoint(time_start_drawbar, 0);
     forceFunct->AddPoint(time_max_drawbar, -full_force);
@@ -530,15 +530,15 @@ WVP* CreateVehicle(ChSystem* system, double vertical_offset, std::shared_ptr<ChF
 
     wvp->GetVehicle().SetStepsize(time_step);
 
-    auto drawForce = std::make_shared<ChForce>();
+    auto drawForce = chrono_types::make_shared<ChForce>();
     wvp->GetChassisBody()->AddForce(drawForce);
     drawForce->SetMode(ChForce::ForceType::FORCE);
     drawForce->SetFrame(ChForce::ReferenceFrame::BODY);
     drawForce->SetAlign(ChForce::AlignmentFrame::WORLD_DIR);
     drawForce->SetVrelpoint(wvp->GetChassis()->GetLocalPosCOM());
     drawForce->SetF_x(forceFunct);
-    drawForce->SetF_y(std::make_shared<ChFunction_Const>(0));
-    drawForce->SetF_z(std::make_shared<ChFunction_Const>(0));
+    drawForce->SetF_y(chrono_types::make_shared<ChFunction_Const>(0));
+    drawForce->SetF_z(chrono_types::make_shared<ChFunction_Const>(0));
 
     return wvp;
 }

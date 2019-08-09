@@ -160,7 +160,7 @@ TerrainNodeDistr::TerrainNodeDistr(MPI_Comm terrain_comm, int num_tires, bool re
     m_mass_pF = 1;
 
     // Default terrain contact material
-    m_material_terrain = std::make_shared<ChMaterialSurfaceSMC>();
+    m_material_terrain = chrono_types::make_shared<ChMaterialSurfaceSMC>();
 
     // ------------------------------------
     // Create the Chrono distributed system
@@ -352,7 +352,7 @@ void TerrainNodeDistr::Construct() {
     container->SetMaterialSurface(m_material_terrain);
     m_system->AddBodyAllRanks(container);
 
-    m_boundary = std::make_shared<ChBoundary>(container);
+    m_boundary = chrono_types::make_shared<ChBoundary>(container);
     m_boundary->AddPlane(ChFrame<>(ChVector<>(0, 0, 0), QUNIT), ChVector2<>(2 * m_hdimX, 2 * m_hdimY));
     m_boundary->AddPlane(ChFrame<>(ChVector<>(+m_hdimX, 0, m_hdimZ), Q_from_AngY(-CH_C_PI_2)),
                          ChVector2<>(2 * m_hdimZ, 2 * m_hdimY));
@@ -367,8 +367,8 @@ void TerrainNodeDistr::Construct() {
 
     // Add path as visualization asset to the container body
     if (m_path) {
-        auto path_asset = std::make_shared<ChLineShape>();
-        path_asset->SetLineGeometry(std::make_shared<geometry::ChLineBezier>(m_path));
+        auto path_asset = chrono_types::make_shared<ChLineShape>();
+        path_asset->SetLineGeometry(chrono_types::make_shared<geometry::ChLineBezier>(m_path));
         path_asset->SetColor(ChColor(0.0f, 0.8f, 0.0f));
         path_asset->SetName("path");
         container->AddAsset(path_asset);
@@ -781,7 +781,7 @@ void TerrainNodeDistr::Initialize() {
         // Broadcast to intra-communicator
         MPI_Bcast(mat_props, 8, MPI_FLOAT, m_system->GetMasterRank(), m_system->GetCommunicator());
 
-        auto mat_tire = std::make_shared<ChMaterialSurfaceSMC>();
+        auto mat_tire = chrono_types::make_shared<ChMaterialSurfaceSMC>();
         mat_tire->SetFriction(mat_props[0]);
         mat_tire->SetRestitution(mat_props[1]);
         mat_tire->SetYoungModulus(mat_props[2]);

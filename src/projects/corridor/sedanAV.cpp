@@ -25,7 +25,7 @@ namespace av {
 
 SedanAV::SedanAV(Framework* framework, unsigned int id, const chrono::ChCoordsys<>& init_pos)
     : Vehicle(framework, id, Vehicle::SEDAN) {
-    m_sedan = std::make_shared<Sedan>(framework->m_system);
+    m_sedan = chrono_types::make_shared<Sedan>(framework->m_system);
 
     m_sedan->SetChassisFixed(false);
     m_sedan->SetChassisCollisionType(ChassisCollisionType::MESH);

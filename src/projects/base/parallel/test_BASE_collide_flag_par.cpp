@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
     float Y = 2e6f;
     float mu = 0.4f;
     float cr = 0.4f;
-    auto ballMat = std::make_shared<ChMaterialSurfaceSMC>();
+    auto ballMat = chrono_types::make_shared<ChMaterialSurfaceSMC>();
     ballMat->SetYoungModulus(Y);
     ballMat->SetFriction(mu);
     ballMat->SetRestitution(cr);
@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
 
     // Lower ball
     auto ball_lower =
-        std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
+        chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
     ball_lower->SetMaterialSurface(ballMat);
 
     ball_lower->SetIdentifier(1);
@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
 
     // Upper ball
     auto ball_upper =
-        std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
+        chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
     ball_upper->SetMaterialSurface(ballMat);
 
     ball_upper->SetIdentifier(2);
@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
     my_sys.AddBody(ball_upper);
 
     // Plate
-    auto plate = std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
+    auto plate = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
     plate->SetMaterialSurface(ballMat);
 
     plate->SetIdentifier(0);

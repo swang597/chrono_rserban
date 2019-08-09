@@ -12,35 +12,35 @@ int main(int argc, char* argv[]) {
     ChSystemNSC system;
     system.Set_G_acc(ChVector<>(0, 0, 0));
 
-    ////auto body0 = std::make_shared<ChBodyEasyBox>(1.0, 2.0, 3.0, 100);
+    ////auto body0 = chrono_types::make_shared<ChBodyEasyBox>(1.0, 2.0, 3.0, 100);
     ////system.AddBody(body0);
 
-    auto body1 = std::make_shared< ChBodyEasyMesh>(GetChronoDataFile("ob_chess_table.obj"), 1000, true, true);
+    auto body1 = chrono_types::make_shared< ChBodyEasyMesh>(GetChronoDataFile("ob_chess_table.obj"), 1000, true, true);
     body1->SetFrame_REF_to_abs(ChFrame<>(ChVector<>(-3.0, 0.0, 0.0), QUNIT));
 
-    auto body2 = std::make_shared<ChBodyEasyMesh>(GetChronoDataFile("pallet.obj"), 1000, true, true);
+    auto body2 = chrono_types::make_shared<ChBodyEasyMesh>(GetChronoDataFile("pallet.obj"), 1000, true, true);
     body2->SetFrame_REF_to_abs(ChFrame<>(ChVector<>(+3.0, 0.0, 0.0), QUNIT));
 
     system.AddBody(body1);
     system.AddBody(body2);
 
-    ////auto body1 = std::make_shared<ChBody>();
+    ////auto body1 = chrono_types::make_shared<ChBody>();
     ////body1->SetPos(ChVector<>(-3.0, 0.0, 0.0));
     ////system.AddBody(body1);
-    ////auto trimesh1 = std::make_shared< geometry::ChTriangleMeshConnected>();
+    ////auto trimesh1 = chrono_types::make_shared< geometry::ChTriangleMeshConnected>();
     ////trimesh1->LoadWavefrontMesh(GetChronoDataFile("ob_chess_table.obj"), true, false);
-    ////auto vshape1 = std::make_shared<ChTriangleMeshShape>();
+    ////auto vshape1 = chrono_types::make_shared<ChTriangleMeshShape>();
     ////vshape1->SetMesh(trimesh1);
     ////vshape1->SetStatic(true);
     ////vshape1->SetName("mesh1");
     ////body1->AddAsset(vshape1);
 
-    ////auto body2 = std::make_shared<ChBody>();
+    ////auto body2 = chrono_types::make_shared<ChBody>();
     ////body2->SetPos(ChVector<>(3.0, 0.0, 0.0));
     ////system.AddBody(body2);
-    ////auto trimesh2 = std::make_shared< geometry::ChTriangleMeshConnected>();
+    ////auto trimesh2 = chrono_types::make_shared< geometry::ChTriangleMeshConnected>();
     ////trimesh2->LoadWavefrontMesh(GetChronoDataFile("pallet.obj"), true, false);
-    ////auto vshape2 = std::make_shared<ChTriangleMeshShape>();
+    ////auto vshape2 = chrono_types::make_shared<ChTriangleMeshShape>();
     ////vshape2->SetMesh(trimesh2);
     ////vshape2->SetStatic(true);
     ////vshape2->SetName("mesh2");

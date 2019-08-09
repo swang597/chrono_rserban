@@ -106,7 +106,7 @@ int main(int argc, char* argv[]) {
     utils::AddBoxGeometry(container.get(), ChVector<>(4, .5, 4), ChVector<>(0, -.5, 0));
     container->GetCollisionModel()->BuildModel();
 
-    container->AddAsset(std::make_shared<ChColorAsset>(ChColor(0.4f, 0.4f, 0.2f)));
+    container->AddAsset(chrono_types::make_shared<ChColorAsset>(ChColor(0.4f, 0.4f, 0.2f)));
 
     auto box = std::shared_ptr<ChBody>(system.NewBody());
     box->SetMass(10);
@@ -121,7 +121,7 @@ int main(int argc, char* argv[]) {
     utils::AddBoxGeometry(box.get(), ChVector<>(0.4, 0.2, 0.1));
     box->GetCollisionModel()->BuildModel();
 
-    box->AddAsset(std::make_shared<ChColorAsset>(ChColor(0.2f, 0.3f, 0.4f)));
+    box->AddAsset(chrono_types::make_shared<ChColorAsset>(ChColor(0.2f, 0.3f, 0.4f)));
 
     system.AddBody(box);
 

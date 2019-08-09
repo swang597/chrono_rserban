@@ -241,11 +241,11 @@ void create_objects(ChSystemParallelNSC& sys) {
     ChVector<> inertia = (2.0 / 5.0) * mass * radius * radius * ChVector<>(1, 1, 1);
 
     // Common material
-    auto mat = std::make_shared<ChMaterialSurfaceNSC>();
+    auto mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
     mat->SetFriction(0.4f);
 
     // Create the containing bin
-    auto bin = std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>());
+    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
     bin->SetMaterialSurface(mat);
     bin->SetIdentifier(-100);
     bin->SetMass(1);
@@ -277,7 +277,7 @@ void create_objects(ChSystemParallelNSC& sys) {
 
     int ballId = 0;
     for (auto point : points) {
-        auto ball = std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>());
+        auto ball = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
         ball->SetMaterialSurface(mat);
 
         ball->SetIdentifier(ballId++);

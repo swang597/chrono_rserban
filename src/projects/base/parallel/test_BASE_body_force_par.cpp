@@ -111,15 +111,15 @@ int main(int argc, char* argv[]) {
     forceFunct.AddPoint(time_end, 0);
 
     if (force_type == BODY_FORCE) {
-        auto drawForce = std::make_shared<ChForce>();
+        auto drawForce = chrono_types::make_shared<ChForce>();
         ball->AddForce(drawForce);
         drawForce->SetMode(ChForce::ForceType::FORCE); // force or torque
         drawForce->SetFrame(ChForce::ReferenceFrame::BODY);
         drawForce->SetAlign(ChForce::AlignmentFrame::WORLD_DIR);
         drawForce->SetVrelpoint(ChVector<>(0, 0, 0));
-        drawForce->SetF_x(std::make_shared<ChFunction_Recorder>(forceFunct));
-        drawForce->SetF_y(std::make_shared<ChFunction_Const>(0));
-        drawForce->SetF_z(std::make_shared<ChFunction_Const>(0));
+        drawForce->SetF_x(chrono_types::make_shared<ChFunction_Recorder>(forceFunct));
+        drawForce->SetF_y(chrono_types::make_shared<ChFunction_Const>(0));
+        drawForce->SetF_z(chrono_types::make_shared<ChFunction_Const>(0));
     }
 
     // Create the visualization window

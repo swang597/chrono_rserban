@@ -63,15 +63,15 @@ void test1() {
     q.Normalize();
 
     // Add angle motor to body1
-    auto fun1 = std::make_shared<ChFunction_Setpoint>();
-    auto joint1 = std::make_shared<ChLinkMotorRotationAngle>();
+    auto fun1 = chrono_types::make_shared<ChFunction_Setpoint>();
+    auto joint1 = chrono_types::make_shared<ChLinkMotorRotationAngle>();
     joint1->Initialize(ground, body1, ChFrame<>(pos1, q));
     joint1->SetAngleFunction(fun1);
     system.AddLink(joint1);
 
     // Add speed motor to body2
-    auto fun2 = std::make_shared<ChFunction_Setpoint>();
-    auto joint2 = std::make_shared<ChLinkMotorRotationSpeed>();
+    auto fun2 = chrono_types::make_shared<ChFunction_Setpoint>();
+    auto joint2 = chrono_types::make_shared<ChLinkMotorRotationSpeed>();
     joint2->Initialize(ground, body2, ChFrame<>(pos2, q));
     joint2->SetSpeedFunction(fun2);
     system.AddLink(joint2);
@@ -125,8 +125,8 @@ void test2() {
     auto frame = ChFrame<>(pos, q);
 
     // Add angle motor
-    auto fun3 = std::make_shared<ChFunction_Setpoint>();
-    auto joint = std::make_shared<ChLinkMotorRotationAngle>();
+    auto fun3 = chrono_types::make_shared<ChFunction_Setpoint>();
+    auto joint = chrono_types::make_shared<ChLinkMotorRotationAngle>();
     joint->Initialize(ground, body, frame);
     joint->SetAngleFunction(fun3);
     system.AddLink(joint);
@@ -135,9 +135,9 @@ void test2() {
     auto F_abs = ChVector<>(0, 5, 0);
     auto d_loc = ChVector<>(1, 0, 0);
 
-    auto container = std::make_shared<ChLoadContainer>();
+    auto container = chrono_types::make_shared<ChLoadContainer>();
     system.Add(container);
-    auto force = std::make_shared<ChLoadBodyForce>(body, F_abs, false, d_loc, true);
+    auto force = chrono_types::make_shared<ChLoadBodyForce>(body, F_abs, false, d_loc, true);
     container->Add(force);
 
     auto F_loc = frame.TransformDirectionParentToLocal(F_abs);   

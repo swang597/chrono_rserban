@@ -95,32 +95,32 @@ int main(int argc, char* argv[]) {
     auto pTP = link->TransformPointParentToLocal(ChVector<>(0.195, 0.448, 0.035));   // tierod loc (Pitman arm side)
     auto pTI = link->TransformPointParentToLocal(ChVector<>(0.195, -0.448, 0.035));  // tierod loc (idler side)
     {
-        auto cyl = std::make_shared<ChCylinderShape>();
+        auto cyl = chrono_types::make_shared<ChCylinderShape>();
         cyl->GetCylinderGeometry().p1 = pP;
         cyl->GetCylinderGeometry().p2 = pI;
         cyl->GetCylinderGeometry().rad = link_radius;
         link->AddAsset(cyl);
-        auto cyl_P = std::make_shared<ChCylinderShape>();
+        auto cyl_P = chrono_types::make_shared<ChCylinderShape>();
         cyl_P->GetCylinderGeometry().p1 = pP;
         cyl_P->GetCylinderGeometry().p2 = pTP;
         cyl_P->GetCylinderGeometry().rad = link_radius;
         link->AddAsset(cyl_P);
-        auto cyl_I = std::make_shared<ChCylinderShape>();
+        auto cyl_I = chrono_types::make_shared<ChCylinderShape>();
         cyl_I->GetCylinderGeometry().p1 = pI;
         cyl_I->GetCylinderGeometry().p2 = pTI;
         cyl_I->GetCylinderGeometry().rad = link_radius;
         link->AddAsset(cyl_I);
-        auto col = std::make_shared<ChColorAsset>();
+        auto col = chrono_types::make_shared<ChColorAsset>();
         col->SetColor(ChColor(0.2f, 0.7f, 0.7f));
         link->AddAsset(col);
     }
 
     // Markers on steering link (at tie-rod connections)
-    auto markerP = std::make_shared<ChMarker>();
+    auto markerP = chrono_types::make_shared<ChMarker>();
     markerP->Impose_Rel_Coord(ChCoordsys<>(pTP));
     link->AddMarker(markerP);
 
-    auto markerI = std::make_shared<ChMarker>();
+    auto markerI = chrono_types::make_shared<ChMarker>();
     markerI->Impose_Rel_Coord(ChCoordsys<>(pTI));
     link->AddMarker(markerI);
 
@@ -138,12 +138,12 @@ int main(int argc, char* argv[]) {
     auto pC = arm->TransformPointParentToLocal(ChVector<>(0, 0.249, 0));      // rev joint loc
     auto pL = arm->TransformPointParentToLocal(ChVector<>(0.129, 0.249, 0));  // univ joint loc
     {
-        auto cyl = std::make_shared<ChCylinderShape>();
+        auto cyl = chrono_types::make_shared<ChCylinderShape>();
         cyl->GetCylinderGeometry().p1 = pC;
         cyl->GetCylinderGeometry().p2 = pL;
         cyl->GetCylinderGeometry().rad = arm_radius;
         arm->AddAsset(cyl);
-        auto col = std::make_shared<ChColorAsset>();
+        auto col = chrono_types::make_shared<ChColorAsset>();
         col->SetColor(ChColor(0.7f, 0.7f, 0.2f));
         arm->AddAsset(col);
     }
@@ -152,7 +152,7 @@ int main(int argc, char* argv[]) {
     // Create joints
     // -------------
 
-    auto revolute = std::make_shared<ChLinkLockRevolute>();
+    auto revolute = chrono_types::make_shared<ChLinkLockRevolute>();
     revolute->Initialize(chassis, arm, ChCoordsys<>(ChVector<>(0, 0.249, 0), QUNIT));
     sys.AddLink(revolute);
 
@@ -161,14 +161,14 @@ int main(int argc, char* argv[]) {
     ChVector<> w(0, 1, 0);  // w = u x v
     ChMatrix33<> rot;
     rot.Set_A_axis(u, v, w);
-    auto universal = std::make_shared<ChLinkUniversal>();
+    auto universal = chrono_types::make_shared<ChLinkUniversal>();
     universal->Initialize(arm, link, ChFrame<>(ChVector<>(0.129, 0.249, 0), rot.Get_A_quaternion()));
     sys.AddLink(universal);
 
     double distance = (ChVector<>(0.129, -0.325, 0) - ChVector<>(0, -0.325, 0)).Length();
-    auto revsph = std::make_shared<ChLinkRevoluteSpherical>();
+    auto revsph = chrono_types::make_shared<ChLinkRevoluteSpherical>();
     revsph->Initialize(chassis, link, ChCoordsys<>(ChVector<>(0, -0.325, 0), QUNIT), distance);
-    revsph->AddAsset(std::make_shared<ChPointPointSegment>());
+    revsph->AddAsset(chrono_types::make_shared<ChPointPointSegment>());
     sys.AddLink(revsph);
 
     // ---------------------
@@ -182,50 +182,50 @@ int main(int argc, char* argv[]) {
     double gear_ratio = 4.0;
 
     // Chassis -- shaftC -- shaftC1 -- shaftA1 -- shaftA -- Arm
-    auto shaftC = std::make_shared<ChShaft>();
+    auto shaftC = chrono_types::make_shared<ChShaft>();
     shaftC->SetInertia(0.01);
     sys.Add(shaftC);
 
-    auto shaftC1 = std::make_shared<ChShaft>();
+    auto shaftC1 = chrono_types::make_shared<ChShaft>();
     shaftC1->SetInertia(0.01);
     sys.Add(shaftC1);
 
-    auto shaftA1 = std::make_shared<ChShaft>();
+    auto shaftA1 = chrono_types::make_shared<ChShaft>();
     shaftA1->SetInertia(0.01);
     sys.Add(shaftA1);
 
-    auto shaftA = std::make_shared<ChShaft>();
+    auto shaftA = chrono_types::make_shared<ChShaft>();
     shaftA->SetInertia(0.01);
     sys.Add(shaftA);
 
     // Rigidly attach shaftA to the arm body
-    auto shaft_arm = std::make_shared<ChShaftsBody>();
+    auto shaft_arm = chrono_types::make_shared<ChShaftsBody>();
     shaft_arm->Initialize(shaftA, arm, ChVector<>(0, 0, 1));
     sys.Add(shaft_arm);
 
     // Rigidly attach shaftC to the chassis body
-    auto shaft_chassis = std::make_shared<ChShaftsBody>();
+    auto shaft_chassis = chrono_types::make_shared<ChShaftsBody>();
     shaft_chassis->Initialize(shaftC, chassis, ChVector<>(0, 0, 1));
     sys.Add(shaft_chassis);
 
     // A motor (for steering input) between shaftC and shaftC1
-    auto shaft_motor = std::make_shared<ChShaftsMotorAngle>();
+    auto shaft_motor = chrono_types::make_shared<ChShaftsMotorAngle>();
     shaft_motor->Initialize(shaftC, shaftC1);
-    auto motor_fun = std::make_shared<ChFunction_Setpoint>();
+    auto motor_fun = chrono_types::make_shared<ChFunction_Setpoint>();
     shaft_motor->SetAngleFunction(motor_fun);
     sys.Add(shaft_motor);
 
     // A compliant or a rigid connection between shaftA1 and shaftC1
     if (rigid) {
         // Use a geear couple with ratio=1
-        auto rigid_connection = std::make_shared<ChShaftsGear>();
+        auto rigid_connection = chrono_types::make_shared<ChShaftsGear>();
         rigid_connection->SetTransmissionRatio(1.0);
         rigid_connection->Initialize(shaftA1, shaftC1);
         sys.Add(rigid_connection);
         cout << "RIGID" << endl;
     } else {
         // Use a torsional spring between shaftA1 and shaftC1
-        auto spring_connection = std::make_shared<ChShaftsTorsionSpring>();
+        auto spring_connection = chrono_types::make_shared<ChShaftsTorsionSpring>();
         spring_connection->SetTorsionalStiffness(2 * CH_C_RAD_TO_DEG);
         ////spring_connection->SetTorsionalDamping(10);
         spring_connection->Initialize(shaftC1, shaftA1);
@@ -235,7 +235,7 @@ int main(int argc, char* argv[]) {
 
     // A reduction gear between shaftA and shaftA1
     // (note order of connected shafts for gear_ratio > 1)
-    auto shaft_gear = std::make_shared<ChShaftsGear>();
+    auto shaft_gear = chrono_types::make_shared<ChShaftsGear>();
     shaft_gear->SetTransmissionRatio(gear_ratio);
     shaft_gear->Initialize(shaftA, shaftA1);
     sys.Add(shaft_gear);

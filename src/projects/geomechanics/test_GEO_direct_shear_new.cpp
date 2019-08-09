@@ -105,7 +105,7 @@ double shear_time = shear_displacement / shear_velocity;
 double box_thick = 1.5 * shear_displacement;  // Thickness of walls so that no material spills during shearing
 
 void AddBox(ChSystemParallel& m_sys, std::shared_ptr<ChBody>& top) {
-    auto box_mat = std::make_shared<ChMaterialSurfaceNSC>();
+    auto box_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
     box_mat->SetFriction(box_mu);
     box_mat->SetRestitution(box_cr);
 
@@ -161,7 +161,7 @@ void AddPlate(ChSystemParallelNSC& m_sys,
               std::shared_ptr<ChBody>& plate,
               std::shared_ptr<ChBody>& top,
               double plate_bottom) {
-    auto box_mat = std::make_shared<ChMaterialSurfaceNSC>();
+    auto box_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
     box_mat->SetFriction(box_mu);
     box_mat->SetRestitution(box_cr);
 
@@ -185,7 +185,7 @@ void AddPlate(ChSystemParallelNSC& m_sys,
     plate->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(1);
     m_sys.AddBody(plate);
 
-    auto prismatic_plate_box = std::make_shared<ChLinkLockPrismatic>();
+    auto prismatic_plate_box = chrono_types::make_shared<ChLinkLockPrismatic>();
     prismatic_plate_box->Initialize(plate, top, ChCoordsys<>(ChVector<>(0, 0, 0), QUNIT));
     m_sys.AddLink(prismatic_plate_box);
 }
@@ -200,9 +200,9 @@ void AddMotor(ChSystemParallelNSC& m_sys,
     ground->SetPos(ChVector<>(0, 0, 0));
     m_sys.AddBody(ground);
 
-    auto pos_func = std::make_shared<ChFunction_Setpoint>();
+    auto pos_func = chrono_types::make_shared<ChFunction_Setpoint>();
 
-    motor = std::make_shared<ChLinkMotorLinearPosition>();
+    motor = chrono_types::make_shared<ChLinkMotorLinearPosition>();
     motor->Initialize(top, ground, ChFrame<>(ChVector<>(0, 0, hz / 2), QUNIT));
     motor->SetMotionFunction(pos_func);
     m_sys.AddLink(motor);
@@ -212,13 +212,13 @@ void FixPlate(ChSystemParallelNSC& m_sys, std::shared_ptr<ChBody>& plate, std::s
     ChQuaternion<> z2y;
     z2y.Q_from_AngAxis(-CH_C_PI / 2, ChVector<>(1, 0, 0));
 
-    auto pin = std::make_shared<ChLinkLockPrismatic>();
+    auto pin = chrono_types::make_shared<ChLinkLockPrismatic>();
     pin->Initialize(plate, top, ChCoordsys<>(ChVector<>(0, 0, 0), z2y));
     m_sys.AddLink(pin);
 }
 
 size_t AddParticles(ChSystemParallelNSC& m_sys, ChVector<> box_center, ChVector<> hdims) {
-    auto sphere_mat = std::make_shared<ChMaterialSurfaceNSC>();
+    auto sphere_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
     sphere_mat->SetFriction(sphere_mu);
     sphere_mat->SetRestitution(sphere_cr);
 

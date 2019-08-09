@@ -31,7 +31,7 @@ namespace robosimian {
 GroundGranular::GroundGranular(ChSystemParallel* sys) : m_sys(sys), m_num_particles(0), m_radius(0), m_num_layers(0) {}
 
 GroundGranularA::GroundGranularA(ChSystemParallel* sys) : GroundGranular(sys) {
-    m_terrain = std::make_shared<vehicle::GranularTerrain>(sys);
+    m_terrain = chrono_types::make_shared<vehicle::GranularTerrain>(sys);
 }
 
 GroundGranularB::GroundGranularB(ChSystemParallel* sys) : GroundGranular(sys) {
@@ -68,7 +68,7 @@ void GroundGranular::Initialize(double x_min, double z_max, double step_size) {
 
     switch (m_sys->GetContactMethod()) {
         case ChMaterialSurface::SMC: {
-            auto mat_c = std::make_shared<ChMaterialSurfaceSMC>();
+            auto mat_c = chrono_types::make_shared<ChMaterialSurfaceSMC>();
             mat_c->SetFriction(0.0f);
             mat_c->SetRestitution(0.0f);
             mat_c->SetYoungModulus(8e5f);
@@ -80,7 +80,7 @@ void GroundGranular::Initialize(double x_min, double z_max, double step_size) {
             mat_c->SetGt(4.0e1f);
             m_material_c = mat_c;
 
-            auto mat_g = std::make_shared<ChMaterialSurfaceSMC>();
+            auto mat_g = chrono_types::make_shared<ChMaterialSurfaceSMC>();
             mat_g->SetFriction(static_cast<float>(m_friction));
             mat_g->SetRestitution(0.0f);
             mat_g->SetYoungModulus(8e5f);
@@ -95,13 +95,13 @@ void GroundGranular::Initialize(double x_min, double z_max, double step_size) {
             break;
         }
         case ChMaterialSurface::NSC: {
-            auto mat_c = std::make_shared<ChMaterialSurfaceNSC>();
+            auto mat_c = chrono_types::make_shared<ChMaterialSurfaceNSC>();
             mat_c->SetFriction(0.0f);
             mat_c->SetRestitution(0.0f);
             mat_c->SetCohesion(0.0f);
             m_material_c = mat_c;
 
-            auto mat_g = std::make_shared<ChMaterialSurfaceNSC>();
+            auto mat_g = chrono_types::make_shared<ChMaterialSurfaceNSC>();
             mat_g->SetFriction(static_cast<float>(m_friction));
             mat_g->SetRestitution(0.0f);
             mat_g->SetCohesion(static_cast<float>(coh_force * step_size));

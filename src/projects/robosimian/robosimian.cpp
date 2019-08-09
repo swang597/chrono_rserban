@@ -248,13 +248,13 @@ class InertiaConverter {
         ChMatrix33<> Jc = J - offset * mass;
 
         // Extract centroidal moments and products of inertia
-        m_inertia_xx.x() = Jc.Get33Element(0, 0);
-        m_inertia_xx.y() = Jc.Get33Element(1, 1);
-        m_inertia_xx.z() = Jc.Get33Element(2, 2);
+        m_inertia_xx.x() = Jc(0, 0);
+        m_inertia_xx.y() = Jc(1, 1);
+        m_inertia_xx.z() = Jc(2, 2);
 
-        m_inertia_xy.x() = Jc.Get33Element(0, 1);
-        m_inertia_xy.y() = Jc.Get33Element(0, 2);
-        m_inertia_xy.z() = Jc.Get33Element(1, 2);
+        m_inertia_xy.x() = Jc(0, 1);
+        m_inertia_xy.y() = Jc(0, 2);
+        m_inertia_xy.z() = Jc(1, 2);
 
         /*
         std::cout << mass <<                                                            // mass
@@ -450,19 +450,19 @@ void RoboSimian::Create(bool has_sled, bool fixed) {
         collision::ChCollisionModel::SetDefaultSuggestedMargin(0.005);
     }
 
-    m_chassis = std::make_shared<Chassis>("chassis", m_system, fixed);
+    m_chassis = chrono_types::make_shared<Chassis>("chassis", m_system, fixed);
 
     if (has_sled)
-        m_sled = std::make_shared<Sled>("sled", m_system);
+        m_sled = chrono_types::make_shared<Sled>("sled", m_system);
 
-    m_limbs.push_back(std::make_shared<Limb>("limb1", FR, front_links, m_system));
-    m_limbs.push_back(std::make_shared<Limb>("limb2", RR, rear_links, m_system));
-    m_limbs.push_back(std::make_shared<Limb>("limb3", RL, rear_links, m_system));
-    m_limbs.push_back(std::make_shared<Limb>("limb4", FL, front_links, m_system));
+    m_limbs.push_back(chrono_types::make_shared<Limb>("limb1", FR, front_links, m_system));
+    m_limbs.push_back(chrono_types::make_shared<Limb>("limb2", RR, rear_links, m_system));
+    m_limbs.push_back(chrono_types::make_shared<Limb>("limb3", RL, rear_links, m_system));
+    m_limbs.push_back(chrono_types::make_shared<Limb>("limb4", FL, front_links, m_system));
 
     // The differential-drive wheels will be removed from robosimian
-    ////m_wheel_left = std::make_shared<WheelDD>("dd_wheel_left", 2, m_system);
-    ////m_wheel_right = std::make_shared<WheelDD>("dd_wheel_right", 3, m_system);
+    ////m_wheel_left = chrono_types::make_shared<WheelDD>("dd_wheel_left", 2, m_system);
+    ////m_wheel_right = chrono_types::make_shared<WheelDD>("dd_wheel_right", 3, m_system);
 
     // Default visualization: COLLISION shapes
     SetVisualizationTypeChassis(VisualizationType::COLLISION);
@@ -797,17 +797,17 @@ void Part::AddVisualizationAssets(VisualizationType vis) {
     if (vis == VisualizationType::NONE)
         return;
 
-    auto col = std::make_shared<ChColorAsset>();
+    auto col = chrono_types::make_shared<ChColorAsset>();
     col->SetColor(m_color);
     m_body->AddAsset(col);
 
     if (vis == VisualizationType::MESH) {
         std::string vis_mesh_file = "robosimian/obj/" + m_mesh_name + ".obj";
-        auto trimesh = std::make_shared<geometry::ChTriangleMeshConnected>();
+        auto trimesh = chrono_types::make_shared<geometry::ChTriangleMeshConnected>();
         trimesh->LoadWavefrontMesh(GetChronoDataFile(vis_mesh_file), true, false);
         //// HACK: a trimesh visual asset ignores transforms! Explicitly offset vertices.
         trimesh->Transform(m_offset, ChMatrix33<>(1));
-        auto trimesh_shape = std::make_shared<ChTriangleMeshShape>();
+        auto trimesh_shape = chrono_types::make_shared<ChTriangleMeshShape>();
         trimesh_shape->SetMesh(trimesh);
         trimesh_shape->SetName(m_mesh_name);
         ////trimesh_shape->Pos = m_offset;
@@ -817,7 +817,7 @@ void Part::AddVisualizationAssets(VisualizationType vis) {
     }
 
     for (auto box : m_boxes) {
-        auto box_shape = std::make_shared<ChBoxShape>();
+        auto box_shape = chrono_types::make_shared<ChBoxShape>();
         box_shape->GetBoxGeometry().SetLengths(box.m_dims);
         box_shape->Pos = box.m_pos;
         box_shape->Rot = box.m_rot;
@@ -830,7 +830,7 @@ void Part::AddVisualizationAssets(VisualizationType vis) {
         ChCoordsys<> csys(cyl.m_pos, cyl.m_rot);
         ChVector<> p1 = csys * ChVector<>(0, cyl.m_length / 2, 0);
         ChVector<> p2 = csys * ChVector<>(0, -cyl.m_length / 2, 0);
-        auto cyl_shape = std::make_shared<ChCylinderShape>();
+        auto cyl_shape = chrono_types::make_shared<ChCylinderShape>();
         cyl_shape->GetCylinderGeometry().rad = cyl.m_radius;
         cyl_shape->GetCylinderGeometry().p1 = p1;
         cyl_shape->GetCylinderGeometry().p2 = p2;
@@ -838,7 +838,7 @@ void Part::AddVisualizationAssets(VisualizationType vis) {
     }
 
     for (auto sphere : m_spheres) {
-        auto sphere_shape = std::make_shared<ChSphereShape>();
+        auto sphere_shape = chrono_types::make_shared<ChSphereShape>();
         sphere_shape->GetSphereGeometry().rad = sphere.m_radius;
         sphere_shape->Pos = sphere.m_pos;
         m_body->AddAsset(sphere_shape);
@@ -846,11 +846,11 @@ void Part::AddVisualizationAssets(VisualizationType vis) {
 
     for (auto mesh : m_meshes) {
         std::string vis_mesh_file = "robosimian/obj/" + mesh.m_name + ".obj";
-        auto trimesh = std::make_shared<geometry::ChTriangleMeshConnected>();
+        auto trimesh = chrono_types::make_shared<geometry::ChTriangleMeshConnected>();
         trimesh->LoadWavefrontMesh(GetChronoDataFile(vis_mesh_file), true, false);
         //// HACK: a trimesh visual asset ignores transforms! Explicitly offset vertices.
         trimesh->Transform(mesh.m_pos, ChMatrix33<>(mesh.m_rot));
-        auto trimesh_shape = std::make_shared<ChTriangleMeshShape>();
+        auto trimesh_shape = chrono_types::make_shared<ChTriangleMeshShape>();
         trimesh_shape->SetMesh(trimesh);
         trimesh_shape->SetName(mesh.m_name);
         ////trimesh_shape->Pos = m_offset;
@@ -874,7 +874,7 @@ void Part::AddCollisionShapes() {
     }
     for (auto mesh : m_meshes) {
         std::string vis_mesh_file = "robosimian/obj/" + mesh.m_name + ".obj";
-        auto trimesh = std::make_shared<geometry::ChTriangleMeshConnected>();
+        auto trimesh = chrono_types::make_shared<geometry::ChTriangleMeshConnected>();
         trimesh->LoadWavefrontMesh(GetChronoDataFile(vis_mesh_file), false, false);
         switch (mesh.m_type) {
             case MeshShape::CONVEX_HULL:
@@ -1010,7 +1010,7 @@ void Sled::Initialize(std::shared_ptr<ChBodyAuxRef> chassis, const ChVector<>& x
     m_body->SetCollide(m_collide);
 
     // Add joint (weld)
-    auto joint = std::make_shared<ChLinkLockLock>();
+    auto joint = chrono_types::make_shared<ChLinkLockLock>();
     joint->Initialize(chassis, m_body, calcJointFrame(X_GC, ChVector<>(1, 0, 0)));
     chassis->GetSystem()->AddLink(joint);
 }
@@ -1064,7 +1064,7 @@ void WheelDD::Initialize(std::shared_ptr<ChBodyAuxRef> chassis, const ChVector<>
     m_body->SetCollide(true);
 
     // Add joint
-    auto joint = std::make_shared<ChLinkLockRevolute>();
+    auto joint = chrono_types::make_shared<ChLinkLockRevolute>();
     joint->Initialize(chassis, m_body, calcJointFrame(X_GC, ChVector<>(0, 0, 1)));
     chassis->GetSystem()->AddLink(joint);
 }
@@ -1074,7 +1074,7 @@ void WheelDD::Initialize(std::shared_ptr<ChBodyAuxRef> chassis, const ChVector<>
 Limb::Limb(const std::string& name, LimbID id, const LinkData data[], ChSystem* system)
     : m_name(name), m_id(id), m_collide_links(false), m_collide_wheel(true) {
     for (int i = 0; i < num_links; i++) {
-        auto link = std::make_shared<Part>(m_name + "_" + data[i].name, system);
+        auto link = chrono_types::make_shared<Part>(m_name + "_" + data[i].name, system);
 
         double mass = data[i].link.m_mass;
         ChVector<> com = data[i].link.m_com;
@@ -1152,7 +1152,7 @@ void Limb::Initialize(std::shared_ptr<ChBodyAuxRef> chassis,
 
         // Weld joints
         if (joints[i].fixed) {
-            auto joint = std::make_shared<ChLinkLockLock>();
+            auto joint = chrono_types::make_shared<ChLinkLockLock>();
             joint->SetNameString(m_name + "_" + joints[i].name);
             joint->Initialize(parent_body, child_body, calcJointFrame(X_GC, joints[i].axis));
             chassis->GetSystem()->AddLink(joint);
@@ -1162,8 +1162,8 @@ void Limb::Initialize(std::shared_ptr<ChBodyAuxRef> chassis,
 
         // Actuated joints (except the wheel motor joint)
         if (joints[i].name.compare("joint8") != 0) {
-            auto motor_fun = std::make_shared<ChFunction_Setpoint>();
-            auto joint = std::make_shared<ChLinkMotorRotationAngle>();
+            auto motor_fun = chrono_types::make_shared<ChFunction_Setpoint>();
+            auto joint = chrono_types::make_shared<ChLinkMotorRotationAngle>();
             joint->SetNameString(m_name + "_" + joints[i].name);
             joint->Initialize(parent_body, child_body, ChFrame<>(calcJointFrame(X_GC, joints[i].axis)));
             joint->SetAngleFunction(motor_fun);
@@ -1175,8 +1175,8 @@ void Limb::Initialize(std::shared_ptr<ChBodyAuxRef> chassis,
 
         // Wheel motor joint
         if (wheel_mode == ActuationMode::SPEED) {
-            auto motor_fun = std::make_shared<ChFunction_Setpoint>();
-            auto joint = std::make_shared<ChLinkMotorRotationSpeed>();
+            auto motor_fun = chrono_types::make_shared<ChFunction_Setpoint>();
+            auto joint = chrono_types::make_shared<ChLinkMotorRotationSpeed>();
             joint->SetNameString(m_name + "_" + joints[i].name);
             joint->Initialize(parent_body, child_body, ChFrame<>(calcJointFrame(X_GC, joints[i].axis)));
             joint->SetSpeedFunction(motor_fun);
@@ -1185,8 +1185,8 @@ void Limb::Initialize(std::shared_ptr<ChBodyAuxRef> chassis,
             m_motors.insert(std::make_pair(joints[i].name, joint));
             m_wheel_motor = joint;
         } else {
-            auto motor_fun = std::make_shared<ChFunction_Setpoint>();
-            auto joint = std::make_shared<ChLinkMotorRotationAngle>();
+            auto motor_fun = chrono_types::make_shared<ChFunction_Setpoint>();
+            auto joint = chrono_types::make_shared<ChLinkMotorRotationAngle>();
             joint->SetNameString(m_name + "_" + joints[i].name);
             joint->Initialize(parent_body, child_body, ChFrame<>(calcJointFrame(X_GC, joints[i].axis)));
             joint->SetAngleFunction(motor_fun);
@@ -1209,7 +1209,7 @@ void Limb::SetVisualizationType(VisualizationType vis) {
     for (auto link : m_links)
         link.second->SetVisualizationType(vis);
 
-    auto texture = std::make_shared<ChTexture>();
+    auto texture = chrono_types::make_shared<ChTexture>();
     texture->SetTextureFilename(GetChronoDataFile("greenwhite.png"));
     m_wheel->m_body->AddAsset(texture);
 }

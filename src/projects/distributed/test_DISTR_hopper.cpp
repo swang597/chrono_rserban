@@ -220,12 +220,12 @@ void Monitor(chrono::ChSystemParallel* system, int rank) {
 std::shared_ptr<ChBoundary> AddContainer(ChSystemDistributed* sys) {
     int binId = -200;
 
-    auto mat = std::make_shared<ChMaterialSurfaceSMC>();
+    auto mat = chrono_types::make_shared<ChMaterialSurfaceSMC>();
     mat->SetYoungModulus(Y);
     mat->SetFriction(mu);
     mat->SetRestitution(cr);
 
-    auto bin = std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
+    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
     bin->SetMaterialSurface(mat);
     bin->SetIdentifier(binId);
     bin->SetMass(1);
@@ -234,7 +234,7 @@ std::shared_ptr<ChBoundary> AddContainer(ChSystemDistributed* sys) {
     bin->SetBodyFixed(true);
     sys->AddBodyAllRanks(bin);
 
-    auto cb = std::make_shared<ChBoundary>(bin);
+    auto cb = chrono_types::make_shared<ChBoundary>(bin);
     // Sloped Wall
     cb->AddPlane(ChFrame<>(ChVector<>(settling_gap + dx / 2, 0, height / 2), Q_from_AngY(-slope_angle)),
                  ChVector2<>(std::sqrt(dx * dx + height * height), 2.01 * hy));
@@ -259,7 +259,7 @@ std::shared_ptr<ChBody> CreateBall(const ChVector<>& pos,
                                    std::shared_ptr<ChMaterialSurfaceSMC> ballMat,
                                    int& ballId,
                                    double r) {
-    auto ball = std::make_shared<ChBody>(std::make_shared<ChCollisionModelDistributed>(), ChMaterialSurface::SMC);
+    auto ball = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelDistributed>(), ChMaterialSurface::SMC);
     ball->SetMaterialSurface(ballMat);
     ball->SetIdentifier(ballId++);
     double mass = GetMass(r);
@@ -280,7 +280,7 @@ std::shared_ptr<ChBody> CreateBall(const ChVector<>& pos,
 size_t AddFallingBalls(ChSystemDistributed* sys) {
     utils::HCPSampler<> sampler(spacing);
     size_t count = 0;
-    auto ballMat = std::make_shared<ChMaterialSurfaceSMC>();
+    auto ballMat = chrono_types::make_shared<ChMaterialSurfaceSMC>();
     ballMat->SetYoungModulus(Y);
     ballMat->SetFriction(mu);
     ballMat->SetRestitution(cr);
@@ -309,7 +309,7 @@ size_t AddLayerOfBalls(ChSystemDistributed* sys) {
     std::cout << "LAYER\n";
     utils::HCPSampler<> sampler(spacing);
     size_t count = 0;
-    auto ballMat = std::make_shared<ChMaterialSurfaceSMC>();
+    auto ballMat = chrono_types::make_shared<ChMaterialSurfaceSMC>();
     ballMat->SetYoungModulus(Y);
     ballMat->SetFriction(mu);
     ballMat->SetRestitution(cr);

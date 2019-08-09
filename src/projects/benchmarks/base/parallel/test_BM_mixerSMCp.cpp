@@ -65,7 +65,7 @@ MixerTestSMC<N>::MixerTestSMC() : m_system(new ChSystemParallelSMC()), m_step(5e
     int num_layers = (N + 24) / 25;
 
     // Create a common material
-    auto mat = std::make_shared<ChMaterialSurfaceSMC>();
+    auto mat = chrono_types::make_shared<ChMaterialSurfaceSMC>();
     mat->SetFriction(0.4f);
     mat->SetYoungModulus(2e5f);
     mat->SetRestitution(0.1f);
@@ -74,7 +74,7 @@ MixerTestSMC<N>::MixerTestSMC() : m_system(new ChSystemParallelSMC()), m_step(5e
     auto bin = utils::CreateBoxContainer(m_system, -100, mat, ChVector<>(1, 1, 0.1 + 0.4 * num_layers * radius), 0.1);
 
     // The rotating mixer body (1.6 x 0.2 x 0.4)
-    auto mixer = std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>());
+    auto mixer = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
     mixer->SetMaterialSurface(mat);
     mixer->SetIdentifier(-200);
     mixer->SetMass(10.0);
@@ -88,9 +88,9 @@ MixerTestSMC<N>::MixerTestSMC() : m_system(new ChSystemParallelSMC()), m_step(5e
     m_system->AddBody(mixer);
 
     // Create a motor between the two bodies, constrained to rotate at 90 deg/s
-    auto motor = std::make_shared<ChLinkMotorRotationAngle>();
+    auto motor = chrono_types::make_shared<ChLinkMotorRotationAngle>();
     motor->Initialize(mixer, bin, ChFrame<>(ChVector<>(0, 0, 0), ChQuaternion<>(1, 0, 0, 0)));
-    motor->SetAngleFunction(std::make_shared<ChFunction_Ramp>(0, CH_C_PI / 2));
+    motor->SetAngleFunction(chrono_types::make_shared<ChFunction_Ramp>(0, CH_C_PI / 2));
     m_system->AddLink(motor);
 
     // Create the balls
@@ -101,7 +101,7 @@ MixerTestSMC<N>::MixerTestSMC() : m_system(new ChSystemParallelSMC()), m_step(5e
         double height = 1 + 2.01 * radius * il;
         for (int ix = -2; ix < 3; ix++) {
             for (int iy = -2; iy < 3; iy++) {
-                auto ball = std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>());
+                auto ball = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
                 ball->SetMaterialSurface(mat);
                 ball->SetIdentifier(num_balls);
                 ball->SetMass(mass);

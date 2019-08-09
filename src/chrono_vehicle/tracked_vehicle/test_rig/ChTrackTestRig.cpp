@@ -84,6 +84,8 @@ ChTrackTestRig::ChTrackTestRig(const std::string& filename,
       m_create_track(create_track),
       m_ride_height(-1),
       m_max_torque(0),
+      m_displ_limit(0),
+      m_driver_logfile(""),
       m_collide_flags(0xFFFF),
       m_vis_sprocket(VisualizationType::NONE),
       m_vis_idler(VisualizationType::NONE),
@@ -111,9 +113,9 @@ ChTrackTestRig::ChTrackTestRig(const std::string& filename,
 
     // Create the track assembly from the specified JSON file.
     if (subtype.compare("TrackAssemblySinglePin") == 0) {
-        m_track = std::make_shared<TrackAssemblySinglePin>(d);
+        m_track = chrono_types::make_shared<TrackAssemblySinglePin>(d);
     } else if (subtype.compare("TrackAssemblyDoublePin") == 0) {
-        m_track = std::make_shared<TrackAssemblyDoublePin>(d);
+        m_track = chrono_types::make_shared<TrackAssemblyDoublePin>(d);
     }
     GetLog() << "Loaded JSON: " << filename.c_str() << "\n";
 
@@ -128,6 +130,8 @@ ChTrackTestRig::ChTrackTestRig(std::shared_ptr<ChTrackAssembly> assembly,
       m_track(assembly),
       m_ride_height(-1),
       m_max_torque(0),
+      m_displ_limit(0),
+      m_driver_logfile(""),
       m_collide_flags(0xFFFF),
       m_vis_sprocket(VisualizationType::NONE),
       m_vis_idler(VisualizationType::NONE),
@@ -139,7 +143,7 @@ ChTrackTestRig::ChTrackTestRig(std::shared_ptr<ChTrackAssembly> assembly,
 
 void ChTrackTestRig::Create() {
     // Create the chassis subsystem
-    m_chassis = std::make_shared<ChTrackTestRigChassis>();
+    m_chassis = chrono_types::make_shared<ChTrackTestRigChassis>();
     m_chassis->Initialize(m_system, ChCoordsys<>(), 0);
     m_chassis->SetFixed(true);
 
@@ -183,9 +187,9 @@ void ChTrackTestRig::Create() {
 
         AddPostVisualization(post, m_chassis->GetBody(), ChColor(0.1f, 0.8f, 0.15f));
 
-        auto linact = std::make_shared<ChLinkMotorLinearPosition>();
+        auto linact = chrono_types::make_shared<ChLinkMotorLinearPosition>();
         linact->SetNameString("post_actuator");
-        linact->SetMotionFunction(std::make_shared<ChFunction_Const>());
+        linact->SetMotionFunction(chrono_types::make_shared<ChFunction_Const>());
         linact->Initialize(m_chassis->GetBody(), post, ChFrame<>(ChVector<>(post_pos), Q_from_AngY(CH_C_PI_2)));
         m_system->AddLink(linact);
 
@@ -201,10 +205,8 @@ void ChTrackTestRig::Initialize() {
 
     // Calculate post displacement offset (if any) to set reference position at specified ride height
     m_displ_offset = 0;
-    m_displ_delay = 0;
     if (m_ride_height > 0) {
         m_displ_offset = -m_ride_height - m_post[LEFT]->GetPos().z();
-        m_displ_delay = 0.2;
     }
 
     // Set visualization modes
@@ -226,10 +228,17 @@ void ChTrackTestRig::Initialize() {
     bool collide_shoes = (m_collide_flags & static_cast<int>(TrackedCollisionFlag::SHOES_LEFT)) != 0;
     for (size_t i = 0; i < m_track->GetNumTrackShoes(); ++i)
         m_track->GetTrackShoe(i)->SetCollide(collide_shoes);
- 
+
+    // Post locations (in X direction)
+    std::vector<double> locations;
+    for (int i = 0; i < m_post.size(); i++) {
+        locations.push_back(m_post[i]->GetPos().x());
+    }
+
     // Initialize the driver system
     m_driver->SetTimeDelay(m_displ_delay);
-    m_driver->Initialize(m_post.size());
+    m_driver->Initialize(m_post.size(), locations);
+    m_driver->LogInit(m_driver_logfile);
 }
 
 // -----------------------------------------------------------------------------
@@ -263,8 +272,6 @@ double ChTrackTestRig::GetRideHeight() const {
 // -----------------------------------------------------------------------------
 void ChTrackTestRig::Advance(double step) {
     double time = GetChTime();
-
-    m_displ_limit = 0.2;
 
     // Driver inputs
     std::vector<double> displ(m_post.size(), 0.0);
@@ -310,6 +317,13 @@ double ChTrackTestRig::GetMass() const {
 }
 
 // -----------------------------------------------------------------------------
+// Log driver inputs
+// -----------------------------------------------------------------------------
+void ChTrackTestRig::LogDriverInputs() {
+    m_driver->Log(GetChTime());
+}
+
+// -----------------------------------------------------------------------------
 // Log constraint violations
 // -----------------------------------------------------------------------------
 void ChTrackTestRig::LogConstraintViolations() {
@@ -326,25 +340,25 @@ void ChTrackTestRig::AddPostVisualization(std::shared_ptr<ChBody> post,
                                        std::shared_ptr<ChBody> chassis,
                                        const ChColor& color) {
     // Platform (on post body)
-    auto base_cyl = std::make_shared<ChCylinderShape>();
+    auto base_cyl = chrono_types::make_shared<ChCylinderShape>();
     base_cyl->GetCylinderGeometry().rad = m_post_radius;
     base_cyl->GetCylinderGeometry().p1 = ChVector<>(0, 0, 0);
     base_cyl->GetCylinderGeometry().p2 = ChVector<>(0, 0, -2 * m_post_hheight);
     post->AddAsset(base_cyl);
 
-    auto col = std::make_shared<ChColorAsset>();
+    auto col = chrono_types::make_shared<ChColorAsset>();
     col->SetColor(color);
     post->AddAsset(col);
 
     // Piston (on post body)
-    auto piston = std::make_shared<ChCylinderShape>();
+    auto piston = chrono_types::make_shared<ChCylinderShape>();
     piston->GetCylinderGeometry().rad = m_post_radius / 6.0;
     piston->GetCylinderGeometry().p1 = ChVector<>(0, 0, -2 * m_post_hheight);
     piston->GetCylinderGeometry().p2 = ChVector<>(0, 0, -30 * m_post_hheight);
     post->AddAsset(piston);
 
     // Post sleeve (on chassis/ground body)
-    auto cyl = std::make_shared<ChCylinderShape>();
+    auto cyl = chrono_types::make_shared<ChCylinderShape>();
     cyl->GetCylinderGeometry().rad = m_post_radius / 4.0;
     cyl->GetCylinderGeometry().p1 = post->GetPos() - ChVector<>(0, 0, 16 * m_post_hheight);
     cyl->GetCylinderGeometry().p2 = post->GetPos() - ChVector<>(0, 0, 32 * m_post_hheight);

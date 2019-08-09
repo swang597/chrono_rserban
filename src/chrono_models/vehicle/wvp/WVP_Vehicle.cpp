@@ -50,14 +50,14 @@ void WVP_Vehicle::Create(bool fixed, SteeringType steering_model, ChassisCollisi
     // -------------------------------------------
     // Create the chassis subsystem
     // -------------------------------------------
-    m_chassis = std::make_shared<WVP_Chassis>("Chassis", fixed, chassis_collision_type);
+    m_chassis = chrono_types::make_shared<WVP_Chassis>("Chassis", fixed, chassis_collision_type);
 
     // -------------------------------------------
     // Create the suspension subsystems
     // -------------------------------------------
     m_suspensions.resize(2);
-    m_suspensions[0] = std::make_shared<WVP_DoubleWishboneFront>("FrontSusp");
-    m_suspensions[1] = std::make_shared<WVP_DoubleWishboneRear>("RearSusp");
+    m_suspensions[0] = chrono_types::make_shared<WVP_DoubleWishboneFront>("FrontSusp");
+    m_suspensions[1] = chrono_types::make_shared<WVP_DoubleWishboneRear>("RearSusp");
 
     // -----------------------------
     // Create the steering subsystem
@@ -65,11 +65,11 @@ void WVP_Vehicle::Create(bool fixed, SteeringType steering_model, ChassisCollisi
     m_steerings.resize(1);
     switch (steering_model) {
         case SteeringType::PITMAN_ARM:
-            m_steerings[0] = std::make_shared<WVP_PitmanArm>("Steering");
+            m_steerings[0] = chrono_types::make_shared<WVP_PitmanArm>("Steering");
             break;
         case SteeringType::PITMAN_ARM_SHAFTS:
-            m_steerings[0] = std::make_shared<WVP_PitmanArmShafts>("Steering", false);
-            ////m_steerings[0] = std::make_shared<WVP_PitmanArmShafts>("Steering", true);
+            m_steerings[0] = chrono_types::make_shared<WVP_PitmanArmShafts>("Steering", false);
+            ////m_steerings[0] = chrono_types::make_shared<WVP_PitmanArmShafts>("Steering", true);
             break;
     }
 
@@ -77,25 +77,25 @@ void WVP_Vehicle::Create(bool fixed, SteeringType steering_model, ChassisCollisi
     // Create the wheels
     // -----------------
     m_wheels.resize(4);
-    m_wheels[0] = std::make_shared<WVP_WheelLeft>("Wheel_FL");
-    m_wheels[1] = std::make_shared<WVP_WheelRight>("Wheel_FR");
-    m_wheels[2] = std::make_shared<WVP_WheelLeft>("Wheel_RL");
-    m_wheels[3] = std::make_shared<WVP_WheelRight>("Wheel_RR");
+    m_wheels[0] = chrono_types::make_shared<WVP_WheelLeft>("Wheel_FL");
+    m_wheels[1] = chrono_types::make_shared<WVP_WheelRight>("Wheel_FR");
+    m_wheels[2] = chrono_types::make_shared<WVP_WheelLeft>("Wheel_RL");
+    m_wheels[3] = chrono_types::make_shared<WVP_WheelRight>("Wheel_RR");
 
     // --------------------
     // Create the driveline
     // --------------------
-    m_driveline = std::make_shared<WVP_Driveline4WD>("Driveline");
-    // m_driveline = std::make_shared<WVP_SimpleDriveline>("Driveline");
+    m_driveline = chrono_types::make_shared<WVP_Driveline4WD>("Driveline");
+    // m_driveline = chrono_types::make_shared<WVP_SimpleDriveline>("Driveline");
 
     // -----------------
     // Create the brakes
     // -----------------
     m_brakes.resize(4);
-    m_brakes[0] = std::make_shared<WVP_BrakeSimple>("Brake_FL");
-    m_brakes[1] = std::make_shared<WVP_BrakeSimple>("Brake_FR");
-    m_brakes[2] = std::make_shared<WVP_BrakeSimple>("Brake_RL");
-    m_brakes[3] = std::make_shared<WVP_BrakeSimple>("Brake_RR");
+    m_brakes[0] = chrono_types::make_shared<WVP_BrakeSimple>("Brake_FL");
+    m_brakes[1] = chrono_types::make_shared<WVP_BrakeSimple>("Brake_FR");
+    m_brakes[2] = chrono_types::make_shared<WVP_BrakeSimple>("Brake_RL");
+    m_brakes[3] = chrono_types::make_shared<WVP_BrakeSimple>("Brake_RR");
 }
 
 WVP_Vehicle::~WVP_Vehicle() {}

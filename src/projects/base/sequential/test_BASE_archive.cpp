@@ -120,22 +120,22 @@ CH_CLASS_VERSION(Container, 5)
 using namespace chrono;
 
 void write_archive(ChArchiveOut& archive) {
-    auto A = std::make_shared<Object>();
+    auto A = chrono_types::make_shared<Object>();
     A->SetVec(ChVector<>(11, 12, 13));
     A->SetVecU(std::make_unique<ChVector<>>(ChVector<>(1, 2, 3)));
 
     // B with zero vector and empty unique_ptr.
-    auto B = std::make_shared<Object>();
+    auto B = chrono_types::make_shared<Object>();
 
-    auto C = std::make_shared<Container>(A, B);
+    auto C = chrono_types::make_shared<Container>(A, B);
     C->ArchiveOUT(archive);
 }
 
 void read_archive(ChArchiveIn& archive) {
-    auto A = std::make_shared<Object>();
-    auto B = std::make_shared<Object>();
+    auto A = chrono_types::make_shared<Object>();
+    auto B = chrono_types::make_shared<Object>();
 
-    auto C = std::make_shared<Container>(A, B);
+    auto C = chrono_types::make_shared<Container>(A, B);
     C->ArchiveIN(archive);
     C->Print();
 }

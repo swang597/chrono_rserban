@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
     ball_lower->SetBodyFixed(false);
     ball_lower->SetCollide(true);
 
-    ball_lower->AddAsset(std::make_shared<ChColorAsset>(1.0f, 0.0f, 0.0f));
+    ball_lower->AddAsset(chrono_types::make_shared<ChColorAsset>(1.0f, 0.0f, 0.0f));
 
     ball_lower->GetCollisionModel()->ClearModel();
     ball_lower->GetCollisionModel()->SetFamily(3);
@@ -66,7 +66,7 @@ int main(int argc, char* argv[]) {
     ball_upper->SetBodyFixed(false);
     ball_upper->SetCollide(true);
 
-    ball_upper->AddAsset(std::make_shared<ChColorAsset>(0.0f, 1.0f, 0.0f));
+    ball_upper->AddAsset(chrono_types::make_shared<ChColorAsset>(0.0f, 1.0f, 0.0f));
 
     ball_upper->GetCollisionModel()->ClearModel();
     ball_upper->GetCollisionModel()->SetFamily(3);
@@ -85,7 +85,7 @@ int main(int argc, char* argv[]) {
     plate->SetBodyFixed(true);
     plate->SetCollide(true);
 
-    plate->AddAsset(std::make_shared<ChColorAsset>(0.3f, 0.3f, 0.5f));
+    plate->AddAsset(chrono_types::make_shared<ChColorAsset>(0.3f, 0.3f, 0.5f));
 
     plate->GetCollisionModel()->ClearModel();
     utils::AddBoxGeometry(plate.get(), ChVector<>(10 * radius, radius, 10 * radius));

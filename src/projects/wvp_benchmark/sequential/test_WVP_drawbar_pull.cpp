@@ -189,12 +189,12 @@ int main(int argc, char* argv[]) {
     ground->SetCollide(false);
     wvp.GetSystem()->AddBody(ground);
     {
-        auto cyl = std::make_shared<ChCylinderShape>();
+        auto cyl = chrono_types::make_shared<ChCylinderShape>();
         cyl->GetCylinderGeometry().rad = 0.02;
         cyl->GetCylinderGeometry().p1 = ChVector<>(-terrainLength / 2, 0, rigLoc.z());
         cyl->GetCylinderGeometry().p2 = ChVector<>(+terrainLength / 2, 0, rigLoc.z());
         ground->AddAsset(cyl);
-        auto col = std::make_shared<ChColorAsset>(0.2f, 0.3f, 0.6f);
+        auto col = chrono_types::make_shared<ChColorAsset>(0.2f, 0.3f, 0.6f);
         ground->AddAsset(col);
     }
 
@@ -206,16 +206,16 @@ int main(int argc, char* argv[]) {
     rig->SetCollide(false);
     wvp.GetSystem()->AddBody(rig);
     {
-        auto box = std::make_shared<ChBoxShape>();
+        auto box = chrono_types::make_shared<ChBoxShape>();
         box->GetBoxGeometry().SetLengths(ChVector<>(1, 0.4, 0.4));
         rig->AddAsset(box);
     }
 
-    auto prismatic1 = std::make_shared<ChLinkLockPrismatic>();
+    auto prismatic1 = chrono_types::make_shared<ChLinkLockPrismatic>();
     prismatic1->Initialize(ground, rig, ChCoordsys<>(rigLoc, Q_from_AngY(CH_C_PI_2)));
     wvp.GetSystem()->AddLink(prismatic1);
 
-    auto prismatic2 = std::make_shared<ChLinkLockPrismatic>();
+    auto prismatic2 = chrono_types::make_shared<ChLinkLockPrismatic>();
     prismatic2->Initialize(rig, wvp.GetChassisBody(), ChCoordsys<>(rigLoc, QUNIT));
     wvp.GetSystem()->AddLink(prismatic2);
 
@@ -227,8 +227,8 @@ int main(int argc, char* argv[]) {
     // Impose forward vehicle velocity using a ChLinkMotorLinearSpeed
     std::cout << "Use ChLinkMotorLinearSpeed." << std::endl;
 
-    auto fun_vel = std::make_shared<ChFunction_Const>(vel);
-    auto actuator = std::make_shared<ChLinkMotorLinearSpeed>();
+    auto fun_vel = chrono_types::make_shared<ChFunction_Const>(vel);
+    auto actuator = chrono_types::make_shared<ChLinkMotorLinearSpeed>();
     actuator->Initialize(rig, ground, ChFrame<>(rigLoc, QUNIT));
     actuator->SetSpeedFunction(fun_vel);
     wvp.GetSystem()->AddLink(actuator);
@@ -236,8 +236,8 @@ int main(int argc, char* argv[]) {
     // Impose forward vehicle velocity using a ChLinkLinActuator
     std::cout << "Use ChLinkLinActuator." << std::endl;
 
-    auto fun_vel = std::make_shared<ChFunction_Ramp>(0, vel);
-    auto actuator = std::make_shared<ChLinkLinActuator>();
+    auto fun_vel = chrono_types::make_shared<ChFunction_Ramp>(0, vel);
+    auto actuator = chrono_types::make_shared<ChLinkLinActuator>();
     actuator->Set_lin_offset(1);
     actuator->Set_dist_funct(fun_vel);
     actuator->Initialize(ground, rig, false, ChCoordsys<>(rigLoc, QUNIT), ChCoordsys<>(rigLoc + ChVector<>(1, 0, 0), QUNIT));
@@ -256,16 +256,16 @@ int main(int argc, char* argv[]) {
         auto body2 = std::dynamic_pointer_cast<ChBody>(bf2);
 
         auto pos = wheel->GetPos();
-        auto weld = std::make_shared<ChLinkLockLock>();
+        auto weld = chrono_types::make_shared<ChLinkLockLock>();
         weld->Initialize(body1, body2, ChCoordsys<>(pos, QUNIT));
         wvp.GetSystem()->AddLink(weld);
     }
 #else
     // Impose wheel angular velocity
     std::vector<std::shared_ptr<ChLinkMotorRotationSpeed>> motors;
-    auto fun_omg = std::make_shared<ChFunction_Const>(omega);
+    auto fun_omg = chrono_types::make_shared<ChFunction_Const>(omega);
     for (int i = 0; i < 4; i++) {
-        auto motor = std::make_shared<ChLinkMotorRotationSpeed>();
+        auto motor = chrono_types::make_shared<ChLinkMotorRotationSpeed>();
         auto wheel = wvp.GetVehicle().GetWheelBody(i);
         auto pos = wheel->GetPos();
         motor->Initialize(wvp.GetChassisBody(), wheel, ChFrame<>(pos, Q_from_AngX(CH_C_PI_2)));

@@ -90,10 +90,10 @@ int main(int argc, char* argv[]) {
     vehicle.Initialize(ChCoordsys<>(ChVector<>(0, 0, 0), ChQuaternion<>(1, 0, 0, 0)));
 
     // Use rigid wheels to actuate suspension.
-    ////auto tire_L = std::make_shared<WVP_RigidTire>("Left", true);
-    ////auto tire_R = std::make_shared<WVP_RigidTire>("Right", true);
-    auto tire_L = std::make_shared<WVP_TMeasyTire>("Left");
-    auto tire_R = std::make_shared<WVP_TMeasyTire>("Right");
+    ////auto tire_L = chrono_types::make_shared<WVP_RigidTire>("Left", true);
+    ////auto tire_R = chrono_types::make_shared<WVP_RigidTire>("Right", true);
+    auto tire_L = chrono_types::make_shared<WVP_TMeasyTire>("Left");
+    auto tire_R = chrono_types::make_shared<WVP_TMeasyTire>("Right");
 
     // Create and intialize the suspension test rig.
     ChSuspensionTestRig rig(vehicle, axle_index, post_limit, tire_L, tire_R);

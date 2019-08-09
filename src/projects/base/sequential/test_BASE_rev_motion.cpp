@@ -36,24 +36,24 @@ int main(int argc, char* argv[]) {
     auto body1 = std::shared_ptr<ChBody>(my_sys.NewBody());
     body1->SetPos(ChVector<>(-0.5, 0, 0));
     body1->SetBodyFixed(true);
-    auto cyl1 = std::make_shared<ChCylinderShape>();
+    auto cyl1 = chrono_types::make_shared<ChCylinderShape>();
     cyl1->GetCylinderGeometry().p1 = ChVector<>(-0.5, 0, 0);
     cyl1->GetCylinderGeometry().p2 = ChVector<>(+0.5, 0, 0);
     cyl1->GetCylinderGeometry().rad = 0.1;
     body1->AddAsset(cyl1);
-    body1->AddAsset(std::make_shared<ChColorAsset>(1.0f, 0.0f, 0.0f));
+    body1->AddAsset(chrono_types::make_shared<ChColorAsset>(1.0f, 0.0f, 0.0f));
     my_sys.AddBody(body1);
 
     auto body2 = std::shared_ptr<ChBody>(my_sys.NewBody());
     body2->SetPos(ChVector<>(+0.5, 0, 0));
-    auto box2 = std::make_shared<ChBoxShape>();
+    auto box2 = chrono_types::make_shared<ChBoxShape>();
     box2->GetBoxGeometry().SetLengths(ChVector<>(1, 0.2, 0.2));
     body2->AddAsset(box2);
-    body2->AddAsset(std::make_shared<ChColorAsset>(0.0f, 1.0f, 0.0f));
+    body2->AddAsset(chrono_types::make_shared<ChColorAsset>(0.0f, 1.0f, 0.0f));
     my_sys.AddBody(body2);
 
     // Create a sine function
-    std::shared_ptr<ChFunction_Sine> fun = std::make_shared<ChFunction_Sine>(0.0, 0.1, CH_C_PI_4);
+    std::shared_ptr<ChFunction_Sine> fun = chrono_types::make_shared<ChFunction_Sine>(0.0, 0.1, CH_C_PI_4);
 
     // ---------------------------------------------
 
@@ -80,14 +80,14 @@ int main(int argc, char* argv[]) {
 
     switch (test) {
         case TEST0: {
-            auto joint = std::make_shared<ChLinkLockRevolute>();
+            auto joint = chrono_types::make_shared<ChLinkLockRevolute>();
             my_sys.AddLink(joint);
             joint->Initialize(body1, body2, ChCoordsys<>(ChVector<>(0, 0, 0)));
             my_sys.Set_G_acc(ChVector<>(0, -10, 0));
             break;
         }
         case TEST1: {
-            auto joint = std::make_shared<ChLinkLockLock>();
+            auto joint = chrono_types::make_shared<ChLinkLockLock>();
             my_sys.AddLink(joint);
             joint->Initialize(body1, body2, ChCoordsys<>(ChVector<>(0, 0, 0)));
             joint->SetMotion_axis(ChVector<>(0, 0, 1));
@@ -95,14 +95,14 @@ int main(int argc, char* argv[]) {
             break;
         }
         case TEST2: {
-            auto joint = std::make_shared<ChLinkLockRevolute>();
+            auto joint = chrono_types::make_shared<ChLinkLockRevolute>();
             my_sys.AddLink(joint);
             joint->Initialize(body1, body2, ChCoordsys<>(ChVector<>(0, 0, 0)));
             joint->GetMarker1()->SetMotion_ang(fun);
             break;
         }
         case TEST3: {
-            auto joint = std::make_shared<ChLinkLockRevolute>();
+            auto joint = chrono_types::make_shared<ChLinkLockRevolute>();
             my_sys.AddLink(joint);
             joint->Initialize(body1, body2, ChCoordsys<>(ChVector<>(0, 0, 0)));
             joint->GetMarker1()->SetMotion_axis(ChVector<>(0, 1, 0));

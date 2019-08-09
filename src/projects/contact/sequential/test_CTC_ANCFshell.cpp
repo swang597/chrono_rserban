@@ -45,21 +45,21 @@ int main(int argc, char* argv[]) {
     collision::ChCollisionModel::SetDefaultSuggestedMargin(0.001);
 
     // Create contact surface material.
-    auto contact_mat = std::make_shared<ChMaterialSurfaceSMC>();
+    auto contact_mat = chrono_types::make_shared<ChMaterialSurfaceSMC>();
     contact_mat->SetYoungModulus(6e4f);
     contact_mat->SetFriction(0.3f);
     contact_mat->SetRestitution(0.5f);
     contact_mat->SetAdhesion(0);
 
     // Adding fixed bodies and collision shapes
-    auto cyl1 = std::make_shared<ChBodyEasyCylinder>(0.1, 0.4, 1000, true, true, ChMaterialSurface::SMC);
+    auto cyl1 = chrono_types::make_shared<ChBodyEasyCylinder>(0.1, 0.4, 1000, true, true, ChMaterialSurface::SMC);
     cyl1->SetBodyFixed(true);
     cyl1->SetPos(ChVector<>(0, 0, -0.25));
     cyl1->SetRot(Q_from_AngZ(CH_C_PI_2));
     cyl1->SetMaterialSurface(contact_mat);
     my_system.Add(cyl1);
 
-    auto cyl2 = std::make_shared<ChBodyEasyCylinder>(0.1, 0.4, 1000, true, true, ChMaterialSurface::SMC);
+    auto cyl2 = chrono_types::make_shared<ChBodyEasyCylinder>(0.1, 0.4, 1000, true, true, ChMaterialSurface::SMC);
     cyl2->SetBodyFixed(true);
     cyl2->SetPos(ChVector<>(0, 0, 0.25));
     cyl2->SetRot(Q_from_AngZ(CH_C_PI_2));
@@ -67,8 +67,8 @@ int main(int argc, char* argv[]) {
     my_system.Add(cyl2);
 
     // Create a mesh and import from file
-    auto my_mesh = std::make_shared<ChMesh>();
-    auto material = std::make_shared<ChMaterialShellANCF>(1000, 1e8, 0.3);
+    auto my_mesh = chrono_types::make_shared<ChMesh>();
+    auto material = chrono_types::make_shared<ChMaterialShellANCF>(1000, 1e8, 0.3);
 
     ChVector<> center(0, 0.5, 0);
     ChMatrix33<> rot(-CH_C_PI_2, ChVector<>(0, 0, 1));
@@ -95,19 +95,19 @@ int main(int argc, char* argv[]) {
     my_mesh->SetAutomaticGravity(true);
 
     // Mesh contact surface
-    auto contact_surface = std::make_shared<ChContactSurfaceMesh>();
+    auto contact_surface = chrono_types::make_shared<ChContactSurfaceMesh>();
     my_mesh->AddContactSurface(contact_surface);
     contact_surface->AddFacesFromBoundary(sphere_swept_thickness);
     contact_surface->SetMaterialSurface(contact_mat);
 
     // Mesh visualization
-    auto vis_mesh1 = std::make_shared<ChVisualizationFEAmesh>(*(my_mesh.get()));
+    auto vis_mesh1 = chrono_types::make_shared<ChVisualizationFEAmesh>(*(my_mesh.get()));
     vis_mesh1->SetFEMdataType(ChVisualizationFEAmesh::E_PLOT_NODE_SPEED_NORM);
     vis_mesh1->SetColorscaleMinMax(0.0, 0.50);
     vis_mesh1->SetSmoothFaces(true);
     my_mesh->AddAsset(vis_mesh1);
 
-    auto vis_mesh2 = std::make_shared<ChVisualizationFEAmesh>(*(my_mesh.get()));
+    auto vis_mesh2 = chrono_types::make_shared<ChVisualizationFEAmesh>(*(my_mesh.get()));
     vis_mesh2->SetFEMdataType(ChVisualizationFEAmesh::E_PLOT_CONTACTSURFACES);
     vis_mesh2->SetWireframe(true);
     vis_mesh2->SetDefaultMeshColor(ChColor(1, 0.5, 0));

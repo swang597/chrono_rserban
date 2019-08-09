@@ -63,13 +63,13 @@ void AddContainer(ChSystemParallelSMC* sys) {
     int binId = -200;
 
     // Create a common material
-    auto mat = std::make_shared<ChMaterialSurfaceSMC>();
+    auto mat = chrono_types::make_shared<ChMaterialSurfaceSMC>();
     mat->SetYoungModulus(Y);
     mat->SetFriction(mu);
     mat->SetRestitution(cr);
 
     // Create the containing bin (4 x 4 x 1)
-    auto bin = std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
+    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
     bin->SetMaterialSurface(mat);
     bin->SetIdentifier(binId);
     bin->SetMass(1);
@@ -117,7 +117,7 @@ std::shared_ptr<ChBody> AddFallingObjects(ChSystemParallel* sys) {
     std::shared_ptr<ChBody> first;
 
     // Common material
-    auto objMat = std::make_shared<ChMaterialSurfaceSMC>();
+    auto objMat = chrono_types::make_shared<ChMaterialSurfaceSMC>();
     objMat->SetYoungModulus(Y);
     objMat->SetFriction(mu);
     objMat->SetRestitution(cr);
@@ -135,7 +135,7 @@ std::shared_ptr<ChBody> AddFallingObjects(ChSystemParallel* sys) {
             for (int iy = -count_Y; iy <= count_Y; iy++) {
                 ChVector<> pos(0.4 * ix, 0.4 * iy, h);
 
-                auto obj = std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
+                auto obj = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
                 obj->SetMaterialSurface(objMat);
 
                 obj->SetIdentifier(objId++);

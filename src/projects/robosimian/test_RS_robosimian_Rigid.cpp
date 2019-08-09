@@ -91,7 +91,7 @@ RayCaster::RayCaster(ChSystem* sys, const ChFrame<>& origin, const ChVector2<>& 
     m_body->SetCollide(false);
     sys->AddBody(m_body);
 
-    m_glyphs = std::make_shared<ChGlyphs>();
+    m_glyphs = chrono_types::make_shared<ChGlyphs>();
     m_glyphs->SetGlyphsSize(0.004);
     m_glyphs->SetZbufferHide(true);
     m_glyphs->SetDrawMode(ChGlyphs::GLYPH_POINT);
@@ -138,17 +138,17 @@ std::shared_ptr<ChBody> CreateTerrain(robosimian::RoboSimian* robot,
     ground->GetCollisionModel()->AddBox(length / 2, width / 2, 0.1, ChVector<>(offset, 0, height - 0.1));
     ground->GetCollisionModel()->BuildModel();
 
-    auto box = std::make_shared<ChBoxShape>();
+    auto box = chrono_types::make_shared<ChBoxShape>();
     box->GetBoxGeometry().Size = ChVector<>(length / 2, width / 2, 0.1);
     box->GetBoxGeometry().Pos = ChVector<>(offset, 0, height - 0.1);
     ground->AddAsset(box);
 
-    auto texture = std::make_shared<ChTexture>();
+    auto texture = chrono_types::make_shared<ChTexture>();
     texture->SetTextureFilename(GetChronoDataFile("pinkwhite.png"));
     texture->SetTextureScale(10 * (float)length, 10 * (float)width);
     ground->AddAsset(texture);
 
-    ground->AddAsset(std::make_shared<ChColorAsset>(0.8f, 0.8f, 0.8f));
+    ground->AddAsset(chrono_types::make_shared<ChColorAsset>(0.8f, 0.8f, 0.8f));
 
     robot->GetSystem()->AddBody(ground);
 
@@ -284,28 +284,28 @@ int main(int argc, char* argv[]) {
     std::shared_ptr<robosimian::Driver> driver;
     switch (mode) {
         case robosimian::LocomotionMode::WALK:
-            driver = std::make_shared<robosimian::Driver>(
+            driver = chrono_types::make_shared<robosimian::Driver>(
                 "",                                                           // start input file
                 GetChronoDataFile("robosimian/actuation/walking_cycle.txt"),  // cycle input file
                 "",                                                           // stop input file
                 true);
             break;
         case robosimian::LocomotionMode::SCULL:
-            driver = std::make_shared<robosimian::Driver>(
+            driver = chrono_types::make_shared<robosimian::Driver>(
                 GetChronoDataFile("robosimian/actuation/sculling_start.txt"),   // start input file
                 GetChronoDataFile("robosimian/actuation/sculling_cycle2.txt"),  // cycle input file
                 GetChronoDataFile("robosimian/actuation/sculling_stop.txt"),    // stop input file
                 true);
             break;
         case robosimian::LocomotionMode::INCHWORM:
-            driver = std::make_shared<robosimian::Driver>(
+            driver = chrono_types::make_shared<robosimian::Driver>(
                 GetChronoDataFile("robosimian/actuation/inchworming_start.txt"),  // start input file
                 GetChronoDataFile("robosimian/actuation/inchworming_cycle.txt"),  // cycle input file
                 GetChronoDataFile("robosimian/actuation/inchworming_stop.txt"),   // stop input file
                 true);
             break;
         case robosimian::LocomotionMode::DRIVE:
-            driver = std::make_shared<robosimian::Driver>(
+            driver = chrono_types::make_shared<robosimian::Driver>(
                 GetChronoDataFile("robosimian/actuation/driving_start.txt"),  // start input file
                 GetChronoDataFile("robosimian/actuation/driving_cycle.txt"),  // cycle input file
                 GetChronoDataFile("robosimian/actuation/driving_stop.txt"),   // stop input file

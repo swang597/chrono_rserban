@@ -25,7 +25,7 @@ namespace av {
 
 TruckAV::TruckAV(Framework* framework, unsigned int id, const chrono::ChCoordsys<>& init_pos)
     : Vehicle(framework, id, Vehicle::TRUCK) {
-    m_hmmwv = std::make_shared<HMMWV_Reduced>(framework->m_system);
+    m_hmmwv = chrono_types::make_shared<HMMWV_Reduced>(framework->m_system);
 
     m_hmmwv->SetChassisFixed(false);
     m_hmmwv->SetChassisCollisionType(ChassisCollisionType::MESH);

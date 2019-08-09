@@ -41,7 +41,7 @@ Vehicle::Vehicle(Framework* framework, unsigned int id, Type vehicle_type)
       m_SPAT_phase(-1),
       m_SPAT_time(0) {
     // Prepare messages sent by this agent
-    m_vehicle_msg = std::make_shared<MessageVEH>();
+    m_vehicle_msg = chrono_types::make_shared<MessageVEH>();
     m_vehicle_msg->type = Message::VEH;
     m_vehicle_msg->senderID = id;
     m_vehicle_msg->time = 0;
@@ -124,7 +124,7 @@ void Vehicle::AdvanceDriver(double step) {
 
 void Vehicle::SetupLidar() {
     // setup simple scanning lidar
-    m_lidar = std::make_shared<ChCollisionLidar>(GetVehicle().GetChassisBody(), 30, false);
+    m_lidar = chrono_types::make_shared<ChCollisionLidar>(GetVehicle().GetChassisBody(), 30, false);
     m_lidar->Initialize(GetLidarPosition(), 1, 10, 0, 0, -.2, .2, .02, 100);
 }
 

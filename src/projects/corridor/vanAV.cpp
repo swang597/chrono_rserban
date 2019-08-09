@@ -25,7 +25,7 @@ namespace av {
 
 VanAV::VanAV(Framework* framework, unsigned int id, const chrono::ChCoordsys<>& init_pos)
     : Vehicle(framework, id, Vehicle::VAN) {
-    m_uaz = std::make_shared<UAZBUS>(framework->m_system);
+    m_uaz = chrono_types::make_shared<UAZBUS>(framework->m_system);
 
     m_uaz->SetChassisFixed(false);
     m_uaz->SetChassisCollisionType(ChassisCollisionType::MESH);

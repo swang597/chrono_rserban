@@ -20,6 +20,7 @@
 #include <string>
 
 #include "chrono/core/ChMathematics.h"
+#include "chrono/assets/ChLineShape.h"
 #include "chrono/geometry/ChLineBezier.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
 
@@ -63,8 +64,8 @@ inline GONOGO_Driver::GONOGO_Driver(chrono::vehicle::ChVehicle& vehicle,
     road->SetBodyFixed(true);
     m_vehicle.GetSystem()->AddBody(road);
 
-    auto path_asset = std::make_shared<chrono::ChLineShape>();
-    path_asset->SetLineGeometry(std::make_shared<chrono::geometry::ChLineBezier>(m_steeringPID.GetPath()));
+    auto path_asset = chrono_types::make_shared<chrono::ChLineShape>();
+    path_asset->SetLineGeometry(chrono_types::make_shared<chrono::geometry::ChLineBezier>(m_steeringPID.GetPath()));
     path_asset->SetColor(chrono::ChColor(0.0f, 0.8f, 0.0f));
     path_asset->SetName("straight_path");
     road->AddAsset(path_asset);

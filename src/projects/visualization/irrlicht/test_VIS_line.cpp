@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
     ChSystemNSC msystem;
 
     // Create a ground body
-    auto ground = std::make_shared<ChBody>();
+    auto ground = chrono_types::make_shared<ChBody>();
     ground->SetBodyFixed(true);
     ground->SetCollide(false);
     msystem.AddBody(ground);
@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Create a path asset and add segments to it
-    auto path_asset = std::make_shared<ChPathShape>();
+    auto path_asset = chrono_types::make_shared<ChPathShape>();
     for (unsigned int i = 1; i < num_line_points; i++) {
         double len = (points[i] - points[i - 1]).Length();
         geometry::ChLineSegment segment(points[i - 1], points[i]);
@@ -68,9 +68,9 @@ int main(int argc, char* argv[]) {
         p.x() -= 20;
 
     // Create a Bezier curve asset, reusing the points
-    auto bezier_curve = std::make_shared<ChBezierCurve>(points);
-    auto bezier_line = std::make_shared<geometry::ChLineBezier>(bezier_curve);
-    auto bezier_asset = std::make_shared<ChLineShape>();
+    auto bezier_curve = chrono_types::make_shared<ChBezierCurve>(points);
+    auto bezier_line = chrono_types::make_shared<geometry::ChLineBezier>(bezier_curve);
+    auto bezier_asset = chrono_types::make_shared<ChLineShape>();
     bezier_asset->SetLineGeometry(bezier_line);
     bezier_asset->SetNumRenderPoints(num_render_points);
     ground->AddAsset(bezier_asset);

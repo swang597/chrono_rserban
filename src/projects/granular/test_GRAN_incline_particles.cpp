@@ -160,12 +160,12 @@ double CreateContainer(ChSystem* system,  // containing system
                        ) {
     bool visible_walls = false;
 
-    auto material = std::make_shared<ChMaterialSurfaceNSC>();
+    auto material = chrono_types::make_shared<ChMaterialSurfaceNSC>();
     material->SetFriction((float)mu);
     material->SetCohesion((float)coh);
     material->SetCompliance((float)compliance);
 
-    auto ground = std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>());
+    auto ground = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
     ground->SetIdentifier(-1);
     ground->SetMass(1000);
     ground->SetBodyFixed(true);
@@ -223,7 +223,7 @@ unsigned int CreateParticles(ChSystemParallelNSC* system,  // containing system
     unsigned int num_particles = 0;
 
     if (use_particles) {
-        particle_container = std::make_shared<ChParticleContainer>();
+        particle_container = chrono_types::make_shared<ChParticleContainer>();
         system->Add3DOFContainer(particle_container);
 
         particle_container->kernel_radius = 2 * radius;
@@ -265,7 +265,7 @@ unsigned int CreateParticles(ChSystemParallelNSC* system,  // containing system
         num_particles = (unsigned int)pos.size();
     } else {
         // Create a material
-        auto mat_g = std::make_shared<ChMaterialSurfaceNSC>();
+        auto mat_g = chrono_types::make_shared<ChMaterialSurfaceNSC>();
         mat_g->SetFriction((float)mu);
         mat_g->SetCohesion((float)coh);
         mat_g->SetCompliance(1e-9f);

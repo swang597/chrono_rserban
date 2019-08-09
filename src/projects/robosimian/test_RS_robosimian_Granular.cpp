@@ -315,7 +315,7 @@ int main(int argc, char* argv[]) {
 
     switch (mode) {
         case robosimian::LocomotionMode::WALK: {
-            auto drv = std::make_shared<robosimian::Driver>(
+            auto drv = chrono_types::make_shared<robosimian::Driver>(
                 "",                                                           // start input file
                 GetChronoDataFile("robosimian/actuation/walking_cycle.txt"),  // cycle input file
                 "",                                                           // stop input file
@@ -325,7 +325,7 @@ int main(int argc, char* argv[]) {
             break;
         }
         case robosimian::LocomotionMode::SCULL: {
-            auto drv = std::make_shared<robosimian::Driver>(
+            auto drv = chrono_types::make_shared<robosimian::Driver>(
                 GetChronoDataFile("robosimian/actuation/sculling_start.txt"),   // start input file
                 GetChronoDataFile("robosimian/actuation/sculling_cycle2.txt"),  // cycle input file
                 GetChronoDataFile("robosimian/actuation/sculling_stop.txt"),    // stop input file
@@ -335,7 +335,7 @@ int main(int argc, char* argv[]) {
             break;
         }
         case robosimian::LocomotionMode::INCHWORM: {
-            auto drv = std::make_shared<robosimian::Driver>(
+            auto drv = chrono_types::make_shared<robosimian::Driver>(
                 GetChronoDataFile("robosimian/actuation/inchworming_start.txt"),  // start input file
                 GetChronoDataFile("robosimian/actuation/inchworming_cycle.txt"),  // cycle input file
                 GetChronoDataFile("robosimian/actuation/inchworming_stop.txt"),   // stop input file
@@ -345,7 +345,7 @@ int main(int argc, char* argv[]) {
             break;
         }
         case robosimian::LocomotionMode::DRIVE: {
-            auto drv = std::make_shared<robosimian::Driver>(
+            auto drv = chrono_types::make_shared<robosimian::Driver>(
                 GetChronoDataFile("robosimian/actuation/driving_start.txt"),  // start input file
                 GetChronoDataFile("robosimian/actuation/driving_cycle.txt"),  // cycle input file
                 GetChronoDataFile("robosimian/actuation/driving_stop.txt"),   // stop input file

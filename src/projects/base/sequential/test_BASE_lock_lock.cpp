@@ -32,26 +32,26 @@ using namespace chrono;
 
 std::shared_ptr<ChLinkLockLock> model1(std::shared_ptr<ChSystem> m_System) {
     // Create the ground body
-    auto m_Ground = std::make_shared<ChBodyAuxRef>();
+    auto m_Ground = chrono_types::make_shared<ChBodyAuxRef>();
     m_Ground->SetBodyFixed(true);
-    auto box = std::make_shared<ChBoxShape>();
+    auto box = chrono_types::make_shared<ChBoxShape>();
     box->GetBoxGeometry().SetLengths(ChVector<>(1, 0.1, 1));
     m_Ground->AddAsset(box);
-    m_Ground->AddAsset(std::make_shared<ChColorAsset>(0.0f, 0.0f, 1.0f));
+    m_Ground->AddAsset(chrono_types::make_shared<ChColorAsset>(0.0f, 0.0f, 1.0f));
     m_System->AddBody(m_Ground);
 
-    auto m_Body = std::make_shared<chrono::ChBodyAuxRef>();
-    auto sphere = std::make_shared<ChSphereShape>();
+    auto m_Body = chrono_types::make_shared<chrono::ChBodyAuxRef>();
+    auto sphere = chrono_types::make_shared<ChSphereShape>();
     sphere->GetSphereGeometry().rad = 0.2;
     m_Body->AddAsset(sphere);
     m_System->AddBody(m_Body);
 
-    auto m_Link = std::make_shared<chrono::ChLinkLockLock>();
+    auto m_Link = chrono_types::make_shared<chrono::ChLinkLockLock>();
 
-    auto m_MarkerLinkBody = std::make_shared<chrono::ChMarker>();
+    auto m_MarkerLinkBody = chrono_types::make_shared<chrono::ChMarker>();
     m_Body->AddMarker(m_MarkerLinkBody);
 
-    auto m_MarkerLinkGround = std::make_shared<chrono::ChMarker>();
+    auto m_MarkerLinkGround = chrono_types::make_shared<chrono::ChMarker>();
     m_Ground->AddMarker(m_MarkerLinkGround);
 
     ChVector<> markerCoorAbs{0., 0., 100.};
@@ -70,8 +70,8 @@ std::shared_ptr<ChLinkLockLock> model1(std::shared_ptr<ChSystem> m_System) {
 
 int main(int argc, char* argv[]) {
     // Create system
-    auto m_System = std::make_shared<ChSystemSMC>();
-    ////auto m_System = std::make_shared<ChSystemNSC>();
+    auto m_System = chrono_types::make_shared<ChSystemSMC>();
+    ////auto m_System = chrono_types::make_shared<ChSystemNSC>();
     m_System->Set_G_acc(ChVector<>(0.0, -10., 0.));
 
     ////m_System->SetSolverType(ChSolver::Type::BARZILAIBORWEIN);
@@ -100,7 +100,7 @@ int main(int argc, char* argv[]) {
 
         auto cnstr = m_Link->GetC();
         for (int i = 0; i < 6; i++) {
-            GetLog() << "  " << cnstr->GetElement(i, 0);
+            GetLog() << "  " << cnstr(i);
         }
 
         auto mpos = m_Link->GetMarker2()->GetAbsCoord().pos;

@@ -40,12 +40,12 @@ double tolerance = 1e-4;
 std::shared_ptr<ChBoundary> AddContainer(ChSystemParallel* sys) {
     int binId = -200;
 
-    auto mat = std::make_shared<ChMaterialSurfaceSMC>();
+    auto mat = chrono_types::make_shared<ChMaterialSurfaceSMC>();
     mat->SetYoungModulus(Y);
     mat->SetFriction(mu);
     mat->SetRestitution(cr);
 
-    auto bin = std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
+    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
     bin->SetMaterialSurface(mat);
     bin->SetIdentifier(binId);
     bin->SetMass(1);
@@ -79,7 +79,7 @@ size_t AddFallingBalls(ChSystemParallel* sys) {
     ChVector<double> box_center((settling_gap + dx / 2) / 2, 0, 3 * height / 4);
     ChVector<double> h_dims = ChVector<>((settling_gap + dx / 2) / 2, hy, height / 4) - 3 * gran_radius;
 
-    auto ballMat = std::make_shared<ChMaterialSurfaceSMC>();
+    auto ballMat = chrono_types::make_shared<ChMaterialSurfaceSMC>();
     ballMat->SetYoungModulus(Y);
     ballMat->SetFriction(mu);
     ballMat->SetRestitution(cr);
@@ -113,7 +113,7 @@ size_t AddFallingBalls(ChSystemParallel* sys) {
         size_t m_num_points;
     };
 
-    auto filter = std::make_shared<MyFilter>(sys, box_center);
+    auto filter = chrono_types::make_shared<MyFilter>(sys, box_center);
     gen.RegisterCreateObjectsCallback(filter);
 
     gen.setBodyIdentifier(0);

@@ -48,14 +48,14 @@ int main(int argc, char* argv[]) {
     ////sys.Set_G_acc(ChVector<>(0.0, 0.0, 0.0));
 
     // Ground body
-    auto ground = std::make_shared<ChBody>();
+    auto ground = chrono_types::make_shared<ChBody>();
     ground->SetIdentifier(-1);
     ground->SetBodyFixed(true);
     sys.Add(ground);
 
-    auto mesh = std::make_shared<fea::ChMesh>();
+    auto mesh = chrono_types::make_shared<fea::ChMesh>();
 
-    auto section = std::make_shared<fea::ChBeamSectionCable>();
+    auto section = chrono_types::make_shared<fea::ChBeamSectionCable>();
     section->SetDiameter(0.002);
     section->SetYoungModulus(1e6);
     section->SetDensity(2000);
@@ -93,11 +93,11 @@ int main(int argc, char* argv[]) {
     std::vector<std::shared_ptr<ChLinkBase>> tip_cnstr;
 
     for (auto node : base_nodes) {
-        auto pos_cnstr = std::make_shared<fea::ChLinkPointFrame>();
+        auto pos_cnstr = chrono_types::make_shared<fea::ChLinkPointFrame>();
         pos_cnstr->Initialize(node, ground);
         sys.Add(pos_cnstr);
 
-        auto dir_cnstr = std::make_shared<fea::ChLinkDirFrame>();
+        auto dir_cnstr = chrono_types::make_shared<fea::ChLinkDirFrame>();
         dir_cnstr->Initialize(node, ground);
         dir_cnstr->SetDirectionInAbsoluteCoords(node->D);
         sys.Add(dir_cnstr);
@@ -107,11 +107,11 @@ int main(int argc, char* argv[]) {
     }
 
     for (auto node : tip_nodes) {
-        auto pos_cnstr = std::make_shared<fea::ChLinkPointFrame>();
+        auto pos_cnstr = chrono_types::make_shared<fea::ChLinkPointFrame>();
         pos_cnstr->Initialize(node, ground);
         sys.Add(pos_cnstr);
 
-        auto dir_cnstr = std::make_shared<fea::ChLinkDirFrame>();
+        auto dir_cnstr = chrono_types::make_shared<fea::ChLinkDirFrame>();
         dir_cnstr->Initialize(node, ground);
         dir_cnstr->SetDirectionInAbsoluteCoords(node->D);
         sys.Add(dir_cnstr);
@@ -124,14 +124,14 @@ int main(int argc, char* argv[]) {
 
     sys.Add(mesh);
 
-    auto mvisA = std::make_shared<fea::ChVisualizationFEAmesh>(*mesh);
+    auto mvisA = chrono_types::make_shared<fea::ChVisualizationFEAmesh>(*mesh);
     mvisA->SetFEMdataType(fea::ChVisualizationFEAmesh::E_PLOT_ANCF_BEAM_BD);
     mvisA->SetColorscaleMinMax(-02, 20);
     mvisA->SetSmoothFaces(true);
     mvisA->SetWireframe(false);
     mesh->AddAsset(mvisA);
 
-    auto mvisB = std::make_shared<fea::ChVisualizationFEAmesh>(*mesh);
+    auto mvisB = chrono_types::make_shared<fea::ChVisualizationFEAmesh>(*mesh);
     mvisB->SetFEMglyphType(fea::ChVisualizationFEAmesh::E_GLYPH_NODE_DOT_POS);
     mvisB->SetFEMdataType(fea::ChVisualizationFEAmesh::E_PLOT_NONE);
     mvisB->SetSymbolsThickness(0.004);
@@ -154,7 +154,7 @@ int main(int argc, char* argv[]) {
 
     // Solver settings
     if (use_MKL) {
-        auto mkl_solver = std::make_shared<ChSolverMKL<>>();
+        auto mkl_solver = chrono_types::make_shared<ChSolverMKL<>>();
         mkl_solver->SetSparsityPatternLock(true);
         sys.SetSolver(mkl_solver);
     } else {

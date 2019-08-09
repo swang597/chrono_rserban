@@ -338,7 +338,7 @@ int main(int argc, char** argv) {
 
             float coh_force = static_cast<float>(CH_C_PI * particle_radius * particle_radius * coh_pressure);
 
-            auto material = std::make_shared<ChMaterialSurfaceSMC>();
+            auto material = chrono_types::make_shared<ChMaterialSurfaceSMC>();
             material->SetFriction(0.9f);
             material->SetRestitution(0.0f);
             material->SetYoungModulus(8e5f);

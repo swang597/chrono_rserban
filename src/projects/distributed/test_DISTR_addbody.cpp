@@ -40,7 +40,7 @@ size_t AddBalls(ChSystem* sys) {
     utils::GridSampler<> sampler(spacing);
     auto points = sampler.SampleBox(box_center, half_dims);
 
-    auto mat = std::make_shared<ChMaterialSurfaceSMC>();
+    auto mat = chrono_types::make_shared<ChMaterialSurfaceSMC>();
     mat->SetYoungModulus(2e6f);
     mat->SetFriction(0.5f);
     mat->SetRestitution(0.01f);

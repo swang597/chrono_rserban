@@ -71,13 +71,13 @@ class MechanismISO {
 };
 
 MechanismISO::MechanismISO(ChSystem* sys) : m_sys(sys) {
-    m_tire = std::make_shared<hmmwv::HMMWV_TMeasyTire>("TMeasy tire");
+    m_tire = chrono_types::make_shared<hmmwv::HMMWV_TMeasyTire>("TMeasy tire");
 
     auto ground = std::shared_ptr<ChBody>(m_sys->NewBody());
     m_sys->AddBody(ground);
     ground->SetBodyFixed(true);
     {
-        auto box = std::make_shared<ChBoxShape>();
+        auto box = chrono_types::make_shared<ChBoxShape>();
         box->GetBoxGeometry().SetLengths(ChVector<>(10, 2, 0.2));
         box->GetBoxGeometry().Pos = ChVector<>(0, 0, -0.1);
         ground->AddAsset(box);
@@ -90,14 +90,14 @@ MechanismISO::MechanismISO(ChSystem* sys) : m_sys(sys) {
     m_wheel->SetPos(ChVector<>(0, 0, wheel_init_height));
     m_wheel->SetWvel_loc(ChVector<>(0, +wheel_init_omega, 0));  // for the wheel to rotate in positive X
     {
-        auto cyl = std::make_shared<ChCylinderShape>();
+        auto cyl = chrono_types::make_shared<ChCylinderShape>();
         cyl->GetCylinderGeometry().rad = 0.1;
         cyl->GetCylinderGeometry().p1 = ChVector<>(0, -0.1, 0);
         cyl->GetCylinderGeometry().p2 = ChVector<>(0, +0.1, 0);
         m_wheel->AddAsset(cyl);
     }
 
-    auto link = std::make_shared<ChLinkLockPlanePlane>();
+    auto link = chrono_types::make_shared<ChLinkLockPlanePlane>();
     link->Initialize(ground, m_wheel, ChCoordsys<>(VNULL, Q_from_AngX(CH_C_PI_2)));
     m_sys->AddLink(link);
 
@@ -183,15 +183,15 @@ ChVector<> ConvertInertia_ISO_to_YUP(const ChVector<>& inertia_ISO) {
     // Moments of inertia in YUP frame
     ChMatrix33<> J_ISO(inertia_ISO);
     ChMatrix33<> J_YUP = yup_R_iso * J_ISO * iso_R_yup;
-    ChVector<> inertia_YUP = J_YUP.Get_Diag();
+    ChVector<> inertia_YUP = J_YUP.diagonal();
 
     /*
     // Alternatively, using the iso_X_yup transform...
     ChFrame<> iso_X_yup(VNULL, Q_from_AngX(CH_C_PI_2));
-    ChFrame<> yup_X_iso = iso_X_yup.GetInverse();
+    ChFrame<> yup_X_iso = iso_X_yup.inverse();
     ChMatrix33<> J_ISO(inertia_ISO);
     ChMatrix33<> J_YUP = (yup_X_iso.GetA() * J_ISO) * iso_X_yup.GetA();
-    ChVector<> inertia_YUP = J_YUP.Get_Diag();
+    ChVector<> inertia_YUP = J_YUP.digonal();
     */
 
     /*
@@ -228,13 +228,13 @@ class MechanismYUP {
 };
 
 MechanismYUP::MechanismYUP(ChSystem* sys) : m_sys(sys) {
-    m_tire = std::make_shared<hmmwv::HMMWV_TMeasyTire>("TMeasy tire");
+    m_tire = chrono_types::make_shared<hmmwv::HMMWV_TMeasyTire>("TMeasy tire");
 
     auto ground = std::shared_ptr<ChBody>(m_sys->NewBody());
     m_sys->AddBody(ground);
     ground->SetBodyFixed(true);
     {
-        auto box = std::make_shared<ChBoxShape>();
+        auto box = chrono_types::make_shared<ChBoxShape>();
         box->GetBoxGeometry().SetLengths(ChVector<>(10, 0.2, 2));
         box->GetBoxGeometry().Pos = ChVector<>(0, -0.1, 0);
         ground->AddAsset(box);
@@ -247,14 +247,14 @@ MechanismYUP::MechanismYUP(ChSystem* sys) : m_sys(sys) {
     m_wheel->SetPos(ChVector<>(0, wheel_init_height, 0));
     m_wheel->SetWvel_loc(ChVector<>(0, 0, -wheel_init_omega));  // for the wheel to rotate in positive X
     {
-        auto cyl = std::make_shared<ChCylinderShape>();
+        auto cyl = chrono_types::make_shared<ChCylinderShape>();
         cyl->GetCylinderGeometry().rad = 0.1;
         cyl->GetCylinderGeometry().p1 = ChVector<>(0, 0, -0.1);
         cyl->GetCylinderGeometry().p2 = ChVector<>(0, 0, +0.1);
         m_wheel->AddAsset(cyl);
     }
 
-    auto link = std::make_shared<ChLinkLockPlanePlane>();
+    auto link = chrono_types::make_shared<ChLinkLockPlanePlane>();
     link->Initialize(ground, m_wheel, ChCoordsys<>(VNULL, QUNIT));
     m_sys->AddLink(link);
 
@@ -267,10 +267,10 @@ MechanismYUP::MechanismYUP(ChSystem* sys) : m_sys(sys) {
     // Cannot directly use tire visualization (incorrect rotation)
     m_tire->SetVisualizationType(VisualizationType::NONE);
     {
-        auto trimesh = std::make_shared<geometry::ChTriangleMeshConnected>();
+        auto trimesh = chrono_types::make_shared<geometry::ChTriangleMeshConnected>();
         trimesh->LoadWavefrontMesh(vehicle::GetDataFile("hmmwv/hmmwv_tire.obj"), false, false);
         trimesh->Transform(VNULL, ChMatrix33<>(Q_from_AngX(-CH_C_PI_2)));
-        auto trimesh_shape = std::make_shared<ChTriangleMeshShape>();
+        auto trimesh_shape = chrono_types::make_shared<ChTriangleMeshShape>();
         trimesh_shape->SetMesh(trimesh);
         trimesh_shape->SetName("hmmwv_tire_POV_geom");
         trimesh_shape->SetStatic(true);

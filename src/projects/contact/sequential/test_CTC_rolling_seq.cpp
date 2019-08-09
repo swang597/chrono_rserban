@@ -84,7 +84,7 @@ int main(int argc, char* argv[]) {
     utils::AddBoxGeometry(container.get(), ChVector<>(20, .5, 20), ChVector<>(0, -.5, 0));
     container->GetCollisionModel()->BuildModel();
 
-    container->AddAsset(std::make_shared<ChColorAsset>(ChColor(0.4f, 0.4f, 0.2f)));
+    container->AddAsset(chrono_types::make_shared<ChColorAsset>(ChColor(0.4f, 0.4f, 0.2f)));
 
     auto ball = std::shared_ptr<ChBody>(system.NewBody());
     ChVector<> pos = ChVector<>(0, radius, 0);
@@ -105,7 +105,7 @@ int main(int argc, char* argv[]) {
     utils::AddSphereGeometry(ball.get(), radius);
     ball->GetCollisionModel()->BuildModel();
 
-    ball->AddAsset(std::make_shared<ChTexture>(GetChronoDataFile("bluwhite.png")));
+    ball->AddAsset(chrono_types::make_shared<ChTexture>(GetChronoDataFile("bluwhite.png")));
 
     system.AddBody(ball);
 

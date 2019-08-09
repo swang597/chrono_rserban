@@ -46,7 +46,7 @@ public:
 		particles = std::vector<std::shared_ptr<Part>>(st.range_x());
 
 		for (auto &p : particles)
-			p = std::make_shared<Part>();
+			p = chrono_types::make_shared<Part>();
 
 		if (WantRandomizeAddresses())
 			DoRandomizeAddresses(particles);

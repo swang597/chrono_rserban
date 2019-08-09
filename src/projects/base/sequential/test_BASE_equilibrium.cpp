@@ -42,57 +42,57 @@ int main(int argc, char* argv[]) {
     system.Set_G_acc(ChVector<>(0, 0, 0));
 
     // Create bodies.
-    auto ground = std::make_shared<ChBody>();
+    auto ground = chrono_types::make_shared<ChBody>();
     system.AddBody(ground);
     ground->SetIdentifier(-1);
     ground->SetBodyFixed(true);
     ground->SetCollide(false);
 
-    auto body1 = std::make_shared<ChBodyEasyCylinder>(0.1, 1.0, 1000, false, true);
+    auto body1 = chrono_types::make_shared<ChBodyEasyCylinder>(0.1, 1.0, 1000, false, true);
     body1->SetPos(ChVector<>(0.5, 0, 0));
     body1->SetRot(Q_ROTATE_Y_TO_X);
-    body1->AddAsset(std::make_shared<ChColorAsset>(1.0f, 0.0f, 0.0f, 0.0f));
+    body1->AddAsset(chrono_types::make_shared<ChColorAsset>(1.0f, 0.0f, 0.0f, 0.0f));
     system.AddBody(body1);
 
-    auto body2 = std::make_shared<ChBodyEasyCylinder>(0.1, 1.0, 1000, false, true);
+    auto body2 = chrono_types::make_shared<ChBodyEasyCylinder>(0.1, 1.0, 1000, false, true);
     body2->SetPos(ChVector<>(2.5, 0, 0));
     body2->SetRot(Q_ROTATE_Y_TO_X);
-    body2->AddAsset(std::make_shared<ChColorAsset>(0.0f, 1.0f, 0.0f, 0.0f));
+    body2->AddAsset(chrono_types::make_shared<ChColorAsset>(0.0f, 1.0f, 0.0f, 0.0f));
     system.AddBody(body2);
 
-    auto body3 = std::make_shared<ChBodyEasyCylinder>(0.1, 2.0, 1000, false, true);
+    auto body3 = chrono_types::make_shared<ChBodyEasyCylinder>(0.1, 2.0, 1000, false, true);
     body3->SetPos(ChVector<>(2.0, 0, 0));
     body3->SetRot(Q_ROTATE_Y_TO_X);
-    body3->AddAsset(std::make_shared<ChColorAsset>(0.0f, 0.0f, 1.0f, 0.0f));
+    body3->AddAsset(chrono_types::make_shared<ChColorAsset>(0.0f, 0.0f, 1.0f, 0.0f));
     system.AddBody(body3);
 
     // Add joints.
-    auto rev1 = std::make_shared<ChLinkLockRevolute>();
+    auto rev1 = chrono_types::make_shared<ChLinkLockRevolute>();
     rev1->Initialize(ground, body1, ChCoordsys<>(ChVector<>(0, 0, 0), QUNIT));
     system.AddLink(rev1);
 
-    auto rev2 = std::make_shared<ChLinkLockRevolute>();
+    auto rev2 = chrono_types::make_shared<ChLinkLockRevolute>();
     rev2->Initialize(ground, body2, ChCoordsys<>(ChVector<>(2, 0, 0), QUNIT));
     system.AddLink(rev2);
 
-    auto rev13 = std::make_shared<ChLinkLockRevolute>();
+    auto rev13 = chrono_types::make_shared<ChLinkLockRevolute>();
     rev13->Initialize(body1, body3, ChCoordsys<>(ChVector<>(1, 0, 0), QUNIT));
     system.AddLink(rev13);
 
-    auto rev23 = std::make_shared<ChLinkLockRevolute>();
+    auto rev23 = chrono_types::make_shared<ChLinkLockRevolute>();
     rev23->Initialize(body2, body3, ChCoordsys<>(ChVector<>(3, 0, 0), QUNIT));
     system.AddLink(rev23);
 
     // Create the spring between body1 and ground.
     // The spring end points are specified in the body relative frames.
-    auto spring = std::make_shared<ChLinkSpring>();
+    auto spring = chrono_types::make_shared<ChLinkSpring>();
     spring->Initialize(ground, body1, true, ChVector<>(1.5, 1, 0), ChVector<>(0, 0.5, 0), false, 0.5);
     spring->Set_SpringK(3e2);
     spring->Set_SpringR(2e2);
     system.AddLink(spring);
 
-    spring->AddAsset(std::make_shared<ChColorAsset>(0.0f, 0.0f, 0.0f, 0.0f));
-    spring->AddAsset(std::make_shared<ChPointPointSpring>(0.05, 80, 15));
+    spring->AddAsset(chrono_types::make_shared<ChColorAsset>(0.0f, 0.0f, 0.0f, 0.0f));
+    spring->AddAsset(chrono_types::make_shared<ChPointPointSpring>(0.05, 80, 15));
 
     // Perform equilibrium analysis.
     auto p1 = body1->GetPos();

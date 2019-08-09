@@ -17,7 +17,6 @@
 #ifndef AV_SCENE_H
 #define AV_SCENE_H
 
-#include "chrono/core/ChMatrixDynamic.h"
 #include "chrono/core/ChFrame.h"
 #include "chrono/core/ChVector.h"
 #include "chrono/core/ChVector2.h"

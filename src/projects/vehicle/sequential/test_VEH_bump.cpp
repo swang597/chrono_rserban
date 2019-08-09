@@ -101,7 +101,7 @@ std::shared_ptr<ChBezierCurve> CreateBezierPath(const ChVector<>& start, const C
     outCV.push_back(P2);
 
     // Generate Bezier path
-    return std::make_shared<ChBezierCurve>(points, inCV, outCV);
+    return chrono_types::make_shared<ChBezierCurve>(points, inCV, outCV);
 }
 
 // =============================================================================
@@ -158,7 +158,7 @@ int main(int argc, char* argv[]) {
     utils::AddCylinderGeometry(bump.get(), bump_radius, 4.0);
     bump->GetCollisionModel()->BuildModel();
 
-    auto color = std::make_shared<ChColorAsset>();
+    auto color = chrono_types::make_shared<ChColorAsset>();
     color->SetColor(ChColor(0.2f, 0.3f, 0.4f));
     bump->AddAsset(color);
 

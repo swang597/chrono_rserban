@@ -124,9 +124,9 @@ DBPcontroller::DBPcontroller(robosimian::RoboSimian* robot)
 
     // Create a body force load on the robot chassis.
     // This is a horizontal force applied at the chassis center.
-    auto force_container = std::make_shared<ChLoadContainer>();
+    auto force_container = chrono_types::make_shared<ChLoadContainer>();
     robot->GetSystem()->Add(force_container);
-    m_load = std::make_shared<ChLoadBodyForce>(robot->GetChassisBody(), VNULL, false, VNULL, true);
+    m_load = chrono_types::make_shared<ChLoadBodyForce>(robot->GetChassisBody(), VNULL, false, VNULL, true);
     force_container->Add(m_load);
 
     m_timer.reset();
@@ -205,7 +205,7 @@ std::shared_ptr<vehicle::SCMDeformableTerrain> CreateTerrain(robosimian::RoboSim
     int ndivX = (int)std::ceil(length * factor);
     int ndivY = (int)std::ceil(width * factor);
 
-    auto terrain = std::make_shared<vehicle::SCMDeformableTerrain>(robot->GetSystem());
+    auto terrain = chrono_types::make_shared<vehicle::SCMDeformableTerrain>(robot->GetSystem());
     terrain->SetPlane(ChCoordsys<>(ChVector<>(length / 2 - offset, 0, 0), Q_from_AngX(CH_C_PI_2)));
     terrain->SetSoilParametersSCM(Kphi, Kc, n, coh, phi, K, E_elastic, damping);
     terrain->SetPlotType(vehicle::SCMDeformableTerrain::PLOT_SINKAGE, 0, 0.15);
@@ -350,28 +350,28 @@ int main(int argc, char* argv[]) {
     std::shared_ptr<robosimian::Driver> driver;
     switch (mode) {
         case robosimian::LocomotionMode::WALK:
-            driver = std::make_shared<robosimian::Driver>(
+            driver = chrono_types::make_shared<robosimian::Driver>(
                 "",                                                           // start input file
                 GetChronoDataFile("robosimian/actuation/walking_cycle.txt"),  // cycle input file
                 "",                                                           // stop input file
                 true);
             break;
         case robosimian::LocomotionMode::SCULL:
-            driver = std::make_shared<robosimian::Driver>(
+            driver = chrono_types::make_shared<robosimian::Driver>(
                 GetChronoDataFile("robosimian/actuation/sculling_start.txt"),   // start input file
                 GetChronoDataFile("robosimian/actuation/sculling_cycle2.txt"),  // cycle input file
                 GetChronoDataFile("robosimian/actuation/sculling_stop.txt"),    // stop input file
                 true);
             break;
         case robosimian::LocomotionMode::INCHWORM:
-            driver = std::make_shared<robosimian::Driver>(
+            driver = chrono_types::make_shared<robosimian::Driver>(
                 GetChronoDataFile("robosimian/actuation/inchworming_start.txt"),  // start input file
                 GetChronoDataFile("robosimian/actuation/inchworming_cycle.txt"),  // cycle input file
                 GetChronoDataFile("robosimian/actuation/inchworming_stop.txt"),   // stop input file
                 true);
             break;
         case robosimian::LocomotionMode::DRIVE:
-            driver = std::make_shared<robosimian::Driver>(
+            driver = chrono_types::make_shared<robosimian::Driver>(
                 GetChronoDataFile("robosimian/actuation/driving_start.txt"),  // start input file
                 GetChronoDataFile("robosimian/actuation/driving_cycle.txt"),  // cycle input file
                 GetChronoDataFile("robosimian/actuation/driving_stop.txt"),   // stop input file

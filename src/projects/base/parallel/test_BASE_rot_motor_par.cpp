@@ -74,7 +74,7 @@ int main(int argc, char* argv[]) {
     body->SetPos(ChVector<>(0, 0, 0));
     my_sys.AddBody(body);
 
-    auto box_shape = std::make_shared<ChBoxShape>();
+    auto box_shape = chrono_types::make_shared<ChBoxShape>();
     box_shape->GetBoxGeometry().SetLengths(ChVector<>(1, 1, 0.2));
     box_shape->Pos = ChVector<>(0, 0, 0);
     box_shape->Rot = QUNIT;
@@ -82,13 +82,13 @@ int main(int argc, char* argv[]) {
 
     // Create rotational motor
 #ifdef MOTOR_SPEED
-    auto motor_fun = std::make_shared<ChFunction_Setpoint>();
-    auto joint = std::make_shared<ChLinkMotorRotationSpeed>();
+    auto motor_fun = chrono_types::make_shared<ChFunction_Setpoint>();
+    auto joint = chrono_types::make_shared<ChLinkMotorRotationSpeed>();
     joint->Initialize(ground, body, ChFrame<>(ChVector<>(0, 0, 0), QUNIT));
     joint->SetSpeedFunction(motor_fun);
 #else
-    auto motor_fun = std::make_shared<ChFunction_Setpoint>();
-    auto joint = std::make_shared<ChLinkMotorRotationAngle>();
+    auto motor_fun = chrono_types::make_shared<ChFunction_Setpoint>();
+    auto joint = chrono_types::make_shared<ChLinkMotorRotationAngle>();
     joint->Initialize(ground, body, ChFrame<>(ChVector<>(0, 0, 0), QUNIT));
     joint->SetAngleFunction(motor_fun);
 #endif

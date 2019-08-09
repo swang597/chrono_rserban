@@ -68,23 +68,23 @@ void ChCollisionLidarRay::SetPoints(const chrono::ChVector<double> &posStart,
 
 	if(visualize){
 		//insert a small sphere at the end of each ray for debugging purposes
-		rayEnd = std::make_shared<chrono::ChBodyEasySphere>(.02, 3000, false, true);
+		rayEnd = chrono_types::make_shared<chrono::ChBodyEasySphere>(.02, 3000, false, true);
 		rayEnd->SetPos(chrono::ChVector<>(this->globalEndPos));
 		rayEnd->SetBodyFixed(true);
 
 		this->parent->GetSystem()->Add(rayEnd);
 
-		auto color2 = std::make_shared<chrono::ChColorAsset>();
+		auto color2 = chrono_types::make_shared<chrono::ChColorAsset>();
 		color2->SetColor(chrono::ChColor(0.1f, 1.0f, .1f));
 		rayEnd->AddAsset(color2);
 
-		rayStart = std::make_shared<chrono::ChBodyEasySphere>(.02, 3000, false, true);
+		rayStart = chrono_types::make_shared<chrono::ChBodyEasySphere>(.02, 3000, false, true);
 		rayStart->SetPos(chrono::ChVector<>(this->globalStartPos));
 		rayStart->SetBodyFixed(true);
 
 		this->parent->GetSystem()->Add(rayStart);
 
-		auto color3 = std::make_shared<chrono::ChColorAsset>();
+		auto color3 = chrono_types::make_shared<chrono::ChColorAsset>();
 		color3->SetColor(chrono::ChColor(0.1f, 0.1f, 1.0f));
 		rayStart->AddAsset(color3);
 	}

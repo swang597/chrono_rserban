@@ -294,7 +294,7 @@ int main(int argc, char** argv) {
 
             switch (method) {
                 case ChMaterialSurface::SMC: {
-                    auto material = std::make_shared<ChMaterialSurfaceSMC>();
+                    auto material = chrono_types::make_shared<ChMaterialSurfaceSMC>();
                     material->SetFriction(0.9f);
                     material->SetRestitution(0.0f);
                     material->SetYoungModulus(8e5f);
@@ -310,7 +310,7 @@ int main(int argc, char** argv) {
                     break;
                 }
                 case ChMaterialSurface::NSC: {
-                    auto material = std::make_shared<ChMaterialSurfaceNSC>();
+                    auto material = chrono_types::make_shared<ChMaterialSurfaceNSC>();
                     material->SetFriction(0.9f);
                     material->SetRestitution(0.0f);
                     material->SetCohesion(static_cast<float>(coh_force));
@@ -515,7 +515,7 @@ std::shared_ptr<ChBezierCurve> CreateBezierPath(double run, double radius, int n
         outCV.push_back(P4_out);
     }
 
-    return std::make_shared<ChBezierCurve>(points, inCV, outCV);
+    return chrono_types::make_shared<ChBezierCurve>(points, inCV, outCV);
 }
 
 // =============================================================================

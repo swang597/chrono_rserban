@@ -232,35 +232,35 @@ void output_frame_ascii(ChSystemNSC& sys, int frame, std::ofstream& file) {
 void create_objects(ChSystemNSC& sys) {
     // Falling objects
     for (int bi = 0; bi < nballs; bi++) {
-        auto sphere = std::make_shared<ChBodyEasySphere>(0.5, 1000, true, true);
+        auto sphere = chrono_types::make_shared<ChBodyEasySphere>(0.5, 1000, true, true);
         sphere->SetPos(ChVector<>(-5 + ChRandom() * 10, 4 + bi * 0.05, -5 + ChRandom() * 10));
         sphere->GetMaterialSurfaceNSC()->SetFriction(0.2f);
 
         sys.Add(sphere);
 
-        auto texture = std::make_shared<ChTexture>();
+        auto texture = chrono_types::make_shared<ChTexture>();
         texture->SetTextureFilename(GetChronoDataFile("bluwhite.png"));
         sphere->AddAsset(texture);
     }
 
     // Container
-    auto material = std::make_shared<ChMaterialSurfaceNSC>();
+    auto material = chrono_types::make_shared<ChMaterialSurfaceNSC>();
     auto ground = utils::CreateBoxContainer(&sys, -1, material, ChVector<>(10, 10, 10), 0.4, ChVector<>(0, -4, 0), QUNIT,
                                             true, true, true, false);
-    auto texture = std::make_shared<ChTexture>();
+    auto texture = chrono_types::make_shared<ChTexture>();
     texture->SetTextureFilename(GetChronoDataFile("concrete.jpg"));
     ground->AddAsset(texture);
 
     // Rotating mixer
-    auto mixer = std::make_shared<ChBodyEasyBox>(10, 5, 1, 4000, true, true);
+    auto mixer = chrono_types::make_shared<ChBodyEasyBox>(10, 5, 1, 4000, true, true);
     mixer->SetPos(ChVector<>(0, -1.6, 0));
     mixer->GetMaterialSurfaceNSC()->SetFriction(0.4f);
     sys.Add(mixer);
 
     // Motor
-    auto motor = std::make_shared<ChLinkMotorRotationSpeed>();
+    auto motor = chrono_types::make_shared<ChLinkMotorRotationSpeed>();
     motor->Initialize(mixer, ground, ChFrame<>(ChVector<>(0, 0, 0), Q_from_AngAxis(CH_C_PI_2, VECT_X)));
-    auto fun = std::make_shared<ChFunction_Const>(0.5);
+    auto fun = chrono_types::make_shared<ChFunction_Const>(0.5);
     motor->SetSpeedFunction(fun);
     sys.AddLink(motor);
 }

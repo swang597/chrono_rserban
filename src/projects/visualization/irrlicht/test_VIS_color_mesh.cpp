@@ -35,20 +35,20 @@ int main(int argc, char* argv[]) {
     ChSystemNSC msystem;
 
     // Create a ground body
-    auto ground = std::make_shared<ChBody>();
+    auto ground = chrono_types::make_shared<ChBody>();
     ground->SetBodyFixed(true);
     ground->SetCollide(false);
     msystem.AddBody(ground);
 
     // Visualization
-    auto vis_level = std::make_shared<ChAssetLevel>();
+    auto vis_level = chrono_types::make_shared<ChAssetLevel>();
     ground->AddAsset(vis_level);
 
-    auto vis_mesh = std::make_shared<ChObjShapeFile>();
+    auto vis_mesh = chrono_types::make_shared<ChObjShapeFile>();
     vis_mesh->SetFilename(GetChronoDataFile("tractor_wheel.obj"));
     vis_level->AddAsset(vis_mesh);
 
-    vis_level->AddAsset(std::make_shared<ChColorAsset>(0.5f, 0.0f, 0.0f));
+    vis_level->AddAsset(chrono_types::make_shared<ChColorAsset>(0.5f, 0.0f, 0.0f));
 
     // Create the Irrlicht visualization
     ChIrrApp application(&msystem, L"Mesh color", irr::core::dimension2d<irr::u32>(800, 600));

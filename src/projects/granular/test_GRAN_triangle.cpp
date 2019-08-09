@@ -88,18 +88,18 @@ int out_fps = 60;
 // =============================================================================
 void CreateGround(ChSystemParallel* system) {
 #ifdef USE_SMC
-    auto mat_g = std::make_shared<ChMaterialSurfaceSMC>();
+    auto mat_g = chrono_types::make_shared<ChMaterialSurfaceSMC>();
     mat_g->SetYoungModulus(1e7f);
     mat_g->SetFriction(0.7f);
     mat_g->SetRestitution(0.01f);
 
-    auto ground = std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
+    auto ground = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
     ground->SetMaterialSurface(mat_g);
 #else
-    auto mat_g = std::make_shared<ChMaterialSurfaceNSC>();
+    auto mat_g = chrono_types::make_shared<ChMaterialSurfaceNSC>();
     mat_g->SetFriction(0.7f);
 
-    auto ground = std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>());
+    auto ground = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
     ground->SetMaterialSurface(mat_g);
 #endif
 
@@ -132,18 +132,18 @@ std::shared_ptr<ChBody> CreateObject(ChSystemParallel* system) {
     double rho_o = 2000.0;
 
 #ifdef USE_SMC
-    auto mat_o = std::make_shared<ChMaterialSurfaceSMC>();
+    auto mat_o = chrono_types::make_shared<ChMaterialSurfaceSMC>();
     mat_o->SetYoungModulus(1e7f);
     mat_o->SetFriction(0.7f);
     mat_o->SetRestitution(0.01f);
 
-    auto obj = std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
+    auto obj = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
     obj->SetMaterialSurface(mat_o);
 #else
-    auto mat_o = std::make_shared<ChMaterialSurfaceNSC>();
+    auto mat_o = chrono_types::make_shared<ChMaterialSurfaceNSC>();
     mat_o->SetFriction(0.7f);
 
-    auto obj = std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>());
+    auto obj = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
     obj->SetMaterialSurface(mat_o);
 #endif
 

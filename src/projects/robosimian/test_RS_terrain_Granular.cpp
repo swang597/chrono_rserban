@@ -19,6 +19,7 @@
 #include <cmath>
 #include <cstdio>
 
+#include "chrono/assets/ChCylinderShape.h"
 #include "chrono/utils/ChUtilsCreators.h"
 #include "chrono/utils/ChUtilsGenerators.h"
 
@@ -139,7 +140,7 @@ int main(int argc, char* argv[]) {
 
     double cyl_length = 0.123;
     double cyl_radius = 0.12;
-    auto cyl_shape = std::make_shared<ChCylinderShape>();
+    auto cyl_shape = chrono_types::make_shared<ChCylinderShape>();
     cyl_shape->GetCylinderGeometry().rad = cyl_radius;
     cyl_shape->GetCylinderGeometry().p1 = ChVector<>(0, cyl_length / 2, 0);
     cyl_shape->GetCylinderGeometry().p2 = ChVector<>(0, -cyl_length / 2, 0);

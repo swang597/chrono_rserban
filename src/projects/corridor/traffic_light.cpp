@@ -37,30 +37,30 @@ TrafficLight::TrafficLight(Framework* framework,
     m_body->SetBodyFixed(true);
     m_body->SetCollide(false);
 
-    auto cyl = std::make_shared<ChCylinderShape>();
+    auto cyl = chrono_types::make_shared<ChCylinderShape>();
     cyl->GetCylinderGeometry().p1 = ChVector<>(0, 0, 0);
     cyl->GetCylinderGeometry().p2 = ChVector<>(0, 0, 3);
     cyl->GetCylinderGeometry().rad = 0.2;
     m_body->AddAsset(cyl);
 
-    auto sphere = std::make_shared<ChSphereShape>();
+    auto sphere = chrono_types::make_shared<ChSphereShape>();
     sphere->GetSphereGeometry().rad = 0.4;
     sphere->Pos = ChVector<>(0, 0, 3);
     m_body->AddAsset(sphere);
 
-    m_body->AddAsset(std::make_shared<ChColorAsset>(ChColor(0.6f, 0, 0)));
+    m_body->AddAsset(chrono_types::make_shared<ChColorAsset>(ChColor(0.6f, 0, 0)));
 
     framework->m_system->AddBody(m_body);
 
     // Prepare messages sent by this agent
-    m_map_msg = std::make_shared<MessageMAP>();
+    m_map_msg = chrono_types::make_shared<MessageMAP>();
     m_map_msg->type = Message::MAP;
     m_map_msg->senderID = id;
     m_map_msg->time = 0;
     m_map_msg->intersectionID = 9999;
     m_map_msg->num_lanes = 3;
 
-    m_spat_msg = std::make_shared<MessageSPAT>();
+    m_spat_msg = chrono_types::make_shared<MessageSPAT>();
     m_spat_msg->type = Message::SPAT;
     m_spat_msg->senderID = id;
     m_spat_msg->time = 0;

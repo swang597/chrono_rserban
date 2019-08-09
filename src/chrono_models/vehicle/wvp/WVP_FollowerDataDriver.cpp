@@ -19,6 +19,7 @@
 //
 // =============================================================================
 
+#include "chrono/assets/ChLineShape.h"
 #include "chrono/core/ChMathematics.h"
 #include "chrono/geometry/ChLineBezier.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
@@ -62,8 +63,8 @@ void WVP_FollowerDataDriver::Create() {
     road->SetBodyFixed(true);
     m_vehicle.GetSystem()->AddBody(road);
 
-    auto path_asset = std::make_shared<ChLineShape>();
-    path_asset->SetLineGeometry(std::make_shared<geometry::ChLineBezier>(m_steeringPID.GetPath()));
+    auto path_asset = chrono_types::make_shared<ChLineShape>();
+    path_asset->SetLineGeometry(chrono_types::make_shared<geometry::ChLineBezier>(m_steeringPID.GetPath()));
     path_asset->SetColor(ChColor(0.0f, 0.8f, 0.0f));
     path_asset->SetName(m_pathName);
     road->AddAsset(path_asset);

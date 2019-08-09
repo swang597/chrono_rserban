@@ -129,12 +129,12 @@ void AddContainer(ChSystemDistributed* sys) {
     // TODO Any of this body stuff needed for custom collision?
     int binId = -200;
 
-    auto mat = std::make_shared<ChMaterialSurfaceSMC>();
+    auto mat = chrono_types::make_shared<ChMaterialSurfaceSMC>();
     mat->SetYoungModulus(Y);
     mat->SetFriction(mu);
     mat->SetRestitution(cr);
 
-    auto bin = std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
+    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
     bin->SetMaterialSurface(mat);
     bin->SetIdentifier(binId);
     bin->SetMass(1);
@@ -163,7 +163,7 @@ inline std::shared_ptr<ChBody> CreateBall(const ChVector<>& pos,
                                           double m,
                                           ChVector<> inertia,
                                           double radius) {
-    auto ball = std::make_shared<ChBody>(std::make_shared<ChCollisionModelDistributed>(), ChMaterialSurface::SMC);
+    auto ball = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelDistributed>(), ChMaterialSurface::SMC);
     ball->SetMaterialSurface(ballMat);
 
     ball->SetIdentifier(*ballId++);
@@ -189,18 +189,18 @@ size_t AddFallingBalls(ChSystemDistributed* sys, utils::SamplingType sampling_ty
 
     switch (sampling_type) {
         case utils::POISSON_DISK:
-            sampler = std::make_shared<utils::PDSampler<double>>(spacing);
+            sampler = chrono_types::make_shared<utils::PDSampler<double>>(spacing);
             break;
         case utils::REGULAR_GRID:
-            sampler = std::make_shared<utils::GridSampler<double>>(spacing);
+            sampler = chrono_types::make_shared<utils::GridSampler<double>>(spacing);
             break;
         case utils::HCP_PACK:
-            sampler = std::make_shared<utils::HCPSampler<double>>(spacing);
+            sampler = chrono_types::make_shared<utils::HCPSampler<double>>(spacing);
     }
 
     auto points = sampler->SampleBox(box_center, half_dims);
 
-    auto ballMat = std::make_shared<ChMaterialSurfaceSMC>();
+    auto ballMat = chrono_types::make_shared<ChMaterialSurfaceSMC>();
     ballMat->SetYoungModulus(Y);
     ballMat->SetFriction(mu);
     ballMat->SetRestitution(cr);

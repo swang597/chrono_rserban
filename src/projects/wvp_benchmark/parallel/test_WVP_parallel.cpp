@@ -108,12 +108,12 @@ class My_Driver : public ChDriver {
 void CreateContainer(ChSystem* system, float mu_g, float coh_g) {
     bool visible_walls = false;
 
-    auto material = std::make_shared<ChMaterialSurfaceNSC>();
+    auto material = chrono_types::make_shared<ChMaterialSurfaceNSC>();
     material->SetFriction(mu_g);
     material->SetCompliance(1e-9f);
     material->SetCohesion(coh_g);
 
-    auto ground = std::make_shared<ChBody>(std::make_shared<ChCollisionModelParallel>());
+    auto ground = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
     ground->SetIdentifier(-1);
     ground->SetMass(1000);
     ground->SetBodyFixed(true);
@@ -153,7 +153,7 @@ void CreateContainer(ChSystem* system, float mu_g, float coh_g) {
 
 int CreateParticles(ChSystem* system, double r_g, double rho_g, float mu_g, float coh_g) {
     // Create a material
-    auto mat_g = std::make_shared<ChMaterialSurfaceNSC>();
+    auto mat_g = chrono_types::make_shared<ChMaterialSurfaceNSC>();
     mat_g->SetFriction(mu_g);
     mat_g->SetRestitution(0);
     mat_g->SetCohesion(coh_g);

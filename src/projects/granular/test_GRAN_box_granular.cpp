@@ -28,6 +28,7 @@
 #include <vector>
 
 #include "chrono/ChConfig.h"
+#include "chrono/assets/ChBoxShape.h"
 #include "chrono/core/ChTimer.h"
 #include "chrono/core/ChStream.h"
 #include "chrono/utils/ChUtilsCreators.h"
@@ -220,7 +221,7 @@ int main(int argc, char** argv) {
 
     switch (method) {
         case ChMaterialSurface::SMC: {
-            auto mat_c = std::make_shared<ChMaterialSurfaceSMC>();
+            auto mat_c = chrono_types::make_shared<ChMaterialSurfaceSMC>();
             mat_c->SetFriction(mu_g);
             mat_c->SetRestitution(cr_g);
             mat_c->SetYoungModulus(Y_g);
@@ -236,7 +237,7 @@ int main(int argc, char** argv) {
             break;
         }
         case ChMaterialSurface::NSC: {
-            auto mat_c = std::make_shared<ChMaterialSurfaceNSC>();
+            auto mat_c = chrono_types::make_shared<ChMaterialSurfaceNSC>();
             mat_c->SetFriction(mu_g);
             mat_c->SetRestitution(cr_g);
             mat_c->SetCohesion(coh_g);
@@ -283,7 +284,7 @@ int main(int argc, char** argv) {
 
     switch (method) {
         case ChMaterialSurface::SMC: {
-            auto mat_g = std::make_shared<ChMaterialSurfaceSMC>();
+            auto mat_g = chrono_types::make_shared<ChMaterialSurfaceSMC>();
             mat_g->SetFriction(mu_g);
             mat_g->SetRestitution(cr_g);
             mat_g->SetYoungModulus(Y_g);
@@ -299,7 +300,7 @@ int main(int argc, char** argv) {
             break;
         }
         case ChMaterialSurface::NSC: {
-            auto mat_g = std::make_shared<ChMaterialSurfaceNSC>();
+            auto mat_g = chrono_types::make_shared<ChMaterialSurfaceNSC>();
             mat_g->SetFriction(mu_g);
             mat_g->SetRestitution(cr_g);
             mat_g->SetCohesion(coh_g);
@@ -360,7 +361,7 @@ int main(int argc, char** argv) {
 
     switch (method) {
         case ChMaterialSurface::SMC: {
-            auto mat_t = std::make_shared<ChMaterialSurfaceSMC>();
+            auto mat_t = chrono_types::make_shared<ChMaterialSurfaceSMC>();
             mat_t->SetFriction(mu_t);
             mat_t->SetRestitution(cr_t);
             mat_t->SetYoungModulus(Y_t);
@@ -376,7 +377,7 @@ int main(int argc, char** argv) {
             break;
         }
         case ChMaterialSurface::NSC: {
-            auto mat_t = std::make_shared<ChMaterialSurfaceNSC>();
+            auto mat_t = chrono_types::make_shared<ChMaterialSurfaceNSC>();
             mat_t->SetFriction(mu_t);
             mat_t->SetRestitution(cr_t);
             mat_t->SetCohesion(coh_t);
@@ -416,7 +417,7 @@ int main(int argc, char** argv) {
     system->GetSettings()->collision.aabb_min = bmin;
     system->GetSettings()->collision.aabb_max = bmax;
 
-    auto bbox = std::make_shared<ChBoxShape>();
+    auto bbox = chrono_types::make_shared<ChBoxShape>();
     real3 bsize = 0.5 * (bmax - bmin);
     real3 bpos = 0.5 * (bmax + bmin);
     bbox->GetBoxGeometry().Size = ChVector<>(bsize.x, bsize.y, bsize.z);
