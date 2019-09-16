@@ -94,7 +94,7 @@
 
 #include "chrono_thirdparty/rapidjson/document.h"
 #include "Eigen/src/Core/util/Memory.h"
-
+#include "chrono_models/vehicle/citybus/CityBus.h"
 
 using namespace chrono;
 using namespace chrono::vehicle;
@@ -102,6 +102,7 @@ using namespace chrono::vehicle;
 using namespace chrono::vehicle::generic;
 using namespace chrono::vehicle::hmmwv;
 using namespace chrono::vehicle::sedan;
+using namespace chrono::vehicle::citybus;
 
 
 %}
@@ -230,7 +231,7 @@ Before adding a shared_ptr, mark as shared ptr all its inheritance tree in the m
 %import(module = "pychrono.core")  "ChVisualization.i"
 %import(module = "pychrono.core") "../chrono/motion_functions/ChFunction_Base.h"
 %import(module = "pychrono.core")  "ChMaterialSurface.i"
-%import(module = "pychrono.core") "../chrono/physics/ChContinuumMaterial.h"
+%import(module = "pychrono.core") "../chrono/fea/ChContinuumMaterial.h"
 %import(module = "pychrono.core") "../chrono/physics/ChPhysicsItem.h"
 //%import(module = "pychrono.core") "../chrono/physics/ChLoadable.h" // disable because strange error in cxx
 

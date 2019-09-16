@@ -174,6 +174,8 @@ source_group("chassis" FILES ${CV_CHASSIS_FILES})
 set(CV_DRIVER_FILES
     driver/ChDataDriver.h
     driver/ChDataDriver.cpp
+    driver/ChHumanDriver.h
+    driver/ChHumanDriver.cpp
     driver/ChPathFollowerDriver.h
     driver/ChPathFollowerDriver.cpp
     driver/ChPathFollowerACCDriver.h
@@ -440,6 +442,8 @@ set(CV_WV_TIRE_FILES
     wheeled_vehicle/tire/RigidTire.cpp
     wheeled_vehicle/tire/PacejkaTire.h
     wheeled_vehicle/tire/PacejkaTire.cpp
+    wheeled_vehicle/tire/Pac89Tire.h
+    wheeled_vehicle/tire/Pac89Tire.cpp
     wheeled_vehicle/tire/LugreTire.h
     wheeled_vehicle/tire/LugreTire.cpp
     wheeled_vehicle/tire/FialaTire.h
@@ -460,8 +464,6 @@ set(CV_WV_TIRE_FILES
 source_group("wheeled_vehicle\\tire" FILES ${CV_WV_TIRE_FILES})
 
 set(CV_WV_UTILS_FILES
-    wheeled_vehicle/utils/ChWheeledVehicleAssembly.h
-    wheeled_vehicle/utils/ChWheeledVehicleAssembly.cpp
 )
 if(ENABLE_MODULE_IRRLICHT)
     set(CVIRR_WV_UTILS_FILES
