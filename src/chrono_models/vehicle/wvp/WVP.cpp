@@ -31,12 +31,11 @@ namespace wvp {
 WVP::WVP()
     : m_system(NULL),
       m_vehicle(NULL),
-      m_powertrain(NULL),
-      m_tires({{NULL, NULL, NULL, NULL}}),
       m_contactMethod(ChMaterialSurface::NSC),
       m_chassisCollisionType(ChassisCollisionType::NONE),
       m_fixed(false),
       m_tireType(TireModelType::RIGID),
+      m_tire_collision_type(ChTire::CollisionType::SINGLE_POINT),
       m_vehicle_step_size(-1),
       m_tire_step_size(-1),
       m_steeringType(SteeringType::PITMAN_ARM),
@@ -49,12 +48,11 @@ WVP::WVP()
 WVP::WVP(ChSystem* system)
     : m_system(system),
       m_vehicle(NULL),
-      m_powertrain(NULL),
-      m_tires({{NULL, NULL, NULL, NULL}}),
       m_contactMethod(ChMaterialSurface::NSC),
       m_chassisCollisionType(ChassisCollisionType::NONE),
       m_fixed(false),
       m_tireType(TireModelType::RIGID),
+      m_tire_collision_type(ChTire::CollisionType::SINGLE_POINT),
       m_vehicle_step_size(-1),
       m_tire_step_size(-1),
       m_steeringType(SteeringType::PITMAN_ARM),
@@ -66,11 +64,6 @@ WVP::WVP(ChSystem* system)
 
 WVP::~WVP() {
     delete m_vehicle;
-    delete m_powertrain;
-    delete m_tires[0];
-    delete m_tires[1];
-    delete m_tires[2];
-    delete m_tires[3];
 }
 
 // -----------------------------------------------------------------------------
@@ -101,110 +94,91 @@ void WVP::Initialize() {
     }
 
     // Create and initialize the powertrain system
-    m_powertrain = new WVP_SimpleMapPowertrain;
-    m_powertrain->Initialize(GetChassisBody(), m_vehicle->GetDriveshaft());
+    auto powertrain = chrono_types::make_shared<WVP_SimpleMapPowertrain>();
+    m_vehicle->InitializePowertrain(powertrain);
 
     // Create the tires and set parameters depending on type.
     switch (m_tireType) {
         case TireModelType::RIGID:
         case TireModelType::RIGID_MESH: {
-            std::cout << "Init RIGID" << std::endl;
             bool use_mesh = (m_tireType == TireModelType::RIGID_MESH);
-            WVP_RigidTire* tire_FL = new WVP_RigidTire("FL", use_mesh);
-            WVP_RigidTire* tire_FR = new WVP_RigidTire("FR", use_mesh);
-            WVP_RigidTire* tire_RL = new WVP_RigidTire("RL", use_mesh);
-            WVP_RigidTire* tire_RR = new WVP_RigidTire("RR", use_mesh);
 
-            m_tires[0] = tire_FL;
-            m_tires[1] = tire_FR;
-            m_tires[2] = tire_RL;
-            m_tires[3] = tire_RR;
+            auto tire_FL = chrono_types::make_shared<WVP_RigidTire>("FL", use_mesh);
+            auto tire_FR = chrono_types::make_shared<WVP_RigidTire>("FR", use_mesh);
+            auto tire_RL = chrono_types::make_shared<WVP_RigidTire>("RL", use_mesh);
+            auto tire_RR = chrono_types::make_shared<WVP_RigidTire>("RR", use_mesh);
+
+            m_vehicle->InitializeTire(tire_FL, m_vehicle->GetAxle(0)->m_wheels[LEFT], VisualizationType::NONE);
+            m_vehicle->InitializeTire(tire_FR, m_vehicle->GetAxle(0)->m_wheels[RIGHT], VisualizationType::NONE);
+            m_vehicle->InitializeTire(tire_RL, m_vehicle->GetAxle(1)->m_wheels[LEFT], VisualizationType::NONE);
+            m_vehicle->InitializeTire(tire_RR, m_vehicle->GetAxle(1)->m_wheels[RIGHT], VisualizationType::NONE);
+
+            m_tire_mass = tire_FL->ReportMass();
 
             break;
         }
         case TireModelType::FIALA: {
-            std::cout << "Init FIALA" << std::endl;
-            WVP_FialaTire* tire_FL = new WVP_FialaTire("FL");
-            WVP_FialaTire* tire_FR = new WVP_FialaTire("FR");
-            WVP_FialaTire* tire_RL = new WVP_FialaTire("RL");
-            WVP_FialaTire* tire_RR = new WVP_FialaTire("RR");
+            auto tire_FL = chrono_types::make_shared<WVP_FialaTire>("FL");
+            auto tire_FR = chrono_types::make_shared<WVP_FialaTire>("FR");
+            auto tire_RL = chrono_types::make_shared<WVP_FialaTire>("RL");
+            auto tire_RR = chrono_types::make_shared<WVP_FialaTire>("RR");
 
-            if (m_tire_step_size > 0) {
-                tire_FL->SetStepsize(m_tire_step_size);
-                tire_FR->SetStepsize(m_tire_step_size);
-                tire_RL->SetStepsize(m_tire_step_size);
-                tire_RR->SetStepsize(m_tire_step_size);
-            }
+            m_vehicle->InitializeTire(tire_FL, m_vehicle->GetAxle(0)->m_wheels[LEFT], VisualizationType::NONE);
+            m_vehicle->InitializeTire(tire_FR, m_vehicle->GetAxle(0)->m_wheels[RIGHT], VisualizationType::NONE);
+            m_vehicle->InitializeTire(tire_RL, m_vehicle->GetAxle(1)->m_wheels[LEFT], VisualizationType::NONE);
+            m_vehicle->InitializeTire(tire_RR, m_vehicle->GetAxle(1)->m_wheels[RIGHT], VisualizationType::NONE);
 
-            m_tires[0] = tire_FL;
-            m_tires[1] = tire_FR;
-            m_tires[2] = tire_RL;
-            m_tires[3] = tire_RR;
+            m_tire_mass = tire_FL->ReportMass();
 
             break;
         }
         case TireModelType::PACEJKA: {
-            WVP_Pac02Tire* tire_FL = new WVP_Pac02Tire("FL");
-            WVP_Pac02Tire* tire_FR = new WVP_Pac02Tire("FR");
-            WVP_Pac02Tire* tire_RL = new WVP_Pac02Tire("RL");
-            WVP_Pac02Tire* tire_RR = new WVP_Pac02Tire("RR");
+            auto tire_FL = chrono_types::make_shared<WVP_Pac02Tire>("FL");
+            auto tire_FR = chrono_types::make_shared<WVP_Pac02Tire>("FR");
+            auto tire_RL = chrono_types::make_shared<WVP_Pac02Tire>("RL");
+            auto tire_RR = chrono_types::make_shared<WVP_Pac02Tire>("RR");
 
             tire_FL->SetDrivenWheel(false);
             tire_FR->SetDrivenWheel(false);
             tire_RL->SetDrivenWheel(true);
             tire_RR->SetDrivenWheel(true);
 
-            if (m_tire_step_size > 0) {
-                tire_FL->SetStepsize(m_tire_step_size);
-                tire_FR->SetStepsize(m_tire_step_size);
-                tire_RL->SetStepsize(m_tire_step_size);
-                tire_RR->SetStepsize(m_tire_step_size);
-            }
+            m_vehicle->InitializeTire(tire_FL, m_vehicle->GetAxle(0)->m_wheels[LEFT], VisualizationType::NONE);
+            m_vehicle->InitializeTire(tire_FR, m_vehicle->GetAxle(0)->m_wheels[RIGHT], VisualizationType::NONE);
+            m_vehicle->InitializeTire(tire_RL, m_vehicle->GetAxle(1)->m_wheels[LEFT], VisualizationType::NONE);
+            m_vehicle->InitializeTire(tire_RR, m_vehicle->GetAxle(1)->m_wheels[RIGHT], VisualizationType::NONE);
 
-            m_tires[0] = tire_FL;
-            m_tires[1] = tire_FR;
-            m_tires[2] = tire_RL;
-            m_tires[3] = tire_RR;
+            m_tire_mass = tire_FL->ReportMass();
 
             break;
         }
         case TireModelType::PAC89: {
-            WVP_Pac89Tire* tire_FL = new WVP_Pac89Tire("FL");
-            WVP_Pac89Tire* tire_FR = new WVP_Pac89Tire("FR");
-            WVP_Pac89Tire* tire_RL = new WVP_Pac89Tire("RL");
-            WVP_Pac89Tire* tire_RR = new WVP_Pac89Tire("RR");
+            auto tire_FL = chrono_types::make_shared<WVP_Pac89Tire>("FL");
+            auto tire_FR = chrono_types::make_shared<WVP_Pac89Tire>("FR");
+            auto tire_RL = chrono_types::make_shared<WVP_Pac89Tire>("RL");
+            auto tire_RR = chrono_types::make_shared<WVP_Pac89Tire>("RR");
 
-            if (m_tire_step_size > 0) {
-                tire_FL->SetStepsize(m_tire_step_size);
-                tire_FR->SetStepsize(m_tire_step_size);
-                tire_RL->SetStepsize(m_tire_step_size);
-                tire_RR->SetStepsize(m_tire_step_size);
-            }
+            m_vehicle->InitializeTire(tire_FL, m_vehicle->GetAxle(0)->m_wheels[LEFT], VisualizationType::NONE);
+            m_vehicle->InitializeTire(tire_FR, m_vehicle->GetAxle(0)->m_wheels[RIGHT], VisualizationType::NONE);
+            m_vehicle->InitializeTire(tire_RL, m_vehicle->GetAxle(1)->m_wheels[LEFT], VisualizationType::NONE);
+            m_vehicle->InitializeTire(tire_RR, m_vehicle->GetAxle(1)->m_wheels[RIGHT], VisualizationType::NONE);
 
-            m_tires[0] = tire_FL;
-            m_tires[1] = tire_FR;
-            m_tires[2] = tire_RL;
-            m_tires[3] = tire_RR;
+            m_tire_mass = tire_FL->ReportMass();
 
             break;
         }
         case TireModelType::TMEASY: {
-            WVP_TMeasyTire* tire_FL = new WVP_TMeasyTire("FL");
-            WVP_TMeasyTire* tire_FR = new WVP_TMeasyTire("FR");
-            WVP_TMeasyTire* tire_RL = new WVP_TMeasyTire("RL");
-            WVP_TMeasyTire* tire_RR = new WVP_TMeasyTire("RR");
+            auto tire_FL = chrono_types::make_shared<WVP_TMeasyTire>("FL");
+            auto tire_FR = chrono_types::make_shared<WVP_TMeasyTire>("FR");
+            auto tire_RL = chrono_types::make_shared<WVP_TMeasyTire>("RL");
+            auto tire_RR = chrono_types::make_shared<WVP_TMeasyTire>("RR");
 
-            if (m_tire_step_size > 0) {
-                tire_FL->SetStepsize(m_tire_step_size);
-                tire_FR->SetStepsize(m_tire_step_size);
-                tire_RL->SetStepsize(m_tire_step_size);
-                tire_RR->SetStepsize(m_tire_step_size);
-            }
+            m_vehicle->InitializeTire(tire_FL, m_vehicle->GetAxle(0)->m_wheels[LEFT], VisualizationType::NONE);
+            m_vehicle->InitializeTire(tire_FR, m_vehicle->GetAxle(0)->m_wheels[RIGHT], VisualizationType::NONE);
+            m_vehicle->InitializeTire(tire_RL, m_vehicle->GetAxle(1)->m_wheels[LEFT], VisualizationType::NONE);
+            m_vehicle->InitializeTire(tire_RR, m_vehicle->GetAxle(1)->m_wheels[RIGHT], VisualizationType::NONE);
 
-            m_tires[0] = tire_FL;
-            m_tires[1] = tire_FR;
-            m_tires[2] = tire_RL;
-            m_tires[3] = tire_RR;
+            m_tire_mass = tire_FL->ReportMass();
 
             break;
         }
@@ -212,68 +186,31 @@ void WVP::Initialize() {
             break;
     }
 
-    // Initialize the tires.
-    m_tires[0]->Initialize(m_vehicle->GetWheelBody(FRONT_LEFT), LEFT);
-    m_tires[1]->Initialize(m_vehicle->GetWheelBody(FRONT_RIGHT), RIGHT);
-    m_tires[2]->Initialize(m_vehicle->GetWheelBody(REAR_LEFT), LEFT);
-    m_tires[3]->Initialize(m_vehicle->GetWheelBody(REAR_RIGHT), RIGHT);
-
-    m_tire_mass = m_tires[0]->ReportMass();
+    for (auto& axle : m_vehicle->GetAxles()) {
+        for (auto& wheel : axle->GetWheels()) {
+            wheel->GetTire()->SetCollisionType(m_tire_collision_type);
+            if (m_tire_step_size > 0)
+                wheel->GetTire()->SetStepsize(m_tire_step_size);
+        }
+    }
 }
 
 // -----------------------------------------------------------------------------
 void WVP::SetTireVisualizationType(VisualizationType vis) {
-    m_tires[0]->SetVisualizationType(vis);
-    m_tires[1]->SetVisualizationType(vis);
-    m_tires[2]->SetVisualizationType(vis);
-    m_tires[3]->SetVisualizationType(vis);
+    for (auto& axle : m_vehicle->GetAxles()) {
+        for (auto& wheel : axle->GetWheels()) {
+            wheel->GetTire()->SetVisualizationType(vis);
+        }
+    }
 }
 
 // -----------------------------------------------------------------------------
-void WVP::Synchronize(double time,
-                      double steering_input,
-                      double braking_input,
-                      double throttle_input,
-                      const ChTerrain& terrain) {
-    TerrainForces tire_forces(4);
-    WheelState wheel_states[4];
-
-    tire_forces[0] = m_tires[0]->GetTireForce();
-    tire_forces[1] = m_tires[1]->GetTireForce();
-    tire_forces[2] = m_tires[2]->GetTireForce();
-    tire_forces[3] = m_tires[3]->GetTireForce();
-
-    wheel_states[0] = m_vehicle->GetWheelState(FRONT_LEFT);
-    wheel_states[1] = m_vehicle->GetWheelState(FRONT_RIGHT);
-    wheel_states[2] = m_vehicle->GetWheelState(REAR_LEFT);
-    wheel_states[3] = m_vehicle->GetWheelState(REAR_RIGHT);
-
-    double powertrain_torque = 0;
-    double driveshaft_speed = 0;
-    if (m_powertrain_connected) {
-        powertrain_torque = m_powertrain->GetOutputTorque();
-        driveshaft_speed = m_vehicle->GetDriveshaftSpeed();
-    }
-
-    m_tires[0]->Synchronize(time, wheel_states[0], terrain);
-    m_tires[1]->Synchronize(time, wheel_states[1], terrain);
-    m_tires[2]->Synchronize(time, wheel_states[2], terrain);
-    m_tires[3]->Synchronize(time, wheel_states[3], terrain);
-
-    m_powertrain->Synchronize(time, throttle_input, driveshaft_speed);
-
-    m_vehicle->Synchronize(time, steering_input, braking_input, powertrain_torque, tire_forces);
+void WVP::Synchronize(double time, const ChDriver::Inputs& driver_inputs, const ChTerrain& terrain) {
+    m_vehicle->Synchronize(time, driver_inputs, terrain);
 }
 
 // -----------------------------------------------------------------------------
 void WVP::Advance(double step) {
-    m_tires[0]->Advance(step);
-    m_tires[1]->Advance(step);
-    m_tires[2]->Advance(step);
-    m_tires[3]->Advance(step);
-
-    m_powertrain->Advance(step);
-
     m_vehicle->Advance(step);
 }
 

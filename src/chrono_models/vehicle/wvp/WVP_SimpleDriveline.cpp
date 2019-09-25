@@ -30,7 +30,7 @@ namespace wvp {
 // -----------------------------------------------------------------------------
 // Construct a default 4WD simple driveline.
 // -----------------------------------------------------------------------------
-WVP_SimpleDriveline::WVP_SimpleDriveline(const std::string& name) : ChDriveline(name) {}
+WVP_SimpleDriveline::WVP_SimpleDriveline(const std::string& name) : ChDrivelineWV(name) {}
 
 // -----------------------------------------------------------------------------
 // Initialize the driveline subsystem.
@@ -38,18 +38,18 @@ WVP_SimpleDriveline::WVP_SimpleDriveline(const std::string& name) : ChDriveline(
 // suspension subsystems.
 // -----------------------------------------------------------------------------
 void WVP_SimpleDriveline::Initialize(std::shared_ptr<ChBody> chassis,
-                                     const ChSuspensionList& suspensions,
+                                     const ChAxleList& axles,
                                      const std::vector<int>& driven_axles) {
     assert(suspensions.size() >= 2);
 
     m_driven_axles = driven_axles;
 
     // Grab handles to the suspension wheel shafts.
-    m_front_left = suspensions[m_driven_axles[0]]->GetAxle(LEFT);
-    m_front_right = suspensions[m_driven_axles[0]]->GetAxle(RIGHT);
+    m_front_left = axles[m_driven_axles[0]]->m_suspension->GetAxle(LEFT);
+    m_front_right = axles[m_driven_axles[0]]->m_suspension->GetAxle(RIGHT);
 
-    m_rear_left = suspensions[m_driven_axles[1]]->GetAxle(LEFT);
-    m_rear_right = suspensions[m_driven_axles[1]]->GetAxle(RIGHT);
+    m_rear_left = axles[m_driven_axles[1]]->m_suspension->GetAxle(LEFT);
+    m_rear_right = axles[m_driven_axles[1]]->m_suspension->GetAxle(RIGHT);
 }
 
 // -----------------------------------------------------------------------------
@@ -131,16 +131,16 @@ void WVP_SimpleDriveline::Synchronize(double torque) {
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-double WVP_SimpleDriveline::GetWheelTorque(const WheelID& wheel_id) const {
-    if (wheel_id.axle() == m_driven_axles[0]) {
-        switch (wheel_id.side()) {
+double WVP_SimpleDriveline::GetSpindleTorque(int axle, VehicleSide side) const {
+    if (axle == m_driven_axles[0]) {
+        switch (side) {
             case LEFT:
                 return -m_front_left->GetAppliedTorque();
             case RIGHT:
                 return -m_front_right->GetAppliedTorque();
         }
-    } else if (wheel_id.axle() == m_driven_axles[1]) {
-        switch (wheel_id.side()) {
+    } else if (axle == m_driven_axles[1]) {
+        switch (side) {
             case LEFT:
                 return -m_rear_left->GetAppliedTorque();
             case RIGHT:

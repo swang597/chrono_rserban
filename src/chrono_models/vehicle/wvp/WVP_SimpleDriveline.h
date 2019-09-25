@@ -23,7 +23,7 @@
 #define WVP_SIMPLE_DRIVELINE_H
 
 #include "chrono_vehicle/ChApiVehicle.h"
-#include "chrono_vehicle/wheeled_vehicle/ChDriveline.h"
+#include "chrono_vehicle/wheeled_vehicle/ChDrivelineWV.h"
 
 #include "chrono_models/ChApiModels.h"
 
@@ -37,7 +37,7 @@ namespace wvp {
 /// Simple driveline model. This template can be used to model a 4WD driveline.
 /// It uses a constant front/rear torque split (a value between 0 and 1) and a
 /// simple model for Torsen limited-slip differentials.
-class CH_MODELS_API WVP_SimpleDriveline : public ChDriveline {
+class CH_MODELS_API WVP_SimpleDriveline : public ChDrivelineWV {
   public:
     WVP_SimpleDriveline(const std::string& name);
 
@@ -53,7 +53,7 @@ class CH_MODELS_API WVP_SimpleDriveline : public ChDriveline {
     /// This function connects this driveline subsystem to the axles of the
     /// specified suspension subsystems.
     virtual void Initialize(std::shared_ptr<ChBody> chassis,      ///< handle to the chassis body
-                            const ChSuspensionList& suspensions,  ///< list of all vehicle suspension subsystems
+                            const ChAxleList& axles,              ///< list of all vehicle axle subsystems
                             const std::vector<int>& driven_axles  ///< indexes of the driven vehicle axles
                             ) override;
 
@@ -67,8 +67,8 @@ class CH_MODELS_API WVP_SimpleDriveline : public ChDriveline {
     /// system.
     virtual void Synchronize(double torque) override;
 
-    /// Get the motor torque to be applied to the specified wheel.
-    virtual double GetWheelTorque(const WheelID& wheel_id) const override;
+    /// Get the motor torque to be applied to the specified spindle.
+    virtual double GetSpindleTorque(int axle, VehicleSide side) const override;
 
   private:
     /// he front torque fraction [0,1].

@@ -52,6 +52,7 @@ class CH_MODELS_API WVP {
     void SetChassisCollisionType(ChassisCollisionType val) { m_chassisCollisionType = val; }
 
     void SetTireType(TireModelType val) { m_tireType = val; }
+    void SetTireCollisionType(ChTire::CollisionType collision_type) { m_tire_collision_type = collision_type; }
 
     void setSteeringType(SteeringType val) { m_steeringType = val; }
 
@@ -68,8 +69,6 @@ class CH_MODELS_API WVP {
     ChWheeledVehicle& GetVehicle() const { return *m_vehicle; }
     std::shared_ptr<ChChassis> GetChassis() const { return m_vehicle->GetChassis(); }
     std::shared_ptr<ChBodyAuxRef> GetChassisBody() const { return m_vehicle->GetChassisBody(); }
-    ChPowertrain& GetPowertrain() const { return *m_powertrain; }
-    ChTire* GetTire(WheelID which) const { return m_tires[which.id()]; }
     double GetTotalMass() const;
 
     void Initialize();
@@ -82,12 +81,7 @@ class CH_MODELS_API WVP {
     void SetWheelVisualizationType(VisualizationType vis) { m_vehicle->SetWheelVisualizationType(vis); }
     void SetTireVisualizationType(VisualizationType vis);
 
-    void Synchronize(double time,
-                     double steering_input,
-                     double braking_input,
-                     double throttle_input,
-                     const ChTerrain& terrain);
-
+    void Synchronize(double time, const ChDriver::Inputs& driver_inputs, const ChTerrain& terrain);
     void Advance(double step);
 
     void LogHardpointLocations() { m_vehicle->LogHardpointLocations(); }
@@ -99,6 +93,7 @@ class CH_MODELS_API WVP {
     bool m_fixed;
 
     TireModelType m_tireType;
+    ChTire::CollisionType m_tire_collision_type;
  
     double m_vehicle_step_size;
     double m_tire_step_size;
@@ -118,8 +113,6 @@ class CH_MODELS_API WVP {
 
     ChSystem* m_system;
     WVP_Vehicle* m_vehicle;
-    ChPowertrain* m_powertrain;
-    std::array<ChTire*, 4> m_tires;
 
     double m_tire_mass;
 };
