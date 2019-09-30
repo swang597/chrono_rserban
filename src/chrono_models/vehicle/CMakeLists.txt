@@ -183,8 +183,8 @@ set(CVM_WVP_FILES
     wvp/WVP_FollowerDataDriver.h
     wvp/WVP_Pac89Tire.cpp
     wvp/WVP_Pac89Tire.h
-    wvp/WVP_Pac02Tire.cpp
-    wvp/WVP_Pac02Tire.h
+    wvp/WVP_PacejkaTire.cpp
+    wvp/WVP_PacejkaTire.h
     wvp/WVP_TMeasyTire.cpp
     wvp/WVP_TMeasyTire.h
 )

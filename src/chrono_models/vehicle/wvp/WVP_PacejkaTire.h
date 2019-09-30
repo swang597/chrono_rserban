@@ -16,8 +16,8 @@
 //
 // =============================================================================
 
-#ifndef WVP_PAC02_TIRE_H
-#define WVP_PAC02_TIRE_H
+#ifndef WVP_PACEJKA_TIRE_H
+#define WVP_PACEJKA_TIRE_H
 
 #include "chrono/assets/ChTriangleMeshShape.h"
 
@@ -30,10 +30,10 @@ namespace vehicle {
 namespace wvp {
 
 /// Pacejka 2002 tire model for the WVP vehicle.
-class CH_MODELS_API WVP_Pac02Tire : public ChPacejkaTire {
+class CH_MODELS_API WVP_PacejkaTire : public ChPacejkaTire {
   public:
-    WVP_Pac02Tire(const std::string& name);
-    ~WVP_Pac02Tire() {}
+    WVP_PacejkaTire(const std::string& name);
+    ~WVP_PacejkaTire() {}
 
     virtual double GetMass() const override { return m_mass; }
     virtual ChVector<> GetInertia() const override { return m_inertia; }

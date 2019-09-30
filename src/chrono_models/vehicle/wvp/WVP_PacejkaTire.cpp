@@ -21,7 +21,7 @@
 #include <algorithm>
 
 #include "chrono_vehicle/ChVehicleModelData.h"
-#include "chrono_models/vehicle/wvp/WVP_Pac02Tire.h"
+#include "chrono_models/vehicle/wvp/WVP_PacejkaTire.h"
 
 namespace chrono {
 namespace vehicle {
@@ -31,21 +31,21 @@ namespace wvp {
 // Static variables
 // -----------------------------------------------------------------------------
 
-const double WVP_Pac02Tire::m_mass = 71.1;
-const ChVector<> WVP_Pac02Tire::m_inertia(9.62, 16.84, 9.62);
+const double WVP_PacejkaTire::m_mass = 71.1;
+const ChVector<> WVP_PacejkaTire::m_inertia(9.62, 16.84, 9.62);
 
-const std::string WVP_Pac02Tire::m_pacTireFile = "hmmwv/tire/HMMWV_pacejka.tir";
+const std::string WVP_PacejkaTire::m_pacTireFile = "hmmwv/tire/HMMWV_pacejka.tir";
 
-const std::string WVP_Pac02Tire::m_meshName = "hmmwv_tire_POV_geom";
-const std::string WVP_Pac02Tire::m_meshFile = "hmmwv/hmmwv_tire.obj";
-
-// -----------------------------------------------------------------------------
-// -----------------------------------------------------------------------------
-WVP_Pac02Tire::WVP_Pac02Tire(const std::string& name) : ChPacejkaTire(name, vehicle::GetDataFile(m_pacTireFile)) {}
+const std::string WVP_PacejkaTire::m_meshName = "hmmwv_tire_POV_geom";
+const std::string WVP_PacejkaTire::m_meshFile = "hmmwv/hmmwv_tire.obj";
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-void WVP_Pac02Tire::AddVisualizationAssets(VisualizationType vis) {
+WVP_PacejkaTire::WVP_PacejkaTire(const std::string& name) : ChPacejkaTire(name, vehicle::GetDataFile(m_pacTireFile)) {}
+
+// -----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
+void WVP_PacejkaTire::AddVisualizationAssets(VisualizationType vis) {
     if (vis == VisualizationType::MESH) {
         auto trimesh = chrono_types::make_shared<geometry::ChTriangleMeshConnected>();
         trimesh->LoadWavefrontMesh(vehicle::GetDataFile(m_meshFile), false, false);
@@ -59,7 +59,7 @@ void WVP_Pac02Tire::AddVisualizationAssets(VisualizationType vis) {
     }
 }
 
-void WVP_Pac02Tire::RemoveVisualizationAssets() {
+void WVP_PacejkaTire::RemoveVisualizationAssets() {
     ChPacejkaTire::RemoveVisualizationAssets();
 
     // Make sure we only remove the assets added by HMMWV_Pac02Tire::AddVisualizationAssets.

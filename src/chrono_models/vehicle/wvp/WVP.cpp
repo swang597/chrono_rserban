@@ -133,10 +133,10 @@ void WVP::Initialize() {
             break;
         }
         case TireModelType::PACEJKA: {
-            auto tire_FL = chrono_types::make_shared<WVP_Pac02Tire>("FL");
-            auto tire_FR = chrono_types::make_shared<WVP_Pac02Tire>("FR");
-            auto tire_RL = chrono_types::make_shared<WVP_Pac02Tire>("RL");
-            auto tire_RR = chrono_types::make_shared<WVP_Pac02Tire>("RR");
+            auto tire_FL = chrono_types::make_shared<WVP_PacejkaTire>("FL");
+            auto tire_FR = chrono_types::make_shared<WVP_PacejkaTire>("FR");
+            auto tire_RL = chrono_types::make_shared<WVP_PacejkaTire>("RL");
+            auto tire_RR = chrono_types::make_shared<WVP_PacejkaTire>("RR");
 
             tire_FL->SetDrivenWheel(false);
             tire_FR->SetDrivenWheel(false);
