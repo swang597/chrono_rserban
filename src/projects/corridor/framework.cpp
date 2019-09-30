@@ -377,7 +377,7 @@ void Framework::Advance() {
     }
     if (m_render) {
         std::string msg = m_ego_vehicle->GetTypeName() + std::to_string(m_ego_vehicle->GetId());
-        m_app->Synchronize(msg, m_ego_vehicle->m_steering, m_ego_vehicle->m_throttle, m_ego_vehicle->m_braking);
+        m_app->Synchronize(msg, m_ego_vehicle->m_driver_inputs);
     }
 
     // advance state of agents and other objects

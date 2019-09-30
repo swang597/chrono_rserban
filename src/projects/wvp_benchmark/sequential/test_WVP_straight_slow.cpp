@@ -174,7 +174,7 @@ int main(int argc, char* argv[]) {
 	// Create the driver system
 	// -------------------------------------
 
-	ChWheeledVehicleIrrApp app(&wvp.GetVehicle(), &wvp.GetPowertrain(), L"WVP sequential test");
+	ChWheeledVehicleIrrApp app(&wvp.GetVehicle(), L"WVP sequential test");
 	app.SetSkyBox();
 	app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
 	app.SetChaseCamera(trackPoint, 6.0, 0.5);
@@ -357,18 +357,19 @@ int main(int argc, char* argv[]) {
 #endif
 
         time = wvp.GetSystem()->GetChTime();
-        // Collect output data from modules (for inter-module communication)
-        double throttle_input = GetThrottleFromSigmoid(time);
-        double steering_input = 0;
-        //double steering_input = 0;
-	    double braking_input = 0;
+
+        // Driver inputs
+        ChDriver::Inputs driver_inputs;
+        driver_inputs.m_throttle = GetThrottleFromSigmoid(time);
+        driver_inputs.m_steering = 0;
+	    driver_inputs.m_braking = 0;
 
         // Update modules (process inputs from other modules)
         //driver.Synchronize(time);
         terrain.Synchronize(time);
-        wvp.Synchronize(time, steering_input, braking_input, throttle_input, terrain);
+        wvp.Synchronize(time, driver_inputs, terrain);
 #ifdef USE_IRRLICHT
-        app.Synchronize("sigmoid driver", steering_input, throttle_input, braking_input);
+        app.Synchronize("sigmoid driver", driver_inputs);
 #endif
 
         // Advance simulation for one timestep for all modules
@@ -414,7 +415,7 @@ int main(int argc, char* argv[]) {
             }
 
             csv << time;    //time
-            csv << steering_input/-.001282; //steering wheel angle in degrees
+            csv << driver_inputs.m_steering/-.001282; //steering wheel angle in degrees
             csv << wvp.GetVehicle().GetVehicleSpeed();  //vehicle speed m/s
             ChQuaternion<> q= wvp.GetVehicle().GetVehicleRot();
             csv << q.Q_to_Euler123().x()*180.0/CH_C_PI;   //roll angle in deg
@@ -424,14 +425,22 @@ int main(int argc, char* argv[]) {
             csv << q.Q_to_Euler123().z()*180.0/CH_C_PI;   //yaw angle deg
             csv << wvp.GetChassisBody()->GetWvel_loc().z()*180.0/CH_C_PI; //yaw rate deg
             csv << wvp.GetVehicle().GetVehicleAcceleration({-2.070,.01,.495}).y()/9.81; //lateral acceleration in g's
-            for(int i=0;i<4;i++){
-                csv << wvp.GetTire(i)->ReportTireForce(&terrain).force.x(); //longitudinal tire forces FL, FR, RL, RR
+ 
+            std::vector<ChVector<>> tire_forces;
+            for (auto& axle : wvp.GetVehicle().GetAxles()) {
+                for (auto& wheel : axle->GetWheels()) {
+                    tire_forces.push_back(wheel->GetTire()->ReportTireForce(&terrain).force);
+                }
             }
-            for(int i=0;i<4;i++){
-                csv << wvp.GetTire(i)->ReportTireForce(&terrain).force.y(); //lateral tire forces FL, FR, RL, RR
+
+            for (int i = 0; i < 4; i++) {
+                csv << tire_forces[i].x();  // longitudinal tire forces FL, FR, RL, RR
             }
-            for(int i=0;i<4;i++){
-                csv << wvp.GetTire(i)->ReportTireForce(&terrain).force.z(); //vertical tire forces FL, FR, RL, RR
+            for (int i = 0; i < 4; i++) {
+                csv << tire_forces[i].y();  // lateral tire forces FL, FR, RL, RR
+            }
+            for (int i = 0; i < 4; i++) {
+                csv << tire_forces[i].z();  // vertical tire forces FL, FR, RL, RR
             }
 
             csv << susp0->GetSpringLength(LEFT);//individual strut lengths m
@@ -439,41 +448,44 @@ int main(int argc, char* argv[]) {
             csv << susp1->GetSpringLength(LEFT);//individual strut lengths m
             csv << susp1->GetSpringLength(RIGHT);//individual strut lengths m
 
-            for(int i=0;i<4;i++){
-                csv << wvp.GetVehicle().GetWheelPos(i).x(); //individual wheel paths x m
-                csv << wvp.GetVehicle().GetWheelPos(i).y(); //individual wheel paths y m
+            for (auto& axle : wvp.GetVehicle().GetAxles()) {
+                for (auto& wheel : axle->GetWheels()) {
+                    csv << wheel->GetPos().x();  // individual wheel paths x m
+                    csv << wheel->GetPos().y();  // individual wheel paths y m
+                }
             }
 
             //from acceleration test
 
-            csv << throttle_input;
-            csv << wvp.GetPowertrain().GetMotorSpeed();
-            csv << wvp.GetPowertrain().GetCurrentTransmissionGear();
-            for(int i=0;i<4;i++){
-                csv << wvp.GetVehicle().GetDriveline()->GetWheelTorque(i);
+            csv << driver_inputs.m_throttle;
+            csv << wvp.GetVehicle().GetPowertrain()->GetMotorSpeed();
+            csv << wvp.GetVehicle().GetPowertrain()->GetCurrentTransmissionGear();
+            for (int axle = 0; axle < 2; axle++) {
+                csv << wvp.GetVehicle().GetDriveline()->GetSpindleTorque(axle, LEFT);
+                csv << wvp.GetVehicle().GetDriveline()->GetSpindleTorque(axle, RIGHT);
             }
-            for(int i=0;i<4;i++){
-                csv << wvp.GetVehicle().GetWheelAngVel(i);
+            for (int axle = 0; axle < 2; axle++) {
+                auto avelL = wvp.GetVehicle().GetSpindleAngVel(axle, LEFT);
+                auto avelR = wvp.GetVehicle().GetSpindleAngVel(axle, RIGHT);
+                csv << avelL << avelR;
             }
+
             csv << wvp.GetVehicle().GetVehicleSpeed();
-            csv << wvp.GetVehicle().GetVehicleAcceleration(wvp.GetVehicle().GetChassis()->GetLocalDriverCoordsys().pos)/9.81;
-            //csv << wvp.GetVehicle().GetVehicleAcceleration({-2.070,.01,.495}).y()/9.81; //lateral acceleration in g's
+            csv << wvp.GetVehicle().GetVehicleAcceleration(
+                       wvp.GetVehicle().GetChassis()->GetLocalDriverCoordsys().pos) /
+                       9.81;
+            // csv << wvp.GetVehicle().GetVehicleAcceleration({-2.070,.01,.495}).y()/9.81; //lateral acceleration in g's
 
-            for(int i=0;i<4;i++){
-                csv << wvp.GetTire(i)->ReportTireForce(&terrain).force.z();
+            for (auto& axle : wvp.GetVehicle().GetAxles()) {
+                for (auto& wheel : axle->GetWheels()) {
+                    csv << wheel->GetTire()->ReportTireForce(&terrain).force;
+                }
             }
 
-            csv << wvp.GetPowertrain().GetMotorTorque();
-
+            csv << wvp.GetVehicle().GetPowertrain()->GetMotorTorque();
 
             csv << std::endl;
         }
-
-
-
-
-
-
 
         // std::cout<<time<<std::endl;
         // Increment frame number

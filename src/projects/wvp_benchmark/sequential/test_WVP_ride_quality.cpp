@@ -20,7 +20,7 @@
 //
 // =============================================================================
 
-// #define USE_IRRLICHT
+//#define USE_IRRLICHT
 
 #include "chrono_vehicle/ChConfigVehicle.h"
 #include "chrono_vehicle/ChVehicleModelData.h"
@@ -182,7 +182,7 @@ int main(int argc, char* argv[]) {
     // -------------------------------------
 
 #ifdef USE_IRRLICHT
-    ChWheeledVehicleIrrApp app(&wvp.GetVehicle(), &wvp.GetPowertrain(), L"WVP sequential test");
+    ChWheeledVehicleIrrApp app(&wvp.GetVehicle(), L"WVP sequential test");
     app.SetSkyBox();
     app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
     app.SetChaseCamera(trackPoint, 6.0, 0.5);
@@ -255,18 +255,20 @@ int main(int argc, char* argv[]) {
     csv << "EngineTorque";
 
     csv <<"W0 Pos x"<<"W0 Pos Y"<<"W0 Pos Z"<<"W1 Pos x"<<"W1 Pos Y"<<"W1 Pos Z";
-    csv <<"W2 Pos x"<<"W2 Pos Y"<<"W2 Pos Z"<<"W3 Pos x"<<"W3 Pos Y"<<"W3 Pos Z";
+    csv << "W2 Pos x"
+        << "W2 Pos Y"
+        << "W2 Pos Z"
+        << "W3 Pos x"
+        << "W3 Pos Y"
+        << "W3 Pos Z";
 
-    for(int i=0;i<4;i++){
-        csv << wvp.GetVehicle().GetWheelPos(i);
+    for (auto& axle : wvp.GetVehicle().GetAxles()) {
+        for (auto& wheel : axle->GetWheels()) {
+            csv << wheel->GetPos();
+        }
     }
 
     csv << std::endl;
-
-
-
-
-
 
     // ---------------
     // Simulation loop
@@ -315,23 +317,18 @@ int main(int argc, char* argv[]) {
             sprintf(filename, "%s/data_%03d.dat", pov_dir.c_str(), render_frame + 1);
             utils::WriteShapesPovray(wvp.GetSystem(), filename);
             render_frame++;
-
         }
 
-
-        // Collect output data from modules (for inter-module communication)
-        double throttle_input = driver.GetThrottle();
-        double steering_input = driver.GetSteering();
-        double braking_input = driver.GetBraking();
-
+        // Driver inputs
+        ChDriver::Inputs driver_inputs = driver.GetInputs();
 
         // Update modules (process inputs from other modules)
         driver.Synchronize(time);
         terrain.Synchronize(time);
-        wvp.Synchronize(time, steering_input, braking_input, throttle_input, terrain);
+        wvp.Synchronize(time, driver_inputs, terrain);
 
 #ifdef USE_IRRLICHT
-        app.Synchronize("Follower driver", steering_input, throttle_input, braking_input);
+        app.Synchronize("Follower driver", driver_inputs);
 #endif
 
         // Advance simulation for one timestep for all modules
@@ -344,35 +341,35 @@ int main(int argc, char* argv[]) {
         app.Advance(step_size);
 #endif
 
-
-        if(data_output && step_number % output_steps == 0){
-            std::cout<<time<<std::endl;
+        if (data_output && step_number % output_steps == 0) {
+            std::cout << time << std::endl;
             csv << time;
-            csv << throttle_input;
-            csv << wvp.GetPowertrain().GetMotorSpeed();
-            csv << wvp.GetPowertrain().GetCurrentTransmissionGear();
-            for(int i=0;i<4;i++){
-                csv << wvp.GetVehicle().GetDriveline()->GetWheelTorque(i);
+            csv << driver_inputs.m_throttle;
+            csv << wvp.GetVehicle().GetPowertrain()->GetMotorSpeed();
+            csv << wvp.GetVehicle().GetPowertrain()->GetCurrentTransmissionGear();
+            for (int axle = 0; axle < 2; axle++) {
+                csv << wvp.GetVehicle().GetDriveline()->GetSpindleTorque(axle, LEFT);
+                csv << wvp.GetVehicle().GetDriveline()->GetSpindleTorque(axle, RIGHT);
             }
-            for(int i=0;i<4;i++){
-                csv << wvp.GetVehicle().GetWheelAngVel(i);
+            for (int axle = 0; axle < 2; axle++) {
+                csv << wvp.GetVehicle().GetSpindleAngVel(axle, LEFT);
+                csv << wvp.GetVehicle().GetSpindleAngVel(axle, RIGHT);
             }
             csv << wvp.GetVehicle().GetVehicleSpeed();
             csv << wvp.GetVehicle().GetVehicleAcceleration(wvp.GetVehicle().GetChassis()->GetLocalDriverCoordsys().pos);
 
             csv << wvp.GetVehicle().GetVehicleAcceleration(vehCOM);
 
-            for(int i=0;i<4;i++){
-                csv << wvp.GetTire(i)->ReportTireForce(&terrain).force.z();
+            for (auto& axle : wvp.GetVehicle().GetAxles()) {
+                for (auto& wheel : axle->GetWheels()) {
+                    csv << wheel->GetTire()->ReportTireForce(&terrain).force;
+                }
             }
 
-            csv << wvp.GetPowertrain().GetMotorTorque();
-
+            csv << wvp.GetVehicle().GetPowertrain()->GetMotorTorque();
 
             csv << std::endl;
         }
-
-
 
         // Increment frame number
         step_number++;
@@ -381,5 +378,6 @@ int main(int argc, char* argv[]) {
     if (data_output) {
         csv.write_to_file(out_dir + "/" + output_file_name + ".dat");
     }
+
     return 0;
 }

@@ -104,7 +104,6 @@ class VehicleNode : public BaseNode {
     double m_driver_target_speed;                          ///< target speed for PATH_FOLLOWER driver type
 
     chrono::vehicle::hmmwv::HMMWV_VehicleFull* m_vehicle;    ///< vehicle system
-    chrono::vehicle::hmmwv::HMMWV_Powertrain* m_powertrain;  ///< powertrain system
 
     int m_num_wheels;                              ///< number of vehicle wheels
     chrono::vehicle::TerrainForces m_tire_forces;  ///< forces received from tire nodes

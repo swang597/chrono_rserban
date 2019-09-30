@@ -50,12 +50,8 @@ ChWheeledVehicle& VanAV::GetVehicle() const {
     return m_uaz->GetVehicle();
 }
 
-ChPowertrain& VanAV::GetPowertrain() const {
-    return m_uaz->GetPowertrain();
-}
-
 void VanAV::Synchronize(double time) {
-    m_uaz->Synchronize(time, m_steering, m_braking, m_throttle, *m_framework->m_terrain);
+    m_uaz->Synchronize(time, m_driver_inputs, *m_framework->m_terrain);
 }
 
 void VanAV::Advance(double step) {

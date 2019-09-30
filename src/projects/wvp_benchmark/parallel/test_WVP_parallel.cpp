@@ -305,14 +305,12 @@ int main(int argc, char* argv[]) {
     double exec_time = 0;
 
     while (time < time_end) {
-        // Extract current driver inputs
-        double steering_input = driver.GetSteering();
-        double braking_input = driver.GetBraking();
-        double throttle_input = driver.GetThrottle();
+        // Driver inputs
+        ChDriver::Inputs driver_inputs = driver.GetInputs();
 
         // Synchronize vehicle systems
         driver.Synchronize(time);
-        wvp.Synchronize(time, steering_input, braking_input, throttle_input, terrain);
+        wvp.Synchronize(time, driver_inputs, terrain);
 
         // Advance vehicle systems
         driver.Advance(time_step);

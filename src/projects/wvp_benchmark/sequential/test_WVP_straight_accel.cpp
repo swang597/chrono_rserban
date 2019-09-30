@@ -147,7 +147,7 @@ int main(int argc, char* argv[]) {
     // -------------------------------------
 
 #ifdef USE_IRRLICHT
-    ChWheeledVehicleIrrApp app(&wvp.GetVehicle(), &wvp.GetPowertrain(), L"WVP sequential test");
+    ChWheeledVehicleIrrApp app(&wvp.GetVehicle(), L"WVP sequential test");
     app.SetSkyBox();
     app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
     app.SetChaseCamera(trackPoint, 6.0, 0.5);
@@ -271,28 +271,23 @@ int main(int argc, char* argv[]) {
             render_frame++;
 
         }
-        
 
-        // Collect output data from modules (for inter-module communication)
-        double throttle_input = driver.GetThrottle();
-        double steering_input = driver.GetSteering();
-        double braking_input = driver.GetBraking();
+        // Driver inputs
+        ChDriver::Inputs driver_inputs = driver.GetInputs();
 
-
-        if(time<3) {
-            throttle_input = 0;
-        }
-        else if(time < 4){
-            throttle_input = 1-exp(-8*(time-3));
+        if (time < 3) {
+            driver_inputs.m_throttle = 0;
+        } else if (time < 4) {
+            driver_inputs.m_throttle = 1 - exp(-8 * (time - 3));
         }
 
         // Update modules (process inputs from other modules)
         driver.Synchronize(time);
         terrain.Synchronize(time);
-        wvp.Synchronize(time, steering_input, braking_input, throttle_input, terrain);
+        wvp.Synchronize(time, driver_inputs, terrain);
 
 #ifdef USE_IRRLICHT
-        app.Synchronize("Follower driver", steering_input, throttle_input, braking_input);
+        app.Synchronize("Follower driver", driver_inputs);
 #endif
 
         // Advance simulation for one timestep for all modules
@@ -309,24 +304,27 @@ int main(int argc, char* argv[]) {
         if(data_output && step_number % output_steps == 0){
             std::cout<<time<<std::endl;
             csv << time;
-            csv << throttle_input;
-            csv << wvp.GetPowertrain().GetMotorSpeed();
-            csv << wvp.GetPowertrain().GetCurrentTransmissionGear();
-            for(int i=0;i<4;i++){
-                csv << wvp.GetVehicle().GetDriveline()->GetWheelTorque(i);
+            csv << driver_inputs.m_throttle;
+            csv << wvp.GetVehicle().GetPowertrain()->GetMotorSpeed();
+            csv << wvp.GetVehicle().GetPowertrain()->GetCurrentTransmissionGear();
+            for (int axle = 0; axle < 2; axle++) {
+                csv << wvp.GetVehicle().GetDriveline()->GetSpindleTorque(axle, LEFT);
+                csv << wvp.GetVehicle().GetDriveline()->GetSpindleTorque(axle, RIGHT);
             }
-            for(int i=0;i<4;i++){
-                csv << wvp.GetVehicle().GetWheelAngVel(i);
+            for (int axle = 0; axle < 2; axle++) {
+                csv << wvp.GetVehicle().GetSpindleAngVel(axle, LEFT);
+                csv << wvp.GetVehicle().GetSpindleAngVel(axle, RIGHT);
             }
             csv << wvp.GetVehicle().GetVehicleSpeed();
             csv << wvp.GetVehicle().GetVehicleAcceleration(wvp.GetVehicle().GetChassis()->GetLocalDriverCoordsys().pos);
             
-            for(int i=0;i<4;i++){
-                csv << wvp.GetTire(i)->ReportTireForce(&terrain).force.z();
+            for (auto& axle : wvp.GetVehicle().GetAxles()) {
+                for (auto& wheel : axle->GetWheels()) {
+                    csv << wheel->GetTire()->ReportTireForce(&terrain).force;
+                }
             }
 
-            csv << wvp.GetPowertrain().GetMotorTorque();
-
+            csv << wvp.GetVehicle().GetPowertrain()->GetMotorTorque();
 
             csv << std::endl;
         }

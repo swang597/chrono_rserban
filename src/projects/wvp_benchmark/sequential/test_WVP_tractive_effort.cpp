@@ -20,7 +20,7 @@
 //
 // =============================================================================
 
-// #define USE_IRRLICHT
+//#define USE_IRRLICHT
 
 
 #include "chrono_vehicle/ChConfigVehicle.h"
@@ -215,7 +215,7 @@ int main(int argc, char* argv[]) {
     // Create the driver system
     // -------------------------------------
 
-    ChWheeledVehicleIrrApp app(&wvp.GetVehicle(), &wvp.GetPowertrain(), L"WVP sequential test");
+    ChWheeledVehicleIrrApp app(&wvp.GetVehicle(), L"WVP sequential test");
     app.SetSkyBox();
     app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
     app.SetChaseCamera(trackPoint, 6.0, 0.5);
@@ -315,20 +315,18 @@ int main(int argc, char* argv[]) {
 
         time = wvp.GetSystem()->GetChTime();
 
-        if(time>=10.0 && time<10.1) wvp.GetSystem()->Set_G_acc(slopegravity);
+        if (time >= 10.0 && time < 10.1)
+            wvp.GetSystem()->Set_G_acc(slopegravity);
 
-
-        // Collect output data from modules (for inter-module communication)
-        double throttle_input = driver.GetThrottle();
-        double steering_input = driver.GetSteering();
-        double braking_input = driver.GetBraking();
+        // Driver inputs
+        ChDriver::Inputs driver_inputs = driver.GetInputs();
 
         // Update modules (process inputs from other modules)
         driver.Synchronize(time);
         terrain->Synchronize(time);
-        wvp.Synchronize(time, steering_input, braking_input, throttle_input, *terrain);
+        wvp.Synchronize(time, driver_inputs, *terrain);
 #ifdef USE_IRRLICHT
-        app.Synchronize("Follower driver", steering_input, throttle_input, braking_input);
+        app.Synchronize("Follower driver", driver_inputs);
 #endif
 
         // Advance simulation for one timestep for all modules
@@ -345,31 +343,32 @@ int main(int argc, char* argv[]) {
             sprintf(filename, "%s/data_%03d.dat", pov_dir.c_str(), render_frame + 1);
             utils::WriteShapesPovray(wvp.GetSystem(), filename);
             render_frame++;
-
         }
 
+        if (data_output && step_number % output_steps == 0) {
+            // output time to check simulation is running
+            std::cout << time << std::endl;
 
-        if(data_output && step_number % output_steps == 0){
-            //output time to check simulation is running
-            std::cout<<time<<std::endl;
-
-            csv << time<<throttle_input;
-            csv << wvp.GetPowertrain().GetMotorSpeed();
+            csv << driver_inputs.m_throttle;
+            csv << wvp.GetVehicle().GetPowertrain()->GetMotorSpeed();
             csv << wvp.GetVehicle().GetVehicleSpeed();
-            csv << wvp.GetPowertrain().GetMotorTorque();
+            csv << wvp.GetVehicle().GetPowertrain()->GetMotorTorque();
 
-            for(int i=0;i<4;i++){
-                csv << wvp.GetVehicle().GetWheelAngVel(i);
+            for (int axle = 0; axle < 2; axle++) {
+                csv << wvp.GetVehicle().GetSpindleAngVel(axle, LEFT);
+                csv << wvp.GetVehicle().GetSpindleAngVel(axle, RIGHT);
             }
 
-            for(int i=0;i<4;i++){
-                csv << wvp.GetTire(i)->GetLongitudinalSlip();
+            for (auto& axle : wvp.GetVehicle().GetAxles()) {
+                for (auto& wheel : axle->GetWheels()) {
+                    csv << wheel->GetTire()->GetLongitudinalSlip();
+                }
             }
+
             csv << forceFunct.Get_y(time);
 
             csv << std::endl;
         }
-
 
         // std::cout<<time<<std::endl;
         // Increment frame number

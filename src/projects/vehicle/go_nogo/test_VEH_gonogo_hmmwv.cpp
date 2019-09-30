@@ -514,13 +514,11 @@ int main(int argc, char* argv[]) {
 
         if (hmmwv) {
             // Extract current driver inputs
-            double steering_input = driver->GetSteering();
-            double braking_input = driver->GetBraking();
-            double throttle_input = driver->GetThrottle();
+            ChDriver::Inputs driver_inputs = driver->GetInputs();
 
             // Synchronize vehicle systems
             driver->Synchronize(time);
-            hmmwv->Synchronize(time, steering_input, braking_input, throttle_input, terrain);
+            hmmwv->Synchronize(time, driver_inputs, terrain);
 
             // Update vehicle x position
             x_pos = hmmwv->GetChassis()->GetPos().x();
@@ -531,13 +529,13 @@ int main(int argc, char* argv[]) {
                 ChVector<> vv = hmmwv->GetChassisBody()->GetFrame_REF_to_abs().GetPos_dt();
                 ChVector<> av = hmmwv->GetChassisBody()->GetFrame_REF_to_abs().GetPos_dtdt();
 
-                ChVector<> v0 = hmmwv->GetVehicle().GetWheelLinVel(0);
-                ChVector<> v1 = hmmwv->GetVehicle().GetWheelLinVel(1);
-                ChVector<> v2 = hmmwv->GetVehicle().GetWheelLinVel(2);
-                ChVector<> v3 = hmmwv->GetVehicle().GetWheelLinVel(3);
+                ChVector<> v0 = hmmwv->GetVehicle().GetSpindleLinVel(0, LEFT);
+                ChVector<> v1 = hmmwv->GetVehicle().GetSpindleLinVel(0, RIGHT);
+                ChVector<> v2 = hmmwv->GetVehicle().GetSpindleLinVel(1, LEFT);
+                ChVector<> v3 = hmmwv->GetVehicle().GetSpindleLinVel(1, RIGHT);
 
                 ofile << system->GetChTime() << del;
-                ofile << throttle_input << del << steering_input << del;
+                ofile << driver_inputs.m_throttle << del << driver_inputs.m_steering << del;
 
                 ofile << pv.x() << del << pv.y() << del << pv.z() << del;
                 ofile << vv.x() << del << vv.y() << del << vv.z() << del;

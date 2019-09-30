@@ -90,21 +90,6 @@ bool output = true;
 
 // =============================================================================
 
-// Calculate wheel angular velocity
-double calcWheelOmega(WVP& wvp, WheelID id) {
-    auto rev = wvp.GetVehicle().GetSuspension(id.axle())->GetRevolute(id.side());
-    
-    auto marker1 = rev->GetMarker1()->GetAbsCoord();
-    auto marker2 = rev->GetMarker2()->GetAbsCoord();
-    
-    auto marker1_omg = rev->GetMarker1()->GetAbsWvel();
-    auto marker2_omg = rev->GetMarker2()->GetAbsWvel();
-    
-    auto rel_omg = marker1.TransformDirectionParentToLocal(marker2_omg - marker1_omg);
-
-    return rel_omg.z();
-}
-
 // Calculate longitudinal slip from radius, chassis velocity, and wheel angular velocity
 double calcLongSlip(double r, double v, double w) {
     return 1 - v / (r * w);
@@ -264,14 +249,15 @@ int main(int argc, char* argv[]) {
     // Impose wheel angular velocity
     std::vector<std::shared_ptr<ChLinkMotorRotationSpeed>> motors;
     auto fun_omg = chrono_types::make_shared<ChFunction_Const>(omega);
-    for (int i = 0; i < 4; i++) {
-        auto motor = chrono_types::make_shared<ChLinkMotorRotationSpeed>();
-        auto wheel = wvp.GetVehicle().GetWheelBody(i);
-        auto pos = wheel->GetPos();
-        motor->Initialize(wvp.GetChassisBody(), wheel, ChFrame<>(pos, Q_from_AngX(CH_C_PI_2)));
-        motor->SetSpeedFunction(fun_omg);
-        wvp.GetSystem()->AddLink(motor);
-        motors.push_back(motor);
+    for (auto& axle : wvp.GetVehicle().GetAxles()) {
+        for (auto& wheel : axle->GetWheels()) {
+            auto motor = chrono_types::make_shared<ChLinkMotorRotationSpeed>();
+            auto pos = wheel->GetSpindle()->GetPos();
+            motor->Initialize(wvp.GetChassisBody(), wheel->GetSpindle(), ChFrame<>(pos, Q_from_AngX(CH_C_PI_2)));
+            motor->SetSpeedFunction(fun_omg);
+            wvp.GetSystem()->AddLink(motor);
+            motors.push_back(motor);
+        }
     }
 #endif
 
@@ -307,7 +293,7 @@ int main(int argc, char* argv[]) {
     // Create the vehicle Irrlicht interface
     // -------------------------------------
 
-    ChWheeledVehicleIrrApp app(&wvp.GetVehicle(), &wvp.GetPowertrain(), L"WVP sequential test");
+    ChWheeledVehicleIrrApp app(&wvp.GetVehicle(), L"WVP sequential test");
     app.SetSkyBox();
     app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
     app.SetChaseCamera(ChVector<>(-2.0, 0.0, 1.75), 6.0, 0.5);
@@ -365,16 +351,17 @@ int main(int argc, char* argv[]) {
 
         time = wvp.GetSystem()->GetChTime();
 
-        // Collect output data from modules (for inter-module communication)
-        double throttle_input = 0;
-        double steering_input = 0;
-        double braking_input = 0;
+        // Driver inputs
+        ChDriver::Inputs driver_inputs;
+        driver_inputs.m_throttle = 0;
+        driver_inputs.m_steering = 0;
+        driver_inputs.m_braking = 0;
 
         // Update modules (process inputs from other modules)
         terrain->Synchronize(time);
-        wvp.Synchronize(time, steering_input, braking_input, throttle_input, *terrain);
+        wvp.Synchronize(time, driver_inputs, *terrain);
 #ifdef USE_IRRLICHT
-        app.Synchronize("", steering_input, throttle_input, braking_input);
+        app.Synchronize("", driver_inputs);
 #endif
 
         // Advance simulation for one timestep for all modules
@@ -390,7 +377,7 @@ int main(int argc, char* argv[]) {
 
 #ifdef LOCK_WHEELS
             // Note: actual reaction torques could be obtained frm the ChLinkLockLock joints
-            std::vector<double> torques = { 0, 0, 0, 0 };
+            std::vector<double> torques = {0, 0, 0, 0};
 #else
             std::vector<double> torques = {
                 motors[0]->GetMotorTorque(),  // wheel motor torque front-left
@@ -399,6 +386,12 @@ int main(int argc, char* argv[]) {
                 motors[3]->GetMotorTorque()   // wheel motor torque rear-right
             };
 #endif
+            std::vector<double> actual_omega = {
+                -wvp.GetVehicle().GetSpindleOmega(0, LEFT),   // front-left
+                -wvp.GetVehicle().GetSpindleOmega(0, RIGHT),  // front-right
+                -wvp.GetVehicle().GetSpindleOmega(1, LEFT),   // rear-left
+                -wvp.GetVehicle().GetSpindleOmega(1, RIGHT)   // rear-right
+            };
 
             if (time >= skip_time) {
                 // Collect filtered reaction force and torques
@@ -411,10 +404,8 @@ int main(int argc, char* argv[]) {
                 csv << time;
                 csv << actual_v;
                 for (int i = 0; i < 4; i++) {
-                    ////double rev_omega = calcWheelOmega(wvp, i);
-                    double actual_omega = -wvp.GetVehicle().GetWheelOmega(i);
-                    double actual_slip = 1 - actual_v / (radius * actual_omega);
-                    csv << actual_omega << actual_slip << torques[i];
+                    double actual_slip = 1 - actual_v / (radius * actual_omega[i]);
+                    csv << actual_omega[i] << actual_slip << torques[i];
                 }
                 csv << force;
                 csv << std::endl;

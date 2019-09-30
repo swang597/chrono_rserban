@@ -47,7 +47,7 @@ using namespace chrono::vehicle::hmmwv;
 // - create the (sequential) Chrono system and set solver parameters
 // -----------------------------------------------------------------------------
 VehicleNode::VehicleNode()
-    : BaseNode("VEHICLE"), m_vehicle(nullptr), m_powertrain(nullptr), m_driver(nullptr), m_driver_type(DEFAULT_DRIVER) {
+    : BaseNode("VEHICLE"), m_vehicle(nullptr), m_driver(nullptr), m_driver_type(DEFAULT_DRIVER) {
     m_prefix = "[Vehicle node]";
 
     // ------------------------
@@ -80,7 +80,6 @@ VehicleNode::VehicleNode()
 // -----------------------------------------------------------------------------
 VehicleNode::~VehicleNode() {
     delete m_vehicle;
-    delete m_powertrain;
     delete m_driver;
     delete m_system;
 }
@@ -140,8 +139,8 @@ void VehicleNode::Initialize() {
     m_vehicle->SetInitWheelAngVel(init_omega);
     m_vehicle->Initialize(ChCoordsys<>(init_loc, init_rot), m_init_fwd_vel);
 
-    m_powertrain = new HMMWV_Powertrain("Powertrain");
-    m_powertrain->Initialize(m_vehicle->GetChassisBody(), m_vehicle->GetDriveshaft());
+    auto powertrain = chrono_types::make_shared<HMMWV_Powertrain>("Powertrain");
+    m_vehicle->InitializePowertrain(powertrain);
 
     switch (m_driver_type) {
         case DEFAULT_DRIVER:
@@ -172,16 +171,19 @@ void VehicleNode::Initialize() {
     // Send wheel initial states.
     // It is assumed that initial linear and angular velocity are always 0.
     double bufWS[7];
-    for (int iw = 0; iw < m_num_wheels; iw++) {
-        WheelState wheel_state = m_vehicle->GetWheelState(WheelID(iw));
-        bufWS[0] = wheel_state.pos.x();
-        bufWS[1] = wheel_state.pos.y();
-        bufWS[2] = wheel_state.pos.z();
-        bufWS[3] = wheel_state.rot.e0();
-        bufWS[4] = wheel_state.rot.e1();
-        bufWS[5] = wheel_state.rot.e2();
-        bufWS[6] = wheel_state.rot.e3();
-        MPI_Send(bufWS, 7, MPI_DOUBLE, TIRE_NODE_RANK(iw), iw, MPI_COMM_WORLD);
+    int iw = 0;
+    for (auto& axle : m_vehicle->GetAxles()) {
+        for (auto& wheel : axle->GetWheels()) {
+            WheelState wheel_state = wheel->GetState();
+            bufWS[0] = wheel_state.pos.x();
+            bufWS[1] = wheel_state.pos.y();
+            bufWS[2] = wheel_state.pos.z();
+            bufWS[3] = wheel_state.rot.e0();
+            bufWS[4] = wheel_state.rot.e1();
+            bufWS[5] = wheel_state.rot.e2();
+            bufWS[6] = wheel_state.rot.e3();
+            MPI_Send(bufWS, 7, MPI_DOUBLE, TIRE_NODE_RANK(iw++), iw, MPI_COMM_WORLD);
+        }
     }
 
     // -------------------------------------
@@ -206,13 +208,7 @@ void VehicleNode::Synchronize(int step_number, double time) {
     //// TODO check this
 
     // Get current driver outputs
-    double steering = m_driver->GetSteering();
-    double throttle = m_driver->GetThrottle();
-    double braking = m_driver->GetBraking();
-
-    // Get current driveshaft speed and powertrain output torque
-    double driveshaft_speed = m_vehicle->GetDriveshaftSpeed();
-    double powertrain_torque = m_powertrain->GetOutputTorque();
+    ChDriver::Inputs driver_inputs = m_driver->GetInputs();
 
     // Receive tire forces from each of the tire nodes
     double bufTF[9];
@@ -226,31 +222,35 @@ void VehicleNode::Synchronize(int step_number, double time) {
 
     // Send complete wheel states to each of the tire nodes
     double bufWS[14];
-    for (int iw = 0; iw < m_num_wheels; iw++) {
-        WheelState wheel_state = m_vehicle->GetWheelState(WheelID(iw));
-        bufWS[0] = wheel_state.pos.x();
-        bufWS[1] = wheel_state.pos.y();
-        bufWS[2] = wheel_state.pos.z();
-        bufWS[3] = wheel_state.rot.e0();
-        bufWS[4] = wheel_state.rot.e1();
-        bufWS[5] = wheel_state.rot.e2();
-        bufWS[6] = wheel_state.rot.e3();
-        bufWS[7] = wheel_state.lin_vel.x();
-        bufWS[8] = wheel_state.lin_vel.y();
-        bufWS[9] = wheel_state.lin_vel.z();
-        bufWS[10] = wheel_state.ang_vel.x();
-        bufWS[11] = wheel_state.ang_vel.y();
-        bufWS[12] = wheel_state.ang_vel.z();
-        bufWS[13] = wheel_state.omega;
-        MPI_Send(bufWS, 14, MPI_DOUBLE, TIRE_NODE_RANK(iw), iw, MPI_COMM_WORLD);
+    int iw = 0;
+    for (auto& axle : m_vehicle->GetAxles()) {
+        for (auto& wheel : axle->GetWheels()) {
+            WheelState wheel_state = wheel->GetState();
+            bufWS[0] = wheel_state.pos.x();
+            bufWS[1] = wheel_state.pos.y();
+            bufWS[2] = wheel_state.pos.z();
+            bufWS[3] = wheel_state.rot.e0();
+            bufWS[4] = wheel_state.rot.e1();
+            bufWS[5] = wheel_state.rot.e2();
+            bufWS[6] = wheel_state.rot.e3();
+            bufWS[7] = wheel_state.lin_vel.x();
+            bufWS[8] = wheel_state.lin_vel.y();
+            bufWS[9] = wheel_state.lin_vel.z();
+            bufWS[10] = wheel_state.ang_vel.x();
+            bufWS[11] = wheel_state.ang_vel.y();
+            bufWS[12] = wheel_state.ang_vel.z();
+            bufWS[13] = wheel_state.omega;
+            MPI_Send(bufWS, 14, MPI_DOUBLE, TIRE_NODE_RANK(iw++), iw, MPI_COMM_WORLD);
+        }
     }
 
-    if (m_verbose)
-        cout << m_prefix << " Driver inputs:   S = " << steering << " T = " << throttle << " B = " << braking << endl;
+    if (m_verbose) {
+        cout << m_prefix << " Driver inputs:   S = " << driver_inputs.m_steering << " T = " << driver_inputs.m_throttle
+             << " B = " << driver_inputs.m_braking << endl;
+    }
 
     // Synchronize vehicle, powertrain, and driver
     m_vehicle->Synchronize(time, steering, braking, powertrain_torque, m_tire_forces);
-    m_powertrain->Synchronize(time, throttle, driveshaft_speed);
     m_driver->Synchronize(time);
 }
 
@@ -267,7 +267,6 @@ void VehicleNode::Advance(double step_size) {
         t += h;
     }
     m_driver->Advance(step_size);
-    m_powertrain->Advance(step_size);
     m_timer.stop();
     m_cum_sim_time += m_timer();
 }

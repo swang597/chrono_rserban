@@ -133,8 +133,7 @@ int main(int argc, char* argv[]) {
     // Create the vehicle Irrlicht application
     // ---------------------------------------
 
-    ChVehicleIrrApp app(&my_hmmwv.GetVehicle(), &my_hmmwv.GetPowertrain(), L"HMMWV RMS",
-                        irr::core::dimension2d<irr::u32>(800, 640));
+    ChVehicleIrrApp app(&my_hmmwv.GetVehicle(), L"HMMWV RMS", irr::core::dimension2d<irr::u32>(800, 640));
 
     app.SetHUDLocation(500, 20);
     app.SetSkyBox();
@@ -183,10 +182,8 @@ int main(int argc, char* argv[]) {
         if (time >= t_end)
             break;
 
-        // Collect output data from modules (for inter-module communication)
-        double throttle_input = driver.GetThrottle();
-        double steering_input = driver.GetSteering();
-        double braking_input = driver.GetBraking();
+        // Driver inputs
+        ChDriver::Inputs driver_inputs = driver.GetInputs();
 
         // Update sentinel and target location markers for the path-follower controller.
         // Note that we do this whether or not we are currently using the path-follower driver.
@@ -216,8 +213,8 @@ int main(int argc, char* argv[]) {
         // Update modules (process inputs from other modules)
         driver.Synchronize(time);
         terrain.Synchronize(time);
-        my_hmmwv.Synchronize(time, steering_input, braking_input, throttle_input, terrain);
-        app.Synchronize("", steering_input, throttle_input, braking_input);
+        my_hmmwv.Synchronize(time, driver_inputs, terrain);
+        app.Synchronize("", driver_inputs);
 
         // Advance simulation for one timestep for all modules
         double step = realtime_timer.SuggestSimulationStep(step_size);

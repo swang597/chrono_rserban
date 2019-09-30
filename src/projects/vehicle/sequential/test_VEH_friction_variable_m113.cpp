@@ -79,8 +79,8 @@ int main(int argc, char* argv[]) {
     vehicle.GetDriveline()->SetGyrationMode(true);
 
     // Create and initialize the powertrain system
-    M113_SimplePowertrain powertrain("Powertrain");
-    powertrain.Initialize(vehicle.GetChassisBody(), vehicle.GetDriveshaft());
+    auto powertrain = chrono_types::make_shared<M113_SimplePowertrain>("Powertrain");
+    vehicle.InitializePowertrain(powertrain);
 
     // Create the terrain
     RigidTerrain terrain(&sys);
@@ -99,7 +99,7 @@ int main(int argc, char* argv[]) {
     terrain.Initialize();
 
     // Create the vehicle Irrlicht interface
-    ChTrackedVehicleIrrApp app(&vehicle, &powertrain, L"M113 friction test");
+    ChTrackedVehicleIrrApp app(&vehicle, L"M113 friction test");
     app.SetSkyBox();
     app.AddTypicalLogo();
     app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
@@ -131,8 +131,6 @@ int main(int argc, char* argv[]) {
     BodyStates shoe_states_right(vehicle.GetNumTrackShoes(RIGHT));
     TerrainForces shoe_forces_left(vehicle.GetNumTrackShoes(LEFT));
     TerrainForces shoe_forces_right(vehicle.GetNumTrackShoes(RIGHT));
-    double driveshaft_speed;
-    double powertrain_torque;
 
     // Output interval
     double out_step_size = 1 / out_fps;
@@ -163,29 +161,25 @@ int main(int argc, char* argv[]) {
         app.EndScene();
 
         // Driver inputs
-        double steering_input = 0;
-        double braking_input = 0;
-        double throttle_input = 0;
+        ChDriver::Inputs driver_inputs;
+        driver_inputs.m_steering = 0;
+        driver_inputs.m_braking = 0;
+        driver_inputs.m_throttle = 0;
         if (time > 1 && time < 2)
-            throttle_input = 0.75 * (time - 1);
+            driver_inputs.m_throttle = 0.75 * (time - 1);
         else if (time > 2)
-            throttle_input = 0.75;
+            driver_inputs.m_throttle = 0.75;
 
         // Collect output data from sub-systems
-        powertrain_torque = powertrain.GetOutputTorque();
-        driveshaft_speed = vehicle.GetDriveshaftSpeed();
         vehicle.GetTrackShoeStates(LEFT, shoe_states_left);
         vehicle.GetTrackShoeStates(RIGHT, shoe_states_right);
 
         // Update modules (process inputs from other modules)
-        powertrain.Synchronize(time, throttle_input, driveshaft_speed);
-        vehicle.Synchronize(time, steering_input, braking_input, powertrain_torque, shoe_forces_left,
-                            shoe_forces_right);
+        vehicle.Synchronize(time, driver_inputs, shoe_forces_left, shoe_forces_right);
         terrain.Synchronize(time);
-        app.Synchronize("", steering_input, throttle_input, braking_input);
+        app.Synchronize("", driver_inputs);
 
         // Advance simulation for one timestep for all modules.
-        powertrain.Advance(step_size);
         terrain.Advance(step_size);
         vehicle.Advance(step_size);
         app.Advance(step_size);

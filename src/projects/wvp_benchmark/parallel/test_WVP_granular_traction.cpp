@@ -419,14 +419,12 @@ int main(int argc, char* argv[]) {
                 engine_on = true;
             }
 
-            // Extract current driver inputs
-            double steering_input = driver->GetSteering();
-            double braking_input = driver->GetBraking();
-            double throttle_input = driver->GetThrottle();
+            // Driver inputs
+            ChDriver::Inputs driver_inputs = driver->GetInputs();
 
             // Synchronize vehicle systems
             driver->Synchronize(time);
-            wvp->Synchronize(time, steering_input, braking_input, throttle_input, terrain);
+            wvp->Synchronize(time, driver_inputs, terrain);
 
             // Save output
             if (output && sim_frame == next_out_frame) {
@@ -435,7 +433,7 @@ int main(int argc, char* argv[]) {
                 ChVector<> av = wvp->GetChassisBody()->GetFrame_REF_to_abs().GetPos_dtdt();
 
                 ofile_sim << system->GetChTime() << del;
-                ofile_sim << throttle_input << del << steering_input << del;
+                ofile_sim << driver_inputs.m_throttle << del << driver_inputs.m_steering << del;
 
                 ofile_sim << pv.x() << del << pv.y() << del << pv.z() << del;
                 ofile_sim << vv.x() << del << vv.y() << del << vv.z() << del;
@@ -444,17 +442,21 @@ int main(int argc, char* argv[]) {
                 ofile_sim << endl;
 
                 ofile_frc << system->GetChTime() << del;
-                ofile_frc << wvp->GetPowertrain().GetMotorSpeed() << del;
+                ofile_frc << wvp->GetVehicle().GetPowertrain()->GetMotorSpeed() << del;
                 ofile_frc << wvp->GetVehicle().GetVehicleSpeed() << del;
-                ofile_frc << wvp->GetPowertrain().GetMotorTorque() << del;
+                ofile_frc << wvp->GetVehicle().GetPowertrain()->GetMotorTorque() << del;
 
-                for (int i = 0; i < 4; i++) {
-                    ChVector<> avel = wvp->GetVehicle().GetWheelAngVel(i);
-                    ofile_frc << avel.x() << del << avel.y() << del << avel.z() << del;
+                for (int axle = 0; axle < 2; axle++) {
+                    auto avelL = wvp->GetVehicle().GetSpindleAngVel(axle, LEFT);
+                    auto avelR = wvp->GetVehicle().GetSpindleAngVel(axle, RIGHT);
+                    ofile_frc << avelL.x() << del << avelL.y() << del << avelL.z() << del;
+                    ofile_frc << avelR.x() << del << avelR.y() << del << avelR.z() << del;
                 }
 
-                for (int i = 0; i < 4; i++) {
-                    ofile_frc << wvp->GetTire(i)->GetLongitudinalSlip() << del;
+                for (auto& axle : wvp->GetVehicle().GetAxles()) {
+                    for (auto& wheel : axle->GetWheels()) {
+                        ofile_frc << wheel->GetTire()->GetLongitudinalSlip() << del;
+                    }
                 }
 
                 ofile_frc << forceFunct->Get_y(system->GetChTime()) << del;

@@ -50,7 +50,6 @@ class Vehicle : public Agent {
     virtual void ProcessMessages() override;
 
     virtual chrono::vehicle::ChWheeledVehicle& GetVehicle() const = 0;
-    virtual chrono::vehicle::ChPowertrain& GetPowertrain() const = 0;
 
     virtual double GetLookAheadDistance() const = 0;
     virtual chrono::ChVector<> GetSteeringGainsPID() const = 0;
@@ -72,9 +71,7 @@ class Vehicle : public Agent {
 
     void SetupLidar();
 
-    double m_steering;
-    double m_throttle;
-    double m_braking;
+    chrono::vehicle::ChDriver::Inputs m_driver_inputs;
 
   private:
     Type m_vehicle_type;

@@ -57,7 +57,7 @@ bool EventReceiver::OnEvent(const irr::SEvent& event) {
 // -----------------------------------------------------------------------------
 
 IrrApp::IrrApp(Framework* framework, irr::core::dimension2d<irr::u32> dims)
-    : ChVehicleIrrApp(&framework->m_ego_vehicle->GetVehicle(), nullptr, L"Corridor Demo", dims),
+    : ChVehicleIrrApp(&framework->m_ego_vehicle->GetVehicle(), L"Corridor Demo", dims),
       m_framework(framework) {
     // Find index of current ego vehicle (ugly!)
     auto index = -1;

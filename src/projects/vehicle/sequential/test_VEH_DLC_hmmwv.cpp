@@ -77,26 +77,26 @@ int main(int argc, char* argv[]) {
 
     // Get handle to FR tire
     std::string outfile = "tire.out";
-    ChTire* FR_tire = my_hmmwv.GetTire(FRONT_RIGHT);
+    auto FR_tire = my_hmmwv.GetVehicle().GetWheel(0, RIGHT)->GetTire();
     ChTMeasyTire* FR_TMeasy = nullptr;
     ChFialaTire* FR_Fiala = nullptr;
     ChPac89Tire* FR_Pac89 = nullptr;
     ChPacejkaTire* FR_Pacejka = nullptr;
     switch (tire_model) {
         case TireModelType::TMEASY:
-            FR_TMeasy = static_cast<ChTMeasyTire*>(FR_tire);
+            FR_TMeasy = static_cast<ChTMeasyTire*>(FR_tire.get());
             outfile = "tmeasy.out";
             break;
         case TireModelType::FIALA:
-            FR_Fiala = static_cast<ChFialaTire*>(FR_tire);
+            FR_Fiala = static_cast<ChFialaTire*>(FR_tire.get());
             outfile = "fiala.out";
             break;
         case TireModelType::PAC89:
-            FR_Pac89 = static_cast<ChPac89Tire*>(FR_tire);
+            FR_Pac89 = static_cast<ChPac89Tire*>(FR_tire.get());
             outfile = "pac89.out";
             break;
         case TireModelType::PACEJKA:
-            FR_Pacejka = static_cast<ChPacejkaTire*>(FR_tire);
+            FR_Pacejka = static_cast<ChPacejkaTire*>(FR_tire.get());
             outfile = "pacejka.out";
             break;
     }
@@ -120,7 +120,7 @@ int main(int argc, char* argv[]) {
     ////auto path = DoubleLaneChangePath(ChVector<>(-125, 0, 0.1), 28.93, 3.6105, 25.0, 50.0, false);
 
     // Create the vehicle Irrlicht application
-    ChVehicleIrrApp app(&my_hmmwv.GetVehicle(), &my_hmmwv.GetPowertrain(), L"DLC test");
+    ChVehicleIrrApp app(&my_hmmwv.GetVehicle(), L"DLC test");
     app.SetHUDLocation(500, 20);
     app.SetSkyBox();
     app.AddTypicalLogo();
@@ -175,15 +175,13 @@ int main(int argc, char* argv[]) {
         // Extract system state
         double time = my_hmmwv.GetSystem()->GetChTime();
 
-        // Collect output data from modules (for inter-module communication)
-        double throttle_input = driver.GetThrottle();
-        double steering_input = driver.GetSteering();
-        double braking_input = driver.GetBraking();
+        // Driver inputs
+        ChDriver::Inputs driver_inputs = driver.GetInputs();
 
         if (my_hmmwv.GetVehicle().GetVehiclePos().x() > x_max - 20) {
-            throttle_input = 0;
-            steering_input = 0;
-            braking_input = 1;
+            driver_inputs.m_throttle = 0;
+            driver_inputs.m_steering = 0;
+            driver_inputs.m_braking = 1;
         }
 
         // Update sentinel and target location markers for the path-follower controller.
@@ -224,8 +222,8 @@ int main(int argc, char* argv[]) {
         // Update modules (process inputs from other modules)
         driver.Synchronize(time);
         terrain.Synchronize(time);
-        my_hmmwv.Synchronize(time, steering_input, braking_input, throttle_input, terrain);
-        app.Synchronize(outfile, steering_input, throttle_input, braking_input);
+        my_hmmwv.Synchronize(time, driver_inputs, terrain);
+        app.Synchronize(outfile, driver_inputs);
 
         // Advance simulation for one timestep for all modules
         driver.Advance(step_size);

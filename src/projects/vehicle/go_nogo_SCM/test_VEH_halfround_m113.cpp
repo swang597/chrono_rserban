@@ -109,8 +109,8 @@ int main(int argc, char* argv[]) {
     vehicle.GetDriveline()->SetGyrationMode(true);
 
     // Create and initialize the powertrain system
-    M113a_SimplePowertrain powertrain("Powertrain");
-    powertrain.Initialize(vehicle.GetChassisBody(), vehicle.GetDriveshaft());
+    auto powertrain = chrono_types::make_shared<M113a_SimplePowertrain>("Powertrain");
+    vehicle.InitializePowertrain(powertrain);
 
     // --------------------------------------------------
     // Control internal collisions and contact monitoring
@@ -175,7 +175,7 @@ int main(int argc, char* argv[]) {
     // Create the vehicle Irrlicht application
     // ---------------------------------------
 
-    ChTrackedVehicleIrrApp app(&vehicle, &powertrain, L"M113 half round obstacle");
+    ChTrackedVehicleIrrApp app(&vehicle, L"M113 half round obstacle");
     app.SetSkyBox();
     app.AddTypicalLogo();
     app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 200.f), irr::core::vector3df(30.f, 50.f, 200.f), 250, 130);
@@ -283,7 +283,7 @@ int main(int argc, char* argv[]) {
             csv << time << steering_input << throttle_input << braking_input;
             csv << vehicle.GetTrackAssembly(LEFT)->GetSprocket()->GetAxleSpeed()
                 << vehicle.GetTrackAssembly(RIGHT)->GetSprocket()->GetAxleSpeed();
-            csv << powertrain.GetMotorSpeed() << powertrain.GetMotorTorque();
+            csv << vehicle.GetPowertrain()->GetMotorSpeed() << vehicle.GetPowertrain()->GetMotorTorque();
 
             // Chassis CG position and local acceleration (raw and filtered)
             csv << vehicle.GetVehicleCOMPos() << acc_CG;
@@ -320,22 +320,18 @@ int main(int argc, char* argv[]) {
 #endif
 
         // Collect output data from sub-systems
-        throttle_input = driver.GetThrottle();
-        steering_input = driver.GetSteering();
-        braking_input = driver.GetBraking();
-        powertrain_torque = powertrain.GetOutputTorque();
+        ChDriver::Inputs driver_inputs = driver.GetInputs();
+        powertrain_torque = vehicle.GetPowertrain()->GetOutputTorque();
         driveshaft_speed = vehicle.GetDriveshaftSpeed();
         vehicle.GetTrackShoeStates(LEFT, shoe_states_left);
         vehicle.GetTrackShoeStates(RIGHT, shoe_states_right);
 
         // Update sub-systems (process inputs from other sub-systems)
         driver.Synchronize(time);
-        powertrain.Synchronize(time, throttle_input, driveshaft_speed);
-        vehicle.Synchronize(time, steering_input, braking_input, powertrain_torque, shoe_forces_left,
-                            shoe_forces_right);
+        vehicle.Synchronize(time, driver_inputs, shoe_forces_left, shoe_forces_right);
         terrain.Synchronize(time);
 #ifdef CHRONO_IRRLICHT
-        app.Synchronize("Follower driver", steering_input, throttle_input, braking_input);
+        app.Synchronize("Follower driver", driver_inputs);
 #endif
 
         // Adjust step size for obstacle crossing
@@ -347,7 +343,6 @@ int main(int argc, char* argv[]) {
 
         // Advance simulation for one timestep for all modules
         driver.Advance(step_size);
-        powertrain.Advance(step_size);
         terrain.Advance(step_size);
         vehicle.Advance(step_size);
 #ifdef CHRONO_IRRLICHT

@@ -149,7 +149,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Create the vehicle Irrlicht interface (associated with 2nd vehicle)
-    ChWheeledVehicleIrrApp app(&hmmwv_2.GetVehicle(), &hmmwv_2.GetPowertrain(), L"Terrain friction test");
+    ChWheeledVehicleIrrApp app(&hmmwv_2.GetVehicle(), L"Terrain friction test");
     app.SetSkyBox();
     app.AddTypicalLogo();
     app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
@@ -191,12 +191,12 @@ int main(int argc, char* argv[]) {
         // Extract output
         if (output && sim_frame % out_steps == 0) {
             double veh_speed_1 = hmmwv_1.GetVehicle().GetVehicleSpeed();
-            double fr_omega_1 = hmmwv_1.GetVehicle().GetWheelOmega(FRONT_RIGHT);
-            double rr_omega_1 = hmmwv_1.GetVehicle().GetWheelOmega(REAR_RIGHT);
+            double fr_omega_1 = hmmwv_1.GetVehicle().GetSpindleOmega(0, RIGHT);
+            double rr_omega_1 = hmmwv_1.GetVehicle().GetSpindleOmega(1, RIGHT);
 
             double veh_speed_2 = hmmwv_2.GetVehicle().GetVehicleSpeed();
-            double fr_omega_2 = hmmwv_2.GetVehicle().GetWheelOmega(FRONT_RIGHT);
-            double rr_omega_2 = hmmwv_2.GetVehicle().GetWheelOmega(REAR_RIGHT);
+            double fr_omega_2 = hmmwv_2.GetVehicle().GetSpindleOmega(0, RIGHT);
+            double rr_omega_2 = hmmwv_2.GetVehicle().GetSpindleOmega(1, RIGHT);
 
             csv << time;
             csv << veh_pos_1 << veh_speed_1 << fr_omega_1 << rr_omega_1;
@@ -220,22 +220,21 @@ int main(int argc, char* argv[]) {
         else if (time > 2)
             throttle_input = 0.75;
 
-        // Collect output data from modules (for inter-module communication)
-        double steering_input_1 = driver_1.GetSteering();
-        double throttle_input_1 = throttle_input;
-        double braking_input_1 = 0;
-
-        double steering_input_2 = driver_2.GetSteering();
-        double throttle_input_2 = throttle_input;
-        double braking_input_2 = 0;
+        // Driver inputs
+        ChDriver::Inputs driver_inputs_1 = driver_1.GetInputs();
+        ChDriver::Inputs driver_inputs_2 = driver_2.GetInputs();
+        driver_inputs_1.m_throttle = throttle_input;
+        driver_inputs_2.m_throttle = throttle_input;
+        driver_inputs_1.m_braking = 0;
+        driver_inputs_2.m_braking = 0;
 
         // Update modules (process inputs from other modules)
         driver_1.Synchronize(time);
         driver_2.Synchronize(time);
-        hmmwv_1.Synchronize(time, steering_input_1, braking_input_1, throttle_input_1, terrain);
-        hmmwv_2.Synchronize(time, steering_input_2, braking_input_2, throttle_input_2, terrain);
+        hmmwv_1.Synchronize(time, driver_inputs_1, terrain);
+        hmmwv_2.Synchronize(time, driver_inputs_2, terrain);
         terrain.Synchronize(time);
-        app.Synchronize(modelname, steering_input_2, throttle_input_2, braking_input_2);
+        app.Synchronize(modelname, driver_inputs_2);
 
         // Advance simulation for one timestep for all modules.
         driver_1.Advance(step_size);

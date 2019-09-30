@@ -34,9 +34,7 @@ Vehicle::Vehicle(Framework* framework, unsigned int id, Type vehicle_type)
       m_vehicle_type(vehicle_type),
       m_steeringPID(nullptr),
       m_speedPID(nullptr),
-      m_steering(0),
-      m_throttle(0),
-      m_braking(0),
+      m_driver_inputs({0, 0, 0}),
       m_MAP_id(0),
       m_SPAT_phase(-1),
       m_SPAT_time(0) {
@@ -104,22 +102,22 @@ void Vehicle::AdvanceDriver(double step) {
 
     if (out_speed > 0) {
         // Vehicle moving too slow
-        m_braking = 0;
-        m_throttle = out_speed;
-    } else if (m_throttle > m_throttle_threshold) {
+        m_driver_inputs.m_braking = 0;
+        m_driver_inputs.m_throttle = out_speed;
+    } else if (m_driver_inputs.m_throttle > m_throttle_threshold) {
         // Vehicle moving too fast: reduce throttle
-        m_braking = 0;
-        m_throttle = 1 + out_speed;
+        m_driver_inputs.m_braking = 0;
+        m_driver_inputs.m_throttle = 1 + out_speed;
     } else {
         // Vehicle moving too fast: apply brakes
-        m_braking = -out_speed;
-        m_throttle = 0;
+        m_driver_inputs.m_braking = -out_speed;
+        m_driver_inputs.m_throttle = 0;
     }
 
     // Set the steering value based on the output from the steering controller.
     double out_steering = m_steeringPID->Advance(GetVehicle(), step);
     ChClampValue(out_steering, -1.0, 1.0);
-    m_steering = out_steering;
+    m_driver_inputs.m_steering = out_steering;
 }
 
 void Vehicle::SetupLidar() {

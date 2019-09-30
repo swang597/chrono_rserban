@@ -108,10 +108,10 @@ int main(int argc, char* argv[]) {
     rig.SetTireVisualizationType(VisualizationType::PRIMITIVES);
 
     // Create the vehicle Irrlicht application.
-    ChVehicleIrrApp app(&rig, NULL, L"WVP Suspension Test Rig");
+    ChVehicleIrrApp app(&rig, L"WVP Suspension Test Rig");
     app.SetSkyBox();
     app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
-    app.SetChaseCamera(0.5 * (rig.GetWheelPos(LEFT) + rig.GetWheelPos(RIGHT)), 2.0, 1.0);
+    app.SetChaseCamera(0.5 * (rig.GetSpindlePos(LEFT) + rig.GetSpindlePos(RIGHT)), 2.0, 1.0);
     app.SetTimestep(step_size);
 
     // Create and initialize the driver system.
@@ -162,8 +162,8 @@ int main(int argc, char* argv[]) {
         // Write output data
         if (collect_output && step_number % out_steps == 0) {
             // Current tire forces
-            auto tire_force_L = rig.GetTireForce(VehicleSide::LEFT);
-            auto tire_force_R = rig.GetTireForce(VehicleSide::RIGHT);
+            auto tire_force_L = rig.ReportTireForce(VehicleSide::LEFT);
+            auto tire_force_R = rig.ReportTireForce(VehicleSide::RIGHT);
             out_csv << rig.GetDisplacementLeftInput() << rig.GetDisplacementRightInput() << rig.GetSteeringInput();
             out_csv << rig.GetActuatorDisp(VehicleSide::LEFT) << rig.GetActuatorDisp(VehicleSide::RIGHT);
             out_csv << tire_force_L.point << tire_force_L.force << tire_force_L.moment;
@@ -175,7 +175,7 @@ int main(int argc, char* argv[]) {
         rig.Advance(step_size);
 
         // Update visualization app
-        app.Synchronize(tire_L->GetTemplateName(), rig.GetSteeringInput(), 0, 0);
+        app.Synchronize(tire_L->GetTemplateName(), {rig.GetSteeringInput(), 0, 0});
         app.Advance(step_size);
 
         // Increment frame number

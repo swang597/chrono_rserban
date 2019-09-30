@@ -202,7 +202,7 @@ int main(int argc, char* argv[]) {
     // Create the driver system
     // -------------------------------------
 
-    ChWheeledVehicleIrrApp app(&wvp.GetVehicle(), &wvp.GetPowertrain(), L"WVP sequential test");
+    ChWheeledVehicleIrrApp app(&wvp.GetVehicle(), L"WVP sequential test");
     app.SetSkyBox();
     app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
     app.SetChaseCamera(trackPoint, 6.0, 0.5);
@@ -324,17 +324,15 @@ int main(int argc, char* argv[]) {
 
         time = wvp.GetSystem()->GetChTime();
 
-        // Collect output data from modules (for inter-module communication)
-        double throttle_input = driver.GetThrottle();
-        double steering_input = driver.GetSteering();
-        double braking_input = driver.GetBraking();
+        // Driver inputs
+        ChDriver::Inputs driver_inputs = driver.GetInputs();
 
         // Update modules (process inputs from other modules)
         driver.Synchronize(time);
         terrain.Synchronize(time);
-        wvp.Synchronize(time, steering_input, braking_input, throttle_input, terrain);
+        wvp.Synchronize(time, driver_inputs, terrain);
 #ifdef USE_IRRLICHT
-        app.Synchronize("Follower driver", steering_input, throttle_input, braking_input);
+        app.Synchronize("Follower driver", driver_inputs);
 #endif
 
         // Advance simulation for one timestep for all modules
@@ -378,7 +376,7 @@ int main(int argc, char* argv[]) {
                 std::cout<<"Strut 3 BUMP STOP ENGAGED!\n";
             }
             csv << time;    //time
-            csv << steering_input/-.001282; //steering wheel angle in degrees
+            csv << driver_inputs.m_steering/-.001282; //steering wheel angle in degrees
             csv << wvp.GetVehicle().GetVehicleSpeed();  //vehicle speed m/s
             csv << wvp.GetVehicle().GetVehicleAcceleration({-2.070,.01,.495}).y()/9.81; //lateral acceleration in g's
             ChQuaternion<> q= wvp.GetVehicle().GetVehicleRot();
@@ -388,16 +386,25 @@ int main(int argc, char* argv[]) {
             csv << wvp.GetChassisBody()->GetWvel_loc().z()*180.0/CH_C_PI; //yaw rate deg
             csv << wvp.GetVehicle().GetVehicleCOMPos().x(); //COM path x
             csv << wvp.GetVehicle().GetVehicleCOMPos().y(); //COM path y
-            for(int i=0;i<4;i++){
-                csv << wvp.GetTire(i)->ReportTireForce(&terrain).force.x(); //longitudinal tire forces FL, FR, RL, RR
+
+            std::vector<ChVector<>> tire_forces;
+            for (auto& axle : wvp.GetVehicle().GetAxles()) {
+                for (auto& wheel : axle->GetWheels()) {
+                    tire_forces.push_back(wheel->GetTire()->ReportTireForce(&terrain).force);
+                }
             }
-            for(int i=0;i<4;i++){
-                csv << wvp.GetTire(i)->ReportTireForce(&terrain).force.y(); //lateral tire forces FL, FR, RL, RR
+
+            for (int i = 0; i < 4; i++) {
+                csv << tire_forces[i].x();  // longitudinal tire forces FL, FR, RL, RR
             }
-            for(int i=0;i<4;i++){
-                csv << wvp.GetTire(i)->ReportTireForce(&terrain).force.z(); //vertical tire forces FL, FR, RL, RR
+            for (int i = 0; i < 4; i++) {
+                csv << tire_forces[i].y();  // lateral tire forces FL, FR, RL, RR
             }
-            csv << susp0->GetSpringLength(LEFT);//individual strut lengths m
+            for (int i = 0; i < 4; i++) {
+                csv << tire_forces[i].z();  // vertical tire forces FL, FR, RL, RR
+            }
+
+            csv << susp0->GetSpringLength(LEFT);   // individual strut lengths m
             csv << susp0->GetSpringLength(RIGHT);//individual strut lengths m
             csv << susp1->GetSpringLength(LEFT);//individual strut lengths m
             csv << susp1->GetSpringLength(RIGHT);//individual strut lengths m

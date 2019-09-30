@@ -121,7 +121,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Create the vehicle Irrlicht interface
-    ChWheeledVehicleIrrApp app(&hmmwv.GetVehicle(), &hmmwv.GetPowertrain(), L"Terrain friction test");
+    ChWheeledVehicleIrrApp app(&hmmwv.GetVehicle(), L"Terrain friction test");
     app.SetSkyBox();
     app.AddTypicalLogo();
     app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
@@ -160,10 +160,11 @@ int main(int argc, char* argv[]) {
         // Extract output
         if (output && sim_frame % out_steps == 0) {
             double veh_speed = hmmwv.GetVehicle().GetVehicleSpeed();
-            double fl_omega = hmmwv.GetVehicle().GetWheelOmega(FRONT_LEFT);
-            double fr_omega = hmmwv.GetVehicle().GetWheelOmega(FRONT_RIGHT);
-            double rl_omega = hmmwv.GetVehicle().GetWheelOmega(REAR_LEFT);
-            double rr_omega = hmmwv.GetVehicle().GetWheelOmega(REAR_RIGHT);
+            hmmwv.GetVehicle().GetAxle(0)->GetWheel(LEFT);
+            double fl_omega = hmmwv.GetVehicle().GetSpindleOmega(0, LEFT);
+            double fr_omega = hmmwv.GetVehicle().GetSpindleOmega(0, RIGHT);
+            double rl_omega = hmmwv.GetVehicle().GetSpindleOmega(1, LEFT);
+            double rr_omega = hmmwv.GetVehicle().GetSpindleOmega(1, RIGHT);
 
             csv << time << veh_pos.x() << veh_speed;
             csv << fl_omega << fr_omega << rl_omega << rr_omega << std::endl;
@@ -181,18 +182,19 @@ int main(int argc, char* argv[]) {
         app.EndScene();
 
         // Driver inputs
-        double steering_input = 0;
-        double braking_input = 0;
-        double throttle_input = 0;
+        ChDriver::Inputs driver_inputs;
+        driver_inputs.m_steering = 0;
+        driver_inputs.m_braking = 0;
+        driver_inputs.m_throttle = 0;
         if (time > 1 && time < 2)
-            throttle_input = 0.75 * (time - 1);
+            driver_inputs.m_throttle = 0.75 * (time - 1);
         else if (time > 2)
-            throttle_input = 0.75;
+            driver_inputs.m_throttle = 0.75;
 
         // Update modules (process inputs from other modules)
-        hmmwv.Synchronize(time, steering_input, braking_input, throttle_input, terrain);
+        hmmwv.Synchronize(time, driver_inputs, terrain);
         terrain.Synchronize(time);
-        app.Synchronize(modelname, steering_input, throttle_input, braking_input);
+        app.Synchronize(modelname, driver_inputs);
 
         // Advance simulation for one timestep for all modules.
         hmmwv.Advance(step_size);

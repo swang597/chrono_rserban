@@ -20,7 +20,7 @@
 //
 // =============================================================================
 
-// #define USE_IRRLICHT
+//#define USE_IRRLICHT
 
 
 #include "chrono_vehicle/ChConfigVehicle.h"
@@ -195,7 +195,7 @@ int main(int argc, char* argv[]) {
     // Create the driver system
     // -------------------------------------
 
-    ChWheeledVehicleIrrApp app(&wvp.GetVehicle(), &wvp.GetPowertrain(), L"WVP sequential test");
+    ChWheeledVehicleIrrApp app(&wvp.GetVehicle(), L"WVP sequential test");
     app.SetSkyBox();
     app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
     app.SetChaseCamera(trackPoint, 6.0, 0.5);
@@ -284,17 +284,16 @@ int main(int argc, char* argv[]) {
 #endif
 
         time = wvp.GetSystem()->GetChTime();
-        // Collect output data from modules (for inter-module communication)
-        double throttle_input = driver.GetThrottle();
-        double steering_input = turn_direction;
-        double braking_input = driver.GetBraking();
+
+        // Driver inputs
+        ChDriver::Inputs driver_inputs = driver.GetInputs();
 
         // Update modules (process inputs from other modules)
         driver.Synchronize(time);
         terrain.Synchronize(time);
-        wvp.Synchronize(time, steering_input, braking_input, throttle_input, terrain);
+        wvp.Synchronize(time, driver_inputs, terrain);
 #ifdef USE_IRRLICHT
-        app.Synchronize("Follower driver", steering_input, throttle_input, braking_input);
+        app.Synchronize("Follower driver", driver_inputs);
 #endif
 
         // Advance simulation for one timestep for all modules
@@ -325,31 +324,20 @@ int main(int argc, char* argv[]) {
             ChVector<> RearRightCornerPos =
                 wvp.GetVehicle().GetChassisBody()->GetFrame_REF_to_abs().TransformPointLocalToParent(RearRightCornerLoc);
 
+            std::cout << time << std::endl;
 
-            std::cout<<time<<std::endl;
+            csv << time << driver_inputs.m_steering << wvp.GetVehicle().GetVehicleSpeed();
 
-            csv <<time<<steering_input<<wvp.GetVehicle().GetVehicleSpeed();
-            
-            csv <<FrontLeftCornerPos<<FrontRightCornerPos<<RearLeftCornerPos<<RearRightCornerPos;
+            csv << FrontLeftCornerPos << FrontRightCornerPos << RearLeftCornerPos << RearRightCornerPos;
 
-
-
-            for(int i=0;i<4;i++){
-                csv << wvp.GetVehicle().GetWheelPos(i);
-
+            for (auto& axle : wvp.GetVehicle().GetAxles()) {
+                for (auto& wheel : axle->GetWheels()) {
+                    csv << wheel->GetPos();
+                }
             }
+
             csv << std::endl;
-
-
-
-
         }
-
-
-
-
-
-
 
         // std::cout<<time<<std::endl;
         // Increment frame number

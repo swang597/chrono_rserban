@@ -52,12 +52,8 @@ ChWheeledVehicle& TruckAV::GetVehicle() const {
     return m_hmmwv->GetVehicle();
 }
 
-ChPowertrain& TruckAV::GetPowertrain() const {
-    return m_hmmwv->GetPowertrain();
-}
-
 void TruckAV::Synchronize(double time) {
-    m_hmmwv->Synchronize(time, m_steering, m_braking, m_throttle, *m_framework->m_terrain);
+    m_hmmwv->Synchronize(time, m_driver_inputs, *m_framework->m_terrain);
 }
 
 void TruckAV::Advance(double step) {

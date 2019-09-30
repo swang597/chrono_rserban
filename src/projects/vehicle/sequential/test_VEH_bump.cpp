@@ -168,7 +168,7 @@ int main(int argc, char* argv[]) {
     // Create the vehicle Irrlicht application
     // ---------------------------------------
 
-    ChVehicleIrrApp app(&my_hmmwv.GetVehicle(), &my_hmmwv.GetPowertrain(), L"Steering Controller Demo",
+    ChVehicleIrrApp app(&my_hmmwv.GetVehicle(), L"Steering Controller Demo",
                         irr::core::dimension2d<irr::u32>(800, 640));
 
     app.SetHUDLocation(500, 20);
@@ -225,7 +225,7 @@ int main(int argc, char* argv[]) {
 
     auto chassis = my_hmmwv.GetVehicle().GetChassis();
     auto chassis_body = my_hmmwv.GetVehicle().GetChassisBody();
-    auto wheel_body = my_hmmwv.GetVehicle().GetWheelBody(FRONT_LEFT);
+    auto wheel_body = my_hmmwv.GetVehicle().GetAxle(0)->GetWheel(LEFT)->GetSpindle();
 
     // Driver location in vehicle local frame
     ChVector<> drv_pos_loc = my_hmmwv.GetChassis()->GetLocalDriverCoordsys().pos;
@@ -266,22 +266,20 @@ int main(int argc, char* argv[]) {
             csv << std::endl;
         }
 
-        // Collect output data from modules (for inter-module communication)
-        double throttle_input = driver_follower.GetThrottle();
-        double steering_input = driver_follower.GetSteering();
-        double braking_input = driver_follower.GetBraking();
+        // Driver inputs
+        ChDriver::Inputs driver_inputs = driver_follower.GetInputs();
 
         /*
         // Hack for acceleration-braking maneuver
         static bool braking = false;
         if (my_hmmwv.GetVehicle().GetVehicleSpeed() > target_speed)
-            braking = true;
+            driver_inputs.m_braking = true;
         if (braking) {
-            throttle_input = 0;
-            braking_input = 1;
+            driver_inputs.m_throttle = 0;
+            driver_inputs.m_braking = 1;
         } else {
-            throttle_input = 1;
-            braking_input = 0;
+            driver_inputs.m_throttle = 1;
+            driver_inputs.m_braking = 0;
         }
         */
 
@@ -304,8 +302,8 @@ int main(int argc, char* argv[]) {
         // Update modules (process inputs from other modules)
         driver_follower.Synchronize(time);
         terrain.Synchronize(time);
-        my_hmmwv.Synchronize(time, steering_input, braking_input, throttle_input, terrain);
-        app.Synchronize("Test", steering_input, throttle_input, braking_input);
+        my_hmmwv.Synchronize(time, driver_inputs, terrain);
+        app.Synchronize("Test", driver_inputs);
 
         // Advance simulation for one timestep for all modules
         double step = realtime_timer.SuggestSimulationStep(step_size);

@@ -305,8 +305,8 @@ int main(int argc, char* argv[]) {
     m113.GetDriveline()->SetGyrationMode(true);
 
     // Create and initialize the powertrain system
-    M113a_SimplePowertrain powertrain("Powertrain");
-    powertrain.Initialize(m113.GetChassisBody(), m113.GetDriveshaft());
+    auto powertrain = chrono_types::make_shared<M113a_SimplePowertrain>("Powertrain");
+    m113.InitializePowertrain(powertrain);
 
     // -------------------------------------
     // Create the driver
@@ -360,7 +360,7 @@ int main(int argc, char* argv[]) {
     // Create the vehicle Irrlicht application
     // ---------------------------------------
 
-    ChTrackedVehicleIrrApp app(&m113, &powertrain, L"M113 go/no-go");
+    ChTrackedVehicleIrrApp app(&m113, L"M113 go/no-go");
     app.SetSkyBox();
     app.AddLight(irr::core::vector3df(-100.f, -150.f, 150.f), 150, irr::video::SColorf(0.65f, 0.65f, 0.7f));
     app.AddLight(irr::core::vector3df(-100.f, +150.f, 150.f), 150, irr::video::SColorf(0.65f, 0.65f, 0.7f));
@@ -494,11 +494,7 @@ int main(int argc, char* argv[]) {
         }
 
         // Collect output data from modules (for inter-module communication)
-        double steering_input = driver.GetSteering();
-        double braking_input = driver.GetBraking();
-        double throttle_input = driver.GetThrottle();
-        double powertrain_torque = powertrain.GetOutputTorque();
-        double driveshaft_speed = m113.GetDriveshaftSpeed();
+        ChDriver::Inputs driver_inputs = driver.GetInputs();
         m113.GetTrackShoeStates(LEFT, shoe_states_left);
         m113.GetTrackShoeStates(RIGHT, shoe_states_right);
 
@@ -507,7 +503,7 @@ int main(int argc, char* argv[]) {
             cout << system->GetChTime() << " pos: " << pv.x() - 6 << " vel: " << vv.x() << " Wtime: " << exec_time << endl;
 
             ofile << system->GetChTime() << del;
-            ofile << throttle_input << del << steering_input << del;
+            ofile << driver_inputs.m_throttle << del << driver_inputs.m_steering << del;
 
             ofile << pv.x() - 6 << del << pv.y() << del << pv.z() << del;
             ofile << vv.x() << del << vv.y() << del << vv.z() << del;
@@ -524,15 +520,13 @@ int main(int argc, char* argv[]) {
         // Synchronize subsystems
         terrain.Synchronize(time);
         driver.Synchronize(time);
-        powertrain.Synchronize(time, throttle_input, driveshaft_speed);
-        m113.Synchronize(time, steering_input, braking_input, powertrain_torque, shoe_forces_left, shoe_forces_right);
+        m113.Synchronize(time, driver_inputs, shoe_forces_left, shoe_forces_right);
 #ifdef CHRONO_IRRLICHT
-        app.Synchronize("", steering_input, throttle_input, braking_input);
+        app.Synchronize("", driver_inputs);
 #endif
 
         // Advance systems
         driver.Advance(time_step);
-        powertrain.Advance(time_step);
         terrain.Advance(time_step);
         m113.Advance(time_step);
 #ifdef CHRONO_IRRLICHT

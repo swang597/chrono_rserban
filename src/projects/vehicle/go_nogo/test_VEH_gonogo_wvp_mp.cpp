@@ -461,9 +461,7 @@ int main(int argc, char* argv[]) {
 
         if (wvp) {
             // Extract current driver inputs
-            double steering_input = driver->GetSteering();
-            double braking_input = driver->GetBraking();
-            double throttle_input = driver->GetThrottle();
+            ChDriver::Inputs driver_inputs = driver->GetInputs();
 
             // Extract chassis state
             ChVector<> pv = wvp->GetChassisBody()->GetFrame_REF_to_abs().GetPos();
@@ -508,7 +506,7 @@ int main(int argc, char* argv[]) {
             // Save output
             if (output && sim_frame == next_out_frame) {
                 ofile << system->GetChTime() << del;
-                ofile << throttle_input << del << steering_input << del;
+                ofile << driver_inputs.m_throttle << del << driver_inputs.m_steering << del;
 
                 ofile << pv.x() << del << pv.y() << del << pv.z() << del;
                 ofile << vv.x() << del << vv.y() << del << vv.z() << del;
@@ -524,7 +522,7 @@ int main(int argc, char* argv[]) {
 
             // Synchronize subsystems
             driver->Synchronize(time);
-            wvp->Synchronize(time, steering_input, braking_input, throttle_input, terrain);
+            wvp->Synchronize(time, driver_inputs, terrain);
 
             // Advance subsystems
             driver->Advance(time_step);

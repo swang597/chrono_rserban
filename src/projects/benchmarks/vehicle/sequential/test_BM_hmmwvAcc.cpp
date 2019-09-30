@@ -103,15 +103,13 @@ HmmwvAccTest::~HmmwvAccTest() {
 void HmmwvAccTest::ExecuteStep() {
     double time = m_hmmwv->GetSystem()->GetChTime();
 
-    // Collect output data from modules (for inter-module communication)
-    double throttle_input = m_driver->GetThrottle();
-    double steering_input = m_driver->GetSteering();
-    double braking_input = m_driver->GetBraking();
+    // Driver inputs
+    ChDriver::Inputs driver_inputs = m_driver->GetInputs();
 
     // Update modules (process inputs from other modules)
     m_driver->Synchronize(time);
     m_terrain->Synchronize(time);
-    m_hmmwv->Synchronize(time, steering_input, braking_input, throttle_input, *m_terrain);
+    m_hmmwv->Synchronize(time, driver_inputs, *m_terrain);
 
     // Advance simulation for one timestep for all modules
     m_driver->Advance(m_step_veh);
@@ -120,7 +118,7 @@ void HmmwvAccTest::ExecuteStep() {
 }
 
 void HmmwvAccTest::SimulateVis() {
-    ChWheeledVehicleIrrApp app(&m_hmmwv->GetVehicle(), &m_hmmwv->GetPowertrain(), L"HMMWV acceleration test");
+    ChWheeledVehicleIrrApp app(&m_hmmwv->GetVehicle(), L"HMMWV acceleration test");
     app.SetSkyBox();
     app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
     app.SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 6.0, 0.5);
@@ -129,10 +127,11 @@ void HmmwvAccTest::SimulateVis() {
     app.AssetUpdateAll();
 
     while (app.GetDevice()->run()) {
+        ChDriver::Inputs driver_inputs = m_driver->GetInputs();
         app.BeginScene();
         app.DrawAll();
         ExecuteStep();
-        app.Synchronize("Acceleration test", m_driver->GetSteering(), m_driver->GetThrottle(), m_driver->GetBraking());
+        app.Synchronize("Acceleration test", driver_inputs);
         app.Advance(m_step_veh);
         app.EndScene();
     }

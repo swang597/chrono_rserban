@@ -289,7 +289,7 @@ int main(int argc, char* argv[]) {
     if (fullSlope > 0.0) {
         windowName += L" - Max. Slope = " + std::to_wstring((int)fullSlope) += L" %";
     }
-    ChWheeledVehicleIrrApp app(&wvp.GetVehicle(), &wvp.GetPowertrain(), windowName.c_str());
+    ChWheeledVehicleIrrApp app(&wvp.GetVehicle(), windowName.c_str());
     app.SetSkyBox();
     app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
     app.SetChaseCamera(trackPoint, 6.0, 0.5);
@@ -392,17 +392,15 @@ int main(int argc, char* argv[]) {
         slopegravity[2] = -9.81 * cos(alpha);
         wvp.GetSystem()->Set_G_acc(slopegravity);
 
-        // Collect output data from modules (for inter-module communication)
-        double throttle_input = driver.GetThrottle();
-        double steering_input = driver.GetSteering();
-        double braking_input = driver.GetBraking();
+        // Driver inputs
+        ChDriver::Inputs driver_inputs = driver.GetInputs();
 
         // Update modules (process inputs from other modules)
         driver.Synchronize(time);
         terrain->Synchronize(time);
-        wvp.Synchronize(time, steering_input, braking_input, throttle_input, *terrain);
+        wvp.Synchronize(time, driver_inputs, *terrain);
 #ifdef USE_IRRLICHT
-        app.Synchronize("Follower driver", steering_input, throttle_input, braking_input);
+        app.Synchronize("Follower driver", driver_inputs);
 #endif
 
         // Advance simulation for one timestep for all modules
@@ -425,18 +423,22 @@ int main(int argc, char* argv[]) {
             // output time to check simulation is running
             std::cout << time << std::endl;
 
-            csv << time << throttle_input;
-            csv << wvp.GetPowertrain().GetMotorSpeed();
+            csv << time << driver_inputs.m_throttle;
+            csv << wvp.GetVehicle().GetPowertrain()->GetMotorSpeed();
             csv << wvp.GetVehicle().GetVehicleSpeed();
-            csv << wvp.GetPowertrain().GetMotorTorque();
+            csv << wvp.GetVehicle().GetPowertrain()->GetMotorTorque();
 
-            for (int i = 0; i < 4; i++) {
-                csv << wvp.GetVehicle().GetWheelAngVel(i);
+            for (int axle = 0; axle < 2; axle++) {
+                csv << wvp.GetVehicle().GetSpindleAngVel(axle, LEFT);
+                csv << wvp.GetVehicle().GetSpindleAngVel(axle, RIGHT);
             }
 
-            for (int i = 0; i < 4; i++) {
-                csv << wvp.GetTire(i)->GetLongitudinalSlip();
+            for (auto& axle : wvp.GetVehicle().GetAxles()) {
+                for (auto& wheel : axle->GetWheels()) {
+                    csv << wheel->GetTire()->GetLongitudinalSlip();
+                }
             }
+
             csv << forceFunct.Get_y(time);
             csv << CH_C_RAD_TO_DEG * atan(slopeFunct.Get_y(time));
 

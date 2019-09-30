@@ -50,12 +50,8 @@ ChWheeledVehicle& SedanAV::GetVehicle() const {
     return m_sedan->GetVehicle();
 }
 
-ChPowertrain& SedanAV::GetPowertrain() const {
-    return m_sedan->GetPowertrain();
-}
-
 void SedanAV::Synchronize(double time) {
-    m_sedan->Synchronize(time, m_steering, m_braking, m_throttle, *m_framework->m_terrain);
+    m_sedan->Synchronize(time, m_driver_inputs, *m_framework->m_terrain);
 }
 
 void SedanAV::Advance(double step) {
