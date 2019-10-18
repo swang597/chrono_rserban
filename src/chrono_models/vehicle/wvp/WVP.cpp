@@ -36,7 +36,6 @@ WVP::WVP()
       m_fixed(false),
       m_tireType(TireModelType::RIGID),
       m_tire_collision_type(ChTire::CollisionType::SINGLE_POINT),
-      m_vehicle_step_size(-1),
       m_tire_step_size(-1),
       m_steeringType(SteeringType::PITMAN_ARM),
       m_initFwdVel(0),
@@ -53,7 +52,6 @@ WVP::WVP(ChSystem* system)
       m_fixed(false),
       m_tireType(TireModelType::RIGID),
       m_tire_collision_type(ChTire::CollisionType::SINGLE_POINT),
-      m_vehicle_step_size(-1),
       m_tire_step_size(-1),
       m_steeringType(SteeringType::PITMAN_ARM),
       m_initFwdVel(0),
@@ -83,10 +81,6 @@ void WVP::Initialize() {
 
     m_vehicle->SetInitWheelAngVel(m_initOmega);
     m_vehicle->Initialize(m_initPos, m_initFwdVel);
-
-    if (m_vehicle_step_size > 0) {
-        m_vehicle->SetStepsize(m_vehicle_step_size);
-    }
 
     // If specified, enable aerodynamic drag
     if (m_apply_drag) {

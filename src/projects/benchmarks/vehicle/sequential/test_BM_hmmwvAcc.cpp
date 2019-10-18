@@ -66,7 +66,6 @@ HmmwvAccTest::HmmwvAccTest() : m_step_veh(1e-3), m_step_tire(1e-3) {
     m_hmmwv->SetDriveType(drive_type);
     m_hmmwv->SetTireType(tire_model);
     m_hmmwv->SetTireStepSize(m_step_tire);
-    m_hmmwv->SetVehicleStepSize(m_step_veh);
     m_hmmwv->SetAerodynamicDrag(0.5, 5.0, 1.2);
     m_hmmwv->Initialize();
 

@@ -33,7 +33,6 @@ TruckAV::TruckAV(Framework* framework, unsigned int id, const chrono::ChCoordsys
     m_hmmwv->SetDriveType(DrivelineType::RWD);
     m_hmmwv->SetTireType(TireModelType::RIGID);
     m_hmmwv->SetTireStepSize(framework->m_step);
-    m_hmmwv->SetVehicleStepSize(framework->m_step);
     m_hmmwv->SetInitPosition(init_pos);
     m_hmmwv->Initialize();
 

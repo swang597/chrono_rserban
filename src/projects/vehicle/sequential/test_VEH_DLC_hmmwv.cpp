@@ -66,7 +66,6 @@ int main(int argc, char* argv[]) {
     my_hmmwv.SetSteeringType(SteeringType::PITMAN_ARM);
     my_hmmwv.SetTireType(tire_model);
     my_hmmwv.SetTireStepSize(tire_step_size);
-    my_hmmwv.SetVehicleStepSize(step_size);
     my_hmmwv.Initialize();
 
     my_hmmwv.SetChassisVisualizationType(VisualizationType::PRIMITIVES);
@@ -168,7 +167,6 @@ int main(int argc, char* argv[]) {
     int debug_steps = (int)std::ceil(debug_step_size / step_size);
 
     // Initialize simulation frame counter and simulation time
-    ChRealtimeStepTimer realtime_timer;
     int sim_frame = 0;
 
     while (app.GetDevice()->run()) {

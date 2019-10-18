@@ -21,8 +21,6 @@
 
 #include <cmath>
 
-#include "chrono/core/ChRealtimeStep.h"
-
 #include "chrono/physics/ChShaftsBody.h"
 #include "chrono/physics/ChShaftsGear.h"
 #include "chrono/physics/ChShaftsMotorAngle.h"
@@ -278,8 +276,6 @@ int main(int argc, char* argv[]) {
     // Simulation loop
     // ---------------
 
-    ChRealtimeStepTimer realtime_timer;
-
     while (application.GetDevice()->run()) {
         // Render scene
         application.BeginScene();
@@ -302,8 +298,7 @@ int main(int argc, char* argv[]) {
         csv << time << steering << aPos << aAngles << lPos << mP << mI << endl;
 
         // Advance dynamics
-        double step = realtime_timer.SuggestSimulationStep(1e-3);
-        sys.DoStepDynamics(step);
+        sys.DoStepDynamics(1e-3);
 
         if (time > 5.0)
             break;

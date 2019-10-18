@@ -19,7 +19,6 @@
 //
 // =============================================================================
 
-#include "chrono/core/ChRealtimeStep.h"
 #include "chrono/utils/ChFilters.h"
 
 #include "chrono_vehicle/ChVehicleModelData.h"
@@ -235,7 +234,6 @@ int main(int argc, char* argv[]) {
     int render_steps = (int)std::ceil(render_step_size / step_size);
 
     // Initialize simulation frame counter and simulation time
-    ChRealtimeStepTimer realtime_timer;
     int sim_frame = 0;
     int render_frame = 0;
 
@@ -306,11 +304,10 @@ int main(int argc, char* argv[]) {
         app.Synchronize("Test", driver_inputs);
 
         // Advance simulation for one timestep for all modules
-        double step = realtime_timer.SuggestSimulationStep(step_size);
-        driver_follower.Advance(step);
-        terrain.Advance(step);
-        my_hmmwv.Advance(step);
-        app.Advance(step);
+        driver_follower.Advance(step_size);
+        terrain.Advance(step_size);
+        my_hmmwv.Advance(step_size);
+        app.Advance(step_size);
 
         // Increment simulation frame number
         sim_frame++;

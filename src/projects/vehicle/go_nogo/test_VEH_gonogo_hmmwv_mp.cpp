@@ -617,8 +617,6 @@ HMMWV_Full* CreateVehicle(ChSystem* system, double vertical_offset) {
     hmmwv->SetWheelVisualizationType(VisualizationType::MESH);
     hmmwv->SetTireVisualizationType(VisualizationType::NONE);
 
-    hmmwv->GetVehicle().SetStepsize(time_step);
-
     return hmmwv;
 }
 

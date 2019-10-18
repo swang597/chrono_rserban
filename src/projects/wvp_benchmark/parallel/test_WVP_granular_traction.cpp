@@ -530,8 +530,6 @@ WVP* CreateVehicle(ChSystem* system, double vertical_offset, std::shared_ptr<ChF
     wvp->SetWheelVisualizationType(VisualizationType::MESH);
     wvp->SetTireVisualizationType(VisualizationType::NONE);
 
-    wvp->GetVehicle().SetStepsize(time_step);
-
     auto drawForce = chrono_types::make_shared<ChForce>();
     wvp->GetChassisBody()->AddForce(drawForce);
     drawForce->SetMode(ChForce::ForceType::FORCE);

@@ -77,7 +77,6 @@ int main(int argc, char* argv[]) {
     hmmwv.SetDriveType(DrivelineType::RWD);
     hmmwv.SetTireType(tire_model);
     hmmwv.SetTireStepSize(tire_step_size);
-    hmmwv.SetVehicleStepSize(step_size);
     hmmwv.Initialize();
     hmmwv.SetChassisVisualizationType(VisualizationType::NONE);
     hmmwv.SetSuspensionVisualizationType(VisualizationType::PRIMITIVES);

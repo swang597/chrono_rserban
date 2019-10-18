@@ -587,8 +587,6 @@ WVP* CreateVehicle(ChSystem* system, double vertical_offset) {
     wvp->SetWheelVisualizationType(VisualizationType::NONE);
     wvp->SetTireVisualizationType(VisualizationType::PRIMITIVES);
 
-    wvp->GetVehicle().SetStepsize(time_step);
-
     return wvp;
 }
 

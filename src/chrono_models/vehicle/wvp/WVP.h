@@ -60,7 +60,6 @@ class CH_MODELS_API WVP {
     void SetInitFwdVel(double fwdVel) { m_initFwdVel = fwdVel; }
     void SetInitWheelAngVel(const std::vector<double>& omega) { m_initOmega = omega; }
 
-    void SetVehicleStepSize(double step_size) { m_vehicle_step_size = step_size; }
     void SetTireStepSize(double step_size) { m_tire_step_size = step_size; }
 
     void DisconnectPowertrain() { m_powertrain_connected = false; }
@@ -95,7 +94,6 @@ class CH_MODELS_API WVP {
     TireModelType m_tireType;
     ChTire::CollisionType m_tire_collision_type;
  
-    double m_vehicle_step_size;
     double m_tire_step_size;
 
     SteeringType m_steeringType;

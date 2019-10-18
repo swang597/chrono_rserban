@@ -31,7 +31,6 @@ VanAV::VanAV(Framework* framework, unsigned int id, const chrono::ChCoordsys<>& 
     m_uaz->SetChassisCollisionType(ChassisCollisionType::MESH);
     m_uaz->SetTireType(TireModelType::RIGID);
     m_uaz->SetTireStepSize(framework->m_step);
-    m_uaz->SetVehicleStepSize(framework->m_step);
     m_uaz->SetInitPosition(init_pos);
     m_uaz->Initialize();
 
