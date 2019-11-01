@@ -22,8 +22,6 @@
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/utils/ChUtilsJSON.h"
 
-#include "chrono_thirdparty/rapidjson/filereadstream.h"
-
 using namespace rapidjson;
 
 namespace chrono {
@@ -31,32 +29,26 @@ namespace vehicle {
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-Pac02Tire::Pac02Tire(const std::string& filename) : ChPac02Tire(""), m_mass(0), m_has_mesh(false) {
-    FILE* fp = fopen(filename.c_str(), "r");
-
-    char readBuffer[65536];
-    FileReadStream is(fp, readBuffer, sizeof(readBuffer));
-
-    fclose(fp);
-
-    Document d;
-    d.ParseStream<ParseFlag::kParseCommentsFlag>(is);
+Pac02Tire::Pac02Tire(const std::string& filename)
+    : ChPac02Tire(""), m_mass(0), m_has_mesh(false), m_has_vert_table(false), m_has_bott_table(false) {
+    Document d = ReadFileJSON(filename);
+    if (d.IsNull())
+        return;
 
     Create(d);
 
     GetLog() << "Loaded JSON: " << filename.c_str() << "\n";
 }
 
-Pac02Tire::Pac02Tire(const rapidjson::Document& d) : ChPac02Tire(""), m_mass(0),  m_has_mesh(false) {
+Pac02Tire::Pac02Tire(const rapidjson::Document& d)
+    : ChPac02Tire(""), m_mass(0), m_has_mesh(false), m_has_vert_table(false), m_has_bott_table(false) {
     Create(d);
 }
 
 void Pac02Tire::Create(const rapidjson::Document& d) {  // Invoke base class method.
     ChPart::Create(d);
 
-    m_has_vert_table = false;
     m_mass = d["Mass"].GetDouble();
-    GetLog() << "Masse = " << m_mass << "\n";
     m_inertia = ReadVectorJSON(d["Inertia"]);
     if (d.HasMember("Use Mode")) {
         // Default value = 3
@@ -65,6 +57,18 @@ void Pac02Tire::Create(const rapidjson::Document& d) {  // Invoke base class met
     if (d.HasMember("Coefficient of Friction")) {
         // Default value = 0.8
         m_PacCoeff.mu0 = d["Coefficient of Friction"].GetDouble();
+    }
+    if (d.HasMember("Tire Side")) {
+        // Default value = LEFT
+        std::string tSide = d["Tire Side"].GetString();
+        if (tSide.compare("left") == 0) {
+            m_measured_side = LEFT;
+            m_allow_mirroring = true;
+        }
+        if (tSide.compare("right") == 0) {
+            m_measured_side = RIGHT;
+            m_allow_mirroring = true;
+        }
     }
     if (d.HasMember("Dimension")) {
         m_PacCoeff.R0 = d["Dimension"]["Unloaded Radius"].GetDouble();
@@ -87,7 +91,14 @@ void Pac02Tire::Create(const rapidjson::Document& d) {  // Invoke base class met
                                     d["Vertical"]["Vertical Curve Data"][i][1u].GetDouble());
             }
             m_has_vert_table = true;
-            GetLog() << "numPts = " << num_points << "\n";
+        }
+        if (d["Vertical"].HasMember("Bottoming Curve Data")) {
+            int num_points = d["Vertical"]["Bottoming Curve Data"].Size();
+            for (int i = 0; i < num_points; i++) {
+                m_vert_map.AddPoint(d["Vertical"]["Bottoming Curve Data"][i][0u].GetDouble(),
+                                    d["Vertical"]["Bottoming Curve Data"][i][1u].GetDouble());
+            }
+            m_has_bott_table = true;
         }
     }
     if (d.HasMember("Scaling Factors")) {
@@ -356,7 +367,7 @@ void Pac02Tire::Create(const rapidjson::Document& d) {  // Invoke base class met
             m_PacCoeff.ptx3 = d["Longitudinal Coefficients"]["ptx3"].GetDouble();
         }
     }
-       
+
     if (d.HasMember("Aligning Coefficients")) {
         if (d["Aligning Coefficients"].HasMember("qbz1")) {
             m_PacCoeff.qbz1 = d["Aligning Coefficients"]["qbz1"].GetDouble();

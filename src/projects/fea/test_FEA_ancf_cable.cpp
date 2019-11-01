@@ -102,8 +102,6 @@ int main(int argc, char* argv[]) {
     mvisualizebeamA->SetWireframe(false);
     my_mesh->AddAsset(mvisualizebeamA);
 
-    mphysicalSystem.SetupInitial();
-
     // ----------------------
     // Run-time visualization
     // ----------------------

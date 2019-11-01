@@ -139,9 +139,6 @@ int main(int argc, char* argv[]) {
     mvisB->SetZbufferHide(false);
     mesh->AddAsset(mvisB);
 
-    // Mark completion of system construction
-    sys.SetupInitial();
-
     // Run-time visualization
     irrlicht::ChIrrApp application(&sys, L"Cables FEM", irr::core::dimension2d<irr::u32>(800, 600), false, true);
     application.AddTypicalLogo();

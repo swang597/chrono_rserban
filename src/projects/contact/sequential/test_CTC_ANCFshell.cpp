@@ -116,9 +116,6 @@ int main(int argc, char* argv[]) {
     // Add the mesh to the system
     my_system.Add(my_mesh);
 
-    // Mark completion of system construction
-    my_system.SetupInitial();
-
     // Bind visualization assets
     ChIrrApp application(&my_system, L"ANCF Collision Test", irr::core::dimension2d<irr::u32>(800, 600), false, true);
     application.AddTypicalLogo();

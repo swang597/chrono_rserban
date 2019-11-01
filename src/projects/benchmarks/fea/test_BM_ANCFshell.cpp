@@ -16,6 +16,7 @@
 //
 // =============================================================================
 
+#include "chrono/ChConfig.h"
 #include "chrono/utils/ChBenchmark.h"
 
 #include "chrono/physics/ChSystemSMC.h"
@@ -25,37 +26,56 @@
 #include "chrono/fea/ChMesh.h"
 #include "chrono/fea/ChVisualizationFEAmesh.h"
 
-#include "chrono_mkl/ChSolverMKL.h"
-
+#ifdef CHRONO_IRRLICHT
 #include "chrono_irrlicht/ChIrrApp.h"
+#endif
+
+#ifdef CHRONO_MKL
+#include "chrono_mkl/ChSolverMKL.h"
+#endif
 
 using namespace chrono;
 using namespace chrono::fea;
-using namespace chrono::irrlicht;
 
 template <int N>
 class ANCFshell : public utils::ChBenchmarkTest {
   public:
-    ANCFshell();
-    ~ANCFshell() { delete m_system; }
+    virtual ~ANCFshell() { delete m_system; }
 
     ChSystem* GetSystem() override { return m_system; }
     void ExecuteStep() override { m_system->DoStepDynamics(1e-4); }
 
     void SimulateVis();
 
-  private:
+  protected:
+    ANCFshell(ChSolver::Type solver_type);
+
     ChSystemSMC* m_system;
 };
 
 template <int N>
-ANCFshell<N>::ANCFshell() {
-    ChSolver::Type solver_type = ChSolver::Type::MINRES;
+class ANCFshell_MINRES : public ANCFshell<N> {
+  public:
+    ANCFshell_MINRES() : ANCFshell<N>(ChSolver::Type::MINRES) {}
+};
 
+template <int N>
+class ANCFshell_MKL : public ANCFshell<N> {
+  public:
+    ANCFshell_MKL() : ANCFshell<N>(ChSolver::Type::CUSTOM) {}
+};
+
+template <int N>
+ANCFshell<N>::ANCFshell(ChSolver::Type solver_type) {
     m_system = new ChSystemSMC();
     m_system->Set_G_acc(ChVector<>(0, -9.8, 0));
 
     // Set solver parameters
+#ifndef CHRONO_MKL
+    if (solver_type == ChSolver::Type::CUSTOM)
+        solver_type = ChSolver::Type::MINRES;
+#endif
+
     switch (solver_type) {
         case ChSolver::Type::MINRES: {
             m_system->SetSolverType(ChSolver::Type::MINRES);
@@ -66,10 +86,12 @@ ANCFshell<N>::ANCFshell() {
             break;
         }
         case ChSolver::Type::CUSTOM: {
+#ifdef CHRONO_MKL
             auto mkl_solver = chrono_types::make_shared<ChSolverMKL<>>();
             mkl_solver->SetSparsityPatternLock(true);
             mkl_solver->SetVerbose(false);
             m_system->SetSolver(mkl_solver);
+#endif
             break;
         }
     }
@@ -139,13 +161,12 @@ ANCFshell<N>::ANCFshell() {
         nodeA = nodeC;
         nodeB = nodeD;
     }
-
-    m_system->SetupInitial();
 }
 
 template <int N>
 void ANCFshell<N>::SimulateVis() {
-    ChIrrApp application(m_system, L"ANCF shells", irr::core::dimension2d<irr::u32>(800, 600), false, true);
+#ifdef CHRONO_IRRLICHT
+    irrlicht::ChIrrApp application(m_system, L"ANCF shells", irr::core::dimension2d<irr::u32>(800, 600), false, true);
     application.AddTypicalLogo();
     application.AddTypicalSky();
     application.AddTypicalLights();
@@ -157,15 +178,16 @@ void ANCFshell<N>::SimulateVis() {
     while (application.GetDevice()->run()) {
         application.BeginScene();
         application.DrawAll();
-        ChIrrTools::drawSegment(application.GetVideoDriver(), ChVector<>(0), ChVector<>(1, 0, 0),
-                                irr::video::SColor(255, 255, 0, 0));
-        ChIrrTools::drawSegment(application.GetVideoDriver(), ChVector<>(0), ChVector<>(0, 1, 0),
-                                irr::video::SColor(255, 0, 255, 0));
-        ChIrrTools::drawSegment(application.GetVideoDriver(), ChVector<>(0), ChVector<>(0, 0, 1),
-                                irr::video::SColor(255, 0, 0, 255));
+        irrlicht::ChIrrTools::drawSegment(application.GetVideoDriver(), ChVector<>(0), ChVector<>(1, 0, 0),
+                                          irr::video::SColor(255, 255, 0, 0));
+        irrlicht::ChIrrTools::drawSegment(application.GetVideoDriver(), ChVector<>(0), ChVector<>(0, 1, 0),
+                                          irr::video::SColor(255, 0, 255, 0));
+        irrlicht::ChIrrTools::drawSegment(application.GetVideoDriver(), ChVector<>(0), ChVector<>(0, 0, 1),
+                                          irr::video::SColor(255, 0, 0, 255));
         ExecuteStep();
         application.EndScene();
     }
+#endif
 }
 
 // =============================================================================
@@ -173,21 +195,30 @@ void ANCFshell<N>::SimulateVis() {
 #define NUM_SKIP_STEPS 10  // number of steps for hot start
 #define NUM_SIM_STEPS 100  // number of simulation steps for each benchmark
 
-CH_BM_SIMULATION_LOOP(ANCFshell08, ANCFshell<8>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
-CH_BM_SIMULATION_LOOP(ANCFshell16, ANCFshell<16>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
-CH_BM_SIMULATION_LOOP(ANCFshell32, ANCFshell<32>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
-CH_BM_SIMULATION_LOOP(ANCFshell64, ANCFshell<64>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
+CH_BM_SIMULATION_LOOP(ANCFshell08_MINRES, ANCFshell_MINRES<8>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
+CH_BM_SIMULATION_LOOP(ANCFshell16_MINRES, ANCFshell_MINRES<16>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
+CH_BM_SIMULATION_LOOP(ANCFshell32_MINRES, ANCFshell_MINRES<32>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
+CH_BM_SIMULATION_LOOP(ANCFshell64_MINRES, ANCFshell_MINRES<64>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
+
+#ifdef CHRONO_MKL
+CH_BM_SIMULATION_LOOP(ANCFshell08_MKL, ANCFshell_MKL<8>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
+CH_BM_SIMULATION_LOOP(ANCFshell16_MKL, ANCFshell_MKL<16>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
+CH_BM_SIMULATION_LOOP(ANCFshell32_MKL, ANCFshell_MKL<32>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
+CH_BM_SIMULATION_LOOP(ANCFshell64_MKL, ANCFshell_MKL<64>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
+#endif
 
 // =============================================================================
 
 int main(int argc, char* argv[]) {
     ::benchmark::Initialize(&argc, argv);
 
+#ifdef CHRONO_IRRLICHT
     if (::benchmark::ReportUnrecognizedArguments(argc, argv)) {
-        ANCFshell<16> test;
+        ANCFshell_MINRES<16> test;
         test.SimulateVis();
         return 0;
     }
+#endif
 
     ::benchmark::RunSpecifiedBenchmarks();
 }

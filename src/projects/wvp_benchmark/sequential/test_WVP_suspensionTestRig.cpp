@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
     auto tire_R = chrono_types::make_shared<WVP_TMeasyTire>("Right");
 
     // Create and intialize the suspension test rig.
-    ChSuspensionTestRig rig(vehicle, axle_index, post_limit, tire_L, tire_R);
+    ChSuspensionTestRigPlatform rig(vehicle, axle_index, post_limit, tire_L, tire_R);
 
     rig.SetInitialRideHeight(0.5);
 
@@ -164,7 +164,7 @@ int main(int argc, char* argv[]) {
             // Current tire forces
             auto tire_force_L = rig.ReportTireForce(VehicleSide::LEFT);
             auto tire_force_R = rig.ReportTireForce(VehicleSide::RIGHT);
-            out_csv << rig.GetDisplacementLeftInput() << rig.GetDisplacementRightInput() << rig.GetSteeringInput();
+            out_csv << rig.GetLeftInput() << rig.GetRightInput() << rig.GetSteeringInput();
             out_csv << rig.GetActuatorDisp(VehicleSide::LEFT) << rig.GetActuatorDisp(VehicleSide::RIGHT);
             out_csv << tire_force_L.point << tire_force_L.force << tire_force_L.moment;
             out_csv << tire_force_R.point << tire_force_R.force << tire_force_R.moment;
