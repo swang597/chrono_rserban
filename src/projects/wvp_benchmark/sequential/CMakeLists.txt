@@ -20,6 +20,7 @@ SET(LIBRARIES
 # ------------------------------------------------------------------------------
 
 SET(DEMOS
+    test_FEDA_sequential
     test_WVP_sequential
     test_WVP_suspensionTestRig
     test_WVP_straight_slow

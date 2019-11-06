@@ -39,7 +39,8 @@ FEDA::FEDA()
       m_initFwdVel(0),
       m_initPos(ChCoordsys<>(ChVector<>(0, 0, 1), QUNIT)),
       m_initOmega({0, 0, 0, 0}),
-      m_apply_drag(false) {}
+      m_apply_drag(false),
+      m_ride_height_config(1) {}
 
 FEDA::FEDA(ChSystem* system)
     : m_system(system),
@@ -52,7 +53,8 @@ FEDA::FEDA(ChSystem* system)
       m_initFwdVel(0),
       m_initPos(ChCoordsys<>(ChVector<>(0, 0, 1), QUNIT)),
       m_initOmega({0, 0, 0, 0}),
-      m_apply_drag(false) {}
+      m_apply_drag(false),
+      m_ride_height_config(1) {}
 
 FEDA::~FEDA() {
     delete m_vehicle;
@@ -70,8 +72,8 @@ void FEDA::SetAerodynamicDrag(double Cd, double area, double air_density) {
 // -----------------------------------------------------------------------------
 void FEDA::Initialize() {
     // Create and initialize the Sedan vehicle
-    m_vehicle = m_system ? new FEDA_Vehicle(m_system, m_fixed, m_chassisCollisionType)
-                         : new FEDA_Vehicle(m_fixed, m_contactMethod, m_chassisCollisionType);
+    m_vehicle = m_system ? new FEDA_Vehicle(m_system, m_fixed, m_chassisCollisionType, m_ride_height_config)
+                         : new FEDA_Vehicle(m_fixed, m_contactMethod, m_chassisCollisionType, m_ride_height_config);
 
     m_vehicle->SetInitWheelAngVel(m_initOmega);
     m_vehicle->Initialize(m_initPos, m_initFwdVel);

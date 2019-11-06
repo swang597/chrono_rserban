@@ -33,8 +33,8 @@ namespace feda {
 const double FEDA_Chassis::m_mass = 4450;
 const ChVector<> FEDA_Chassis::m_inertiaXX(2420.0, 8200.0, 7100.0);
 const ChVector<> FEDA_Chassis::m_inertiaXY(0, 0, 0);
-const ChVector<> FEDA_Chassis::m_COM_loc(-1.591564, 0.0889, 0.50176);
-const ChCoordsys<> FEDA_Chassis::m_driverCsys(ChVector<>(0.0, 0.5, 1.2), ChQuaternion<>(1, 0, 0, 0));
+const ChVector<> FEDA_Chassis::m_COM_loc(-1.591564, 0.0889, 0.97);
+const ChCoordsys<> FEDA_Chassis::m_driverCsys(ChVector<>(-1.0, 0.5, 1.2), ChQuaternion<>(1, 0, 0, 0));
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------

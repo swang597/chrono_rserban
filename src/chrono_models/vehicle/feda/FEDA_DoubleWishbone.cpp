@@ -62,10 +62,12 @@ const ChVector<> FEDA_DoubleWishboneFront::m_uprightInertiaProducts(0.0, 0.0, 0.
 const double FEDA_DoubleWishboneFront::m_axleInertia = 0.4;
 
 const double FEDA_DoubleWishboneFront::m_springCoefficient = 76000;
-const double FEDA_DoubleWishboneFront::m_springRestLength = 0.60208;
+const double FEDA_DoubleWishboneFront::m_springRestLength =
+    0.60208;  // distance between top and arm mount points of the strut in design position
+const double FEDA_DoubleWishboneFront::m_springF0 = 0.125550934 * FEDA_DoubleWishboneFront::m_springCoefficient;
 const double FEDA_DoubleWishboneFront::m_bumpstop_clearance = 0.11;
 const double FEDA_DoubleWishboneFront::m_reboundstop_clearance = 0.11;
-const double FEDA_DoubleWishboneFront::m_air_pressure = 18.0 * psi2pascal;
+const double FEDA_DoubleWishboneFront::m_air_pressure[] = {18.0 * psi2pascal, 36.0 * psi2pascal, 50.0 * psi2pascal};
 
 // -----------------------------------------------------------------------------
 
@@ -92,10 +94,12 @@ const ChVector<> FEDA_DoubleWishboneRear::m_uprightInertiaProducts(0.0, 0.0, 0.0
 const double FEDA_DoubleWishboneRear::m_axleInertia = 0.4;
 
 const double FEDA_DoubleWishboneRear::m_springCoefficient = 76000;
-const double FEDA_DoubleWishboneRear::m_springRestLength = 0.60208;
+const double FEDA_DoubleWishboneRear::m_springRestLength =
+    0.60208;  // distance between top and arm mount points of the strut in design position
+const double FEDA_DoubleWishboneRear::m_springF0 = 0.125550934 * FEDA_DoubleWishboneRear::m_springCoefficient;
 const double FEDA_DoubleWishboneRear::m_bumpstop_clearance = 0.11;
 const double FEDA_DoubleWishboneRear::m_reboundstop_clearance = 0.11;
-const double FEDA_DoubleWishboneRear::m_air_pressure = 18.0 * psi2pascal;
+const double FEDA_DoubleWishboneRear::m_air_pressure[] = {18.0 * psi2pascal, 36.0 * psi2pascal, 50.0 * psi2pascal};
 
 // --------------------------------------------------------------------------------------------------------------------------------
 // FEDA spring functor class - implements a linear spring in combination with an airspring + bistops
@@ -103,19 +107,21 @@ const double FEDA_DoubleWishboneRear::m_air_pressure = 18.0 * psi2pascal;
 class AirCoilSpringBistopForce : public ChLinkSpringCB::ForceFunctor {
   public:
     /// Use default bump stop and rebound stop maps
-    AirCoilSpringBistopForce(double k, double min_length, double max_length, double p0)
+    AirCoilSpringBistopForce(double k, double min_length, double max_length, double coilSpringF0, double p0)
         : m_k(k),
           m_min_length(min_length),
           m_max_length(max_length),
           m_kappa(1.3),
-          m_piston_radius(0.08),
+          m_piston_radius(0.207 / 2.0),
           m_cylinder_compression_length(0.16),
+          m_coilSpringF0(coilSpringF0),
           m_P0(p0) {
         // percalculations
         double A0 = pow(m_piston_radius, 2.0) * CH_C_PI;
         double V0 = m_cylinder_compression_length * A0;
-        m_F0 = m_P0 * A0;
-        m_hf0 = m_P0 * V0 / m_F0;
+        m_airSpringF0 = m_P0 * A0;
+        GetLog() << "Fzero = " << m_airSpringF0 << "N\n";
+        m_hf0 = m_P0 * V0 / m_airSpringF0;
 
         // From ADAMS/Car example
         m_bump.AddPoint(0.0, 0.0);
@@ -162,9 +168,9 @@ class AirCoilSpringBistopForce : public ChLinkSpringCB::ForceFunctor {
             defl_rebound = length - m_max_length;
         }
 
-        force = m_F0 * pow(m_hf0, m_kappa) / pow(m_hf0 - defl_spring, m_kappa) + defl_spring * m_k +
-                m_bump.Get_y(defl_bump) - m_rebound.Get_y(defl_rebound);
-
+        force = m_airSpringF0 * pow(m_hf0, m_kappa) / pow(m_hf0 - defl_spring, m_kappa) + defl_spring * m_k +
+                m_coilSpringF0 + m_bump.Get_y(defl_bump) - m_rebound.Get_y(defl_rebound);
+        // GetLog() << "d =" << defl_spring << " m\n";
         return force;
     }
 
@@ -172,14 +178,15 @@ class AirCoilSpringBistopForce : public ChLinkSpringCB::ForceFunctor {
     double m_k;
     double m_min_length;
     double m_max_length;
+    double m_coilSpringF0;  // preload of the coil spring
 
     // airspring model (cylinder/piston)
     double m_kappa;  // polytropial exponent
     double m_piston_radius;
     double m_cylinder_compression_length;
-    double m_P0;   // gas pressure at design position [pas]
-    double m_hf0;  // value to ease the calculation [m]
-    double m_F0;   // gas force at design position [N]
+    double m_P0;           // gas pressure at design position [pas]
+    double m_hf0;          // value to ease the calculation [m]
+    double m_airSpringF0;  // gas force at design position [N]
 
     ChFunction_Recorder m_bump;
     ChFunction_Recorder m_rebound;
@@ -192,48 +199,58 @@ class AirCoilSpringBistopForce : public ChLinkSpringCB::ForceFunctor {
 // -----------------------------------------------------------------------------
 // Constructors
 // -----------------------------------------------------------------------------
-FEDA_DoubleWishboneFront::FEDA_DoubleWishboneFront(const std::string& name) : ChDoubleWishbone(name) {
+FEDA_DoubleWishboneFront::FEDA_DoubleWishboneFront(const std::string& name, int ride_height_mode)
+    : ChDoubleWishbone(name) {
+    m_ride_height_mode = ChClamp(ride_height_mode, 0, 2);
+    GetLog() << "Ride Height Front = " << m_ride_height_mode << " (Pressure = " << m_air_pressure[m_ride_height_mode]
+             << " Pas)\n";
     m_springForceCB = new AirCoilSpringBistopForce(m_springCoefficient, m_springRestLength - m_bumpstop_clearance,
-                                                   m_springRestLength + m_reboundstop_clearance, m_air_pressure);
+                                                   m_springRestLength + m_reboundstop_clearance, m_springF0,
+                                                   m_air_pressure[m_ride_height_mode]);
 
     m_shockForceCB = new MapDamperForce();
-    dynamic_cast<MapDamperForce*>(m_shockForceCB)->add_point(-5, -11936.925);
-    dynamic_cast<MapDamperForce*>(m_shockForceCB)->add_point(-3, -11368.5);
-    dynamic_cast<MapDamperForce*>(m_shockForceCB)->add_point(-0.33, -10335);
-    dynamic_cast<MapDamperForce*>(m_shockForceCB)->add_point(-0.22, -8376);
-    dynamic_cast<MapDamperForce*>(m_shockForceCB)->add_point(-0.13, -5789);
-    dynamic_cast<MapDamperForce*>(m_shockForceCB)->add_point(-0.05, -2672);
-    dynamic_cast<MapDamperForce*>(m_shockForceCB)->add_point(-0.02, -654);
-    dynamic_cast<MapDamperForce*>(m_shockForceCB)->add_point(0, 0);
-    dynamic_cast<MapDamperForce*>(m_shockForceCB)->add_point(0.02, 652);
-    dynamic_cast<MapDamperForce*>(m_shockForceCB)->add_point(0.05, 1649);
-    dynamic_cast<MapDamperForce*>(m_shockForceCB)->add_point(0.13, 2975);
-    dynamic_cast<MapDamperForce*>(m_shockForceCB)->add_point(0.22, 4718);
-    dynamic_cast<MapDamperForce*>(m_shockForceCB)->add_point(0.33, 7496);
-    dynamic_cast<MapDamperForce*>(m_shockForceCB)->add_point(3, 8245.6);
-    dynamic_cast<MapDamperForce*>(m_shockForceCB)->add_point(5, 8657.88);
+    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(-5, -11936.925);
+    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(-3, -11368.5);
+    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(-0.33, -10335);
+    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(-0.22, -8376);
+    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(-0.13, -5789);
+    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(-0.05, -2672);
+    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(-0.02, -654);
+    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(0, 0);
+    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(0.02, 652);
+    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(0.05, 1649);
+    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(0.13, 2975);
+    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(0.22, 4718);
+    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(0.33, 7496);
+    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(3, 8245.6);
+    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(5, 8657.88);
 }
 
-FEDA_DoubleWishboneRear::FEDA_DoubleWishboneRear(const std::string& name) : ChDoubleWishbone(name) {
+FEDA_DoubleWishboneRear::FEDA_DoubleWishboneRear(const std::string& name, int ride_height_mode)
+    : ChDoubleWishbone(name) {
+    m_ride_height_mode = ChClamp(ride_height_mode, 0, 2);
+    GetLog() << "Ride Height Rear = " << m_ride_height_mode << " (Pressure = " << m_air_pressure[m_ride_height_mode]
+             << " Pas)\n";
     m_springForceCB = new AirCoilSpringBistopForce(m_springCoefficient, m_springRestLength - m_bumpstop_clearance,
-                                                   m_springRestLength + m_reboundstop_clearance, m_air_pressure);
+                                                   m_springRestLength + m_reboundstop_clearance, m_springF0,
+                                                   m_air_pressure[m_ride_height_mode]);
 
     m_shockForceCB = new MapDamperForce();
-    dynamic_cast<MapDamperForce*>(m_shockForceCB)->add_point(-5, -11936.925);
-    dynamic_cast<MapDamperForce*>(m_shockForceCB)->add_point(-3, -11368.5);
-    dynamic_cast<MapDamperForce*>(m_shockForceCB)->add_point(-0.33, -10335);
-    dynamic_cast<MapDamperForce*>(m_shockForceCB)->add_point(-0.22, -8376);
-    dynamic_cast<MapDamperForce*>(m_shockForceCB)->add_point(-0.13, -5789);
-    dynamic_cast<MapDamperForce*>(m_shockForceCB)->add_point(-0.05, -2672);
-    dynamic_cast<MapDamperForce*>(m_shockForceCB)->add_point(-0.02, -654);
-    dynamic_cast<MapDamperForce*>(m_shockForceCB)->add_point(0, 0);
-    dynamic_cast<MapDamperForce*>(m_shockForceCB)->add_point(0.02, 652);
-    dynamic_cast<MapDamperForce*>(m_shockForceCB)->add_point(0.05, 1649);
-    dynamic_cast<MapDamperForce*>(m_shockForceCB)->add_point(0.13, 2975);
-    dynamic_cast<MapDamperForce*>(m_shockForceCB)->add_point(0.22, 4718);
-    dynamic_cast<MapDamperForce*>(m_shockForceCB)->add_point(0.33, 7496);
-    dynamic_cast<MapDamperForce*>(m_shockForceCB)->add_point(3, 8245.6);
-    dynamic_cast<MapDamperForce*>(m_shockForceCB)->add_point(5, 8657.88);
+    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(-5, -11936.925);
+    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(-3, -11368.5);
+    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(-0.33, -10335);
+    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(-0.22, -8376);
+    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(-0.13, -5789);
+    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(-0.05, -2672);
+    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(-0.02, -654);
+    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(0, 0);
+    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(0.02, 652);
+    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(0.05, 1649);
+    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(0.13, 2975);
+    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(0.22, 4718);
+    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(0.33, 7496);
+    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(3, 8245.6);
+    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(5, 8657.88);
 }
 
 // -----------------------------------------------------------------------------

@@ -31,7 +31,7 @@ const double rpm2rads = CH_C_PI / 30;
 FEDA_SimpleMapPowertrain::FEDA_SimpleMapPowertrain(const std::string& name) : ChSimpleMapPowertrain(name) {}
 
 double FEDA_SimpleMapPowertrain::GetMaxEngineSpeed() {
-    return 2525 * rpm2rads;
+    return 2550 * rpm2rads;
 }
 
 void FEDA_SimpleMapPowertrain::SetEngineTorqueMaps(ChFunction_Recorder& map0, ChFunction_Recorder& mapF) {
@@ -83,7 +83,7 @@ void FEDA_SimpleMapPowertrain::SetEngineTorqueMaps(ChFunction_Recorder& map0, Ch
     mapF.AddPoint(2400 * rpm2rads, 540);
     mapF.AddPoint(2500 * rpm2rads, 520);
     mapF.AddPoint(2525 * rpm2rads, 505);
-    mapF.AddPoint(2850 * rpm2rads, 0.0);
+    mapF.AddPoint(2550 * rpm2rads, 0);
 }
 
 void FEDA_SimpleMapPowertrain::SetGearRatios(std::vector<double>& fwd_gear_ratios, double& reverse_gear_ratio) {
@@ -98,12 +98,12 @@ void FEDA_SimpleMapPowertrain::SetGearRatios(std::vector<double>& fwd_gear_ratio
 }
 
 void FEDA_SimpleMapPowertrain::SetShiftPoints(std::vector<std::pair<double, double>>& shift_bands) {
-    shift_bands.push_back(std::pair<double, double>(1000 * rpm2rads, 2225 * rpm2rads));
-    shift_bands.push_back(std::pair<double, double>(1000 * rpm2rads, 2225 * rpm2rads));
-    shift_bands.push_back(std::pair<double, double>(1000 * rpm2rads, 2225 * rpm2rads));
-    shift_bands.push_back(std::pair<double, double>(1000 * rpm2rads, 2225 * rpm2rads));
-    shift_bands.push_back(std::pair<double, double>(1000 * rpm2rads, 2225 * rpm2rads));
-    shift_bands.push_back(std::pair<double, double>(1000 * rpm2rads, 2700 * rpm2rads));
+    shift_bands.push_back(std::pair<double, double>(1200 * rpm2rads, 2225 * rpm2rads));
+    shift_bands.push_back(std::pair<double, double>(1200 * rpm2rads, 2225 * rpm2rads));
+    shift_bands.push_back(std::pair<double, double>(1200 * rpm2rads, 2225 * rpm2rads));
+    shift_bands.push_back(std::pair<double, double>(1200 * rpm2rads, 2225 * rpm2rads));
+    shift_bands.push_back(std::pair<double, double>(1200 * rpm2rads, 2225 * rpm2rads));
+    shift_bands.push_back(std::pair<double, double>(1200 * rpm2rads, 2700 * rpm2rads));
 }
 
 }  // namespace feda

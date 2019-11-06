@@ -59,6 +59,10 @@ class CH_MODELS_API FEDA {
 
     void SetTireStepSize(double step_size) { m_tire_step_size = step_size; }
 
+    void SetRideHeight_Low() { m_ride_height_config = 0; }
+    void SetRideHeight_OnRoad() { m_ride_height_config = 1; }
+    void SetRideHeight_ObstacleCrossing() { m_ride_height_config = 2; }
+
     ChSystem* GetSystem() const { return m_vehicle->GetSystem(); }
     ChWheeledVehicle& GetVehicle() const { return *m_vehicle; }
     std::shared_ptr<ChChassis> GetChassis() const { return m_vehicle->GetChassis(); }
@@ -106,6 +110,8 @@ class CH_MODELS_API FEDA {
     FEDA_Vehicle* m_vehicle;
 
     double m_tire_mass;
+
+    int m_ride_height_config;
 };
 
 /// @} vehicle_models_sedan

@@ -32,13 +32,17 @@ namespace feda {
 // -----------------------------------------------------------------------------
 FEDA_Vehicle::FEDA_Vehicle(const bool fixed,
                            ChMaterialSurface::ContactMethod contact_method,
-                           ChassisCollisionType chassis_collision_type)
-    : ChWheeledVehicle("FEDA", contact_method), m_omega({0, 0, 0, 0}) {
+                           ChassisCollisionType chassis_collision_type,
+                           int ride_height)
+    : ChWheeledVehicle("FEDA", contact_method), m_omega({0, 0, 0, 0}), m_ride_height(ride_height) {
     Create(fixed, chassis_collision_type);
 }
 
-FEDA_Vehicle::FEDA_Vehicle(ChSystem* system, const bool fixed, ChassisCollisionType chassis_collision_type)
-    : ChWheeledVehicle("FEDA", system), m_omega({0, 0, 0, 0}) {
+FEDA_Vehicle::FEDA_Vehicle(ChSystem* system,
+                           const bool fixed,
+                           ChassisCollisionType chassis_collision_type,
+                           int ride_height)
+    : ChWheeledVehicle("FEDA", system), m_omega({0, 0, 0, 0}), m_ride_height(ride_height) {
     Create(fixed, chassis_collision_type);
 }
 
@@ -51,8 +55,8 @@ void FEDA_Vehicle::Create(bool fixed, ChassisCollisionType chassis_collision_typ
     m_axles[0] = chrono_types::make_shared<ChAxle>();
     m_axles[1] = chrono_types::make_shared<ChAxle>();
 
-    m_axles[0]->m_suspension = chrono_types::make_shared<FEDA_DoubleWishboneFront>("FrontSusp");
-    m_axles[1]->m_suspension = chrono_types::make_shared<FEDA_DoubleWishboneRear>("RearSusp");
+    m_axles[0]->m_suspension = chrono_types::make_shared<FEDA_DoubleWishboneFront>("FrontSusp", m_ride_height);
+    m_axles[1]->m_suspension = chrono_types::make_shared<FEDA_DoubleWishboneRear>("RearSusp", m_ride_height);
 
     m_axles[0]->m_wheels.resize(2);
     m_axles[0]->m_wheels[0] = chrono_types::make_shared<FEDA_WheelLeft>("Wheel_FL");
@@ -84,15 +88,15 @@ void FEDA_Vehicle::Initialize(const ChCoordsys<>& chassisPos, double chassisFwdV
 
     // Initialize the steering subsystem (specify the steering subsystem's frame relative to the chassis reference
     // frame).
-    ChVector<> offset = ChVector<>(0.95, 0, 0.03);
+    ChVector<> offset = ChVector<>(0.0, 0, 0.0);
     ChQuaternion<> rotation = ChQuaternion<>(1, 0, 0, 0);
     m_steerings[0]->Initialize(m_chassis->GetBody(), offset, rotation);
 
     // Initialize the axle subsystems.
-    m_axles[0]->Initialize(m_chassis->GetBody(), ChVector<>(1.388, 0, .25), ChVector<>(0),
-                           m_steerings[0]->GetSteeringLink(), 0, 0.0, m_omega[0], m_omega[1]);
-    m_axles[1]->Initialize(m_chassis->GetBody(), ChVector<>(-1.388, 0, .125), ChVector<>(0), m_chassis->GetBody(), -1,
-                           0.0, m_omega[2], m_omega[3]);
+    m_axles[0]->Initialize(m_chassis->GetBody(), ChVector<>(0, 0, 0), ChVector<>(0), m_steerings[0]->GetSteeringLink(),
+                           0, 0.0, m_omega[0], m_omega[1]);
+    m_axles[1]->Initialize(m_chassis->GetBody(), ChVector<>(-3.302, 0, 0), ChVector<>(0), m_chassis->GetBody(), -1, 0.0,
+                           m_omega[2], m_omega[3]);
 
     // Initialize the driveline subsystem (FWD)
     std::vector<int> driven_susp_indexes = {0, 1};

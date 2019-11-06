@@ -49,11 +49,13 @@ class CH_MODELS_API FEDA_Vehicle : public ChWheeledVehicle {
   public:
     FEDA_Vehicle(const bool fixed = false,
                  ChMaterialSurface::ContactMethod contact_method = ChMaterialSurface::NSC,
-                 ChassisCollisionType chassis_collision_type = ChassisCollisionType::NONE);
+                 ChassisCollisionType chassis_collision_type = ChassisCollisionType::NONE,
+                 int ride_height = 1);
 
     FEDA_Vehicle(ChSystem* system,
                  const bool fixed = false,
-                 ChassisCollisionType chassis_collision_type = ChassisCollisionType::NONE);
+                 ChassisCollisionType chassis_collision_type = ChassisCollisionType::NONE,
+                 int ride_height = 1);
 
     ~FEDA_Vehicle();
 
@@ -76,6 +78,8 @@ class CH_MODELS_API FEDA_Vehicle : public ChWheeledVehicle {
     double GetShockLength(int axle, VehicleSide side) const;
     double GetShockVelocity(int axle, VehicleSide side) const;
 
+    void SetRideHeight(int theConfig) { m_ride_height = ChClamp(theConfig, 0, 2); }
+
     virtual void Initialize(const ChCoordsys<>& chassisPos, double chassisFwdVel = 0) override;
 
     // Log debugging information
@@ -86,6 +90,8 @@ class CH_MODELS_API FEDA_Vehicle : public ChWheeledVehicle {
     void Create(bool fixed, ChassisCollisionType chassis_collision_type);
 
     std::vector<double> m_omega;
+
+    int m_ride_height;
 };
 
 /// @} vehicle_models_feda
