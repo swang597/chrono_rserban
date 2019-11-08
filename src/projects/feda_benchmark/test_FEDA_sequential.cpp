@@ -199,6 +199,10 @@ int main(int argc, char* argv[]) {
         auto susp0 = std::static_pointer_cast<ChDoubleWishbone>(feda.GetVehicle().GetSuspension(0));
         auto susp1 = std::static_pointer_cast<ChDoubleWishbone>(feda.GetVehicle().GetSuspension(1));
 
+        ////auto susp = feda.GetVehicle().GetAxle(0)->GetSuspension();
+        ////auto states = (std::static_pointer_cast<FEDA_DoubleWishboneFront>(susp))->GetShock(LEFT)->GetStates();
+        ////std::cout << time << "   " << states(0) << "  " << states(1) << std::endl;
+
         ChCoordsys<> vehCoord = ChCoordsys<>(feda.GetVehicle().GetVehiclePos(), feda.GetVehicle().GetVehicleRot());
         ChVector<> vehCOM = vehCoord.TransformPointParentToLocal(feda.GetVehicle().GetVehicleCOMPos());
         // std::cout << "Vehicle COM: " << vehCOM.x() << "|" << vehCOM.y() << "|" << vehCOM.z() << std::endl;
@@ -212,5 +216,6 @@ int main(int argc, char* argv[]) {
         step_number++;
     }
 
+    GetLog() << "CoG of the FED alpha above ground = " << feda.GetVehicle().GetVehicleCOMPos().z() << " m\n";
     return 0;
 }

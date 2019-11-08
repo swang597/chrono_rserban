@@ -20,22 +20,7 @@ SET(LIBRARIES
 # ------------------------------------------------------------------------------
 
 SET(DEMOS
-    test_WVP_sequential
-    test_WVP_suspensionTestRig
-    test_WVP_straight_slow
-    test_WVP_constant_radius
-    test_WVP_gravel_lane_change
-    test_WVP_paved_lane_change
-    test_WVP_side_slope
-    test_WVP_straight_accel
-    test_WVP_wall2wall
-    test_WVP_pavedDLC_closed
-    test_WVP_gravelDLC_closed
-    test_WVP_slope_grade
-    test_WVP_tractive_effort
-    test_WVP_ride_quality
-    test_WVP_softsoil_traction
-    test_WVP_drawbar_pull
+    test_FEDA_sequential
 )
 
 # ------------------------------------------------------------------------------

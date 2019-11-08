@@ -76,6 +76,8 @@ set(CVM_HMMWV_FILES
 source_group("hmmwv" FILES ${CVM_HMMWV_FILES})
 
 set(CVM_FEDA_FILES
+    feda/FEDA_AntirollBarRSD.h
+    feda/FEDA_AntirollBarRSD.cpp
     feda/FEDA_BrakeSimple.cpp
     feda/FEDA_BrakeSimple.h
     feda/FEDA_Chassis.cpp

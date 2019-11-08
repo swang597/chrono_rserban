@@ -9,7 +9,7 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Radu Serban, Justin Madsen, Daniel Melanz
+// Authors: Radu Serban, Rainer Gericke
 // =============================================================================
 //
 // Front and Rear FEDA suspension subsystems (double A-arm).
@@ -196,6 +196,145 @@ class AirCoilSpringBistopForce : public ChLinkSpringCB::ForceFunctor {
 // FEDA shock functor class - implements a nonlinear damper
 // -----------------------------------------------------------------------------
 
+class MyShockForce : public ChLinkSpringCB::ForceFunctor {
+  public:
+    virtual double operator()(double time,          // current time
+                              double rest_length,   // undeformed length
+                              double length,        // current length
+                              double vel,           // current velocity (positive when extending)
+                              ChLinkSpringCB* link  // back-pointer to associated link
+                              ) override {
+        // Access states
+        auto states = link->GetStates();
+
+        // ....
+
+        return 0;
+    }
+};
+
+class MyShockODE : public ChLinkSpringCB::ODE {
+  public:
+    virtual int GetNumStates() const override { return 2; }
+    virtual void SetInitialConditions(ChVectorDynamic<>& states,  ///< output vector containig initial conditions
+                                      ChLinkSpringCB* link        ///< back-pointer to associated link
+                                      ) override {
+        states(0) = 1;
+        states(1) = 0;
+    }
+    virtual void CalculateRHS(double time,
+                              const ChVectorDynamic<>& states,  ///< current states
+                              ChVectorDynamic<>& rhs,           ///< output vector containing the ODE right-hand side
+                              ChLinkSpringCB* link              ///< back-pointer to associated link
+                              ) override {
+        rhs(0) = states(0);
+        rhs(1) = std::cos(time);
+    }
+};
+
+class FEDA_ShockForce : public ChLinkSpringCB::ForceFunctor {
+  public:
+    virtual double operator()(double time,          // current time
+                              double rest_length,   // undeformed length
+                              double length,        // current length
+                              double vel,           // current velocity (positive when extending)
+                              ChLinkSpringCB* link  // back-pointer to associated link
+                              ) override {
+        // Access states
+        auto& states = link->GetStates();
+
+        // ....
+
+
+        return -states(1);  // flip the sign to make the force acting against velocity
+    }
+};
+
+class FEDA_ShockODE : public ChLinkSpringCB::ODE {
+  public:
+    FEDA_ShockODE() {
+        // Setup damper tables for high freqnency signals
+        m_hf_damper_table.AddPoint(-5, -11936.925);
+        m_hf_damper_table.AddPoint(-3, -11368.5);
+        m_hf_damper_table.AddPoint(-0.33, -10335);
+        m_hf_damper_table.AddPoint(-0.22, -8376);
+        m_hf_damper_table.AddPoint(-0.13, -5789);
+        m_hf_damper_table.AddPoint(-0.05, -2672);
+        m_hf_damper_table.AddPoint(-0.02, -654);
+        m_hf_damper_table.AddPoint(0, 0);
+        m_hf_damper_table.AddPoint(0.02, 652);
+        m_hf_damper_table.AddPoint(0.05, 1649);
+        m_hf_damper_table.AddPoint(0.13, 2975);
+        m_hf_damper_table.AddPoint(0.22, 4718);
+        m_hf_damper_table.AddPoint(0.33, 7496);
+        m_hf_damper_table.AddPoint(3, 8245.6);
+        m_hf_damper_table.AddPoint(5, 8657.88);
+
+        // Setup damper tables for low freqnency signals
+        m_lf_damper_table.AddPoint(-5, -12183.06833);
+        m_lf_damper_table.AddPoint(-3, -11602.92222);
+        m_lf_damper_table.AddPoint(-0.33, -10548);
+        m_lf_damper_table.AddPoint(-0.22, -8620);
+        m_lf_damper_table.AddPoint(-0.13, -6669);
+        m_lf_damper_table.AddPoint(-0.05, -2935);
+        m_lf_damper_table.AddPoint(-0.02, -986);
+        m_lf_damper_table.AddPoint(0, 0);
+        m_lf_damper_table.AddPoint(0.02, 766);
+        m_lf_damper_table.AddPoint(0.05, 3621);
+        m_lf_damper_table.AddPoint(0.13, 12628);
+        m_lf_damper_table.AddPoint(0.22, 14045);
+        m_lf_damper_table.AddPoint(0.33, 15444);
+        m_lf_damper_table.AddPoint(3, 16988.27778);
+        m_lf_damper_table.AddPoint(5, 17837.69167);
+    }
+
+    virtual int GetNumStates() const override { return 2; }
+    virtual void SetInitialConditions(ChVectorDynamic<>& states,  ///< output vector containig initial conditions
+                                      ChLinkSpringCB* link        ///< back-pointer to associated link
+                                      ) override {
+        // we start with zero velocity and zero force
+        states(0) = 0;
+        states(1) = 0;
+    }
+
+    virtual void CalculateRHS(double time,
+                              const ChVectorDynamic<>& states,  ///< current states
+                              ChVectorDynamic<>& rhs,           ///< output vector containing the ODE right-hand side
+                              ChLinkSpringCB* link              ///< back-pointer to associated link
+                              ) override {
+
+        // ODE1
+        // y_dot0 = (u0 - y0)/T0;
+        // u0 is damper velocity vel = input
+        // y0 = delayed damper velocity v_del = stage(0) = output
+        const double T0 = 0.04;
+        const double T1 = 1.02e-3;
+        double vel = link->GetDist_dt();
+        rhs(0) = (vel - states(0)) / T0;
+        double vel_delayed = states(0);
+        double vel_min = std::min(vel, vel_delayed);
+
+        double force_hf = m_hf_damper_table.Get_y(vel);
+        double force_lf = m_lf_damper_table.Get_y(vel_min);
+        double force1 = 0.0;
+        if (vel > 0.0) {
+            force1 = force_hf + force_lf;
+        } else {
+            force1 = force_hf;
+        }
+
+        // ODE2
+        // y_dot1 = (u1 - y1)/T1;
+        // u1 = damper force1 = input
+        // y1 = delayed damper force = stage(1) = output
+        rhs(1) = (force1 - states(1)) / T1;
+    }
+
+  private:
+    ChFunction_Recorder m_hf_damper_table;
+    ChFunction_Recorder m_lf_damper_table;
+};
+
 // -----------------------------------------------------------------------------
 // Constructors
 // -----------------------------------------------------------------------------
@@ -208,22 +347,7 @@ FEDA_DoubleWishboneFront::FEDA_DoubleWishboneFront(const std::string& name, int 
                                                    m_springRestLength + m_reboundstop_clearance, m_springF0,
                                                    m_air_pressure[m_ride_height_mode]);
 
-    m_shockForceCB = new MapDamperForce();
-    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(-5, -11936.925);
-    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(-3, -11368.5);
-    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(-0.33, -10335);
-    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(-0.22, -8376);
-    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(-0.13, -5789);
-    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(-0.05, -2672);
-    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(-0.02, -654);
-    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(0, 0);
-    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(0.02, 652);
-    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(0.05, 1649);
-    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(0.13, 2975);
-    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(0.22, 4718);
-    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(0.33, 7496);
-    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(3, 8245.6);
-    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(5, 8657.88);
+    m_shockForceCB = new FEDA_ShockForce();
 }
 
 FEDA_DoubleWishboneRear::FEDA_DoubleWishboneRear(const std::string& name, int ride_height_mode)
@@ -234,23 +358,7 @@ FEDA_DoubleWishboneRear::FEDA_DoubleWishboneRear(const std::string& name, int ri
     m_springForceCB = new AirCoilSpringBistopForce(m_springCoefficient, m_springRestLength - m_bumpstop_clearance,
                                                    m_springRestLength + m_reboundstop_clearance, m_springF0,
                                                    m_air_pressure[m_ride_height_mode]);
-
-    m_shockForceCB = new MapDamperForce();
-    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(-5, -11936.925);
-    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(-3, -11368.5);
-    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(-0.33, -10335);
-    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(-0.22, -8376);
-    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(-0.13, -5789);
-    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(-0.05, -2672);
-    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(-0.02, -654);
-    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(0, 0);
-    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(0.02, 652);
-    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(0.05, 1649);
-    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(0.13, 2975);
-    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(0.22, 4718);
-    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(0.33, 7496);
-    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(3, 8245.6);
-    static_cast<MapDamperForce*>(m_shockForceCB)->add_point(5, 8657.88);
+    m_shockForceCB = new FEDA_ShockForce();
 }
 
 // -----------------------------------------------------------------------------
@@ -264,6 +372,36 @@ FEDA_DoubleWishboneFront::~FEDA_DoubleWishboneFront() {
 FEDA_DoubleWishboneRear::~FEDA_DoubleWishboneRear() {
     delete m_springForceCB;
     delete m_shockForceCB;
+}
+
+void FEDA_DoubleWishboneFront::Initialize(
+    std::shared_ptr<ChBodyAuxRef> chassis,  // [in] handle to the chassis body
+    const ChVector<>& location,             // [in] location relative to the chassis frame
+    std::shared_ptr<ChBody> tierod_body,    // [in] body to which tireods are connected
+    int steering_index,                     // [in] index of the associated steering mechanism
+    double left_ang_vel,                    // [in] initial angular velocity of left wheel
+    double right_ang_vel                    // [in] initial angular velocity of right wheel
+) {
+    ChDoubleWishbone::Initialize(chassis, location, tierod_body, steering_index, left_ang_vel, right_ang_vel);
+
+    m_shockODE = new FEDA_ShockODE;
+    GetShock(LEFT)->RegisterODE(m_shockODE);
+    GetShock(RIGHT)->RegisterODE(m_shockODE);
+}
+
+void FEDA_DoubleWishboneRear::Initialize(
+    std::shared_ptr<ChBodyAuxRef> chassis,  // [in] handle to the chassis body
+    const ChVector<>& location,             // [in] location relative to the chassis frame
+    std::shared_ptr<ChBody> tierod_body,    // [in] body to which tireods are connected
+    int steering_index,                     // [in] index of the associated steering mechanism
+    double left_ang_vel,                    // [in] initial angular velocity of left wheel
+    double right_ang_vel                    // [in] initial angular velocity of right wheel
+) {
+    ChDoubleWishbone::Initialize(chassis, location, tierod_body, steering_index, left_ang_vel, right_ang_vel);
+
+    m_shockODE = new FEDA_ShockODE;
+    GetShock(LEFT)->RegisterODE(m_shockODE);
+    GetShock(RIGHT)->RegisterODE(m_shockODE);
 }
 
 // -----------------------------------------------------------------------------

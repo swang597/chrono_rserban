@@ -109,6 +109,12 @@ if(BUILD_PROJECTS_WVP)
   add_subdirectory(wvp_benchmark)
 endif()
 
+option(BUILD_PROJECTS_FEDA "Build FED-alpha projects" ON)
+mark_as_advanced(FORCE BUILD_PROJECTS_FEDA)
+if(BUILD_PROJECTS_FEDA)
+  add_subdirectory(feda_benchmark)
+endif()
+
 option(BUILD_PROJECTS_CORRIDOR "Build AV corridor projects" ON)
 mark_as_advanced(FORCE BUILD_PROJECTS_CORRIDOR)
 if(BUILD_PROJECTS_CORRIDOR)

@@ -33,6 +33,7 @@
 #include "chrono_models/vehicle/feda/FEDA_BrakeSimple.h"
 #include "chrono_models/vehicle/feda/FEDA_Chassis.h"
 #include "chrono_models/vehicle/feda/FEDA_DoubleWishbone.h"
+#include "chrono_models/vehicle/feda/FEDA_AntirollBarRSD.h"
 #include "chrono_models/vehicle/feda/FEDA_Driveline4WD.h"
 #include "chrono_models/vehicle/feda/FEDA_PitmanArm.h"
 #include "chrono_models/vehicle/feda/FEDA_Wheel.h"

@@ -33,7 +33,7 @@ namespace feda {
 const double FEDA_Chassis::m_mass = 4450;
 const ChVector<> FEDA_Chassis::m_inertiaXX(2420.0, 8200.0, 7100.0);
 const ChVector<> FEDA_Chassis::m_inertiaXY(0, 0, 0);
-const ChVector<> FEDA_Chassis::m_COM_loc(-1.591564, 0.0889, 0.97);
+const ChVector<> FEDA_Chassis::m_COM_loc(-1.591564, 0.0889, 0.57);
 const ChCoordsys<> FEDA_Chassis::m_driverCsys(ChVector<>(-1.0, 0.5, 1.2), ChQuaternion<>(1, 0, 0, 0));
 
 // -----------------------------------------------------------------------------
@@ -60,7 +60,7 @@ FEDA_Chassis::FEDA_Chassis(const std::string& name, bool fixed, ChassisCollision
 
     m_has_mesh = true;
     m_vis_mesh_name = "FEDA_chassis_POV_geom";
-    m_vis_mesh_file = "feda/meshes/FEDA_chassis_vis.obj";
+    m_vis_mesh_file = "feda/meshes/feda_hull.obj";
 
     m_has_collision = (chassis_collision_type != ChassisCollisionType::NONE);
     switch (chassis_collision_type) {

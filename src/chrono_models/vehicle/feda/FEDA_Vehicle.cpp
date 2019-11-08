@@ -70,6 +70,9 @@ void FEDA_Vehicle::Create(bool fixed, ChassisCollisionType chassis_collision_typ
     m_axles[1]->m_brake_left = chrono_types::make_shared<FEDA_BrakeSimple>("Brake_RL");
     m_axles[1]->m_brake_right = chrono_types::make_shared<FEDA_BrakeSimple>("Brake_RR");
 
+    // Create the antirollbar system
+    m_axles[0]->m_antirollbar = chrono_types::make_shared<FEDA_AntirollBarRSD>("AntirollBar");
+
     // Create the steering subsystem
     m_steerings.resize(1);
     m_steerings[0] = chrono_types::make_shared<FEDA_PitmanArm>("Steering");
@@ -93,8 +96,8 @@ void FEDA_Vehicle::Initialize(const ChCoordsys<>& chassisPos, double chassisFwdV
     m_steerings[0]->Initialize(m_chassis->GetBody(), offset, rotation);
 
     // Initialize the axle subsystems.
-    m_axles[0]->Initialize(m_chassis->GetBody(), ChVector<>(0, 0, 0), ChVector<>(0), m_steerings[0]->GetSteeringLink(),
-                           0, 0.0, m_omega[0], m_omega[1]);
+    m_axles[0]->Initialize(m_chassis->GetBody(), ChVector<>(0, 0, 0), ChVector<>(0.3, 0, 0.05),
+                           m_steerings[0]->GetSteeringLink(), 0, 0.0, m_omega[0], m_omega[1]);
     m_axles[1]->Initialize(m_chassis->GetBody(), ChVector<>(-3.302, 0, 0), ChVector<>(0), m_chassis->GetBody(), -1, 0.0,
                            m_omega[2], m_omega[3]);
 

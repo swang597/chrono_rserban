@@ -40,7 +40,7 @@ WVP_SimpleDriveline::WVP_SimpleDriveline(const std::string& name) : ChDrivelineW
 void WVP_SimpleDriveline::Initialize(std::shared_ptr<ChBody> chassis,
                                      const ChAxleList& axles,
                                      const std::vector<int>& driven_axles) {
-    assert(suspensions.size() >= 2);
+    assert(axles.size() >= 2);
 
     m_driven_axles = driven_axles;
 
