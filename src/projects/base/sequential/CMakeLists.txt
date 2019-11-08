@@ -15,6 +15,7 @@ set(DEMOS
     test_BASE_archive
     test_BASE_lock_lock
     test_BASE_active_spring
+    test_BASE_active_shock
 )
 
 include_directories(${CH_IRRLICHTINC})
