@@ -21,6 +21,7 @@ SET(LIBRARIES
 
 SET(DEMOS
     test_FEDA_sequential
+    test_FEDA_wall2wall_turning
 )
 
 # ------------------------------------------------------------------------------
