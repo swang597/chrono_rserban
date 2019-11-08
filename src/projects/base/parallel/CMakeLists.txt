@@ -15,6 +15,7 @@ set(DEMOS
     test_BASE_callbackNSC_par
     test_BASE_global_aabb_par
     test_BASE_rotate_gravity_par
+    test_BASE_active_spring_par
 )
 
 include_directories(${CH_PARALLEL_INCLUDES})
