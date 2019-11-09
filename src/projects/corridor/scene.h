@@ -25,13 +25,17 @@ namespace av {
 
 typedef chrono::ChVector2<> GPScoord;
 
-class Area {
-public:
-    Area(const chrono::ChFrame<>& frame, const chrono::ChVector<>& dims);
-
-    chrono::ChFrame<> m_frame;
-    chrono::ChVector<> m_dims;
-};
+////class Area {
+////  public:
+////    Area(const chrono::ChFrame<>& frame, const chrono::ChVector<>& dims);
+////
+////  private:
+////    chrono::ChFrame<> m_frame;
+////    chrono::ChVector<> m_dims;
+////
+////  public:
+////    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+////};
 
 class Scene {
   public:

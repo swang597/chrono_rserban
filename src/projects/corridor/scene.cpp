@@ -39,6 +39,6 @@ ChVector2<> Scene::FromGPS(const GPScoord& gps) const {
     return ChVector2<>(x, -y);
 }
 
-Area::Area(const chrono::ChFrame<>& frame, const chrono::ChVector<>& dims) : m_frame(frame), m_dims(dims) {}
+////Area::Area(const ChFrame<>& frame, const ChVector<>& dims) : m_frame(frame), m_dims(dims) {}
 
 }  // end namespace av

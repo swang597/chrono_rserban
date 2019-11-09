@@ -27,7 +27,7 @@ int main(int argc, char* argv[]) {
     std::string vis_file("corridor/park_visual.obj");
     std::string coll_file("corridor/park_collision.obj");
 
-    // Load MAP messasage
+    // Load MAP message
     ChMAPMessage message;
     auto res = message.ParseFromFile(vehicle::GetDataFile("univ_park_map_info.json"));
     if (res != "") {

@@ -30,6 +30,10 @@ std::string ChMAPMessage::ParseFromFile(std::string filename) {
     std::string path = "mapData";
 
     std::ifstream mapinfo(filename);
+    if (!mapinfo.good()) {
+        std::cout << "ERROR: Could not open JSON file: " << filename << std::endl;
+        return path + " -- Cannot open file";
+    }
     rapidjson::IStreamWrapper wrapinfo(mapinfo);
     document.ParseStream(wrapinfo);
 
