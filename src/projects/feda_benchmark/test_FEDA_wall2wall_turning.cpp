@@ -60,7 +60,7 @@ SteeringType steering_model = SteeringType::PITMAN_ARM;
 ChVector<> trackPoint(0.0, 0.0, 1.75);
 
 // Simulation step sizes
-double step_size = 1e-3;
+double step_size = 2e-4;
 double tire_step_size = step_size;
 
 // Simulation end time

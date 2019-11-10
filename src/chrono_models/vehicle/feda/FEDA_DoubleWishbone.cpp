@@ -245,14 +245,13 @@ class FEDA_ShockForce : public ChLinkSpringCB::ForceFunctor {
 
         // ....
 
-
         return -states(1);  // flip the sign to make the force acting against velocity
     }
 };
 
 class FEDA_ShockODE : public ChLinkSpringCB::ODE {
   public:
-    FEDA_ShockODE() {
+    FEDA_ShockODE() : m_use_damper_tables(false) {
         // Setup damper tables for high freqnency signals
         m_hf_damper_table.AddPoint(-5, -11936.925);
         m_hf_damper_table.AddPoint(-3, -11368.5);
@@ -302,7 +301,6 @@ class FEDA_ShockODE : public ChLinkSpringCB::ODE {
                               ChVectorDynamic<>& rhs,           ///< output vector containing the ODE right-hand side
                               ChLinkSpringCB* link              ///< back-pointer to associated link
                               ) override {
-
         // ODE1
         // y_dot0 = (u0 - y0)/T0;
         // u0 is damper velocity vel = input
@@ -313,9 +311,16 @@ class FEDA_ShockODE : public ChLinkSpringCB::ODE {
         rhs(0) = (vel - states(0)) / T0;
         double vel_delayed = states(0);
         double vel_min = std::min(vel, vel_delayed);
-
-        double force_hf = m_hf_damper_table.Get_y(vel);
-        double force_lf = m_lf_damper_table.Get_y(vel_min);
+        double force_hf, force_lf;
+        if (m_use_damper_tables) {
+            // use lookup tables
+            force_hf = m_hf_damper_table.Get_y(vel);
+            force_lf = m_lf_damper_table.Get_y(vel_min);
+        } else {
+            // use continuous funktions (derived from the tables)
+            force_hf = HF_DamperForce(vel);
+            force_lf = LF_DamperForce(vel);
+        }
         double force1 = 0.0;
         if (vel > 0.0) {
             force1 = force_hf + force_lf;
@@ -331,8 +336,29 @@ class FEDA_ShockODE : public ChLinkSpringCB::ODE {
     }
 
   private:
+    bool m_use_damper_tables;
     ChFunction_Recorder m_hf_damper_table;
     ChFunction_Recorder m_lf_damper_table;
+    double HF_DamperForce(double vel) {
+        const double p1 = 38097.1;
+        const double p2 = 2.83566;
+        const double p4 = 2.45786;
+        if (vel >= 0.0) {
+            return p1 * vel / (1.0 + p2 * vel);
+        } else {
+            return p1 * vel / (1.0 - p4 * vel);
+        }
+    }
+    double LF_DamperForce(double vel) {
+        const double q1 = 160650;
+        const double q2 = 7.46883;
+        const double q4 = 11.579;
+        if (vel >= 0.0) {
+            return q1 * vel / (1.0 + q2 * vel);
+        } else {
+            return q1 * vel / (1.0 - q4 * vel);
+        }
+    }
 };
 
 // -----------------------------------------------------------------------------

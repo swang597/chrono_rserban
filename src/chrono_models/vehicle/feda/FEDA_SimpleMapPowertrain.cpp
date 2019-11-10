@@ -36,7 +36,7 @@ double FEDA_SimpleMapPowertrain::GetMaxEngineSpeed() {
 
 void FEDA_SimpleMapPowertrain::SetEngineTorqueMaps(ChFunction_Recorder& map0, ChFunction_Recorder& mapF) {
     map0.AddPoint(-10.472, 0.000);
-    map0.AddPoint(83.776, -20.0);
+    map0.AddPoint(83.776, 0.0);
 
     map0.AddPoint(700 * rpm2rads, -40.0);
     map0.AddPoint(800 * rpm2rads, -41.0);
@@ -60,9 +60,8 @@ void FEDA_SimpleMapPowertrain::SetEngineTorqueMaps(ChFunction_Recorder& map0, Ch
     map0.AddPoint(2525 * rpm2rads, -95.9);
     map0.AddPoint(2850 * rpm2rads, -99.9);
 
-    mapF.AddPoint(-10.472, 100.);
-    mapF.AddPoint(83.776, 112.);
-
+    mapF.AddPoint(-10.472, 0.0);
+    mapF.AddPoint(0, 300.0);
     mapF.AddPoint(700 * rpm2rads, 400);
     mapF.AddPoint(800 * rpm2rads, 410);
     mapF.AddPoint(900 * rpm2rads, 450);
