@@ -9,10 +9,10 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Radu Serban
+// Authors: Radu Serban, Rainer Gericke
 // =============================================================================
 //
-// HMMWV acceleration test.
+// FED alpha acceleration test.
 //
 // The vehicle reference frame has Z up, X towards the front of the vehicle, and
 // Y pointing to the left.
@@ -34,6 +34,8 @@
 #include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
 
 #include "chrono_models/vehicle/feda/FEDA.h"
+
+#include "chrono_thirdparty/filesystem/path.h"
 
 #ifdef CHRONO_POSTPROCESS
 #include "chrono_postprocess/ChGnuPlot.h"
@@ -58,7 +60,7 @@ PowertrainModelType powertrain_model = PowertrainModelType::SHAFTS;
 // Drive type (FWD, RWD, or AWD)
 DrivelineType drive_type = DrivelineType::AWD;
 
-// Type of tire model (RIGID, RIGID_MESH, PACEJKA, LUGRE, FIALA, PAC89, PAC02, TMEASY)
+// Type of tire model (PAC02)
 TireModelType tire_model = TireModelType::PAC02;
 
 // Terrain length (X direction)
@@ -67,6 +69,10 @@ double terrainLength = 400.0;
 // Simulation step sizes
 double step_size = 2e-4;
 double tire_step_size = 2e-4;
+
+// output directory
+const std::string out_dir = "../FEDA_ACCELERATION";
+bool data_output = true;
 
 // =============================================================================
 
@@ -77,30 +83,30 @@ int main(int argc, char* argv[]) {
     // Create systems
     // --------------
 
-    // Create the HMMWV vehicle, set parameters, and initialize.
-    // Typical aerodynamic drag for HMMWV: Cd = 0.5 and area ~5 m2
-    FEDA my_hmmwv;
-    my_hmmwv.SetContactMethod(ChMaterialSurface::SMC);
-    my_hmmwv.SetChassisFixed(false);
-    my_hmmwv.SetInitPosition(ChCoordsys<>(ChVector<>(-terrainLength / 2 + 5, 0, 0.7), ChQuaternion<>(1, 0, 0, 0)));
+    // Create the FED alpha vehicle, set parameters, and initialize.
+    // Typical aerodynamic drag for FED alpha: Cd = 0.6 and area 3.8 m2
+    FEDA my_feda;
+    my_feda.SetContactMethod(ChMaterialSurface::SMC);
+    my_feda.SetChassisFixed(false);
+    my_feda.SetInitPosition(ChCoordsys<>(ChVector<>(-terrainLength / 2 + 5, 0, 0.5), ChQuaternion<>(1, 0, 0, 0)));
     // my_hmmwv.SetPowertrainType(powertrain_model);
     // my_hmmwv.SetDriveType(drive_type);
-    my_hmmwv.SetTireType(tire_model);
-    my_hmmwv.SetTireStepSize(tire_step_size);
-    my_hmmwv.SetAerodynamicDrag(0.6, 3.8, 1.2041);
-    my_hmmwv.Initialize();
+    my_feda.SetTireType(tire_model);
+    my_feda.SetTireStepSize(tire_step_size);
+    my_feda.SetAerodynamicDrag(0.6, 3.8, 1.2041);
+    my_feda.Initialize();
 
     // Set subsystem visualization mode
     VisualizationType tire_vis_type =
         (tire_model == TireModelType::RIGID_MESH) ? VisualizationType::MESH : VisualizationType::PRIMITIVES;
-    my_hmmwv.SetChassisVisualizationType(chassis_vis_type);
-    my_hmmwv.SetSuspensionVisualizationType(suspension_vis_type);
-    my_hmmwv.SetSteeringVisualizationType(steering_vis_type);
-    my_hmmwv.SetWheelVisualizationType(wheel_vis_type);
-    my_hmmwv.SetTireVisualizationType(tire_vis_type);
+    my_feda.SetChassisVisualizationType(chassis_vis_type);
+    my_feda.SetSuspensionVisualizationType(suspension_vis_type);
+    my_feda.SetSteeringVisualizationType(steering_vis_type);
+    my_feda.SetWheelVisualizationType(wheel_vis_type);
+    my_feda.SetTireVisualizationType(tire_vis_type);
 
     // Create the terrain
-    RigidTerrain terrain(my_hmmwv.GetSystem());
+    RigidTerrain terrain(my_feda.GetSystem());
     auto patch = terrain.AddPatch(ChCoordsys<>(ChVector<>(0, 0, -5), QUNIT), ChVector<>(terrainLength, 5, 10));
     patch->SetContactFrictionCoefficient(0.9f);
     patch->SetContactRestitutionCoefficient(0.01f);
@@ -110,7 +116,7 @@ int main(int argc, char* argv[]) {
     terrain.Initialize();
 
     // Create the vehicle Irrlicht interface
-    ChWheeledVehicleIrrApp app(&my_hmmwv.GetVehicle(), L"HMMWV acceleration test");
+    ChWheeledVehicleIrrApp app(&my_feda.GetVehicle(), L"HMMWV acceleration test");
     app.SetSkyBox();
     app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
     app.SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 6.0, 0.5);
@@ -121,7 +127,7 @@ int main(int argc, char* argv[]) {
     // ----------------------------------------------
 
     auto path = StraightLinePath(ChVector<>(-terrainLength / 2, 0, 0.5), ChVector<>(terrainLength / 2, 0, 0.5), 1);
-    ChPathFollowerDriver driver(my_hmmwv.GetVehicle(), path, "my_path", 1000.0);
+    ChPathFollowerDriver driver(my_feda.GetVehicle(), path, "my_path", 1000.0);
     driver.GetSteeringController().SetLookAheadDistance(5.0);
     driver.GetSteeringController().SetGains(0.5, 0, 0);
     driver.GetSpeedController().SetGains(0.4, 0, 0);
@@ -134,6 +140,27 @@ int main(int argc, char* argv[]) {
     app.AssetBindAll();
     app.AssetUpdateAll();
 
+    // -------------
+    // Prepare output
+    // -------------
+
+    if (data_output) {
+        if (!filesystem::create_directory(filesystem::path(out_dir))) {
+            std::cout << "Error creating directory " << out_dir << std::endl;
+            return 1;
+        }
+    }
+
+    utils::CSV_writer csv("\t");
+    csv.stream().setf(std::ios::scientific | std::ios::showpos);
+    csv.stream().precision(6);
+
+    csv << "time";
+    csv << "throttle";
+    csv << "VehicleSpeed";
+    csv << "CurrentTransmissionGear";
+    csv << std::endl;
+
     // ---------------
     // Simulation loop
     // ---------------
@@ -143,7 +170,7 @@ int main(int argc, char* argv[]) {
     double last_speed = -1;
 
     // Record vehicle speed
-    ChFunction_Recorder speed_recorder;
+    ChFunction_Recorder speed_recorder, engine_speed_recorder;
 
     // Initialize simulation frame counter and simulation time
     int step_number = 0;
@@ -153,9 +180,10 @@ int main(int argc, char* argv[]) {
     ChTimer<> timer;
     timer.start();
     while (app.GetDevice()->run()) {
-        time = my_hmmwv.GetSystem()->GetChTime();
+        time = my_feda.GetSystem()->GetChTime();
 
-        double speed = speed_filter.Add(my_hmmwv.GetVehicle().GetVehicleSpeed());
+        double speed = speed_filter.Add(my_feda.GetVehicle().GetVehicleSpeed());
+        int gear_pos = my_feda.GetPowertrain()->GetCurrentTransmissionGear();
         if (!done) {
             speed_recorder.AddPoint(time, speed);
             if (time > 6 && std::abs((speed - last_speed) / step_size) < 2e-4) {
@@ -164,11 +192,11 @@ int main(int argc, char* argv[]) {
                 std::cout << "Simulation time: " << timer() << std::endl;
                 std::cout << "Maximum speed: " << speed << std::endl;
 #ifdef CHRONO_POSTPROCESS
-                postprocess::ChGnuPlot gplot;
-                gplot.SetGrid();
-                gplot.SetLabelX("time (s)");
-                gplot.SetLabelY("speed (m/s)");
-                gplot.Plot(speed_recorder, "", " with lines lt -1 lc rgb'#00AAEE' ");
+                postprocess::ChGnuPlot gplot_speed;
+                gplot_speed.SetGrid();
+                gplot_speed.SetLabelX("time (s)");
+                gplot_speed.SetLabelY("speed (m/s)");
+                gplot_speed.Plot(speed_recorder, "", " with lines lt -1 lc rgb'#00AAEE' ");
 #endif
             }
         }
@@ -183,6 +211,11 @@ int main(int argc, char* argv[]) {
 
         // Driver inputs
         ChDriver::Inputs driver_inputs = driver.GetInputs();
+        csv << time;
+        csv << driver_inputs.m_throttle;
+        csv << 3.6 * speed;
+        csv << gear_pos;
+        csv << std::endl;
 
         if (done) {
             driver_inputs.m_throttle = 0.1;
@@ -192,19 +225,23 @@ int main(int argc, char* argv[]) {
         // Update modules (process inputs from other modules)
         driver.Synchronize(time);
         terrain.Synchronize(time);
-        my_hmmwv.Synchronize(time, driver_inputs, terrain);
+        my_feda.Synchronize(time, driver_inputs, terrain);
         app.Synchronize("Acceleration test", driver_inputs);
 
         // Advance simulation for one timestep for all modules
         driver.Advance(step_size);
         terrain.Advance(step_size);
-        my_hmmwv.Advance(step_size);
+        my_feda.Advance(step_size);
         app.Advance(step_size);
 
         // Increment frame number
         step_number++;
 
         app.EndScene();
+    }
+
+    if (data_output) {
+        csv.write_to_file(out_dir + "/feda_accel_chrono.dat");
     }
 
     return 0;
