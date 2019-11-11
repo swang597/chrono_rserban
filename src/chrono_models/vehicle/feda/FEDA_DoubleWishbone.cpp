@@ -67,7 +67,8 @@ const double FEDA_DoubleWishboneFront::m_springRestLength =
 const double FEDA_DoubleWishboneFront::m_springF0 = 0.125550934 * FEDA_DoubleWishboneFront::m_springCoefficient;
 const double FEDA_DoubleWishboneFront::m_bumpstop_clearance = 0.11;
 const double FEDA_DoubleWishboneFront::m_reboundstop_clearance = 0.11;
-const double FEDA_DoubleWishboneFront::m_air_pressure[] = {18.0 * psi2pascal, 36.0 * psi2pascal, 50.0 * psi2pascal};
+const double FEDA_DoubleWishboneFront::m_air_pressure[] = {18.0 * psi2pascal, 41.5 * psi2pascal,
+                                                           110.0 * psi2pascal};  // Proving Ground Config
 
 // -----------------------------------------------------------------------------
 
@@ -99,7 +100,8 @@ const double FEDA_DoubleWishboneRear::m_springRestLength =
 const double FEDA_DoubleWishboneRear::m_springF0 = 0.125550934 * FEDA_DoubleWishboneRear::m_springCoefficient;
 const double FEDA_DoubleWishboneRear::m_bumpstop_clearance = 0.11;
 const double FEDA_DoubleWishboneRear::m_reboundstop_clearance = 0.11;
-const double FEDA_DoubleWishboneRear::m_air_pressure[] = {18.0 * psi2pascal, 36.0 * psi2pascal, 50.0 * psi2pascal};
+const double FEDA_DoubleWishboneRear::m_air_pressure[] = {41.0 * psi2pascal, 72 * psi2pascal,
+                                                          150.0 * psi2pascal};  // Proving Ground Config
 
 // --------------------------------------------------------------------------------------------------------------------------------
 // FEDA spring functor class - implements a linear spring in combination with an airspring + bistops

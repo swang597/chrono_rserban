@@ -42,7 +42,7 @@ ChVector<> initLoc(0, 0, 0.5);
 ChQuaternion<> initRot(1, 0, 0, 0);
 
 // Visualization type for vehicle parts (PRIMITIVES, MESH, or NONE)
-VisualizationType chassis_vis_type = VisualizationType::NONE;
+VisualizationType chassis_vis_type = VisualizationType::PRIMITIVES;
 VisualizationType suspension_vis_type = VisualizationType::PRIMITIVES;
 VisualizationType steering_vis_type = VisualizationType::PRIMITIVES;
 VisualizationType wheel_vis_type = VisualizationType::NONE;
@@ -85,8 +85,8 @@ int main(int argc, char* argv[]) {
     feda.SetTireType(tire_model);
     feda.SetTireStepSize(tire_step_size);
     feda.SetAerodynamicDrag(Cd, area, air_density);
-    // feda.SetRideHeight_OnRoad();
-    feda.SetRideHeight_ObstacleCrossing();
+    feda.SetRideHeight_OnRoad();
+    // feda.SetRideHeight_ObstacleCrossing();
     // feda.SetRideHeight_Low();
 
     // feda.setSteeringType(steering_model);
@@ -217,5 +217,16 @@ int main(int argc, char* argv[]) {
     }
 
     GetLog() << "CoG of the FED alpha above ground = " << feda.GetVehicle().GetVehicleCOMPos().z() << " m\n";
+    // Ride height test, originally the tests where made with body reference points, we don't have it
+    // Ride height OnRoad is reached when the drive shafts are straight lines
+    double refHeightFront =
+        (feda.GetVehicle().GetWheel(0, LEFT)->GetPos().z() + feda.GetVehicle().GetWheel(0, RIGHT)->GetPos().z()) / 2.0;
+    double refHeightRear =
+        (feda.GetVehicle().GetWheel(1, LEFT)->GetPos().z() + feda.GetVehicle().GetWheel(1, RIGHT)->GetPos().z()) / 2.0;
+    double bodyHeightFront = feda.GetVehicle().GetVehiclePointLocation(ChVector<>(0, 0, 0)).z();
+    double bodyHeightRear = feda.GetVehicle().GetVehiclePointLocation(ChVector<>(-3.302, 0, 0)).z();
+    double rideHeightFront = bodyHeightFront - refHeightFront;
+    double rideHeightRear = bodyHeightRear - refHeightRear;
+    GetLog() << "Ride Height Front = " << rideHeightFront << " m, Rear = " << rideHeightRear << " m\n";
     return 0;
 }
