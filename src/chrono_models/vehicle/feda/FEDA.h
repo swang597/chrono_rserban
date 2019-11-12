@@ -27,6 +27,7 @@
 
 #include "chrono_models/ChApiModels.h"
 #include "chrono_models/vehicle/feda/FEDA_Vehicle.h"
+#include "chrono_models/vehicle/feda/FEDA_Powertrain.h"
 #include "chrono_models/vehicle/feda/FEDA_SimpleMapPowertrain.h"
 #include "chrono_models/vehicle/feda/FEDA_RigidTire.h"
 //#include "chrono_models/vehicle/sedan/Sedan_TMeasyTire.h"

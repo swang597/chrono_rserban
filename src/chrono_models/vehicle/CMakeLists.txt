@@ -94,6 +94,8 @@ set(CVM_FEDA_FILES
     feda/FEDA_RigidTire.h
     feda/FEDA_SimpleMapPowertrain.cpp
     feda/FEDA_SimpleMapPowertrain.h
+    feda/FEDA_Powertrain.cpp
+    feda/FEDA_Powertrain.h
     feda/FEDA_Vehicle.cpp
     feda/FEDA_Vehicle.h   
     feda/FEDA_Wheel.cpp

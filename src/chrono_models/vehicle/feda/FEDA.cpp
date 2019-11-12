@@ -84,6 +84,7 @@ void FEDA::Initialize() {
     }
 
     // Create and initialize the powertrain system
+    // auto powertrain = chrono_types::make_shared<FEDA_Powertrain>("Powertrain"); working, but suboptimal
     auto powertrain = chrono_types::make_shared<FEDA_SimpleMapPowertrain>("Powertrain");
     m_vehicle->InitializePowertrain(powertrain);
 

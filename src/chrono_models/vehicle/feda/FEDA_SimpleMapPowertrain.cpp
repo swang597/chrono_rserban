@@ -60,7 +60,7 @@ void FEDA_SimpleMapPowertrain::SetEngineTorqueMaps(ChFunction_Recorder& map0, Ch
     map0.AddPoint(2525 * rpm2rads, -95.9);
     map0.AddPoint(2850 * rpm2rads, -99.9);
 
-    mapF.AddPoint(-10.472, 0.0);
+    mapF.AddPoint(-10.472, 300.0);
     mapF.AddPoint(0, 300.0);
     mapF.AddPoint(700 * rpm2rads, 400);
     mapF.AddPoint(800 * rpm2rads, 410);
