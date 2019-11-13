@@ -1,0 +1,323 @@
+// =============================================================================
+// PROJECT CHRONO - http://projectchrono.org
+//
+// Copyright (c) 2014 projectchrono.org
+// All rights reserved.
+//
+// Use of this source code is governed by a BSD-style license that can be found
+// in the LICENSE file at the top level of the distribution and at
+// http://projectchrono.org/license-chrono.txt.
+//
+// =============================================================================
+// Authors: Radu Serban, Rainer Gericke
+// =============================================================================
+//
+// Demonstration of an OpenCRG terrain.
+//
+// The vehicle reference frame has Z up, X towards the front of the vehicle, and
+// Y pointing to the left.
+//
+// =============================================================================
+#include "chrono/utils/ChFilters.h"
+
+#include "chrono_vehicle/ChVehicleModelData.h"
+#include "chrono_vehicle/driver/ChPathFollowerDriver.h"
+#include "chrono_vehicle/terrain/CRGTerrain.h"
+#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
+
+#include "chrono_models/vehicle/feda/FEDA.h"
+
+#include "chrono_thirdparty/filesystem/path.h"
+
+#ifdef CHRONO_POSTPROCESS
+#include "chrono_postprocess/ChGnuPlot.h"
+#endif
+
+using namespace chrono;
+using namespace chrono::utils;
+using namespace chrono::vehicle;
+using namespace chrono::vehicle::feda;
+
+// =============================================================================
+// Select Path Follower, uncomment the next line to get the pure PID driver
+#define USE_PID 1
+// to use the XT controller uncomment the next line
+//#define USE_XT
+// to use the SR controller uncomment the next line
+//#define USE_SR
+// =============================================================================
+// Problem parameters
+
+// Type of tire model (PAC02)
+TireModelType tire_model = TireModelType::PAC02;
+
+// OpenCRG input file
+std::string crg_road_file = "terrain/crg_roads/halfround_100mm.crg";
+// std::string crg_road_file = "terrain/crg_roads/Barber.crg";
+////std::string crg_road_file = "terrain/crg_roads/Horstwalde.crg";
+////std::string crg_road_file = "terrain/crg_roads/handmade_arc.crg";
+////std::string crg_road_file = "terrain/crg_roads/handmade_banked.crg";
+////std::string crg_road_file = "terrain/crg_roads/handmade_circle.crg";
+////std::string crg_road_file = "terrain/crg_roads/handmade_sloped.crg";
+
+// Road visualization (mesh or boundary lines)
+bool useMesh = true;
+
+// Desired vehicle speed (m/s)
+double target_speed = 3;
+
+// Simulation step size
+double step_size = 2e-4;
+double tire_step_size = 2e-4;
+
+// Output frame images
+bool output_images = false;
+double fps = 60;
+const std::string out_dir = GetChronoOutputPath() + "OPENCRG_DEMO";
+const double mph2ms = 0.44704;
+// =============================================================================
+
+int main(int argc, char* argv[]) {
+    GetLog() << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
+
+    // ---------------------------------------
+    // Create the vehicle, terrain, and driver
+    // ---------------------------------------
+    double velmph = 5;
+    if (argc == 2) {
+        velmph = atof(argv[1]);
+    }
+    target_speed = mph2ms * velmph;
+
+    // Create the FEDA vehicle, set parameters, and initialize
+    FEDA my_feda;
+    my_feda.SetContactMethod(ChMaterialSurface::SMC);
+    my_feda.SetChassisFixed(false);
+    my_feda.SetInitPosition(ChCoordsys<>(ChVector<>(2, 0, 0.5), QUNIT));
+    my_feda.SetTireType(tire_model);
+    my_feda.SetTireStepSize(tire_step_size);
+    my_feda.SetRideHeight_ObstacleCrossing();
+    my_feda.Initialize();
+
+    my_feda.SetChassisVisualizationType(VisualizationType::PRIMITIVES);
+    my_feda.SetSuspensionVisualizationType(VisualizationType::PRIMITIVES);
+    my_feda.SetSteeringVisualizationType(VisualizationType::PRIMITIVES);
+    my_feda.SetWheelVisualizationType(VisualizationType::NONE);
+    my_feda.SetTireVisualizationType(VisualizationType::PRIMITIVES);
+
+    // Create the terrain
+    CRGTerrain terrain(my_feda.GetSystem());
+    terrain.UseMeshVisualization(useMesh);
+    terrain.SetContactFrictionCoefficient(0.8f);
+    terrain.Initialize(vehicle::GetDataFile(crg_road_file));
+
+    // Get the vehicle path (middle of the road)
+    auto path = terrain.GetPath();
+    bool path_is_closed = terrain.IsPathClosed();
+    double road_length = terrain.GetLength();
+    double road_width = terrain.GetWidth();
+
+#ifdef USE_PID
+    // Create the driver system based on PID steering controller
+    ChPathFollowerDriver driver(my_feda.GetVehicle(), path, "my_path", target_speed, path_is_closed);
+    driver.GetSteeringController().SetLookAheadDistance(5);
+    driver.GetSteeringController().SetGains(0.5, 0, 0);
+    driver.GetSpeedController().SetGains(0.4, 0, 0);
+    driver.Initialize();
+
+    ChWheeledVehicleIrrApp app(&my_feda.GetVehicle(), L"OpenCRG Demo PID Steering",
+                               irr::core::dimension2d<irr::u32>(800, 640));
+#endif
+#ifdef USE_XT
+    // Create the driver system based on XT steering controller
+    ChPathFollowerDriverXT driver(my_feda.GetVehicle(), path, "my_path", target_speed, path_is_closed,
+                                  my_feda.GetVehicle().GetMaxSteeringAngle());
+    driver.GetSteeringController().SetLookAheadDistance(5);
+    driver.GetSteeringController().SetGains(0.4, 1, 1, 1);
+    driver.GetSpeedController().SetGains(0.4, 0, 0);
+    driver.Initialize();
+
+    ChWheeledVehicleIrrApp app(&my_feda.GetVehicle(), L"OpenCRG Demo XT Steering",
+                               irr::core::dimension2d<irr::u32>(800, 640));
+#endif
+#ifdef USE_SR
+    ChPathFollowerDriverSR driver(my_feda.GetVehicle(), path, "my_path", target_speed, path_is_closed,
+                                  my_feda.GetVehicle().GetMaxSteeringAngle(), 3.2);
+    driver.GetSteeringController().SetGains(0.1, 5);
+    driver.GetSteeringController().SetPreviewTime(0.5);
+    driver.GetSpeedController().SetGains(0.4, 0, 0);
+    driver.Initialize();
+
+    ChWheeledVehicleIrrApp app(&my_feda.GetVehicle(), L"OpenCRG Demo SR Steering",
+                               irr::core::dimension2d<irr::u32>(800, 640));
+#endif
+
+    // ---------------------------------------
+    // Create the vehicle Irrlicht application
+    // ---------------------------------------
+
+    app.SetHUDLocation(500, 20);
+    app.SetSkyBox();
+    app.AddTypicalLogo();
+    app.AddTypicalLights(irr::core::vector3df(-150.f, -150.f, 200.f), irr::core::vector3df(-150.f, 150.f, 200.f), 100,
+                         100);
+    app.AddTypicalLights(irr::core::vector3df(150.f, -150.f, 200.f), irr::core::vector3df(150.0f, 150.f, 200.f), 100,
+                         100);
+    app.SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 6.0, 0.5);
+
+    app.SetTimestep(step_size);
+
+    // Visualization of controller points (sentinel & target)
+    irr::scene::IMeshSceneNode* ballS = app.GetSceneManager()->addSphereSceneNode(0.1f);
+    irr::scene::IMeshSceneNode* ballT = app.GetSceneManager()->addSphereSceneNode(0.1f);
+    ballS->getMaterial(0).EmissiveColor = irr::video::SColor(0, 255, 0, 0);
+    ballT->getMaterial(0).EmissiveColor = irr::video::SColor(0, 0, 255, 0);
+
+    // Finalize construction of visualization assets
+    app.AssetBindAll();
+    app.AssetUpdateAll();
+
+    // ----------------
+    // Output directory
+    // ----------------
+
+    if (output_images) {
+        if (!filesystem::create_directory(filesystem::path(out_dir))) {
+            std::cout << "Error creating directory " << out_dir << std::endl;
+            return 1;
+        }
+    }
+
+    // ---------------
+    // Simulation loop
+    // ---------------
+
+    // Final time
+    double t_end = 2 + road_length / target_speed;
+    if (path_is_closed) {
+        t_end += 30.0;
+    }
+    double xend = road_length - 10.0;
+    std::cout << "Road length:     " << road_length << std::endl;
+    std::cout << "Road width:      " << road_width << std::endl;
+    std::cout << "Closed loop?     " << path_is_closed << std::endl;
+    std::cout << "Set end time to: " << t_end << std::endl;
+
+    // Number of simulation steps between image outputs
+    double render_step_size = 1 / fps;
+    int render_steps = (int)std::ceil(render_step_size / step_size);
+
+    // Initialize frame counters
+    int sim_frame = 0;
+    int render_frame = 0;
+
+    ChVector<> local_driver_pos = my_feda.GetChassis()->GetLocalDriverCoordsys().pos;
+
+    ChISO2631_Shock_SeatCushionLogger seat_logger(step_size);
+    ChButterworth_Lowpass wesFilter(4, step_size, 30.0);
+    ChFunction_Recorder seatFkt;
+    std::vector<double> t, azd, azdf;
+    while (app.GetDevice()->run()) {
+        double time = my_feda.GetSystem()->GetChTime();
+        double xpos = my_feda.GetVehicle().GetVehiclePos().x();
+        if (time >= t_end || xpos > road_length - 10)
+            break;
+
+        // Driver inputs
+        ChDriver::Inputs driver_inputs = driver.GetInputs();
+
+        // Update sentinel and target location markers for the path-follower controller.
+        // Note that we do this whether or not we are currently using the path-follower driver.
+        const ChVector<>& pS = driver.GetSteeringController().GetSentinelLocation();
+        const ChVector<>& pT = driver.GetSteeringController().GetTargetLocation();
+        ballS->setPosition(irr::core::vector3df((irr::f32)pS.x(), (irr::f32)pS.y(), (irr::f32)pS.z()));
+        ballT->setPosition(irr::core::vector3df((irr::f32)pT.x(), (irr::f32)pT.y(), (irr::f32)pT.z()));
+
+        // Render scene and output images
+        app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
+        app.DrawAll();
+
+        if (output_images && sim_frame % render_steps == 0) {
+            char filename[200];
+            sprintf(filename, "%s/image_%05d.bmp", out_dir.c_str(), render_frame++);
+            app.WriteImageToFile(filename);
+            render_frame++;
+        }
+
+        // Update modules (process inputs from other modules)
+        driver.Synchronize(time);
+        terrain.Synchronize(time);
+        my_feda.Synchronize(time, driver_inputs, terrain);
+        app.Synchronize("", driver_inputs);
+
+        // Advance simulation for one timestep for all modules
+        driver.Advance(step_size);
+        terrain.Advance(step_size);
+        my_feda.Advance(step_size);
+        app.Advance(step_size);
+
+        xpos = my_feda.GetVehicle().GetVehiclePos().x();
+        if (xpos >= road_length / 2.0 - 1.0) {
+            double speed = my_feda.GetVehicle().GetVehicleSpeed();
+            ChVector<> seat_acc = my_feda.GetVehicle().GetVehicleAcceleration(local_driver_pos);
+            seat_logger.AddData(seat_acc);
+            t.push_back(time);
+            azd.push_back(seat_acc.z() / 9.80665);
+            azdf.push_back(wesFilter.Filter(seat_acc.z() / 9.80665));
+            seatFkt.AddPoint(time, azdf.back());
+        }
+
+        // Increment simulation frame number
+        sim_frame++;
+
+        app.EndScene();
+    }
+
+    double se_low = 0.5;
+    double se_high = 0.8;
+    double se = seat_logger.GetSe();
+
+    double az_limit = 2.5;
+    double az = seat_logger.GetLegacyAz();
+
+    GetLog() << "Shock Simulation Results #1 (ISO 2631-5 Method):\n";
+    GetLog() << "  Significant Speed                        Vsig = " << target_speed << " m/s\n";
+    GetLog() << "  Equivalent Static Spine Compressive Stress Se = " << se << " MPa\n";
+    if (se <= se_low) {
+        GetLog() << "Se <= " << se_low << " MPa (ok) - low risc of health effect, below limit for average occupants\n";
+    } else if (se >= se_high) {
+        GetLog() << "Se >= " << se_high << " MPa - severe risc of health effect!\n";
+    } else {
+        GetLog() << "Se is between [" << se_low << ";" << se_high << "] - risc of health effects, above limit!\n";
+    }
+    GetLog() << "\nShock Simulation Results #2 (Traditional NRMM Method):\n";
+    GetLog() << "  Maximum Vertical Seat Acceleration = " << az << " g\n";
+    if (az <= az_limit) {
+        GetLog() << "Az <= " << az_limit << " g (ok)\n";
+    } else {
+        GetLog() << "Az > " << az_limit << " g - severe risk for average occupant!\n";
+    }
+
+    // filter test
+    double azdmax = azd[0];
+    double azdfmax = azdf[0];
+    for (size_t i = 0; i < azd.size(); i++) {
+        if (azd[i] > azdmax)
+            azdmax = azd[i];
+        if (azdf[i] > azdfmax)
+            azdfmax = azdf[i];
+    }
+    GetLog() << "Filtertest:\nAz maximum = " << azdmax << " g (unfiltered),   Az maximum = " << azdfmax
+             << " g (filtered)\n";
+
+#ifdef CHRONO_POSTPROCESS
+    std::string title = "Fed alpha on halfround " + std::to_string(4) + " in, V = " + std::to_string(velmph) + " mph";
+    postprocess::ChGnuPlot gplot_seat;
+    gplot_seat.SetGrid();
+    gplot_seat.SetTitle(title.c_str());
+    gplot_seat.SetLabelX("time (s)");
+    gplot_seat.SetLabelY("driver seat acceleration (g)");
+    gplot_seat.Plot(seatFkt, "", " with lines lt -1 lc rgb'#00AAEE' ");
+#endif
+    return 0;
+}

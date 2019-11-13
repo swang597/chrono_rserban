@@ -132,10 +132,14 @@ void FEDA::Initialize() {
             auto tire_RL = chrono_types::make_shared<FEDA_Pac02Tire>("RL");
             auto tire_RR = chrono_types::make_shared<FEDA_Pac02Tire>("RR");
 
-            m_vehicle->InitializeTire(tire_FL, m_vehicle->GetAxle(0)->m_wheels[LEFT], VisualizationType::NONE);
-            m_vehicle->InitializeTire(tire_FR, m_vehicle->GetAxle(0)->m_wheels[RIGHT], VisualizationType::NONE);
-            m_vehicle->InitializeTire(tire_RL, m_vehicle->GetAxle(1)->m_wheels[LEFT], VisualizationType::NONE);
-            m_vehicle->InitializeTire(tire_RR, m_vehicle->GetAxle(1)->m_wheels[RIGHT], VisualizationType::NONE);
+            m_vehicle->InitializeTire(tire_FL, m_vehicle->GetAxle(0)->m_wheels[LEFT], VisualizationType::NONE,
+                                      ChTire::CollisionType::FOUR_POINTS);
+            m_vehicle->InitializeTire(tire_FR, m_vehicle->GetAxle(0)->m_wheels[RIGHT], VisualizationType::NONE,
+                                      ChTire::CollisionType::FOUR_POINTS);
+            m_vehicle->InitializeTire(tire_RL, m_vehicle->GetAxle(1)->m_wheels[LEFT], VisualizationType::NONE,
+                                      ChTire::CollisionType::FOUR_POINTS);
+            m_vehicle->InitializeTire(tire_RR, m_vehicle->GetAxle(1)->m_wheels[RIGHT], VisualizationType::NONE,
+                                      ChTire::CollisionType::FOUR_POINT);
 
             m_tire_mass = tire_FL->ReportMass();
 

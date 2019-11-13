@@ -266,6 +266,9 @@ bool ChTire::DiscTerrainCollisionEnvelope(
     ChCoordsys<>& contact,               // [out] contact coordinate system (relative to the global frame)
     double& depth                        // [out] penetration depth (positive if contact occurred)
 ) {
+    GetLog() << "Radius = " << disc_radius << " m\n";
+    GetLog() << "Disc center = {" << disc_center.x() << ";" << disc_center.y() << ";" << disc_center.z() << "}\n";
+
     // Approximate the terrain with a plane. Define the projection of the lowest
     // point onto this plane as the contact point on the terrain. We don't know
     // where the equivalent contact point exactly is, so we employ the intersection
@@ -374,7 +377,7 @@ ChVector<> ChTire::EstimateInertia(double tire_width,    // tire width [mm]
                                    double rim_diameter,  // rim diameter [in]
                                    double tire_mass,     // mass of the tire [kg]
                                    double t_factor       // tread to sidewall thickness factor
-                                   ) {
+) {
     double rho = 1050.0;  // rubber density in kg/m^3
 
     double width = tire_width / 1000;             // tire width in meters

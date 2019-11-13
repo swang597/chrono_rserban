@@ -53,6 +53,8 @@ class CH_MODELS_API FEDA_Pac02Tire : public ChPac02Tire {
     virtual void AddVisualizationAssets(VisualizationType vis) override;
     virtual void RemoveVisualizationAssets() override final;
 
+    void SetPressureLevel(unsigned int p_level) { m_tire_inflation_pressure_level = p_level; }
+
   private:
     static const double m_mass;
     static const ChVector<> m_inertia;
@@ -60,10 +62,16 @@ class CH_MODELS_API FEDA_Pac02Tire : public ChPac02Tire {
     bool m_use_vert_map;
     ChFunction_Recorder m_bott_map;
     bool m_use_bott_map;
+    unsigned int m_tire_inflation_pressure_level;
 
     static const std::string m_meshName;
     static const std::string m_meshFile;
     std::shared_ptr<ChTriangleMeshShape> m_trimesh_shape;
+
+    void SetParametersLevel1();
+    void SetParametersLevel2();
+    void SetParametersLevel3();
+    void SetParametersLevel4();
 };
 
 /// @} vehicle_models_hmmwv

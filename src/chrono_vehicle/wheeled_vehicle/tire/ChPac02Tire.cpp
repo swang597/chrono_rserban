@@ -319,14 +319,21 @@ void ChPac02Tire::Synchronize(double time, const ChTerrain& terrain) {
     // Assuming the tire is a disc, check contact with terrain
     switch (m_collision_type) {
         case ChTire::CollisionType::SINGLE_POINT:
+            GetLog() << "SP:Wheel Pos = {" << wheel_state.pos.x() << ";" << wheel_state.pos.y() << ";"
+                     << wheel_state.pos.z() << "}\n";
             m_data.in_contact =
                 DiscTerrainCollision(terrain, wheel_state.pos, disc_normal, m_PacCoeff.R0, m_data.frame, m_data.depth);
             break;
         case ChTire::CollisionType::FOUR_POINTS:
+            GetLog() << "4P:Wheel Pos = {" << wheel_state.pos.x() << ";" << wheel_state.pos.y() << ";"
+                     << wheel_state.pos.z() << "}\n";
             m_data.in_contact = DiscTerrainCollision4pt(terrain, wheel_state.pos, disc_normal, m_PacCoeff.R0,
                                                         m_PacCoeff.width, m_data.frame, m_data.depth, dum_cam);
             break;
+        default:
         case ChTire::CollisionType::ENVELOPE:
+            GetLog() << "EN:Wheel Pos = {" << wheel_state.pos.x() << ";" << wheel_state.pos.y() << ";"
+                     << wheel_state.pos.z() << "}\n";
             m_data.in_contact = DiscTerrainCollisionEnvelope(terrain, wheel_state.pos, disc_normal, m_PacCoeff.R0,
                                                              m_areaDep, m_data.frame, m_data.depth);
             break;
