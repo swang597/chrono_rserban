@@ -299,25 +299,29 @@ int main(int argc, char* argv[]) {
     }
 
     // filter test
-    double azdmax = azd[0];
-    double azdfmax = azdf[0];
-    for (size_t i = 0; i < azd.size(); i++) {
-        if (azd[i] > azdmax)
-            azdmax = azd[i];
-        if (azdf[i] > azdfmax)
-            azdfmax = azdf[i];
-    }
-    GetLog() << "Filtertest:\nAz maximum = " << azdmax << " g (unfiltered),   Az maximum = " << azdfmax
-             << " g (filtered)\n";
+    if (azd.size() > 0) {
+        double azdmax = azd[0];
+        double azdfmax = azdf[0];
+        for (size_t i = 0; i < azd.size(); i++) {
+            if (azd[i] > azdmax)
+                azdmax = azd[i];
+            if (azdf[i] > azdfmax)
+                azdfmax = azdf[i];
+        }
+        GetLog() << "Filtertest:\nAz maximum = " << azdmax << " g (unfiltered),   Az maximum = " << azdfmax
+                 << " g (filtered)\n";
 
 #ifdef CHRONO_POSTPROCESS
-    std::string title = "Fed alpha on halfround " + std::to_string(4) + " in, V = " + std::to_string(velmph) + " mph";
-    postprocess::ChGnuPlot gplot_seat;
-    gplot_seat.SetGrid();
-    gplot_seat.SetTitle(title.c_str());
-    gplot_seat.SetLabelX("time (s)");
-    gplot_seat.SetLabelY("driver seat acceleration (g)");
-    gplot_seat.Plot(seatFkt, "", " with lines lt -1 lc rgb'#00AAEE' ");
+        std::string title =
+            "Fed alpha on halfround " + std::to_string(4) + " in, V = " + std::to_string(velmph) + " mph";
+        postprocess::ChGnuPlot gplot_seat;
+        gplot_seat.SetGrid();
+        gplot_seat.SetTitle(title.c_str());
+        gplot_seat.SetLabelX("time (s)");
+        gplot_seat.SetLabelY("driver seat acceleration (g)");
+        gplot_seat.Plot(seatFkt, "", " with lines lt -1 lc rgb'#00AAEE' ");
 #endif
+    }
+
     return 0;
 }

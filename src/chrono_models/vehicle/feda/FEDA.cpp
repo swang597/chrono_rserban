@@ -139,7 +139,7 @@ void FEDA::Initialize() {
             m_vehicle->InitializeTire(tire_RL, m_vehicle->GetAxle(1)->m_wheels[LEFT], VisualizationType::NONE,
                                       ChTire::CollisionType::FOUR_POINTS);
             m_vehicle->InitializeTire(tire_RR, m_vehicle->GetAxle(1)->m_wheels[RIGHT], VisualizationType::NONE,
-                                      ChTire::CollisionType::FOUR_POINT);
+                                      ChTire::CollisionType::FOUR_POINTS);
 
             m_tire_mass = tire_FL->ReportMass();
 
