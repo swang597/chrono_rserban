@@ -53,6 +53,8 @@ class CH_MODELS_API FEDA {
     void SetChassisCollisionType(ChassisCollisionType val) { m_chassisCollisionType = val; }
 
     void SetTireType(TireModelType val) { m_tireType = val; }
+    void SetTireCollisionType(ChTire::CollisionType collType) { m_tire_collision_type = collType; }
+    void SetTirePressureLevel(unsigned int pressure_level = 2) { m_tire_pressure_level = pressure_level; }
 
     void SetInitPosition(const ChCoordsys<>& pos) { m_initPos = pos; }
     void SetInitFwdVel(double fwdVel) { m_initFwdVel = fwdVel; }
@@ -112,7 +114,11 @@ class CH_MODELS_API FEDA {
 
     double m_tire_mass;
 
+    unsigned int m_tire_pressure_level;
+
     int m_ride_height_config;
+
+    ChTire::CollisionType m_tire_collision_type;
 };
 
 /// @} vehicle_models_sedan

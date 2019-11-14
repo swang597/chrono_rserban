@@ -96,7 +96,9 @@ int main(int argc, char* argv[]) {
     my_feda.SetInitPosition(ChCoordsys<>(ChVector<>(2, 0, 0.5), QUNIT));
     my_feda.SetTireType(tire_model);
     my_feda.SetTireStepSize(tire_step_size);
+    my_feda.SetTirePressureLevel(1);
     my_feda.SetRideHeight_ObstacleCrossing();
+    my_feda.SetTireCollisionType(ChTire::CollisionType::FOUR_POINTS);
     my_feda.Initialize();
 
     my_feda.SetChassisVisualizationType(VisualizationType::PRIMITIVES);

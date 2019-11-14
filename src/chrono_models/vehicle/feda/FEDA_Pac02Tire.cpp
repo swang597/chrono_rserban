@@ -41,8 +41,8 @@ const std::string FEDA_Pac02Tire::m_meshFile = "feda/tire.obj";
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-FEDA_Pac02Tire::FEDA_Pac02Tire(const std::string& name)
-    : ChPac02Tire(name), m_use_vert_map(false), m_tire_inflation_pressure_level(2) {}
+FEDA_Pac02Tire::FEDA_Pac02Tire(const std::string& name, unsigned int pressure_level)
+    : ChPac02Tire(name), m_use_vert_map(false), m_tire_inflation_pressure_level(pressure_level) {}
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------

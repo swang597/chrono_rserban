@@ -266,9 +266,6 @@ bool ChTire::DiscTerrainCollisionEnvelope(
     ChCoordsys<>& contact,               // [out] contact coordinate system (relative to the global frame)
     double& depth                        // [out] penetration depth (positive if contact occurred)
 ) {
-    GetLog() << "Radius = " << disc_radius << " m\n";
-    GetLog() << "Disc center = {" << disc_center.x() << ";" << disc_center.y() << ";" << disc_center.z() << "}\n";
-
     // Approximate the terrain with a plane. Define the projection of the lowest
     // point onto this plane as the contact point on the terrain. We don't know
     // where the equivalent contact point exactly is, so we employ the intersection
@@ -284,7 +281,7 @@ bool ChTire::DiscTerrainCollisionEnvelope(
     double A = 0;   // overlapping area of tire disc and road surface contour
     double Xc = 0;  // relative x coordinate of area A centroid
     double Zc = 0;  // relative z (rsp. to road height) height of area A centroid, actually unused
-    for (size_t i = 1; i < n_con_pts-1; i++) {
+    for (size_t i = 1; i < n_con_pts - 1; i++) {
         double x = -disc_radius + x_step * double(i);
         ChVector<> pTest = disc_center + x * longitudinal;
         double q = terrain.GetHeight(pTest.x(), pTest.y());
@@ -296,23 +293,18 @@ bool ChTire::DiscTerrainCollisionEnvelope(
         }
         if (i == 1 || i == (n_con_pts - 2)) {
             A += 0.5 * Q1;
-            Xc += 0.5 * Q1 * x;
-            // Zc += 0.5 * Q1 * Q2 / 2.0;
         } else {
             A += Q1;
-            Xc += Q1 * x;
-            // Zc += Q1 * Q2 / 2.0;
         }
     }
     A *= x_step;
-    Xc *= x_step / A;
     // Zc *= x_step / A;
     if (A == 0) {
         return false;
     }
 
     // Xc = negative means area centroid is in front of the disc_center
-    ChVector<> pXc = disc_center - Xc * longitudinal;
+    ChVector<> pXc = disc_center;
 
     // Zc relative to q(x)
     // Zc = terrain.GetHeight(disc_center.x(), disc_center.y()) + Zc;

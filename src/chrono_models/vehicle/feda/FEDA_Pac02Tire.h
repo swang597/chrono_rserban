@@ -35,7 +35,7 @@ namespace feda {
 /// PAC02 tire model for the FEDA vehicle.
 class CH_MODELS_API FEDA_Pac02Tire : public ChPac02Tire {
   public:
-    FEDA_Pac02Tire(const std::string& name);
+    FEDA_Pac02Tire(const std::string& name, unsigned int pressure_level = 2);
     ~FEDA_Pac02Tire() {}
 
     virtual double GetNormalStiffnessForce(double depth) const override;
