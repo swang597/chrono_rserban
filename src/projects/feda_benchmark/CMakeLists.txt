@@ -1,3 +1,5 @@
+message(STATUS "Projects: FED-alpha benchmark...")
+
 if(NOT ENABLE_MODULE_IRRLICHT)
   return()
 endif()  

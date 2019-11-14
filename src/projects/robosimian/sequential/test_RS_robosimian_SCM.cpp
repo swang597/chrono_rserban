@@ -23,6 +23,8 @@
 #include "chrono/physics/ChSystemSMC.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
 
+#include "chrono_models/robosimian/robosimian.h"
+
 #include "chrono_vehicle/terrain/SCMDeformableTerrain.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
@@ -31,7 +33,6 @@
 #include "chrono_thirdparty/filesystem/path.h"
 
 #include "irrlicht_app.h"
-#include "robosimian.h"
 
 using namespace chrono;
 using namespace chrono::collision;
@@ -73,7 +74,7 @@ bool GetProblemSpecs(int argc,
 
 // =============================================================================
 
-class DBPcontroller : public robosimian::Driver::PhaseChangeCallback {
+class DBPcontroller : public chrono::robosimian::Driver::PhaseChangeCallback {
   public:
     DBPcontroller(robosimian::RoboSimian* robot);
     ~DBPcontroller() { delete m_csv; }
@@ -407,10 +408,10 @@ int main(int argc, char* argv[]) {
     // Create the visualization window
     // -------------------------------
 
-    robosimian::RobotIrrApp* application = nullptr;
+    RobotIrrApp* application = nullptr;
     if (render) {
-        application = new robosimian::RobotIrrApp(&robot, driver.get(), L"RoboSimian - SCM terrain",
-                                                  irr::core::dimension2d<irr::u32>(800, 600));
+        application = new RobotIrrApp(&robot, driver.get(), L"RoboSimian - SCM terrain",
+                                      irr::core::dimension2d<irr::u32>(800, 600));
         application->AddTypicalLogo();
         application->AddTypicalSky();
         application->AddTypicalCamera(irr::core::vector3df(1, -2.75f, 0.2f), irr::core::vector3df(1, 0, 0));

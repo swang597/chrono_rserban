@@ -23,10 +23,11 @@
 #include <unordered_map>
 #include <vector>
 
-#include "chrono_models/robosimian/ChApiRoboSimian.h"
+#include "chrono_models/ChApiModels.h"
 #include "chrono/assets/ChColor.h"
 #include "chrono/physics/ChLinkMotorRotation.h"
 #include "chrono/physics/ChSystem.h"
+
 namespace chrono {
 namespace robosimian {
 
@@ -86,7 +87,7 @@ enum class LocomotionMode {
 // Definition of a part (body + collision shapes + visualization assets)
 // -----------------------------------------------------------------------------
 
-struct ChApiRoboSimian BoxShape {
+struct CH_MODELS_API BoxShape {
     BoxShape(const chrono::ChVector<>& pos, const chrono::ChQuaternion<>& rot, const chrono::ChVector<>& dims)
         : m_pos(pos), m_rot(rot), m_dims(dims) {}
     chrono::ChVector<> m_pos;
@@ -94,13 +95,13 @@ struct ChApiRoboSimian BoxShape {
     chrono::ChVector<> m_dims;
 };
 
-struct ChApiRoboSimian SphereShape {
+struct CH_MODELS_API SphereShape {
     SphereShape(const chrono::ChVector<>& pos, double radius) : m_pos(pos), m_radius(radius) {}
     chrono::ChVector<> m_pos;
     double m_radius;
 };
 
-struct ChApiRoboSimian CylinderShape {
+struct CH_MODELS_API CylinderShape {
     CylinderShape(const chrono::ChVector<>& pos, const chrono::ChQuaternion<>& rot, double radius, double length)
         : m_pos(pos), m_rot(rot), m_radius(radius), m_length(length) {}
     chrono::ChVector<> m_pos;
@@ -109,8 +110,8 @@ struct ChApiRoboSimian CylinderShape {
     double m_length;
 };
 
-struct ChApiRoboSimian MeshShape {
-    enum Type { CONVEX_HULL, TRIANGLE_SOUP, NODE_CLOUD };
+struct CH_MODELS_API MeshShape {
+    enum class Type { CONVEX_HULL, TRIANGLE_SOUP, NODE_CLOUD };
     MeshShape(const chrono::ChVector<>& pos, const chrono::ChQuaternion<>& rot, const std::string& name, Type type)
         : m_pos(pos), m_rot(rot), m_name(name), m_type(type) {}
     chrono::ChVector<> m_pos;
@@ -119,7 +120,7 @@ struct ChApiRoboSimian MeshShape {
     Type m_type;
 };
 
-class ChApiRoboSimian Part {
+class CH_MODELS_API Part {
   public:
     Part(const std::string& name, chrono::ChSystem* system);
     virtual ~Part() {}
@@ -154,7 +155,7 @@ class ChApiRoboSimian Part {
 // Robot chassis (torso)
 // -----------------------------------------------------------------------------
 
-class ChApiRoboSimian Chassis : public Part {
+class CH_MODELS_API Chassis : public Part {
   public:
     Chassis(const std::string& name, chrono::ChSystem* system, bool fixed);
     ~Chassis() {}
@@ -178,7 +179,7 @@ class ChApiRoboSimian Chassis : public Part {
 // Robot sled (fixed to chassis)
 // -----------------------------------------------------------------------------
 
-class ChApiRoboSimian Sled : public Part {
+class CH_MODELS_API Sled : public Part {
   public:
     Sled(const std::string& name, chrono::ChSystem* system);
     ~Sled() {}
@@ -205,7 +206,7 @@ class ChApiRoboSimian Sled : public Part {
 // Direct-drive robot wheels (not used in current model)
 // -----------------------------------------------------------------------------
 
-class ChApiRoboSimian WheelDD : public Part {
+class CH_MODELS_API WheelDD : public Part {
   public:
     WheelDD(const std::string& name, int id, chrono::ChSystem* system);
     ~WheelDD() {}
@@ -221,7 +222,7 @@ class ChApiRoboSimian WheelDD : public Part {
 // Robot limb components
 // -----------------------------------------------------------------------------
 
-class ChApiRoboSimian Link {
+class CH_MODELS_API Link {
   public:
     Link(const std::string& mesh_name,
          const chrono::ChVector<>& offset,
@@ -253,7 +254,7 @@ class ChApiRoboSimian Link {
     friend class Limb;
 };
 
-struct ChApiRoboSimian LinkData {
+struct CH_MODELS_API LinkData {
 
 	LinkData(std::string myname, Link mylink, bool inc) : link(mylink), name(myname), include(inc) {
         // Nothing left to do.
@@ -265,7 +266,7 @@ struct ChApiRoboSimian LinkData {
     bool include;
 };
 
-struct ChApiRoboSimian JointData {
+struct CH_MODELS_API JointData {
     std::string name;
     std::string linkA;
     std::string linkB;
@@ -275,7 +276,7 @@ struct ChApiRoboSimian JointData {
     chrono::ChVector<> axis;
 };
 
-class ChApiRoboSimian Limb {
+class CH_MODELS_API Limb {
   public:
     Limb(const std::string& name, LimbID id, const LinkData data[], chrono::ChSystem* system);
     ~Limb() {}
@@ -371,7 +372,7 @@ class ContactManager;
 class ContactMaterial;
 class Driver;
 
-class ChApiRoboSimian RoboSimian {
+class CH_MODELS_API RoboSimian {
   public:
     RoboSimian(chrono::ChMaterialSurface::ContactMethod contact_method, bool has_sled = false, bool fixed = false);
     RoboSimian(chrono::ChSystem* system, bool has_sled = false, bool fixed = false);
@@ -504,7 +505,7 @@ class ChApiRoboSimian RoboSimian {
 
 typedef std::array<std::array<double, 8>, 4> Actuation;
 
-class ChApiRoboSimian Driver {
+class CH_MODELS_API Driver {
   public:
     enum Phase { POSE, HOLD, START, CYCLE, STOP };
 

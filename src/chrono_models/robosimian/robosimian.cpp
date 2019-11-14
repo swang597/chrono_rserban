@@ -883,13 +883,13 @@ void Part::AddCollisionShapes() {
         auto trimesh = chrono_types::make_shared<geometry::ChTriangleMeshConnected>();
         trimesh->LoadWavefrontMesh(GetChronoDataFile(vis_mesh_file), false, false);
         switch (mesh.m_type) {
-            case MeshShape::CONVEX_HULL:
+            case MeshShape::Type::CONVEX_HULL:
                 m_body->GetCollisionModel()->AddConvexHull(trimesh->getCoordsVertices(), mesh.m_pos, mesh.m_rot);
                 break;
-            case MeshShape::TRIANGLE_SOUP:
+            case MeshShape:: Type::TRIANGLE_SOUP:
                 m_body->GetCollisionModel()->AddTriangleMesh(trimesh, false, false, mesh.m_pos, mesh.m_rot, 0.002);
                 break;
-            case MeshShape::NODE_CLOUD:
+            case MeshShape::Type::NODE_CLOUD:
                 for (auto v : trimesh->getCoordsVertices()) {
                     m_body->GetCollisionModel()->AddSphere(0.002, v);
                 }
@@ -989,7 +989,7 @@ Sled::Sled(const std::string& name, chrono::ChSystem* system) : Part(name, syste
     m_body->SetInertiaXY(inertia_xy);
     system->Add(m_body);
 
-    m_meshes.push_back(MeshShape(ChVector<>(0, 0, 0), QUNIT, "robosim_sled_coll", MeshShape::CONVEX_HULL));
+    m_meshes.push_back(MeshShape(ChVector<>(0, 0, 0), QUNIT, "robosim_sled_coll", MeshShape::Type::CONVEX_HULL));
 
     m_mesh_name = "robosim_sled";
     m_offset = ChVector<>(0, 0, 0);

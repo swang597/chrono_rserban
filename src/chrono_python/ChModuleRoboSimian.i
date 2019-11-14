@@ -51,6 +51,7 @@
 #include "chrono/core/ChQuaternion.h"
 #include "chrono/core/ChVector.h"
 #include "chrono/solver/ChSolver.h"
+#include "chrono/solver/ChSolverDirect.h"
 #include "chrono/solver/ChIterativeSolver.h"
 #include "chrono/solver/ChSolverMINRES.h"
 
@@ -65,7 +66,7 @@
 
 #include "Eigen/src/Core/util/Memory.h"
 
-#include "chrono_models/robosimian/ChApiRoboSimian.h"
+#include "chrono_models/ChApiModels.h"
 #include "chrono_models/robosimian/robosimian.h"
 #include "chrono_models/robosimian/driver_cb.h"
 
@@ -79,7 +80,7 @@ using namespace chrono::robosimian;
 #define ChApi
 #define EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-#define ChApiRoboSimian
+#define CH_MODELS_API
 
 
 

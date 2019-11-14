@@ -18,8 +18,6 @@
 
 using namespace chrono;
 
-namespace robosimian {
-
 RobotIrrApp::RobotIrrApp(robosimian::RoboSimian* robot,
                          robosimian::Driver* driver,
                          const wchar_t* title,
@@ -114,5 +112,3 @@ bool RobotGUIEventReceiver::OnEvent(const irr::SEvent& event) {
     }
     return false;
 }
-
-}  // end namespace robosimian

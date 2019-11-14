@@ -20,16 +20,14 @@
 #include "chrono_irrlicht/ChIrrApp.h"
 #include "chrono_irrlicht/ChIrrTools.h"
 
-#include "robosimian.h"
-
-namespace robosimian {
+#include "chrono_models/robosimian/robosimian.h"
 
 class RobotGUIEventReceiver;
 
 class RobotIrrApp : public chrono::irrlicht::ChIrrApp {
   public:
-    RobotIrrApp(robosimian::RoboSimian* robot,
-                robosimian::Driver* driver,
+    RobotIrrApp(chrono::robosimian::RoboSimian* robot,
+                chrono::robosimian::Driver* driver,
                 const wchar_t* title = 0,
                 irr::core::dimension2d<irr::u32> dims = irr::core::dimension2d<irr::u32>(1000, 800));
 
@@ -48,8 +46,8 @@ class RobotIrrApp : public chrono::irrlicht::ChIrrApp {
                        irr::video::SColor color = irr::video::SColor(255, 20, 20, 20));
 
   private:
-    robosimian::RoboSimian* m_robot;
-    robosimian::Driver* m_driver;
+    chrono::robosimian::RoboSimian* m_robot;
+    chrono::robosimian::Driver* m_driver;
 
     RobotGUIEventReceiver* m_erecv;
 
@@ -66,15 +64,13 @@ class RobotIrrApp : public chrono::irrlicht::ChIrrApp {
 
 class RobotGUIEventReceiver : public irr::IEventReceiver {
   public:
-    RobotGUIEventReceiver(RobotIrrApp* app) : m_app(app), m_vis(robosimian::VisualizationType::COLLISION) {}
+    RobotGUIEventReceiver(RobotIrrApp* app) : m_app(app), m_vis(chrono::robosimian::VisualizationType::COLLISION) {}
 
     virtual bool OnEvent(const irr::SEvent& event) override;
 
   private:
-    robosimian::VisualizationType m_vis;
+    chrono::robosimian::VisualizationType m_vis;
     RobotIrrApp* m_app;
 };
-
-}  // end namespace robosimian
 
 #endif

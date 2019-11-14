@@ -27,6 +27,9 @@
 
 #include "chrono_parallel/physics/ChSystemParallel.h"
 
+#include "chrono_models/robosimian/robosimian.h"
+#include "chrono_models/robosimian/driver_cb.h"
+
 #include "chrono_vehicle/terrain/GranularTerrain.h"
 
 #include "chrono_opengl/ChOpenGLWindow.h"
@@ -34,9 +37,7 @@
 #include "chrono_thirdparty/SimpleOpt/SimpleOpt.h"
 #include "chrono_thirdparty/filesystem/path.h"
 
-#include "driver_cb.h"
 #include "granular.h"
-#include "robosimian.h"
 
 using namespace chrono;
 using namespace chrono::collision;
@@ -114,9 +115,9 @@ double coh_g = 40e3;
 float mu_g = 0.4f;
 
 // Terrain patch
-double patch_length = 5;
+double patch_length = 3;  //// 5
 double patch_width = 2.5;
-unsigned int num_layers = 10;
+unsigned int num_layers = 5;  //// 10
 
 // =============================================================================
 
@@ -390,8 +391,8 @@ int main(int argc, char* argv[]) {
     std::pair<double, double> terrain_init_height;
     std::pair<double, double> terrain_settled_height;
 
-    robosimian::GroundGranularA ground(sys);
-    ////robosimian::GroundGranularB ground(sys);
+    GroundGranularA ground(sys);
+    ////GroundGranularB ground(sys);
 
     while (true) {
         double time = sys->GetChTime();

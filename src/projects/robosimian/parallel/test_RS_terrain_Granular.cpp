@@ -28,7 +28,6 @@
 #include "granular.h"
 
 using namespace chrono;
-using namespace robosimian;
 
 using std::cout;
 using std::endl;

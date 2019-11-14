@@ -20,8 +20,6 @@
 #include "chrono_parallel/physics/ChSystemParallel.h"
 #include "chrono_vehicle/terrain/GranularTerrain.h"
 
-namespace robosimian {
-
 class GroundGranular {
   public:
     GroundGranular(chrono::ChSystemParallel* sys);
@@ -75,7 +73,5 @@ class GroundGranularB : public GroundGranular {
   private:
     std::shared_ptr<chrono::ChBody> m_ground;
 };
-
-}  // end namespace robosimian
 
 #endif

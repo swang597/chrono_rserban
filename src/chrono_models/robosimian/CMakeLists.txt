@@ -4,24 +4,17 @@
 # Cannot be used stand-alone (it's loaded by CMake config. file in parent dir.)
 #=============================================================================
 
-option(ENABLE_MODULE_ROBOSIMIAN "Enable the Chrono Robosimian module" OFF)
-
-# Return now if this module is not enabled
-IF(NOT ENABLE_MODULE_ROBOSIMIAN)
-	RETURN()
-ENDIF()
-
-MESSAGE(STATUS "==== Chrono Robosimian module ====")
+MESSAGE(STATUS "Model of the ROBOSIMIAN robot...")
 
 #-----------------------------------------------------------------------------
-# LIST THE FILES THAT MAKE THE ROBOSIMIAN LIBRARY
+# List the files in the ChronoModels_robosimian library
 
 SET(ChronoModels_robosimian_SOURCES 
     robosimian.cpp
 )
 
 SET(ChronoModels_robosimian_HEADERS
-    ChApiRoboSimian.h
+    ../ChApiModels.h
 	robosimian.h 
 	driver_cb.h
 )
@@ -43,7 +36,7 @@ ADD_LIBRARY(ChronoModels_robosimian SHARED
 SET_TARGET_PROPERTIES(ChronoModels_robosimian PROPERTIES
                       COMPILE_FLAGS "${CH_CXX_FLAGS}"
                       LINK_FLAGS "${CH_LINKERFLAG_SHARED}"
-					  COMPILE_DEFINITIONS "CH_API_COMPILE_ROBOSIMIAN")
+					  COMPILE_DEFINITIONS "CH_API_COMPILE_MODELS")
                           
 TARGET_LINK_LIBRARIES(ChronoModels_robosimian 
 	                  ChronoEngine)

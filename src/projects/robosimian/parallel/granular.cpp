@@ -26,8 +26,6 @@
 
 using namespace chrono;
 
-namespace robosimian {
-
 GroundGranular::GroundGranular(ChSystemParallel* sys) : m_sys(sys), m_num_particles(0), m_radius(0), m_num_layers(0) {}
 
 GroundGranularA::GroundGranularA(ChSystemParallel* sys) : GroundGranular(sys) {
@@ -231,5 +229,3 @@ std::pair<double, double> GroundGranular::GetTopHeight(int num_samples) const {
 
     return std::make_pair(max_height + m_radius, avg_height + m_radius);
 }
-
-}  // end namespace robosimian
