@@ -284,7 +284,7 @@ bool ChTire::DiscTerrainCollisionEnvelope(
     double A = 0;   // overlapping area of tire disc and road surface contour
     double Xc = 0;  // relative x coordinate of area A centroid
     double Zc = 0;  // relative z (rsp. to road height) height of area A centroid, actually unused
-    for (size_t i = 0; i < n_con_pts; i++) {
+    for (size_t i = 1; i < n_con_pts-1; i++) {
         double x = -disc_radius + x_step * double(i);
         ChVector<> pTest = disc_center + x * longitudinal;
         double q = terrain.GetHeight(pTest.x(), pTest.y());
@@ -294,7 +294,7 @@ bool ChTire::DiscTerrainCollisionEnvelope(
         if (Q1 < 0) {
             Q1 = 0;
         }
-        if (i == 0 || i == (n_con_pts - 1)) {
+        if (i == 1 || i == (n_con_pts - 2)) {
             A += 0.5 * Q1;
             Xc += 0.5 * Q1 * x;
             // Zc += 0.5 * Q1 * Q2 / 2.0;

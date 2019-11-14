@@ -62,8 +62,8 @@ ChainTest<N>::ChainTest() : m_length(0.25), m_step(1e-3) {
     // Set solver parameters
     switch (solver_type) {
         case ChSolver::Type::CUSTOM: {
-            auto mkl_solver = chrono_types::make_shared<ChSolverMKL<>>();
-            mkl_solver->SetSparsityPatternLock(true);
+            auto mkl_solver = chrono_types::make_shared<ChSolverMKL>();
+            mkl_solver->LockSparsityPattern(true);
             mkl_solver->SetVerbose(false);
             m_system->SetSolver(mkl_solver);
             break;
