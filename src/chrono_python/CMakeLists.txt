@@ -625,7 +625,6 @@ if(ENABLE_MODULE_VEHICLE)
 
 endif()
 
-if(ENABLE_MODULE_ROBOSIMIAN)
 
   message(STATUS "...add python robosimian module:  pychrono.robosimian")
   
@@ -690,7 +689,6 @@ if(ENABLE_MODULE_ROBOSIMIAN)
   # Install .py module wrapper
   install(FILES "${CHPY_VEHICLE_PY_FILE}" DESTINATION "${CH_INSTALL_PYTHON}/${CHPY_PACKAGENAME}")
 
-endif()
 
 #-----------------------------------------------------------------------------
 # Display information about setting the PYTHONPATH environment variable
