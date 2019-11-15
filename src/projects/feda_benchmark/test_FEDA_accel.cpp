@@ -64,7 +64,7 @@ DrivelineType drive_type = DrivelineType::AWD;
 TireModelType tire_model = TireModelType::PAC02;
 
 // Terrain length (X direction)
-double terrainLength = 400.0;
+double terrainLength = 800.0;
 
 // Simulation step sizes
 double step_size = 2e-4;
@@ -159,6 +159,7 @@ int main(int argc, char* argv[]) {
     csv << "throttle";
     csv << "VehicleSpeed";
     csv << "CurrentTransmissionGear";
+    csv << "Distance";
     csv << std::endl;
 
     // ---------------
@@ -170,7 +171,7 @@ int main(int argc, char* argv[]) {
     double last_speed = -1;
 
     // Record vehicle speed
-    ChFunction_Recorder speed_recorder, engine_speed_recorder;
+    ChFunction_Recorder speed_recorder, dist_recorder;
 
     // Initialize simulation frame counter and simulation time
     int step_number = 0;
@@ -183,9 +184,11 @@ int main(int argc, char* argv[]) {
         time = my_feda.GetSystem()->GetChTime();
 
         double speed = speed_filter.Add(my_feda.GetVehicle().GetVehicleSpeed());
+        double dist = terrainLength / 2.0 + my_feda.GetVehicle().GetVehiclePos().x();
         int gear_pos = my_feda.GetPowertrain()->GetCurrentTransmissionGear();
         if (!done) {
             speed_recorder.AddPoint(time, speed);
+            dist_recorder.AddPoint(time, dist);
             if (time > 6 && std::abs((speed - last_speed) / step_size) < 2e-4) {
                 done = true;
                 timer.stop();
@@ -197,6 +200,11 @@ int main(int argc, char* argv[]) {
                 gplot_speed.SetLabelX("time (s)");
                 gplot_speed.SetLabelY("speed (m/s)");
                 gplot_speed.Plot(speed_recorder, "", " with lines lt -1 lc rgb'#00AAEE' ");
+                postprocess::ChGnuPlot gplot_dist;
+                gplot_dist.SetGrid();
+                gplot_dist.SetLabelX("time (s)");
+                gplot_dist.SetLabelY("dist (m)");
+                gplot_dist.Plot(dist_recorder, "", " with lines lt -1 lc rgb'#00AAEE' ");
 #endif
             }
         }
@@ -215,6 +223,7 @@ int main(int argc, char* argv[]) {
         csv << driver_inputs.m_throttle;
         csv << 3.6 * speed;
         csv << gear_pos;
+        csv << dist;
         csv << std::endl;
 
         if (done) {

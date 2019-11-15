@@ -12,7 +12,7 @@
 // Authors: Radu Serban, Rainer Gericke
 // =============================================================================
 //
-// Demonstration of an OpenCRG terrain.
+// Shock performance calculation
 //
 // The vehicle reference frame has Z up, X towards the front of the vehicle, and
 // Y pointing to the left.
@@ -24,6 +24,7 @@
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"
 #include "chrono_vehicle/terrain/CRGTerrain.h"
 #include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
+#include "chrono_vehicle/utils/ChVehiclePath.h"
 
 #include "chrono_models/vehicle/feda/FEDA.h"
 
@@ -52,7 +53,7 @@ using namespace chrono::vehicle::feda;
 TireModelType tire_model = TireModelType::PAC02;
 
 // OpenCRG input file
-std::string crg_road_file = "terrain/crg_roads/halfround_100mm.crg";
+std::string crg_road_file = "terrain/crg_roads/halfround_";
 // std::string crg_road_file = "terrain/crg_roads/Barber.crg";
 ////std::string crg_road_file = "terrain/crg_roads/Horstwalde.crg";
 ////std::string crg_road_file = "terrain/crg_roads/handmade_arc.crg";
@@ -80,20 +81,63 @@ const double mph2ms = 0.44704;
 int main(int argc, char* argv[]) {
     GetLog() << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
 
+    unsigned int obsHeight = 4;
+    // This curve let us know, which accelration distance has to be provided
+    // units (m/s) rsp. (m)
+    // Curve calulated with test_FEDA_accel
+    ChFunction_Recorder feda_acc_curve;
+    // AddPoint (speed,acceleration_distance)
+    feda_acc_curve.AddPoint(0, 0);
+    feda_acc_curve.AddPoint(5, 10);
+    feda_acc_curve.AddPoint(10, 27);
+    feda_acc_curve.AddPoint(15, 72);
+    feda_acc_curve.AddPoint(20, 153);
+    feda_acc_curve.AddPoint(25, 296);
+    feda_acc_curve.AddPoint(30, 494);
+    feda_acc_curve.AddPoint(33, 694);
+
     // ---------------------------------------
     // Create the vehicle, terrain, and driver
     // ---------------------------------------
     double velmph = 5;
-    if (argc == 2) {
-        velmph = atof(argv[1]);
+    switch (argc) {
+        case 2:
+            velmph = atof(argv[1]);
+            break;
+        case 3:
+            switch (atoi(argv[1])) {
+                default:
+                case 4:
+                    obsHeight = 4;
+                    break;
+                case 8:
+                    obsHeight = 8;
+                    break;
+                case 10:
+                    obsHeight = 10;
+                    break;
+                case 12:
+                    obsHeight = 12;
+                    break;
+            }
+            obsHeight = atoi(argv[1]);
+            velmph = atof(argv[2]);
+            break;
+        default:
+            GetLog() << "usage: test_FEDA_shock Speed_in_mph\n";
+            GetLog() << "usage: test_FEDA_shock Obstacle_height_in_inch Speed_in_mph\n";
+            return 1;
     }
     target_speed = mph2ms * velmph;
+
+    crg_road_file.append(std::to_string(obsHeight) + "in.crg");
+    double start_pos = -feda_acc_curve.Get_y(target_speed);
 
     // Create the FEDA vehicle, set parameters, and initialize
     FEDA my_feda;
     my_feda.SetContactMethod(ChMaterialSurface::SMC);
     my_feda.SetChassisFixed(false);
-    my_feda.SetInitPosition(ChCoordsys<>(ChVector<>(2, 0, 0.5), QUNIT));
+    my_feda.SetInitPosition(ChCoordsys<>(ChVector<>(start_pos + 1, 0, 0.5), QUNIT));
     my_feda.SetTireType(tire_model);
     my_feda.SetTireStepSize(tire_step_size);
     my_feda.SetTirePressureLevel(1);
@@ -114,10 +158,14 @@ int main(int argc, char* argv[]) {
     terrain.Initialize(vehicle::GetDataFile(crg_road_file));
 
     // Get the vehicle path (middle of the road)
-    auto path = terrain.GetPath();
+    // auto path = terrain.GetPath();
     bool path_is_closed = terrain.IsPathClosed();
     double road_length = terrain.GetLength();
     double road_width = terrain.GetWidth();
+    auto path = StraightLinePath(ChVector<>(start_pos, 0, 0.5), ChVector<>(road_length + 20.0, 0, 0.5), 1);
+
+    std::wstring wTitle = L"FED Alpha Shock Performance: Obstcle ";
+    wTitle.append(std::to_wstring(obsHeight) + L" in, V = " + std::to_wstring(int(velmph)) + L" mph");
 
 #ifdef USE_PID
     // Create the driver system based on PID steering controller
@@ -127,8 +175,7 @@ int main(int argc, char* argv[]) {
     driver.GetSpeedController().SetGains(0.4, 0, 0);
     driver.Initialize();
 
-    ChWheeledVehicleIrrApp app(&my_feda.GetVehicle(), L"OpenCRG Demo PID Steering",
-                               irr::core::dimension2d<irr::u32>(800, 640));
+    ChWheeledVehicleIrrApp app(&my_feda.GetVehicle(), wTitle.c_str(), irr::core::dimension2d<irr::u32>(800, 640));
 #endif
 #ifdef USE_XT
     // Create the driver system based on XT steering controller
@@ -139,8 +186,7 @@ int main(int argc, char* argv[]) {
     driver.GetSpeedController().SetGains(0.4, 0, 0);
     driver.Initialize();
 
-    ChWheeledVehicleIrrApp app(&my_feda.GetVehicle(), L"OpenCRG Demo XT Steering",
-                               irr::core::dimension2d<irr::u32>(800, 640));
+    ChWheeledVehicleIrrApp app(&my_feda.GetVehicle(), wTitle.c_str(), irr::core::dimension2d<irr::u32>(800, 640));
 #endif
 #ifdef USE_SR
     ChPathFollowerDriverSR driver(my_feda.GetVehicle(), path, "my_path", target_speed, path_is_closed,
@@ -150,8 +196,7 @@ int main(int argc, char* argv[]) {
     driver.GetSpeedController().SetGains(0.4, 0, 0);
     driver.Initialize();
 
-    ChWheeledVehicleIrrApp app(&my_feda.GetVehicle(), L"OpenCRG Demo SR Steering",
-                               irr::core::dimension2d<irr::u32>(800, 640));
+    ChWheeledVehicleIrrApp app(&my_feda.GetVehicle(), wTitle.c_str(), irr::core::dimension2d<irr::u32>(800, 640));
 #endif
 
     // ---------------------------------------
@@ -194,16 +239,11 @@ int main(int argc, char* argv[]) {
     // Simulation loop
     // ---------------
 
-    // Final time
-    double t_end = 2 + road_length / target_speed;
-    if (path_is_closed) {
-        t_end += 30.0;
-    }
+    // Final posistion
     double xend = road_length - 10.0;
     std::cout << "Road length:     " << road_length << std::endl;
     std::cout << "Road width:      " << road_width << std::endl;
     std::cout << "Closed loop?     " << path_is_closed << std::endl;
-    std::cout << "Set end time to: " << t_end << std::endl;
 
     // Number of simulation steps between image outputs
     double render_step_size = 1 / fps;
@@ -215,14 +255,13 @@ int main(int argc, char* argv[]) {
 
     ChVector<> local_driver_pos = my_feda.GetChassis()->GetLocalDriverCoordsys().pos;
 
-    ChISO2631_Shock_SeatCushionLogger seat_logger(step_size);
     ChButterworth_Lowpass wesFilter(4, step_size, 30.0);
     ChFunction_Recorder seatFkt;
     std::vector<double> t, azd, azdf;
     while (app.GetDevice()->run()) {
         double time = my_feda.GetSystem()->GetChTime();
         double xpos = my_feda.GetVehicle().GetVehiclePos().x();
-        if (time >= t_end || xpos > road_length - 10)
+        if (xpos > road_length - 10)
             break;
 
         // Driver inputs
@@ -262,7 +301,6 @@ int main(int argc, char* argv[]) {
         if (xpos >= road_length / 2.0 - 1.0) {
             double speed = my_feda.GetVehicle().GetVehicleSpeed();
             ChVector<> seat_acc = my_feda.GetVehicle().GetVehicleAcceleration(local_driver_pos);
-            seat_logger.AddData(seat_acc);
             t.push_back(time);
             azd.push_back(seat_acc.z() / 9.80665);
             azdf.push_back(wesFilter.Filter(seat_acc.z() / 9.80665));
@@ -275,31 +313,6 @@ int main(int argc, char* argv[]) {
         app.EndScene();
     }
 
-    double se_low = 0.5;
-    double se_high = 0.8;
-    double se = seat_logger.GetSe();
-
-    double az_limit = 2.5;
-    double az = seat_logger.GetLegacyAz();
-
-    GetLog() << "Shock Simulation Results #1 (ISO 2631-5 Method):\n";
-    GetLog() << "  Significant Speed                        Vsig = " << target_speed << " m/s\n";
-    GetLog() << "  Equivalent Static Spine Compressive Stress Se = " << se << " MPa\n";
-    if (se <= se_low) {
-        GetLog() << "Se <= " << se_low << " MPa (ok) - low risc of health effect, below limit for average occupants\n";
-    } else if (se >= se_high) {
-        GetLog() << "Se >= " << se_high << " MPa - severe risc of health effect!\n";
-    } else {
-        GetLog() << "Se is between [" << se_low << ";" << se_high << "] - risc of health effects, above limit!\n";
-    }
-    GetLog() << "\nShock Simulation Results #2 (Traditional NRMM Method):\n";
-    GetLog() << "  Maximum Vertical Seat Acceleration = " << az << " g\n";
-    if (az <= az_limit) {
-        GetLog() << "Az <= " << az_limit << " g (ok)\n";
-    } else {
-        GetLog() << "Az > " << az_limit << " g - severe risk for average occupant!\n";
-    }
-
     // filter test
     if (azd.size() > 0) {
         double azdmax = azd[0];
@@ -310,12 +323,12 @@ int main(int argc, char* argv[]) {
             if (azdf[i] > azdfmax)
                 azdfmax = azdf[i];
         }
-        GetLog() << "Filtertest:\nAz maximum = " << azdmax << " g (unfiltered),   Az maximum = " << azdfmax
-                 << " g (filtered)\n";
+        GetLog() << "Shock Performance Result Obstcle: " << obsHeight << " in, Speed = " << velmph
+                 << " mph,  Az maximum = " << azdfmax << " g\n";
 
 #ifdef CHRONO_POSTPROCESS
         std::string title =
-            "Fed alpha on halfround " + std::to_string(4) + " in, V = " + std::to_string(velmph) + " mph";
+            "Fed alpha on halfround " + std::to_string(obsHeight) + " in, V = " + std::to_string(velmph) + " mph";
         postprocess::ChGnuPlot gplot_seat;
         gplot_seat.SetGrid();
         gplot_seat.SetTitle(title.c_str());
