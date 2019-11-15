@@ -28,6 +28,11 @@ try:
 except:
     pass
 
+try:
+	import _robosimian
+except:
+    pass
+
 	
 # The following allows the package "pychrono" to be directly
 # used as C++ namespace chrono:: ie. you just need to type
