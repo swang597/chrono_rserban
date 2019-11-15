@@ -12,8 +12,8 @@
 // Authors: Radu Serban
 // =============================================================================
 //
-// Simple example demonstrating the use of a ChLinkSpringCB with states.
-//
+// Simple example demonstrating the use of a stiff element with force controlled
+// by internal dynamics.
 //
 // =============================================================================
 
@@ -24,18 +24,38 @@
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/physics/ChBody.h"
 #include "chrono/physics/ChLinkMotorLinearSpeed.h"
+#include "chrono/solver/ChSolverMINRES.h"
+
+#include "chrono_mkl/ChSolverMKL.h"
 
 #include "chrono_irrlicht/ChIrrApp.h"
 
-#ifdef CHRONO_POSTPROCESS
 #include "chrono_postprocess/ChGnuPlot.h"
-#endif
 
 #include "chrono_thirdparty/filesystem/path.h"
 
 using namespace chrono;
 using namespace chrono::irrlicht;
 using namespace irr;
+
+// =============================================================================
+
+enum class SolverType {
+    MINRES,  // MINRES iterative solver
+    PARDISO  // Pardiso sparse direct solver
+};
+SolverType solver_type = SolverType::PARDISO;
+
+enum class IntegratorType {
+    HHT,  // HHT
+    EI,   // Euler implicit
+    EIL   // euler implicit linearized
+};
+IntegratorType integrator_type = IntegratorType::EIL;
+
+bool use_jacobians = false;
+
+double step_size = 1e-4;
 
 // =============================================================================
 
@@ -100,7 +120,7 @@ class ShockODE : public ChLinkSpringCB::ODE {
         states(1) = 0;
     }
 
-    virtual void CalculateRHS(double time,
+    virtual void CalculateRHS(double time,                      // current time
                               const ChVectorDynamic<>& states,  // current states
                               ChVectorDynamic<>& rhs,           // output vector containing the ODE right-hand side
                               ChLinkSpringCB* link              // back-pointer to associated link
@@ -130,6 +150,23 @@ class ShockODE : public ChLinkSpringCB::ODE {
         // u1 = damper force1 = input
         // y1 = delayed damper force = stage(1) = output
         rhs(1) = (force1 - states(1)) / T1;
+    }
+
+    virtual bool CalculateJac(double time,                      // current time
+                              const ChVectorDynamic<>& states,  // current ODE states
+                              const ChVectorDynamic<>& rhs,     // current ODE right-hand side vector
+                              ChMatrixDynamic<>& jac,           // output Jacobian matrix
+                              ChLinkSpringCB* link              // back-pointer to associated link
+    ) {
+        const double T0 = 0.04;
+        const double T1 = 1.02e-3;
+
+        jac(0, 0) = -1 / T0;
+        jac(0, 1) = 0;
+        jac(1, 0) = 0;
+        jac(1, 1) = -1 / T1;
+
+        return true;
     }
 
   private:
@@ -209,14 +246,15 @@ int main(int argc, char* argv[]) {
 
     auto spring = chrono_types::make_shared<ChLinkSpringCB>();
     spring->Initialize(body, ground, true, ChVector<>(0, 0, 0), ChVector<>(0, 0, 0));
+    ////spring->IsStiff(use_jacobians);
     spring->RegisterForceFunctor(&force);
     spring->RegisterODE(&rhs);
     system.AddLink(spring);
     spring->AddAsset(chrono_types::make_shared<ChColorAsset>(0.5f, 0.5f, 0.5f));
-	spring->AddAsset(chrono_types::make_shared<ChPointPointSegment>());
+    spring->AddAsset(chrono_types::make_shared<ChPointPointSegment>());
 
     // Create the Irrlicht application
-    ChIrrApp application(&system, L"Active spring test", core::dimension2d<u32>(800, 600), false, true);
+    ChIrrApp application(&system, L"Active shock test", core::dimension2d<u32>(800, 600), false, true);
     application.AddTypicalLogo();
     application.AddTypicalSky();
     application.AddTypicalLights();
@@ -233,15 +271,59 @@ int main(int argc, char* argv[]) {
     std::string logfile = out_dir + "/log.dat";
     ChStreamOutAsciiFile log(logfile.c_str());
 
-    // Modify integrator
-    ////system.SetTimestepperType(ChTimestepper::Type::HHT);
-    ////auto integrator = std::static_pointer_cast<ChTimestepperHHT>(system.GetTimestepper());
-    ////integrator->SetAlpha(0);
-    ////integrator->SetMaxiters(20);
-    ////integrator->SetAbsTolerances(1e-6);
+        std::string btitle("Body - ");
+
+        // Modify integrator
+    switch (integrator_type) {
+        case IntegratorType::HHT: {
+            btitle += "HHT - ";
+            system.SetTimestepperType(ChTimestepper::Type::HHT);
+            auto integrator = std::static_pointer_cast<ChTimestepperHHT>(system.GetTimestepper());
+            integrator->SetAlpha(-0.2);
+            integrator->SetMaxiters(20);
+            integrator->SetAbsTolerances(1e-6);
+            break;
+        }
+        case IntegratorType::EI: {
+            btitle += "EI - ";
+            system.SetTimestepperType(ChTimestepper::Type::EULER_IMPLICIT);
+            auto integrator = std::static_pointer_cast<ChTimestepperEulerImplicit>(system.GetTimestepper());
+            integrator->SetMaxiters(1);
+            break;
+        }
+        case IntegratorType::EIL: {
+            btitle += "EIL - ";
+            break;
+        }
+    }
+
+    // Modify solver
+    switch (solver_type) {
+        case SolverType::MINRES: {
+            btitle += "MINRES - ";
+            system.SetSolverType(ChSolver::Type::MINRES);
+            system.SetSolverWarmStarting(true);
+            system.SetMaxItersSolverSpeed(200);
+            system.SetMaxItersSolverStab(200);
+            system.SetTolForce(1e-14);
+            auto msolver = std::static_pointer_cast<ChSolverMINRES>(system.GetSolver());
+            msolver->SetDiagonalPreconditioning(true);
+            msolver->SetVerbose(false);
+            break;
+        }
+        case SolverType::PARDISO: {
+            btitle += "PARDISO - ";
+            auto mkl_solver = chrono_types::make_shared<ChSolverMKL>();
+            mkl_solver->LockSparsityPattern(false);
+            system.SetSolver(mkl_solver);
+            break;
+        }
+    }
+
+    btitle += use_jacobians ? " Jac YES" : "Jac NO";
 
     // Simulation loop
-    application.SetTimestep(1e-4);
+    application.SetTimestep(step_size);
     while (application.GetDevice()->run()) {
         application.BeginScene();
         application.DrawAll();
@@ -250,7 +332,12 @@ int main(int argc, char* argv[]) {
 
         double vel = body->GetPos_dt().y();
         ChVectorDynamic<> state = spring->GetStates();
-        log << system.GetChTime() << ", " << vel << ", " << state(0) << ", " << state(1) << "\n";
+        log << system.GetChTime() << ", " << vel << ", " << state(0) << ", " << state(1) << ", ";
+        log << body->GetPos().y() << ", " << body->GetPos_dt().y();
+        log << "\n";
+
+        if (system.GetChTime() >= 1)
+            break;
     }
 
 #ifdef CHRONO_POSTPROCESS
@@ -258,15 +345,27 @@ int main(int argc, char* argv[]) {
     std::string gplfile = out_dir + "/tmp.gpl";
     postprocess::ChGnuPlot mplot(gplfile.c_str());
 
+    mplot.OutputWindow(0);
     mplot.SetTitle("ODE solution");
     mplot.SetLabelX("t");
     mplot.SetLabelY("y");
-    //mplot.SetCommand("set ytics nomirror");
-    //mplot.SetCommand("set y2range [-1:1]");
-    //mplot.SetCommand("set y2tics -1, 0.25");
+    // mplot.SetCommand("set ytics nomirror");
+    // mplot.SetCommand("set y2range [-1:1]");
+    // mplot.SetCommand("set y2tics -1, 0.25");
     mplot.Plot(logfile.c_str(), 1, 2, "velocity", " with lines lw 2 axis x1y1");
     mplot.Plot(logfile.c_str(), 1, 3, "state 1", " with lines lw 2 axis x1y1");
     mplot.Plot(logfile.c_str(), 1, 4, "state 2", " with lines lw 2 axis x1y2");
+
+    mplot.OutputWindow(1);
+    mplot.SetGrid();
+    mplot.SetTitle(btitle.c_str());
+    mplot.SetLabelX("t");
+    mplot.SetLabelY("y");
+    mplot.SetCommand("set ytics nomirror");
+    mplot.SetCommand("set y2range [-20:20]");
+    mplot.SetCommand("set y2tics -20, 5");
+    mplot.Plot(logfile.c_str(), 1, 4, "y", " with lines lw 2 axis x1y1");
+    mplot.Plot(logfile.c_str(), 1, 5, "y'", " with lines lw 2 axis x1y2");
 #endif
 
     return 0;
