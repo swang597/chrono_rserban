@@ -33,16 +33,21 @@ namespace feda {
 FEDA_Vehicle::FEDA_Vehicle(const bool fixed,
                            ChMaterialSurface::ContactMethod contact_method,
                            ChassisCollisionType chassis_collision_type,
-                           int ride_height)
-    : ChWheeledVehicle("FEDA", contact_method), m_omega({0, 0, 0, 0}), m_ride_height(ride_height) {
+                           int ride_height,
+                           int damperMode)
+    : ChWheeledVehicle("FEDA", contact_method),
+      m_omega({0, 0, 0, 0}),
+      m_ride_height(ride_height),
+      m_damper_mode(damperMode) {
     Create(fixed, chassis_collision_type);
 }
 
 FEDA_Vehicle::FEDA_Vehicle(ChSystem* system,
                            const bool fixed,
                            ChassisCollisionType chassis_collision_type,
-                           int ride_height)
-    : ChWheeledVehicle("FEDA", system), m_omega({0, 0, 0, 0}), m_ride_height(ride_height) {
+                           int ride_height,
+                           int damperMode)
+    : ChWheeledVehicle("FEDA", system), m_omega({0, 0, 0, 0}), m_ride_height(ride_height), m_damper_mode(damperMode) {
     Create(fixed, chassis_collision_type);
 }
 
@@ -55,8 +60,10 @@ void FEDA_Vehicle::Create(bool fixed, ChassisCollisionType chassis_collision_typ
     m_axles[0] = chrono_types::make_shared<ChAxle>();
     m_axles[1] = chrono_types::make_shared<ChAxle>();
 
-    m_axles[0]->m_suspension = chrono_types::make_shared<FEDA_DoubleWishboneFront>("FrontSusp", m_ride_height);
-    m_axles[1]->m_suspension = chrono_types::make_shared<FEDA_DoubleWishboneRear>("RearSusp", m_ride_height);
+    m_axles[0]->m_suspension =
+        chrono_types::make_shared<FEDA_DoubleWishboneFront>("FrontSusp", m_ride_height, m_damper_mode);
+    m_axles[1]->m_suspension =
+        chrono_types::make_shared<FEDA_DoubleWishboneRear>("RearSusp", m_ride_height, m_damper_mode);
 
     m_axles[0]->m_wheels.resize(2);
     m_axles[0]->m_wheels[0] = chrono_types::make_shared<FEDA_WheelLeft>("Wheel_FL");

@@ -42,6 +42,7 @@ namespace feda {
 
 class CH_MODELS_API FEDA {
   public:
+    enum class DamperMode { FSD, PASSIVE_LOW, PASSIVE_HIGH };
     FEDA();
     FEDA(ChSystem* system);
 
@@ -65,6 +66,8 @@ class CH_MODELS_API FEDA {
     void SetRideHeight_Low() { m_ride_height_config = 0; }
     void SetRideHeight_OnRoad() { m_ride_height_config = 1; }
     void SetRideHeight_ObstacleCrossing() { m_ride_height_config = 2; }
+
+    void SetDamperMode(DamperMode theDamperMode = DamperMode::FSD);
 
     ChSystem* GetSystem() const { return m_vehicle->GetSystem(); }
     ChWheeledVehicle& GetVehicle() const { return *m_vehicle; }
@@ -117,6 +120,7 @@ class CH_MODELS_API FEDA {
     unsigned int m_tire_pressure_level;
 
     int m_ride_height_config;
+    int m_damper_mode;
 
     ChTire::CollisionType m_tire_collision_type;
 };

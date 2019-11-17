@@ -42,7 +42,8 @@ FEDA::FEDA()
       m_apply_drag(false),
       m_ride_height_config(1),
       m_tire_collision_type(ChTire::CollisionType::SINGLE_POINT),
-      m_tire_pressure_level(2) {}
+      m_tire_pressure_level(2),
+      m_damper_mode(1) {}
 
 FEDA::FEDA(ChSystem* system)
     : m_system(system),
@@ -58,7 +59,8 @@ FEDA::FEDA(ChSystem* system)
       m_apply_drag(false),
       m_ride_height_config(1),
       m_tire_collision_type(ChTire::CollisionType::SINGLE_POINT),
-      m_tire_pressure_level(2) {}
+      m_tire_pressure_level(2),
+      m_damper_mode(1) {}
 
 FEDA::~FEDA() {
     delete m_vehicle;
@@ -73,11 +75,27 @@ void FEDA::SetAerodynamicDrag(double Cd, double area, double air_density) {
     m_apply_drag = true;
 }
 
+void FEDA::SetDamperMode(DamperMode theDamperMode) {
+    switch (theDamperMode) {
+        case DamperMode::FSD:
+            m_damper_mode = 1;
+            break;
+        case DamperMode::PASSIVE_LOW:
+            m_damper_mode = 2;
+            break;
+        case DamperMode::PASSIVE_HIGH:
+            m_damper_mode = 3;
+            break;
+    }
+}
 // -----------------------------------------------------------------------------
 void FEDA::Initialize() {
     // Create and initialize the Sedan vehicle
-    m_vehicle = m_system ? new FEDA_Vehicle(m_system, m_fixed, m_chassisCollisionType, m_ride_height_config)
-                         : new FEDA_Vehicle(m_fixed, m_contactMethod, m_chassisCollisionType, m_ride_height_config);
+    GetLog() << "FEDA::Initialize(): Damper Mode = " << m_damper_mode << "\n";
+    m_vehicle =
+        m_system
+            ? new FEDA_Vehicle(m_system, m_fixed, m_chassisCollisionType, m_ride_height_config, m_damper_mode)
+            : new FEDA_Vehicle(m_fixed, m_contactMethod, m_chassisCollisionType, m_ride_height_config, m_damper_mode);
 
     m_vehicle->SetInitWheelAngVel(m_initOmega);
     m_vehicle->Initialize(m_initPos, m_initFwdVel);

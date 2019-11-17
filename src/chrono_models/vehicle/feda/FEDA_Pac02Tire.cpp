@@ -219,14 +219,8 @@ void FEDA_Pac02Tire::SetParametersLevel1() {
     // setting bottoming table
     m_use_bott_map = true;
     m_bott_map.AddPoint(0, 0);
-    m_bott_map.AddPoint(0.09, 0);
-    m_bott_map.AddPoint(0.1, 100000);
-    m_bott_map.AddPoint(0.2, 200000);
-    m_bott_map.AddPoint(0.3, 300000);
-    m_bott_map.AddPoint(0.4, 400000);
-    m_bott_map.AddPoint(0.5, 500000);
-    m_bott_map.AddPoint(0.6, 600000);
-    m_bott_map.AddPoint(6, 6e+06);
+    m_bott_map.AddPoint(0.14, 0);
+    m_bott_map.AddPoint(0.365, 452000);
 }
 
 void FEDA_Pac02Tire::SetParametersLevel2() {
@@ -381,14 +375,8 @@ void FEDA_Pac02Tire::SetParametersLevel2() {
     // setting bottoming table
     m_use_bott_map = true;
     m_bott_map.AddPoint(0, 0);
-    m_bott_map.AddPoint(0.09, 0);
-    m_bott_map.AddPoint(0.1, 100000);
-    m_bott_map.AddPoint(0.2, 200000);
-    m_bott_map.AddPoint(0.3, 300000);
-    m_bott_map.AddPoint(0.4, 400000);
-    m_bott_map.AddPoint(0.5, 500000);
-    m_bott_map.AddPoint(0.6, 600000);
-    m_bott_map.AddPoint(6, 6e+06);
+    m_bott_map.AddPoint(0.14, 0);
+    m_bott_map.AddPoint(0.365, 452000);
 }
 
 void FEDA_Pac02Tire::SetParametersLevel3() {
@@ -521,14 +509,8 @@ void FEDA_Pac02Tire::SetParametersLevel3() {
     // setting bottoming table
     m_use_bott_map = true;
     m_bott_map.AddPoint(0, 0);
-    m_bott_map.AddPoint(0.09, 0);
-    m_bott_map.AddPoint(0.1, 100000);
-    m_bott_map.AddPoint(0.2, 200000);
-    m_bott_map.AddPoint(0.3, 300000);
-    m_bott_map.AddPoint(0.4, 400000);
-    m_bott_map.AddPoint(0.5, 500000);
-    m_bott_map.AddPoint(0.6, 600000);
-    m_bott_map.AddPoint(6, 6e+06);
+    m_bott_map.AddPoint(0.14, 0);
+    m_bott_map.AddPoint(0.365, 452000);
 }
 
 void FEDA_Pac02Tire::SetParametersLevel4() {
@@ -661,14 +643,8 @@ void FEDA_Pac02Tire::SetParametersLevel4() {
     // setting bottoming table
     m_use_bott_map = true;
     m_bott_map.AddPoint(0, 0);
-    m_bott_map.AddPoint(0.09, 0);
-    m_bott_map.AddPoint(0.1, 100000);
-    m_bott_map.AddPoint(0.2, 200000);
-    m_bott_map.AddPoint(0.3, 300000);
-    m_bott_map.AddPoint(0.4, 400000);
-    m_bott_map.AddPoint(0.5, 500000);
-    m_bott_map.AddPoint(0.6, 600000);
-    m_bott_map.AddPoint(6, 6e+06);
+    m_bott_map.AddPoint(0.14, 0);
+    m_bott_map.AddPoint(0.365, 452000);
 }
 
 double FEDA_Pac02Tire::GetNormalStiffnessForce(double depth) const {

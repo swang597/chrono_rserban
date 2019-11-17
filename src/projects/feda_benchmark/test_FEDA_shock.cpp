@@ -40,13 +40,6 @@ using namespace chrono::vehicle;
 using namespace chrono::vehicle::feda;
 
 // =============================================================================
-// Select Path Follower, uncomment the next line to get the pure PID driver
-#define USE_PID 1
-// to use the XT controller uncomment the next line
-//#define USE_XT
-// to use the SR controller uncomment the next line
-//#define USE_SR
-// =============================================================================
 // Problem parameters
 
 // Type of tire model (PAC02)
@@ -96,6 +89,8 @@ int main(int argc, char* argv[]) {
     feda_acc_curve.AddPoint(30, 494);
     feda_acc_curve.AddPoint(33, 694);
 
+    FEDA::DamperMode theDamperMode = FEDA::DamperMode::FSD;
+
     // ---------------------------------------
     // Create the vehicle, terrain, and driver
     // ---------------------------------------
@@ -123,9 +118,46 @@ int main(int argc, char* argv[]) {
             obsHeight = atoi(argv[1]);
             velmph = atof(argv[2]);
             break;
+        case 4:
+            switch (argv[1][0]) {
+                case 'f':
+                case 'F':
+                default:
+                    theDamperMode = FEDA::DamperMode::FSD;
+                    break;
+                case 'l':
+                case 'L':
+                    theDamperMode = FEDA::DamperMode::PASSIVE_LOW;
+                    // step_size = tire_step_size = 1.0e-3;
+                    break;
+                case 'h':
+                case 'H':
+                    theDamperMode = FEDA::DamperMode::PASSIVE_HIGH;
+                    // step_size = tire_step_size = 1.0e-3;
+                    break;
+            }
+            switch (atoi(argv[2])) {
+                default:
+                case 4:
+                    obsHeight = 4;
+                    break;
+                case 8:
+                    obsHeight = 8;
+                    break;
+                case 10:
+                    obsHeight = 10;
+                    break;
+                case 12:
+                    obsHeight = 12;
+                    break;
+            }
+            velmph = atof(argv[3]);
+            break;
         default:
-            GetLog() << "usage: test_FEDA_shock Speed_in_mph\n";
-            GetLog() << "usage: test_FEDA_shock Obstacle_height_in_inch Speed_in_mph\n";
+            GetLog() << "usage form 1: test_FEDA_shock Speed_in_mph\n";
+            GetLog() << "usage form 2: test_FEDA_shock Obstacle_height_in_inch Speed_in_mph\n";
+            GetLog() << "usage form 3: test_FEDA_shock DamperMode Obstacle_height_in_inch Speed_in_mph\n\tDamperMode = "
+                        "one of:  fsd, low or high\n";
             return 1;
     }
     target_speed = mph2ms * velmph;
@@ -142,6 +174,7 @@ int main(int argc, char* argv[]) {
     my_feda.SetTireStepSize(tire_step_size);
     my_feda.SetTirePressureLevel(1);
     my_feda.SetRideHeight_ObstacleCrossing();
+    my_feda.SetDamperMode(theDamperMode);
     my_feda.SetTireCollisionType(ChTire::CollisionType::FOUR_POINTS);
     my_feda.Initialize();
 
@@ -166,8 +199,18 @@ int main(int argc, char* argv[]) {
 
     std::wstring wTitle = L"FED Alpha Shock Performance: Obstcle ";
     wTitle.append(std::to_wstring(obsHeight) + L" in, V = " + std::to_wstring(int(velmph)) + L" mph");
+    switch (theDamperMode) {
+        case FEDA::DamperMode::FSD:
+            wTitle.append(L", FSD Dampers");
+            break;
+        case FEDA::DamperMode::PASSIVE_LOW:
+            wTitle.append(L", Passive Dampers with low damping");
+            break;
+        case FEDA::DamperMode::PASSIVE_HIGH:
+            wTitle.append(L", Passive Dampers with high damping");
+            break;
+    }
 
-#ifdef USE_PID
     // Create the driver system based on PID steering controller
     ChPathFollowerDriver driver(my_feda.GetVehicle(), path, "my_path", target_speed, path_is_closed);
     driver.GetSteeringController().SetLookAheadDistance(5);
@@ -176,28 +219,6 @@ int main(int argc, char* argv[]) {
     driver.Initialize();
 
     ChWheeledVehicleIrrApp app(&my_feda.GetVehicle(), wTitle.c_str(), irr::core::dimension2d<irr::u32>(800, 640));
-#endif
-#ifdef USE_XT
-    // Create the driver system based on XT steering controller
-    ChPathFollowerDriverXT driver(my_feda.GetVehicle(), path, "my_path", target_speed, path_is_closed,
-                                  my_feda.GetVehicle().GetMaxSteeringAngle());
-    driver.GetSteeringController().SetLookAheadDistance(5);
-    driver.GetSteeringController().SetGains(0.4, 1, 1, 1);
-    driver.GetSpeedController().SetGains(0.4, 0, 0);
-    driver.Initialize();
-
-    ChWheeledVehicleIrrApp app(&my_feda.GetVehicle(), wTitle.c_str(), irr::core::dimension2d<irr::u32>(800, 640));
-#endif
-#ifdef USE_SR
-    ChPathFollowerDriverSR driver(my_feda.GetVehicle(), path, "my_path", target_speed, path_is_closed,
-                                  my_feda.GetVehicle().GetMaxSteeringAngle(), 3.2);
-    driver.GetSteeringController().SetGains(0.1, 5);
-    driver.GetSteeringController().SetPreviewTime(0.5);
-    driver.GetSpeedController().SetGains(0.4, 0, 0);
-    driver.Initialize();
-
-    ChWheeledVehicleIrrApp app(&my_feda.GetVehicle(), wTitle.c_str(), irr::core::dimension2d<irr::u32>(800, 640));
-#endif
 
     // ---------------------------------------
     // Create the vehicle Irrlicht application

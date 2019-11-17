@@ -41,7 +41,7 @@ namespace feda {
 /// The control arms are modeled using rigid bodies.
 class CH_MODELS_API FEDA_DoubleWishboneFront : public ChDoubleWishbone {
   public:
-    FEDA_DoubleWishboneFront(const std::string& name, int rideHeightMode = 2);
+    FEDA_DoubleWishboneFront(const std::string& name, int rideHeightMode = 2, int damperMode = 1);
     ~FEDA_DoubleWishboneFront();
 
     virtual double getSpindleMass() const override { return m_spindleMass; }
@@ -116,6 +116,7 @@ class CH_MODELS_API FEDA_DoubleWishboneFront : public ChDoubleWishbone {
     static const double m_air_pressure[3];
 
     int m_ride_height_mode;
+    int m_damper_mode;
 };
 
 // -----------------------------------------------------------------------------
@@ -124,7 +125,7 @@ class CH_MODELS_API FEDA_DoubleWishboneFront : public ChDoubleWishbone {
 /// The control arms are modeled using rigid bodies.
 class CH_MODELS_API FEDA_DoubleWishboneRear : public ChDoubleWishbone {
   public:
-    FEDA_DoubleWishboneRear(const std::string& name, int rideHeightMode = 2);
+    FEDA_DoubleWishboneRear(const std::string& name, int rideHeightMode = 2, int damperMode = 2);
     ~FEDA_DoubleWishboneRear();
 
     virtual double getSpindleMass() const override { return m_spindleMass; }
@@ -199,6 +200,7 @@ class CH_MODELS_API FEDA_DoubleWishboneRear : public ChDoubleWishbone {
     static const double m_air_pressure[3];
 
     int m_ride_height_mode;
+    int m_damper_mode;
 };
 
 /// @} vehicle_models_feda
