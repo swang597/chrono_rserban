@@ -246,7 +246,7 @@ bool ChTire::DiscTerrainCollision4pt(
 }
 
 void ChTire::ConstructAreaDepthTable(double disc_radius, ChFunction_Recorder& areaDep) {
-    const size_t n_lookup = 30;
+    const size_t n_lookup = 90;
     double depMax = disc_radius;  // should be high enough to avoid extrapolation
     double depStep = depMax / double(n_lookup - 1);
     for (size_t i = 0; i < n_lookup; i++) {
@@ -274,7 +274,7 @@ bool ChTire::DiscTerrainCollisionEnvelope(
     ChVector<> normal = terrain.GetNormal(disc_center.x(), disc_center.y());
     ChVector<> longitudinal = Vcross(disc_normal, normal);
     longitudinal.Normalize();
-    const size_t n_con_pts = 31;
+    const size_t n_con_pts = 181;
     double x_step = 2.0 * disc_radius / double(n_con_pts - 1);
     // ChVectorDynamic<> q(n_con_pts);  // road surface height values along 'longitudinal'
     // ChVectorDynamic<> x(n_con_pts);  // x values along disc_center + x*longitudinal

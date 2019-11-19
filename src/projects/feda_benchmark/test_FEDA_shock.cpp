@@ -175,7 +175,7 @@ int main(int argc, char* argv[]) {
     my_feda.SetTirePressureLevel(1);
     my_feda.SetRideHeight_ObstacleCrossing();
     my_feda.SetDamperMode(theDamperMode);
-    my_feda.SetTireCollisionType(ChTire::CollisionType::FOUR_POINTS);
+    my_feda.SetTireCollisionType(ChTire::CollisionType::ENVELOPE);
     my_feda.Initialize();
 
     my_feda.SetChassisVisualizationType(VisualizationType::PRIMITIVES);

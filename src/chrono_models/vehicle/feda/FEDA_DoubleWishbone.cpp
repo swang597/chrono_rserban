@@ -66,7 +66,8 @@ const double FEDA_DoubleWishboneFront::m_springRestLength =
     0.60208;  // distance between top and arm mount points of the strut in design position
 const double FEDA_DoubleWishboneFront::m_springF0 = 0.125550934 * FEDA_DoubleWishboneFront::m_springCoefficient;
 const double FEDA_DoubleWishboneFront::m_bumpstop_clearance = 0.11;
-const double FEDA_DoubleWishboneFront::m_reboundstop_clearance = 0.11;
+const double FEDA_DoubleWishboneFront::m_reboundstop_clearance =
+    0.08;  // the rebound neads araound 4 cm to compensate the spring forces: 0.11-0.03 = 0.08
 const double FEDA_DoubleWishboneFront::m_air_pressure[] = {18.0 * psi2pascal, 41.5 * psi2pascal,
                                                            110.0 * psi2pascal};  // Proving Ground Config
 
@@ -99,7 +100,8 @@ const double FEDA_DoubleWishboneRear::m_springRestLength =
     0.60208;  // distance between top and arm mount points of the strut in design position
 const double FEDA_DoubleWishboneRear::m_springF0 = 0.125550934 * FEDA_DoubleWishboneRear::m_springCoefficient;
 const double FEDA_DoubleWishboneRear::m_bumpstop_clearance = 0.11;
-const double FEDA_DoubleWishboneRear::m_reboundstop_clearance = 0.11;
+const double FEDA_DoubleWishboneRear::m_reboundstop_clearance =
+    0.07;  // the rebound neads araound 4 cm to compensate the spring forces: 0.11-0.04 = 0.07
 const double FEDA_DoubleWishboneRear::m_air_pressure[] = {41.0 * psi2pascal, 72 * psi2pascal,
                                                           150.0 * psi2pascal};  // Proving Ground Config
 
@@ -168,6 +170,7 @@ class AirCoilSpringBistopForce : public ChLinkSpringCB::ForceFunctor {
 
         if (length > m_max_length) {
             defl_rebound = length - m_max_length;
+            // GetLog() << "Rebound Deflection: " << defl_rebound << " m\n";
         }
 
         force = m_airSpringF0 * pow(m_hf0, m_kappa) / pow(m_hf0 - defl_spring, m_kappa) + defl_spring * m_k +
@@ -324,7 +327,7 @@ class FEDA_ShockODE : public ChLinkSpringCB::ODE {
             force_lf = LF_DamperForce(vel_min);
         }
         double force1 = 0.0;
-        if (vel > 0.0) {
+        if (vel > 0.0) {  // vel is used by the Ricardo model, vel_min leads to a smoother signal
             force1 = force_hf + force_lf;
         } else {
             force1 = force_hf;
