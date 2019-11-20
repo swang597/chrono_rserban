@@ -252,10 +252,9 @@ class FEDA_ShockForce : public ChLinkTSDA::ForceFunctor {
 
 class FEDA_ShockODE : public ChLinkTSDA::ODE {
   public:
-    FEDA_ShockODE() : m_use_damper_tables(false) {
+    FEDA_ShockODE() : m_use_damper_tables(true) {
         // Setup damper tables for high freqnency signals
-        m_hf_damper_table.AddPoint(-5, -11936.925);
-        m_hf_damper_table.AddPoint(-3, -11368.5);
+        m_hf_damper_table.AddPoint(-5.0, -93494.0202);  // found by linear extrapolation
         m_hf_damper_table.AddPoint(-0.33, -10335);
         m_hf_damper_table.AddPoint(-0.22, -8376);
         m_hf_damper_table.AddPoint(-0.13, -5789);
@@ -267,12 +266,11 @@ class FEDA_ShockODE : public ChLinkTSDA::ODE {
         m_hf_damper_table.AddPoint(0.13, 2975);
         m_hf_damper_table.AddPoint(0.22, 4718);
         m_hf_damper_table.AddPoint(0.33, 7496);
-        m_hf_damper_table.AddPoint(3, 8245.6);
-        m_hf_damper_table.AddPoint(5, 8657.88);
+        m_hf_damper_table.AddPoint(5.0, 62719.72222);  // found by linear extrapolation
 
         // Setup damper tables for low freqnency signals
-        m_lf_damper_table.AddPoint(-5, -12183.06833);
-        m_lf_damper_table.AddPoint(-3, -11602.92222);
+        m_lf_damper_table.AddPoint(-5.0, -92405.19192);  // found by linear extrapolation
+        m_lf_damper_table.AddPoint(-1.0, -22292.06061);
         m_lf_damper_table.AddPoint(-0.33, -10548);
         m_lf_damper_table.AddPoint(-0.22, -8620);
         m_lf_damper_table.AddPoint(-0.13, -6669);
@@ -284,8 +282,7 @@ class FEDA_ShockODE : public ChLinkTSDA::ODE {
         m_lf_damper_table.AddPoint(0.13, 12628);
         m_lf_damper_table.AddPoint(0.22, 14045);
         m_lf_damper_table.AddPoint(0.33, 15444);
-        m_lf_damper_table.AddPoint(3, 16988.27778);
-        m_lf_damper_table.AddPoint(5, 17837.69167);
+        m_lf_damper_table.AddPoint(5.0, 74851.94949);  // found by linear extrapolation
     }
 
     virtual int GetNumStates() const override { return 2; }
@@ -340,6 +337,9 @@ class FEDA_ShockODE : public ChLinkTSDA::ODE {
     bool m_use_damper_tables;
     ChFunction_Recorder m_hf_damper_table;
     ChFunction_Recorder m_lf_damper_table;
+    // these functions shouldn't better not be used, only for testing
+    // there are to few data available to make a meaningful
+    // curve fit
     double HF_DamperForce(double vel) {
         const double p1 = 38097.1;
         const double p2 = 2.83566;

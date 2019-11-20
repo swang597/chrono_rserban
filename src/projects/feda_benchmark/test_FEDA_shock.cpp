@@ -278,7 +278,8 @@ int main(int argc, char* argv[]) {
 
     ChButterworth_Lowpass wesFilter(4, step_size, 30.0);
     ChFunction_Recorder seatFkt;
-    std::vector<double> t, azd, azdf;
+    ChFunction_Recorder shockVelFkt;
+    std::vector<double> t, azd, azdf, shvel_exp, shvel_com;
     while (app.GetDevice()->run()) {
         double time = my_feda.GetSystem()->GetChTime();
         double xpos = my_feda.GetVehicle().GetVehiclePos().x();
@@ -318,6 +319,14 @@ int main(int argc, char* argv[]) {
         my_feda.Advance(step_size);
         app.Advance(step_size);
 
+        double sv1 =
+            std::static_pointer_cast<ChDoubleWishbone>(my_feda.GetVehicle().GetSuspension(0))->GetShockVelocity(LEFT);
+        double sv2 =
+            std::static_pointer_cast<ChDoubleWishbone>(my_feda.GetVehicle().GetSuspension(0))->GetShockVelocity(RIGHT);
+        double sv3 =
+            std::static_pointer_cast<ChDoubleWishbone>(my_feda.GetVehicle().GetSuspension(1))->GetShockVelocity(LEFT);
+        double sv4 =
+            std::static_pointer_cast<ChDoubleWishbone>(my_feda.GetVehicle().GetSuspension(1))->GetShockVelocity(RIGHT);
         xpos = my_feda.GetVehicle().GetVehiclePos().x();
         if (xpos >= road_length / 2.0 - 1.0) {
             double speed = my_feda.GetVehicle().GetVehicleSpeed();
@@ -326,6 +335,8 @@ int main(int argc, char* argv[]) {
             azd.push_back(seat_acc.z() / 9.80665);
             azdf.push_back(wesFilter.Filter(seat_acc.z() / 9.80665));
             seatFkt.AddPoint(time, azdf.back());
+            shvel_exp.push_back(std::max(std::max(sv1, sv2), std::max(sv3, sv4)));
+            shvel_com.push_back(std::min(std::min(sv1, sv2), std::min(sv3, sv4)));
         }
 
         // Increment simulation frame number
@@ -346,7 +357,18 @@ int main(int argc, char* argv[]) {
         }
         GetLog() << "Shock Performance Result Obstcle: " << obsHeight << " in, Speed = " << velmph
                  << " mph,  Az maximum = " << azdfmax << " g\n";
-
+        double shvmax = 0.0;
+        double shvmin = 0.0;
+        for (int i = 0; i < shvel_exp.size(); i++) {
+            if (shvel_exp[i] > shvmax) {
+                shvmax = shvel_exp[i];
+            }
+            if (shvel_com[i] < shvmin) {
+                shvmin = shvel_com[i];
+            }
+        }
+        GetLog() << "Max. Damper Expansion Velocity = " << shvmax << " m/s\n";
+        GetLog() << "Min. Damper Compression Velocity = " << shvmin << " m/s\n";
 #ifdef CHRONO_POSTPROCESS
         std::string title =
             "Fed alpha on halfround " + std::to_string(obsHeight) + " in, V = " + std::to_string(velmph) + " mph";
@@ -358,6 +380,5 @@ int main(int argc, char* argv[]) {
         gplot_seat.Plot(seatFkt, "", " with lines lt -1 lc rgb'#00AAEE' ");
 #endif
     }
-
     return 0;
 }
