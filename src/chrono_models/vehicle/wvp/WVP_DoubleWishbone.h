@@ -63,8 +63,8 @@ class CH_MODELS_API WVP_DoubleWishboneFront : public ChDoubleWishbone {
     virtual double getAxleInertia() const override { return m_axleInertia; }
 
     virtual double getSpringRestLength() const override { return m_springRestLength; }
-    virtual ChLinkSpringCB::ForceFunctor* getSpringForceFunctor() const override { return m_springForceCB; }
-    virtual ChLinkSpringCB::ForceFunctor* getShockForceFunctor() const override { return m_shockForceCB; }
+    virtual ChLinkTSDA::ForceFunctor* getSpringForceFunctor() const override { return m_springForceCB; }
+    virtual ChLinkTSDA::ForceFunctor* getShockForceFunctor() const override { return m_shockForceCB; }
 
     virtual void Initialize(std::shared_ptr<ChBodyAuxRef> chassis,  ///< [in] handle to the chassis body
                             const ChVector<>& location,             ///< [in] location relative to the chassis frame
@@ -77,8 +77,8 @@ class CH_MODELS_API WVP_DoubleWishboneFront : public ChDoubleWishbone {
   private:
     virtual const ChVector<> getLocation(PointId which) override;
 
-    ChLinkSpringCB::ForceFunctor* m_springForceCB;
-    ChLinkSpringCB::ForceFunctor* m_shockForceCB;
+    ChLinkTSDA::ForceFunctor* m_springForceCB;
+    ChLinkTSDA::ForceFunctor* m_shockForceCB;
 
     static const double m_spindleMass;
     static const double m_UCAMass;
@@ -136,8 +136,8 @@ class CH_MODELS_API WVP_DoubleWishboneRear : public ChDoubleWishbone {
     virtual double getAxleInertia() const override { return m_axleInertia; }
 
     virtual double getSpringRestLength() const override { return m_springRestLength; }
-    virtual ChLinkSpringCB::ForceFunctor* getSpringForceFunctor() const override { return m_springForceCB; }
-    virtual ChLinkSpringCB::ForceFunctor* getShockForceFunctor() const override { return m_shockForceCB; }
+    virtual ChLinkTSDA::ForceFunctor* getSpringForceFunctor() const override { return m_springForceCB; }
+    virtual ChLinkTSDA::ForceFunctor* getShockForceFunctor() const override { return m_shockForceCB; }
 
     virtual void Initialize(std::shared_ptr<ChBodyAuxRef> chassis,  ///< [in] handle to the chassis body
                             const ChVector<>& location,             ///< [in] location relative to the chassis frame
@@ -150,8 +150,8 @@ class CH_MODELS_API WVP_DoubleWishboneRear : public ChDoubleWishbone {
   private:
     virtual const ChVector<> getLocation(PointId which) override;
 
-    ChLinkSpringCB::ForceFunctor* m_springForceCB;
-    ChLinkSpringCB::ForceFunctor* m_shockForceCB;
+    ChLinkTSDA::ForceFunctor* m_springForceCB;
+    ChLinkTSDA::ForceFunctor* m_shockForceCB;
 
     static const double m_spindleMass;
     static const double m_UCAMass;
@@ -182,15 +182,11 @@ class CH_MODELS_API WVP_DoubleWishboneRear : public ChDoubleWishbone {
 
 // -----------------------------------------------------------------------------
 
-class CH_MODELS_API WVP_SpringForce : public ChLinkSpringCB::ForceFunctor {
+class CH_MODELS_API WVP_SpringForce : public ChLinkTSDA::ForceFunctor {
   public:
     WVP_SpringForce(int axle_index, double rest_length, double preload);
 
-    virtual double operator()(double time,
-                              double rest_length,
-                              double length,
-                              double vel,
-                              ChLinkSpringCB* link) override;
+    virtual double operator()(double time, double rest_length, double length, double vel, ChLinkTSDA* link) override;
 
     double evaluate(double displ);
 
@@ -203,15 +199,11 @@ class CH_MODELS_API WVP_SpringForce : public ChLinkSpringCB::ForceFunctor {
 
 // -----------------------------------------------------------------------------
 
-class CH_MODELS_API WVP_ShockForce : public ChLinkSpringCB::ForceFunctor {
+class CH_MODELS_API WVP_ShockForce : public ChLinkTSDA::ForceFunctor {
   public:
     WVP_ShockForce(int axle_index, double rest_length);
 
-    virtual double operator()(double time,
-                              double rest_length,
-                              double length,
-                              double vel,
-                              ChLinkSpringCB* link) override;
+    virtual double operator()(double time, double rest_length, double length, double vel, ChLinkTSDA* link) override;
 
     double evaluate(double displ, double vel, double displ_other, double vel_other);
 
@@ -219,8 +211,8 @@ class CH_MODELS_API WVP_ShockForce : public ChLinkSpringCB::ForceFunctor {
     int m_axle_index;
     double m_rest_length;
 
-    std::shared_ptr<ChLinkSpringCB> m_shock_left;
-    std::shared_ptr<ChLinkSpringCB> m_shock_right;
+    std::shared_ptr<ChLinkTSDA> m_shock_left;
+    std::shared_ptr<ChLinkTSDA> m_shock_right;
 
     ChFunction_Recorder m_roll_map;
     std::map<double, std::shared_ptr<ChFunction_Recorder>> m_para_damp_map;

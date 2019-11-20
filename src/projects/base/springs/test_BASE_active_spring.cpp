@@ -56,8 +56,15 @@ enum class IntegratorType {
 IntegratorType integrator_type = IntegratorType::HHT;
 
 bool use_jacobians = true;
+int num_nonlin_iterations = 20;
+double abs_tol = 1e-5;
+bool step_control = true;
+
+// -------------------------------------------------
 
 double step_size = 1e-4;
+bool verbose_integrator = false;
+bool verbose_solver = false;
 
 // =============================================================================
 
@@ -69,13 +76,13 @@ double damping_coef = 0.5 * critical_damping;
 
 // =============================================================================
 
-// Functor class implementing the force for a ChLinkSpringCB.
-class MySpringForce : public ChLinkSpringCB::ForceFunctor {
-    virtual double operator()(double time,          // current time
-                              double rest_length,   // undeformed length
-                              double length,        // current length
-                              double vel,           // current velocity (positive when extending)
-                              ChLinkSpringCB* link  // back-pointer to associated link
+// Functor class implementing the force for a ChLinkTSDA.
+class MySpringForce : public ChLinkTSDA::ForceFunctor {
+    virtual double operator()(double time,         // current time
+                              double rest_length,  // undeformed length
+                              double length,       // current length
+                              double vel,          // current velocity (positive when extending)
+                              ChLinkTSDA* link     // back-pointer to associated link
                               ) override {
         // Access current states.
         ////ChVectorDynamic<> states = link->GetStates();
@@ -86,11 +93,11 @@ class MySpringForce : public ChLinkSpringCB::ForceFunctor {
     }
 };
 
-// Functor class implementing the ODE right-hand side for a ChLinkSpringCB.
-class MySpringRHS : public ChLinkSpringCB::ODE {
+// Functor class implementing the ODE right-hand side for a ChLinkTSDA.
+class MySpringRHS : public ChLinkTSDA::ODE {
     virtual int GetNumStates() const override { return 2; }
     virtual void SetInitialConditions(ChVectorDynamic<>& states,  ///< output vector containig initial conditions
-                                      ChLinkSpringCB* link        ///< back-pointer to associated link
+                                      ChLinkTSDA* link            ///< back-pointer to associated link
                                       ) override {
         states(0) = 1;
         states(1) = 0;
@@ -98,7 +105,7 @@ class MySpringRHS : public ChLinkSpringCB::ODE {
     virtual void CalculateRHS(double time,
                               const ChVectorDynamic<>& states,  ///< current states
                               ChVectorDynamic<>& rhs,           ///< output vector containing the ODE right-hand side
-                              ChLinkSpringCB* link              ///< back-pointer to associated link
+                              ChLinkTSDA* link                  ///< back-pointer to associated link
                               ) override {
         rhs(0) = states(0);
         rhs(1) = std::cos(time);
@@ -124,7 +131,7 @@ int main(int argc, char* argv[]) {
     sph->Pos = ChVector<>(0, 0, 0);
     ground->AddAsset(sph);
 
-    // Create a body suspended through a ChLinkSpring
+    // Create a body suspended through a ChLinkTSDA
     auto body = chrono_types::make_shared<ChBody>();
     system.AddBody(body);
     body->SetPos(ChVector<>(0, -3, 0));
@@ -142,9 +149,9 @@ int main(int argc, char* argv[]) {
     MySpringForce force;
     MySpringRHS rhs;
 
-    auto spring = chrono_types::make_shared<ChLinkSpringCB>();
+    auto spring = chrono_types::make_shared<ChLinkTSDA>();
     spring->Initialize(body, ground, true, ChVector<>(0, 0, 0), ChVector<>(0, 0, 0), false, rest_length);
-    ////spring->IsStiff(use_jacobians);
+    spring->IsStiff(use_jacobians);
     spring->RegisterForceFunctor(&force);
     spring->RegisterODE(&rhs);
     system.AddLink(spring);
@@ -178,15 +185,19 @@ int main(int argc, char* argv[]) {
             system.SetTimestepperType(ChTimestepper::Type::HHT);
             auto integrator = std::static_pointer_cast<ChTimestepperHHT>(system.GetTimestepper());
             integrator->SetAlpha(-0.2);
-            integrator->SetMaxiters(20);
-            integrator->SetAbsTolerances(1e-6);
+            integrator->SetMaxiters(num_nonlin_iterations);
+            integrator->SetAbsTolerances(abs_tol);
+            integrator->SetStepControl(step_control);
+            integrator->SetVerbose(verbose_integrator);
             break;
         }
         case IntegratorType::EI: {
             btitle += "EI - ";
             system.SetTimestepperType(ChTimestepper::Type::EULER_IMPLICIT);
             auto integrator = std::static_pointer_cast<ChTimestepperEulerImplicit>(system.GetTimestepper());
-            integrator->SetMaxiters(1);
+            integrator->SetMaxiters(num_nonlin_iterations);
+            integrator->SetAbsTolerances(1e-6);
+            integrator->SetVerbose(verbose_integrator);
             break;
         }
         case IntegratorType::EIL: {
@@ -204,16 +215,17 @@ int main(int argc, char* argv[]) {
             system.SetMaxItersSolverSpeed(200);
             system.SetMaxItersSolverStab(200);
             system.SetTolForce(1e-14);
-            auto msolver = std::static_pointer_cast<ChSolverMINRES>(system.GetSolver());
-            msolver->SetDiagonalPreconditioning(true);
-            msolver->SetVerbose(false);
+            auto solver = std::static_pointer_cast<ChSolverMINRES>(system.GetSolver());
+            solver->SetDiagonalPreconditioning(true);
+            solver->SetVerbose(verbose_solver);
             break;
         }
         case SolverType::PARDISO: {
             btitle += "PARDISO - ";
-            auto mkl_solver = chrono_types::make_shared<ChSolverMKL>();
-            mkl_solver->LockSparsityPattern(false);
-            system.SetSolver(mkl_solver);
+            auto solver = chrono_types::make_shared<ChSolverMKL>();
+            solver->LockSparsityPattern(false);
+            solver->SetVerbose(verbose_solver);
+            system.SetSolver(solver);
             break;
         }
     }

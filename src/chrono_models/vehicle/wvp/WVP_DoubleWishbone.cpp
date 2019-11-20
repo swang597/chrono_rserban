@@ -136,7 +136,7 @@ WVP_SpringForce::WVP_SpringForce(int axle, double rest_length, double preload)
     m_map.AddPoint(196.0e-3, 70.22e3);
 }
 
-double WVP_SpringForce::operator()(double time, double rest_length, double length, double vel, ChLinkSpringCB* link) {
+double WVP_SpringForce::operator()(double time, double rest_length, double length, double vel, ChLinkTSDA* link) {
     // grab the value from the spring map
     return m_map.Get_y(m_rest_length - length) + m_preload;
 }
@@ -499,22 +499,22 @@ WVP_ShockForce::WVP_ShockForce(int axle_index, double rest_length)
 	m_roll_map.AddPoint(227.2e-3, 19.5e3 + 11.4e3);
 }
 
-double WVP_ShockForce::operator()(double time, double rest_length, double length, double vel, ChLinkSpringCB* link) {
+double WVP_ShockForce::operator()(double time, double rest_length, double length, double vel, ChLinkTSDA* link) {
     double length_mine;
     double length_other;
     double vel_mine;
     double vel_other;
 
     if (link == m_shock_left.get()) {
-        length_mine = m_shock_left->GetSpringLength();
-        vel_mine = m_shock_left->GetSpringVelocity();
-        length_other = m_shock_right->GetSpringLength();
-        vel_other = m_shock_right->GetSpringVelocity();
+        length_mine = m_shock_left->GetLength();
+        vel_mine = m_shock_left->GetVelocity();
+        length_other = m_shock_right->GetLength();
+        vel_other = m_shock_right->GetVelocity();
     } else {
-        length_mine = m_shock_right->GetSpringLength();
-        vel_mine = m_shock_right->GetSpringVelocity();
-        length_other = m_shock_left->GetSpringLength();
-        vel_other = m_shock_left->GetSpringVelocity();
+        length_mine = m_shock_right->GetLength();
+        vel_mine = m_shock_right->GetVelocity();
+        length_other = m_shock_left->GetLength();
+        vel_other = m_shock_left->GetVelocity();
     }
 
     double displ_mine = length_mine - m_rest_length;
@@ -643,8 +643,8 @@ void WVP_DoubleWishboneFront::Initialize(std::shared_ptr<ChBodyAuxRef> chassis,
 
     // Set the left and right shock elements in the shock force functor class.
     // Note that this can only be done here, after these elements were created.
-    GetShock(VehicleSide::LEFT)->SetSpringRestLength(m_springRestLength);
-    GetShock(VehicleSide::RIGHT)->SetSpringRestLength(m_springRestLength);
+    GetShock(VehicleSide::LEFT)->SetRestLength(m_springRestLength);
+    GetShock(VehicleSide::RIGHT)->SetRestLength(m_springRestLength);
     static_cast<WVP_ShockForce*>(m_shockForceCB)->m_shock_left = GetShock(VehicleSide::LEFT);
     static_cast<WVP_ShockForce*>(m_shockForceCB)->m_shock_right = GetShock(VehicleSide::RIGHT);
 }
@@ -660,8 +660,8 @@ void WVP_DoubleWishboneRear::Initialize(std::shared_ptr<ChBodyAuxRef> chassis,
 
     // Set the left and right shock elements in the shock force functor class.
     // Note that this can only be done here, after these elements were created.
-    GetShock(VehicleSide::LEFT)->SetSpringRestLength(m_springRestLength);
-    GetShock(VehicleSide::RIGHT)->SetSpringRestLength(m_springRestLength);
+    GetShock(VehicleSide::LEFT)->SetRestLength(m_springRestLength);
+    GetShock(VehicleSide::RIGHT)->SetRestLength(m_springRestLength);
     static_cast<WVP_ShockForce*>(m_shockForceCB)->m_shock_left = GetShock(VehicleSide::LEFT);
     static_cast<WVP_ShockForce*>(m_shockForceCB)->m_shock_right = GetShock(VehicleSide::RIGHT);
 }

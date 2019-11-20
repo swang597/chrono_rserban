@@ -108,7 +108,7 @@ const double FEDA_DoubleWishboneRear::m_air_pressure[] = {41.0 * psi2pascal, 72 
 // --------------------------------------------------------------------------------------------------------------------------------
 // FEDA spring functor class - implements a linear spring in combination with an airspring + bistops
 // --------------------------------------------------------------------------------------------------------------------------------
-class AirCoilSpringBistopForce : public ChLinkSpringCB::ForceFunctor {
+class AirCoilSpringBistopForce : public ChLinkTSDA::ForceFunctor {
   public:
     /// Use default bump stop and rebound stop maps
     AirCoilSpringBistopForce(double k, double min_length, double max_length, double coilSpringF0, double p0)
@@ -153,11 +153,7 @@ class AirCoilSpringBistopForce : public ChLinkSpringCB::ForceFunctor {
         m_rebound.AddPoint(60.0e-3, 125000.0);
     }
 
-    virtual double operator()(double time,
-                              double rest_length,
-                              double length,
-                              double vel,
-                              ChLinkSpringCB* link) override {
+    virtual double operator()(double time, double rest_length, double length, double vel, ChLinkTSDA* link) override {
         double force = 0;
 
         double defl_spring = rest_length - length;
@@ -201,13 +197,13 @@ class AirCoilSpringBistopForce : public ChLinkSpringCB::ForceFunctor {
 // FEDA shock functor class - implements a nonlinear damper
 // -----------------------------------------------------------------------------
 
-class MyShockForce : public ChLinkSpringCB::ForceFunctor {
+class MyShockForce : public ChLinkTSDA::ForceFunctor {
   public:
-    virtual double operator()(double time,          // current time
-                              double rest_length,   // undeformed length
-                              double length,        // current length
-                              double vel,           // current velocity (positive when extending)
-                              ChLinkSpringCB* link  // back-pointer to associated link
+    virtual double operator()(double time,         // current time
+                              double rest_length,  // undeformed length
+                              double length,       // current length
+                              double vel,          // current velocity (positive when extending)
+                              ChLinkTSDA* link     // back-pointer to associated link
                               ) override {
         // Access states
         auto states = link->GetStates();
@@ -218,32 +214,32 @@ class MyShockForce : public ChLinkSpringCB::ForceFunctor {
     }
 };
 
-class MyShockODE : public ChLinkSpringCB::ODE {
+class MyShockODE : public ChLinkTSDA::ODE {
   public:
     virtual int GetNumStates() const override { return 2; }
-    virtual void SetInitialConditions(ChVectorDynamic<>& states,  ///< output vector containig initial conditions
-                                      ChLinkSpringCB* link        ///< back-pointer to associated link
+    virtual void SetInitialConditions(ChVectorDynamic<>& states,  // output vector containig initial conditions
+                                      ChLinkTSDA* link            // back-pointer to associated link
                                       ) override {
         states(0) = 1;
         states(1) = 0;
     }
     virtual void CalculateRHS(double time,
-                              const ChVectorDynamic<>& states,  ///< current states
-                              ChVectorDynamic<>& rhs,           ///< output vector containing the ODE right-hand side
-                              ChLinkSpringCB* link              ///< back-pointer to associated link
+                              const ChVectorDynamic<>& states,  // current states
+                              ChVectorDynamic<>& rhs,           // output vector containing the ODE right-hand side
+                              ChLinkTSDA* link                  // back-pointer to associated link
                               ) override {
         rhs(0) = states(0);
         rhs(1) = std::cos(time);
     }
 };
 
-class FEDA_ShockForce : public ChLinkSpringCB::ForceFunctor {
+class FEDA_ShockForce : public ChLinkTSDA::ForceFunctor {
   public:
-    virtual double operator()(double time,          // current time
-                              double rest_length,   // undeformed length
-                              double length,        // current length
-                              double vel,           // current velocity (positive when extending)
-                              ChLinkSpringCB* link  // back-pointer to associated link
+    virtual double operator()(double time,         // current time
+                              double rest_length,  // undeformed length
+                              double length,       // current length
+                              double vel,          // current velocity (positive when extending)
+                              ChLinkTSDA* link     // back-pointer to associated link
                               ) override {
         // Access states
         auto& states = link->GetStates();
@@ -254,7 +250,7 @@ class FEDA_ShockForce : public ChLinkSpringCB::ForceFunctor {
     }
 };
 
-class FEDA_ShockODE : public ChLinkSpringCB::ODE {
+class FEDA_ShockODE : public ChLinkTSDA::ODE {
   public:
     FEDA_ShockODE() : m_use_damper_tables(false) {
         // Setup damper tables for high freqnency signals
@@ -293,8 +289,8 @@ class FEDA_ShockODE : public ChLinkSpringCB::ODE {
     }
 
     virtual int GetNumStates() const override { return 2; }
-    virtual void SetInitialConditions(ChVectorDynamic<>& states,  ///< output vector containig initial conditions
-                                      ChLinkSpringCB* link        ///< back-pointer to associated link
+    virtual void SetInitialConditions(ChVectorDynamic<>& states,  // output vector containig initial conditions
+                                      ChLinkTSDA* link            // back-pointer to associated link
                                       ) override {
         // we start with zero velocity and zero force
         states(0) = 0;
@@ -302,9 +298,9 @@ class FEDA_ShockODE : public ChLinkSpringCB::ODE {
     }
 
     virtual void CalculateRHS(double time,
-                              const ChVectorDynamic<>& states,  ///< current states
-                              ChVectorDynamic<>& rhs,           ///< output vector containing the ODE right-hand side
-                              ChLinkSpringCB* link              ///< back-pointer to associated link
+                              const ChVectorDynamic<>& states,  // current states
+                              ChVectorDynamic<>& rhs,           // output vector containing the ODE right-hand side
+                              ChLinkTSDA* link                  // back-pointer to associated link
                               ) override {
         // ODE1
         // y_dot0 = (u0 - y0)/T0;
@@ -312,7 +308,7 @@ class FEDA_ShockODE : public ChLinkSpringCB::ODE {
         // y0 = delayed damper velocity v_del = stage(0) = output
         const double T0 = 0.04;
         const double T1 = 1.0e-3;
-        double vel = link->GetDist_dt();
+        double vel = link->GetVelocity();
         rhs(0) = (vel - states(0)) / T0;
         double vel_delayed = states(0);
         double vel_min = std::min(vel, vel_delayed);

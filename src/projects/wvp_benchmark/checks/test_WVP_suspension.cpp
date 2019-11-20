@@ -48,7 +48,7 @@ void CheckSuspension(WVP_Vehicle& vehicle, int axle, utils::CSV_writer& csv) {
     // Suspension subsystem
     auto susp = std::static_pointer_cast<WVP_DoubleWishboneFront>(vehicle.GetSuspension(axle));
 
-    // Force elements (of type ChLinkSpringCB)
+    // Force elements (of type ChLinkTSDA)
     auto spring_L = susp->GetSpring(VehicleSide::LEFT);
     auto spring_R = susp->GetSpring(VehicleSide::RIGHT);
     auto shock_L = susp->GetShock(VehicleSide::LEFT);

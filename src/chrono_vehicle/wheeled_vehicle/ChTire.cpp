@@ -302,7 +302,7 @@ bool ChTire::DiscTerrainCollisionEnvelope(
     if (A == 0) {
         return false;
     }
-
+    
     // Xc = negative means area centroid is in front of the disc_center
     ChVector<> pXc = disc_center;
 

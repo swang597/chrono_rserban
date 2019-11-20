@@ -60,7 +60,7 @@
 #include "chrono/physics/ChBodyAuxRef.h"
 #include "chrono/physics/ChMarker.h"
 #include "chrono/physics/ChLink.h"
-#include "chrono/physics/ChLinkSpringCB.h"
+#include "chrono/physics/ChLinkTSDA.h"
 #include "chrono/physics/ChLinkRotSpringCB.h"
 #include "chrono/physics/ChPhysicsItem.h"
 
@@ -177,7 +177,7 @@ Before adding a shared_ptr, mark as shared ptr all its inheritance tree in the m
 %import(module = "pychrono.core")  "ChBodyAuxRef.i"
 %import(module = "pychrono.core")  "ChLinkBase.i"
 %import(module = "pychrono.core")  "ChLinkLock.i"
-%import(module = "pychrono.core")  "ChLinkSpringCB.i"
+%import(module = "pychrono.core")  "ChLinkTSDA.i"
 %import(module = "pychrono.core") "../chrono/motion_functions/ChFunction_Base.h"
 %import(module = "pychrono.core")  "ChMaterialSurface.i"
 %import(module = "pychrono.core") "../chrono/fea/ChContinuumMaterial.h"

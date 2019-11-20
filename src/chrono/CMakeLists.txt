@@ -217,6 +217,7 @@ set(ChronoEngine_physics_links_SOURCES
     physics/ChLinkPulley.cpp
     physics/ChLinkLinActuator.cpp
     physics/ChLinkScrew.cpp
+    physics/ChLinkTSDA.cpp
     physics/ChLinkSpring.cpp
     physics/ChLinkSpringCB.cpp
     physics/ChLinkRotSpringCB.cpp
@@ -259,6 +260,7 @@ set(ChronoEngine_physics_links_HEADERS
     physics/ChLinkPulley.h
     physics/ChLinksAll.h
     physics/ChLinkScrew.h
+    physics/ChLinkTSDA.h
     physics/ChLinkSpring.h
     physics/ChLinkSpringCB.h
     physics/ChLinkRotSpringCB.h
@@ -1250,6 +1252,7 @@ endif()
 set_target_properties(ChronoEngine PROPERTIES LINK_FLAGS "${CH_LINKERFLAG_SHARED}")
 
 target_compile_definitions(ChronoEngine PRIVATE "CH_API_COMPILE")
+target_compile_definitions(ChronoEngine PRIVATE "CH_IGNORE_DEPRECATED")
 
 if (USE_BULLET_DOUBLE)
     target_compile_definitions(ChronoEngine PRIVATE "BT_USE_DOUBLE_PRECISION")

@@ -40,6 +40,25 @@ using namespace irr;
 
 // =============================================================================
 
+//// TODO
+////   (1) Check HHT when setting abs_tol too tight (e.g., 1e-5) - Solution explodes!
+////       Works fine with looser tolerance (e.g., 1e-4).  
+////       Check number of iterations in each case. Check ewt vectors.
+////
+////   (2) When using tables, check discontinuity between HF <-> HF+LF
+////       Unlike the NO tables case, here we use vel_min, which introduces a jump. 
+////       This results in solution oscillations with implicit integrators (HT and EI)
+////       [SOLVED] by fixing ODE rhs so that there is no discontinuity
+////
+////   (3) When using step actuation, HHT leads to some (small) spikes in velocity.
+////       I would have expected they would smoothen the sharp fronts...
+////       Euler implicit behaves better?
+////       
+////   (4) HHT step size control out of whack - ensure it falls *precisely* on what
+////       the user requests
+
+// --------------------------------------------------
+
 enum class SolverType {
     MINRES,  // MINRES iterative solver
     PARDISO  // Pardiso sparse direct solver
@@ -51,21 +70,33 @@ enum class IntegratorType {
     EI,   // Euler implicit
     EIL   // euler implicit linearized
 };
-IntegratorType integrator_type = IntegratorType::EIL;
+IntegratorType integrator_type = IntegratorType::HHT;
 
-bool use_jacobians = false;
+bool use_jacobians = true;
+int num_nonlin_iterations = 20;
+double abs_tol = 1e-3;
+bool step_control = true;
 
-double step_size = 1e-4;
+// -------------------------------------------------
+
+bool smooth_actuation = true;
+bool use_tables = true;
+
+// -------------------------------------------------
+
+double step_size = 1e-3;
+bool verbose_integrator = false;
+bool verbose_solver = false;
 
 // =============================================================================
 
-class ShockForce : public ChLinkSpringCB::ForceFunctor {
+class ShockForce : public ChLinkTSDA::ForceFunctor {
   public:
-    virtual double operator()(double time,          // current time
-                              double rest_length,   // undeformed length
-                              double length,        // current length
-                              double vel,           // current velocity (positive when extending)
-                              ChLinkSpringCB* link  // back-pointer to associated link
+    virtual double operator()(double time,         // current time
+                              double rest_length,  // undeformed length
+                              double length,       // current length
+                              double vel,          // current velocity (positive when extending)
+                              ChLinkTSDA* link     // back-pointer to associated link
                               ) override {
         // Damper force is the value oif the 2nd state.
         // Flip the sign to make the force acting against velocity
@@ -73,9 +104,9 @@ class ShockForce : public ChLinkSpringCB::ForceFunctor {
     }
 };
 
-class ShockODE : public ChLinkSpringCB::ODE {
+class ShockODE : public ChLinkTSDA::ODE {
   public:
-    ShockODE() {
+    ShockODE(bool use_tables) : m_use_damper_tables(use_tables) {
         // Setup damper tables for high frequency signals
         m_hf_damper_table.AddPoint(-5, -11936.925);
         m_hf_damper_table.AddPoint(-3, -11368.5);
@@ -113,7 +144,7 @@ class ShockODE : public ChLinkSpringCB::ODE {
 
     virtual int GetNumStates() const override { return 2; }
     virtual void SetInitialConditions(ChVectorDynamic<>& states,  // output vector containig initial conditions
-                                      ChLinkSpringCB* link        // back-pointer to associated link
+                                      ChLinkTSDA* link            // back-pointer to associated link
                                       ) override {
         // we start with zero velocity and zero force
         states(0) = 0;
@@ -123,7 +154,7 @@ class ShockODE : public ChLinkSpringCB::ODE {
     virtual void CalculateRHS(double time,                      // current time
                               const ChVectorDynamic<>& states,  // current states
                               ChVectorDynamic<>& rhs,           // output vector containing the ODE right-hand side
-                              ChLinkSpringCB* link              // back-pointer to associated link
+                              ChLinkTSDA* link                  // back-pointer to associated link
                               ) override {
         // ODE1
         // y_dot0 = (u0 - y0)/T0;
@@ -131,18 +162,27 @@ class ShockODE : public ChLinkSpringCB::ODE {
         // y0 = delayed damper velocity v_del = stage(0) = output
         const double T0 = 0.04;
         const double T1 = 1.02e-3;
-        double vel = link->GetDist_dt();
+        double vel = link->GetVelocity();
         rhs(0) = (vel - states(0)) / T0;
         double vel_delayed = states(0);
         double vel_min = std::min(vel, vel_delayed);
-
-        double force_hf = m_hf_damper_table.Get_y(vel);
-        double force_lf = m_lf_damper_table.Get_y(vel_min);
+        double force_hf, force_lf;
+        if (m_use_damper_tables) {
+            // use lookup tables
+            force_hf = m_hf_damper_table.Get_y(vel);
+            force_lf = m_lf_damper_table.Get_y(vel_min);
+        } else {
+            // use continuous funktions (derived from the tables)
+            force_hf = HF_DamperForce(vel);
+            force_lf = LF_DamperForce(vel_min);
+        }
         double force1 = 0.0;
-        if (vel > 0.0) {
+        if (vel_min > 0.0) {
             force1 = force_hf + force_lf;
+            //std::cout << time << "  " << vel << "  " << force1 << "   HF + LF" << std::endl;
         } else {
             force1 = force_hf;
+            //std::cout << time << "  " << vel << "  " << force1 << "   HF" << std::endl;
         }
 
         // ODE2
@@ -156,7 +196,7 @@ class ShockODE : public ChLinkSpringCB::ODE {
                               const ChVectorDynamic<>& states,  // current ODE states
                               const ChVectorDynamic<>& rhs,     // current ODE right-hand side vector
                               ChMatrixDynamic<>& jac,           // output Jacobian matrix
-                              ChLinkSpringCB* link              // back-pointer to associated link
+                              ChLinkTSDA* link                  // back-pointer to associated link
     ) {
         const double T0 = 0.04;
         const double T1 = 1.02e-3;
@@ -170,15 +210,37 @@ class ShockODE : public ChLinkSpringCB::ODE {
     }
 
   private:
+    double HF_DamperForce(double vel) {
+        const double p1 = 38097.1;
+        const double p2 = 2.83566;
+        const double p4 = 2.45786;
+        if (vel >= 0.0) {
+            return p1 * vel / (1.0 + p2 * vel);
+        } else {
+            return p1 * vel / (1.0 - p4 * vel);
+        }
+    }
+    double LF_DamperForce(double vel) {
+        const double q1 = 160650;
+        const double q2 = 7.46883;
+        const double q4 = 11.579;
+        if (vel >= 0.0) {
+            return q1 * vel / (1.0 + q2 * vel);
+        } else {
+            return q1 * vel / (1.0 - q4 * vel);
+        }
+    }
+
     ChFunction_Recorder m_hf_damper_table;
     ChFunction_Recorder m_lf_damper_table;
+    bool m_use_damper_tables;
 };
 
 // =============================================================================
 
 class Actuation : public ChFunction {
   public:
-    Actuation() : m_period(0.75), m_width(0.01), m_start(0.5) {}
+    Actuation(bool smooth) : m_smooth(smooth), m_period(0.5), m_width(0.05), m_start(0.1) {}
     virtual Actuation* Clone() const override { return new Actuation(*this); }
 
     virtual void Update(double x) override {
@@ -188,12 +250,18 @@ class Actuation : public ChFunction {
     }
 
     virtual double Get_y(double x) const override {
-        if (x > m_start && x < m_start + m_width)
-            return 2;
+        if (x > m_start && x < m_start + m_width) {
+            if (m_smooth)
+                return 1 + std::cos(2 * CH_C_PI * ((x - m_start) / m_width - 0.5));
+            else
+                return 2;
+        }
+
         return 0;
     }
 
   private:
+    bool m_smooth;
     double m_period;
     double m_width;
     double m_start;
@@ -218,7 +286,7 @@ int main(int argc, char* argv[]) {
     sph->Pos = ChVector<>(0, 0, 0);
     ground->AddAsset(sph);
 
-    // Create a body suspended through a ChLinkSpringCB
+    // Create a body suspended through a ChLinkTSDA
     auto body = chrono_types::make_shared<ChBody>();
     system.AddBody(body);
     body->SetPos(ChVector<>(0, -3, 0));
@@ -234,7 +302,7 @@ int main(int argc, char* argv[]) {
 
     // Create an actuator to control body speed (along Y direction)
     auto x2y = Q_from_AngZ(-CH_C_PI_2);
-    auto speed_fun = chrono_types::make_shared<Actuation>();
+    auto speed_fun = chrono_types::make_shared<Actuation>(smooth_actuation);
     auto motor = chrono_types::make_shared<ChLinkMotorLinearSpeed>();
     system.AddLink(motor);
     motor->Initialize(ground, body, ChFrame<>(body->GetPos(), x2y));
@@ -242,11 +310,11 @@ int main(int argc, char* argv[]) {
 
     // Create the shock between body and ground. The end points are specified in the body relative frames.
     ShockForce force;
-    ShockODE rhs;
+    ShockODE rhs(use_tables);
 
-    auto spring = chrono_types::make_shared<ChLinkSpringCB>();
+    auto spring = chrono_types::make_shared<ChLinkTSDA>();
     spring->Initialize(body, ground, true, ChVector<>(0, 0, 0), ChVector<>(0, 0, 0));
-    ////spring->IsStiff(use_jacobians);
+    spring->IsStiff(use_jacobians);
     spring->RegisterForceFunctor(&force);
     spring->RegisterODE(&rhs);
     system.AddLink(spring);
@@ -271,28 +339,32 @@ int main(int argc, char* argv[]) {
     std::string logfile = out_dir + "/log.dat";
     ChStreamOutAsciiFile log(logfile.c_str());
 
-        std::string btitle("Body - ");
+    std::string title("");
 
-        // Modify integrator
+    // Modify integrator
     switch (integrator_type) {
         case IntegratorType::HHT: {
-            btitle += "HHT - ";
+            title += "HHT - ";
             system.SetTimestepperType(ChTimestepper::Type::HHT);
             auto integrator = std::static_pointer_cast<ChTimestepperHHT>(system.GetTimestepper());
             integrator->SetAlpha(-0.2);
-            integrator->SetMaxiters(20);
-            integrator->SetAbsTolerances(1e-6);
+            integrator->SetMaxiters(num_nonlin_iterations);
+            integrator->SetAbsTolerances(abs_tol);
+            integrator->SetStepControl(step_control);
+            integrator->SetVerbose(verbose_integrator);
             break;
         }
         case IntegratorType::EI: {
-            btitle += "EI - ";
+            title += "EI - ";
             system.SetTimestepperType(ChTimestepper::Type::EULER_IMPLICIT);
             auto integrator = std::static_pointer_cast<ChTimestepperEulerImplicit>(system.GetTimestepper());
-            integrator->SetMaxiters(1);
+            integrator->SetMaxiters(num_nonlin_iterations);
+            integrator->SetAbsTolerances(1e-6);
+            integrator->SetVerbose(verbose_integrator);
             break;
         }
         case IntegratorType::EIL: {
-            btitle += "EIL - ";
+            title += "EIL - ";
             break;
         }
     }
@@ -300,31 +372,37 @@ int main(int argc, char* argv[]) {
     // Modify solver
     switch (solver_type) {
         case SolverType::MINRES: {
-            btitle += "MINRES - ";
+            title += "MINRES - ";
             system.SetSolverType(ChSolver::Type::MINRES);
             system.SetSolverWarmStarting(true);
             system.SetMaxItersSolverSpeed(200);
             system.SetMaxItersSolverStab(200);
             system.SetTolForce(1e-14);
-            auto msolver = std::static_pointer_cast<ChSolverMINRES>(system.GetSolver());
-            msolver->SetDiagonalPreconditioning(true);
-            msolver->SetVerbose(false);
+            auto solver = std::static_pointer_cast<ChSolverMINRES>(system.GetSolver());
+            solver->SetDiagonalPreconditioning(true);
+            solver->SetVerbose(verbose_solver);
             break;
         }
         case SolverType::PARDISO: {
-            btitle += "PARDISO - ";
-            auto mkl_solver = chrono_types::make_shared<ChSolverMKL>();
-            mkl_solver->LockSparsityPattern(false);
-            system.SetSolver(mkl_solver);
+            title += "PARDISO - ";
+            auto solver = chrono_types::make_shared<ChSolverMKL>();
+            solver->LockSparsityPattern(false);
+            solver->SetVerbose(verbose_solver);
+            system.SetSolver(solver);
             break;
         }
     }
 
-    btitle += use_jacobians ? " Jac YES" : "Jac NO";
+    title += use_jacobians ? " Jac YES" : "Jac NO";
 
     // Simulation loop
     application.SetTimestep(step_size);
     while (application.GetDevice()->run()) {
+        
+        if (verbose_integrator || verbose_solver) {
+            std::cout << system.GetChTime() << " ---------------- " << std::endl;
+        }
+        
         application.BeginScene();
         application.DrawAll();
         application.DoStep();
@@ -336,7 +414,7 @@ int main(int argc, char* argv[]) {
         log << body->GetPos().y() << ", " << body->GetPos_dt().y();
         log << "\n";
 
-        if (system.GetChTime() >= 1)
+        if (system.GetChTime() >= 0.25)
             break;
     }
 
@@ -345,10 +423,12 @@ int main(int argc, char* argv[]) {
     std::string gplfile = out_dir + "/tmp.gpl";
     postprocess::ChGnuPlot mplot(gplfile.c_str());
 
+    std::string otitle = "ODE solution - " + title;
     mplot.OutputWindow(0);
-    mplot.SetTitle("ODE solution");
+    mplot.SetTitle(otitle.c_str());
     mplot.SetLabelX("t");
-    mplot.SetLabelY("y");
+    mplot.SetLabelY("velocity / state 1");
+    mplot.SetCommand("set y2label 'state 2'");
     // mplot.SetCommand("set ytics nomirror");
     // mplot.SetCommand("set y2range [-1:1]");
     // mplot.SetCommand("set y2tics -1, 0.25");
@@ -356,16 +436,18 @@ int main(int argc, char* argv[]) {
     mplot.Plot(logfile.c_str(), 1, 3, "state 1", " with lines lw 2 axis x1y1");
     mplot.Plot(logfile.c_str(), 1, 4, "state 2", " with lines lw 2 axis x1y2");
 
+    std::string btitle = "BODY states - " + title;
     mplot.OutputWindow(1);
-    mplot.SetGrid();
+    //mplot.SetGrid();
     mplot.SetTitle(btitle.c_str());
     mplot.SetLabelX("t");
-    mplot.SetLabelY("y");
+    mplot.SetLabelY("y pos");
+    mplot.SetCommand("set y2label 'y vel'");
     mplot.SetCommand("set ytics nomirror");
-    mplot.SetCommand("set y2range [-20:20]");
-    mplot.SetCommand("set y2tics -20, 5");
-    mplot.Plot(logfile.c_str(), 1, 4, "y", " with lines lw 2 axis x1y1");
-    mplot.Plot(logfile.c_str(), 1, 5, "y'", " with lines lw 2 axis x1y2");
+    mplot.SetCommand("set y2range [-1.5:2.5]");
+    mplot.SetCommand("set y2tics -1.5, 0.5");
+    mplot.Plot(logfile.c_str(), 1, 5, "y pos", " with lines lw 2 axis x1y1");
+    mplot.Plot(logfile.c_str(), 1, 6, "y vel", " with lines lw 2 axis x1y2");
 #endif
 
     return 0;
