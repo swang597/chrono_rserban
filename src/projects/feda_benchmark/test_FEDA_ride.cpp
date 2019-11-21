@@ -46,7 +46,7 @@ using namespace chrono::vehicle::feda;
 TireModelType tire_model = TireModelType::PAC02;
 
 // OpenCRG input file
-std::string crg_road_file = "terrain/crg_roads/halfround_";
+std::string crg_road_file = "terrain/crg_roads/krc_rms_";
 // std::string crg_road_file = "terrain/crg_roads/Barber.crg";
 ////std::string crg_road_file = "terrain/crg_roads/Horstwalde.crg";
 ////std::string crg_road_file = "terrain/crg_roads/handmade_arc.crg";
@@ -55,7 +55,7 @@ std::string crg_road_file = "terrain/crg_roads/halfround_";
 ////std::string crg_road_file = "terrain/crg_roads/handmade_sloped.crg";
 
 // Road visualization (mesh or boundary lines)
-bool useMesh = true;
+bool useMesh = false;
 
 // Desired vehicle speed (m/s)
 double target_speed = 3;
@@ -74,7 +74,7 @@ const double mph2ms = 0.44704;
 int main(int argc, char* argv[]) {
     GetLog() << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
 
-    unsigned int obsHeight = 4;
+    unsigned int rmsLevel = 1;
     // This curve let us know, which accelration distance has to be provided
     // units (m/s) rsp. (m)
     // Curve calulated with test_FEDA_accel
@@ -97,22 +97,31 @@ int main(int argc, char* argv[]) {
     double velmph = 5;
     switch (argc) {
         case 2:
+            crg_road_file.append("1in.crg");
             velmph = atof(argv[1]);
             break;
         case 3:
             switch (atoi(argv[1])) {
                 default:
+                case 1:
+                    rmsLevel = 1;
+                    crg_road_file.append("1in.crg");
+                    break;
+                case 2:
+                    rmsLevel = 2;
+                    crg_road_file.append("1p5in.crg");
+                    break;
+                case 3:
+                    rmsLevel = 3;
+                    crg_road_file.append("2in.crg");
+                    break;
                 case 4:
-                    obsHeight = 4;
+                    rmsLevel = 4;
+                    crg_road_file.append("3in.crg");
                     break;
-                case 8:
-                    obsHeight = 8;
-                    break;
-                case 10:
-                    obsHeight = 10;
-                    break;
-                case 12:
-                    obsHeight = 12;
+                case 5:
+                    rmsLevel = 5;
+                    crg_road_file.append("4in.crg");
                     break;
             }
             velmph = atof(argv[2]);
@@ -137,38 +146,47 @@ int main(int argc, char* argv[]) {
             }
             switch (atoi(argv[2])) {
                 default:
+                case 1:
+                    rmsLevel = 1;
+                    crg_road_file.append("1in.crg");
+                    break;
+                case 2:
+                    rmsLevel = 2;
+                    crg_road_file.append("1p5in.crg");
+                    break;
+                case 3:
+                    rmsLevel = 3;
+                    crg_road_file.append("2in.crg");
+                    break;
                 case 4:
-                    obsHeight = 4;
+                    rmsLevel = 4;
+                    crg_road_file.append("3in.crg");
                     break;
-                case 8:
-                    obsHeight = 8;
-                    break;
-                case 10:
-                    obsHeight = 10;
-                    break;
-                case 12:
-                    obsHeight = 12;
+                case 5:
+                    rmsLevel = 5;
+                    crg_road_file.append("4in.crg");
                     break;
             }
             velmph = atof(argv[3]);
             break;
         default:
-            GetLog() << "usage form 1: test_FEDA_shock Speed_in_mph\n";
-            GetLog() << "usage form 2: test_FEDA_shock Obstacle_height_in_inch Speed_in_mph\n";
-            GetLog() << "usage form 3: test_FEDA_shock DamperMode Obstacle_height_in_inch Speed_in_mph\n\tDamperMode = "
+            GetLog() << "usage form 1: test_FEDA_ride Speed_in_mph\n";
+            GetLog() << "usage form 2: test_FEDA_ride RMScase Speed_in_mph\n";
+            GetLog() << "usage form 3: test_FEDA_ride DamperMode RMScase Speed_in_mph\n\tDamperMode = "
                         "one of:  fsd, low or high\n";
+            GetLog() << "\tRMScase = "
+                        "one of:  1 (1in), 2 (1.5in), 3 (2in), 4 (3in), 5 (4in)\n";
             return 1;
     }
     target_speed = mph2ms * velmph;
 
-    crg_road_file.append(std::to_string(obsHeight) + "in.crg");
     double start_pos = -feda_acc_curve.Get_y(target_speed);
 
     // Create the FEDA vehicle, set parameters, and initialize
     FEDA my_feda;
     my_feda.SetContactMethod(ChMaterialSurface::SMC);
     my_feda.SetChassisFixed(false);
-    my_feda.SetInitPosition(ChCoordsys<>(ChVector<>(start_pos + 1, 0, 0.5), QUNIT));
+    my_feda.SetInitPosition(ChCoordsys<>(ChVector<>(start_pos - 1, 0, 0.5), QUNIT));
     my_feda.SetTireType(tire_model);
     my_feda.SetTireStepSize(tire_step_size);
     my_feda.SetTirePressureLevel(1);
@@ -196,8 +214,24 @@ int main(int argc, char* argv[]) {
     double road_width = terrain.GetWidth();
     auto path = StraightLinePath(ChVector<>(start_pos, 0, 0.5), ChVector<>(road_length + 20.0, 0, 0.5), 1);
 
-    std::wstring wTitle = L"FED Alpha Shock Performance: Obstcle ";
-    wTitle.append(std::to_wstring(obsHeight) + L" in, V = " + std::to_wstring(int(velmph)) + L" mph");
+    std::wstring wTitle = L"FED Alpha Ride Performance: KRC Course ";
+    switch (rmsLevel) {
+        case 1:
+            wTitle.append(L"1 in RMS, V = " + std::to_wstring(int(velmph)) + L" mph");
+            break;
+        case 2:
+            wTitle.append(L"1.5 in RMS, V = " + std::to_wstring(int(velmph)) + L" mph");
+            break;
+        case 3:
+            wTitle.append(L"2 in RMS, V = " + std::to_wstring(int(velmph)) + L" mph");
+            break;
+        case 4:
+            wTitle.append(L"3 in RMS, V = " + std::to_wstring(int(velmph)) + L" mph");
+            break;
+        case 5:
+            wTitle.append(L"4 in RMS, V = " + std::to_wstring(int(velmph)) + L" mph");
+            break;
+    }
     switch (theDamperMode) {
         case FEDA::DamperMode::FSD:
             wTitle.append(L", FSD Dampers");
@@ -255,6 +289,8 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    ChISO2631_Vibration_SeatCushionLogger driverSeatLogger(step_size), passengerSeatLogger(step_size);
+
     // ---------------
     // Simulation loop
     // ---------------
@@ -274,6 +310,8 @@ int main(int argc, char* argv[]) {
     int render_frame = 0;
 
     ChVector<> local_driver_pos = my_feda.GetChassis()->GetLocalDriverCoordsys().pos;
+    ChVector<> local_passenger_pos = local_driver_pos;
+    local_passenger_pos.y() *= -1.0;
 
     ChButterworth_Lowpass wesFilter(4, step_size, 30.0);
     ChFunction_Recorder seatFkt;
@@ -327,15 +365,18 @@ int main(int argc, char* argv[]) {
         double sv4 =
             std::static_pointer_cast<ChDoubleWishbone>(my_feda.GetVehicle().GetSuspension(1))->GetShockVelocity(RIGHT);
         xpos = my_feda.GetVehicle().GetVehiclePos().x();
-        if (xpos >= road_length / 2.0 - 1.0) {
+        if (xpos >= 0.0) {
             double speed = my_feda.GetVehicle().GetVehicleSpeed();
-            ChVector<> seat_acc = my_feda.GetVehicle().GetVehicleAcceleration(local_driver_pos);
+            ChVector<> seat_acc_driver = my_feda.GetVehicle().GetVehicleAcceleration(local_driver_pos);
+            ChVector<> seat_acc_passenger = my_feda.GetVehicle().GetVehicleAcceleration(local_passenger_pos);
             t.push_back(time);
-            azd.push_back(seat_acc.z() / 9.80665);
-            azdf.push_back(wesFilter.Filter(seat_acc.z() / 9.80665));
+            azd.push_back(seat_acc_driver.z() / 9.80665);
+            azdf.push_back(wesFilter.Filter(seat_acc_driver.z() / 9.80665));
             seatFkt.AddPoint(time, azdf.back());
             shvel_exp.push_back(std::max(std::max(sv1, sv2), std::max(sv3, sv4)));
             shvel_com.push_back(std::min(std::min(sv1, sv2), std::min(sv3, sv4)));
+            driverSeatLogger.AddData(target_speed, seat_acc_driver);
+            passengerSeatLogger.AddData(target_speed, seat_acc_passenger);
         }
 
         // Increment simulation frame number
@@ -354,7 +395,7 @@ int main(int argc, char* argv[]) {
             if (azdf[i] > azdfmax)
                 azdfmax = azdf[i];
         }
-        GetLog() << "Shock Performance Result Obstcle: " << obsHeight << " in, Speed = " << velmph
+        GetLog() << "Shock Performance Result Obstcle: " << rmsLevel << " in, Speed = " << velmph
                  << " mph,  Az maximum = " << azdfmax << " g\n";
         double shvmax = 0.0;
         double shvmin = 0.0;
@@ -368,9 +409,17 @@ int main(int argc, char* argv[]) {
         }
         GetLog() << "Max. Damper Expansion Velocity = " << shvmax << " m/s\n";
         GetLog() << "Min. Damper Compression Velocity = " << shvmin << " m/s\n";
+        double mps2mph = 2.2369362921;
+        double effSpeed = driverSeatLogger.GetAVGSpeed();
+        double absPowDriver = driverSeatLogger.GetAbsorbedPowerVertical();
+        double absPowPassenger = passengerSeatLogger.GetAbsorbedPowerVertical();
+        GetLog() << "\nDriver's Seat:    Absorbed Power = " << absPowDriver << " W at speed = " << effSpeed
+                 << " m/s ( = " << effSpeed * mps2mph << " mph)\n";
+        GetLog() << "Passenger's Seat: Absorbed Power = " << absPowPassenger << " W\n";
+        GetLog() << "Exposition Time = " << driverSeatLogger.GetExposureTime() << " s\n";
 #ifdef CHRONO_POSTPROCESS
         std::string title =
-            "Fed alpha on halfround " + std::to_string(obsHeight) + " in, V = " + std::to_string(velmph) + " mph";
+            "Fed alpha on halfround " + std::to_string(rmsLevel) + " in, V = " + std::to_string(velmph) + " mph";
         postprocess::ChGnuPlot gplot_seat;
         gplot_seat.SetGrid();
         gplot_seat.SetTitle(title.c_str());

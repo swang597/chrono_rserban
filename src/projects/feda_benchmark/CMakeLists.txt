@@ -26,6 +26,7 @@ SET(DEMOS
     test_FEDA_wall2wall_turning
     test_FEDA_accel
     test_FEDA_shock
+    test_FEDA_ride
 )
 
 # ------------------------------------------------------------------------------
