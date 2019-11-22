@@ -123,6 +123,14 @@ int main(int argc, char* argv[]) {
                     rmsLevel = 5;
                     crg_road_file.append("4in.crg");
                     break;
+                case 6:
+                    rmsLevel = 6;
+                    crg_road_file.append("1_1p5in.crg");
+                    break;
+                case 7:
+                    rmsLevel = 7;
+                    crg_road_file.append("1p5_2in.crg");
+                    break;
             }
             velmph = atof(argv[2]);
             break;
@@ -166,6 +174,14 @@ int main(int argc, char* argv[]) {
                     rmsLevel = 5;
                     crg_road_file.append("4in.crg");
                     break;
+                case 6:
+                    rmsLevel = 6;
+                    crg_road_file.append("1_1p5in.crg");
+                    break;
+                case 7:
+                    rmsLevel = 7;
+                    crg_road_file.append("1p5_2in.crg");
+                    break;
             }
             velmph = atof(argv[3]);
             break;
@@ -175,7 +191,7 @@ int main(int argc, char* argv[]) {
             GetLog() << "usage form 3: test_FEDA_ride DamperMode RMScase Speed_in_mph\n\tDamperMode = "
                         "one of:  fsd, low or high\n";
             GetLog() << "\tRMScase = "
-                        "one of:  1 (1in), 2 (1.5in), 3 (2in), 4 (3in), 5 (4in)\n";
+                        "one of:  1 (1in), 2 (1.5in), 3 (2in), 4 (3in), 5 (4in), 6 (1+1.5in), 7 (1.5+2in)\n";
             return 1;
     }
     target_speed = mph2ms * velmph;
@@ -230,6 +246,12 @@ int main(int argc, char* argv[]) {
             break;
         case 5:
             wTitle.append(L"4 in RMS, V = " + std::to_wstring(int(velmph)) + L" mph");
+            break;
+        case 6:
+            wTitle.append(L"1 in / 1.5 in RMS, V = " + std::to_wstring(int(velmph)) + L" mph");
+            break;
+        case 7:
+            wTitle.append(L"1.5 in / 2 in RMS, V = " + std::to_wstring(int(velmph)) + L" mph");
             break;
     }
     switch (theDamperMode) {
