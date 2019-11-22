@@ -17,6 +17,10 @@
 //
 // =============================================================================
 
+////#include <cfloat>
+////unsigned int fp_control_state = _controlfp(_EM_DENORMAL, _MCW_EM);
+
+
 #include <cstdio>
 
 #include "chrono/assets/ChPointPointDrawing.h"
@@ -85,8 +89,8 @@ bool use_tables = true;
 // -------------------------------------------------
 
 double step_size = 1e-3;
-bool verbose_integrator = false;
-bool verbose_solver = false;
+bool verbose_integrator = true;
+bool verbose_solver = true;
 
 // =============================================================================
 
@@ -399,8 +403,10 @@ int main(int argc, char* argv[]) {
     application.SetTimestep(step_size);
     while (application.GetDevice()->run()) {
         
+        double time = system.GetChTime();
+
         if (verbose_integrator || verbose_solver) {
-            std::cout << system.GetChTime() << " ---------------- " << std::endl;
+            std::cout << time << " ---------------- " << std::endl;
         }
         
         application.BeginScene();
@@ -408,13 +414,15 @@ int main(int argc, char* argv[]) {
         application.DoStep();
         application.EndScene();
 
+        double spring_vel = spring->GetVelocity();
+        double pos = body->GetPos().y();
         double vel = body->GetPos_dt().y();
         ChVectorDynamic<> state = spring->GetStates();
-        log << system.GetChTime() << ", " << vel << ", " << state(0) << ", " << state(1) << ", ";
-        log << body->GetPos().y() << ", " << body->GetPos_dt().y();
+        log << time << ", " << spring_vel << ", " << state(0) << ", " << state(1) << ", ";
+        log << pos << ", " << vel;
         log << "\n";
 
-        if (system.GetChTime() >= 0.25)
+        if (system.GetChTime() >= 0.4)
             break;
     }
 
