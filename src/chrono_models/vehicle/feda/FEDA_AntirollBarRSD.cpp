@@ -32,8 +32,10 @@ const double FEDA_AntirollBarRSD::m_arm_length = 1.250 / 2.0;
 const double FEDA_AntirollBarRSD::m_arm_width = -0.33;
 const double FEDA_AntirollBarRSD::m_droplink_height = -0.17043;
 const double FEDA_AntirollBarRSD::m_arm_radius = 0.02;
-const double FEDA_AntirollBarRSD::m_spring_coef = 130784.754;
-const double FEDA_AntirollBarRSD::m_damping_coef = 5000.0;
+// const double FEDA_AntirollBarRSD::m_spring_coef = 130784.754;
+// const double FEDA_AntirollBarRSD::m_damping_coef = 5000.0;
+const double FEDA_AntirollBarRSD::m_spring_coef = 15 * 1307.84754;
+const double FEDA_AntirollBarRSD::m_damping_coef = 15 * 50.000;
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------

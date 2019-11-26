@@ -40,7 +40,7 @@ const ChVector<> FEDA_Chassis::m_COM_loc(-1.591564, 0.0889, 0.57);
 const double FEDA_Chassis::m_mass = 5672.87;
 const ChVector<> FEDA_Chassis::m_inertiaXX(5.74E+03, 7.66E+03, 9.87E+03);
 const ChVector<> FEDA_Chassis::m_inertiaXY(0, 0, 0);
-const ChVector<> FEDA_Chassis::m_COM_loc(-(1.0 - 0.4162) * 3.302, 0.0889, 0.61);
+const ChVector<> FEDA_Chassis::m_COM_loc(-(1.0 - 0.4162) * 3.302, 0.00889, 0.61);
 
 const ChCoordsys<> FEDA_Chassis::m_driverCsys(ChVector<>(-1.35, 0.52, 1.01), ChQuaternion<>(1, 0, 0, 0));
 

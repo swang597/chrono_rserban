@@ -27,6 +27,7 @@ SET(DEMOS
     test_FEDA_accel
     test_FEDA_shock
     test_FEDA_ride
+    test_FEDA_steady_state_cornering
 )
 
 # ------------------------------------------------------------------------------
