@@ -130,6 +130,10 @@ using namespace chrono::robosimian;
 %shared_ptr(chrono::ChFunction_Recorder)
 %shared_ptr(chrono::ChBezierCurve)
 %shared_ptr(chrono::ChLinkMarkers)
+%shared_ptr(chrono::robosimian::Part)
+%shared_ptr(chrono::robosimian::Chassis)
+%shared_ptr(chrono::robosimian::Sled)
+%shared_ptr(chrono::robosimian::WheelDD)
 
 /*
 from this module: pay attention to inheritance in the model namespace (generic, sedan etc). 
