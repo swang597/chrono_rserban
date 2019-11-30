@@ -196,8 +196,8 @@ int main(int argc, char* argv[]) {
     double road_width = terrain.GetWidth();
     auto path = StraightLinePath(ChVector<>(start_pos, 0, 0.5), ChVector<>(road_length + 20.0, 0, 0.5), 1);
 
-    std::wstring wTitle = L"FED Alpha Shock Performance: Obstcle ";
-    wTitle.append(std::to_wstring(obsHeight) + L" in, V = " + std::to_wstring(int(velmph)) + L" mph");
+    std::wstring wTitle = L"FED Alpha Shock Performance: Obstacle ";
+    wTitle.append(std::to_wstring(obsHeight) + L" inch, V = " + std::to_wstring(int(velmph)) + L" mph");
     switch (theDamperMode) {
         case FEDA::DamperMode::FSD:
             wTitle.append(L", FSD Dampers");
