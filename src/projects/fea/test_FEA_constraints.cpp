@@ -17,7 +17,7 @@
 // =============================================================================
 
 #include "chrono/physics/ChSystemSMC.h"
-#include "chrono/solver/ChSolverMINRES.h"
+#include "chrono/solver/ChIterativeSolverLS.h"
 
 #include "chrono_irrlicht/ChIrrApp.h"
 
@@ -155,11 +155,11 @@ int main(int argc, char* argv[]) {
         mkl_solver->LockSparsityPattern(true);
         sys.SetSolver(mkl_solver);
     } else {
-        sys.SetSolverType(ChSolver::Type::MINRES);
-        sys.SetSolverWarmStarting(true);
-        sys.SetTolForce(1e-10);
-        sys.SetMaxItersSolverSpeed(10000);
-        sys.SetMaxItersSolverStab(10000);
+        auto minres_solver = chrono_types::make_shared<ChSolverMINRES>();
+        minres_solver->SetMaxIterations(400);
+        minres_solver->SetTolerance(1e-12);
+        minres_solver->EnableWarmStart(true);
+        sys.SetSolver(minres_solver);
     }
 
     // Integrator settings

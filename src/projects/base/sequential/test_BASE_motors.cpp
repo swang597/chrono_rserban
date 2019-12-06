@@ -35,7 +35,7 @@ void test1() {
     system.Set_G_acc(ChVector<>(0, 0, -10));
 
     // Set solver settings
-    system.SetMaxItersSolverSpeed(200);
+    system.SetSolverMaxIterations(200);
     system.SetSolverType(ChSolver::Type::BARZILAIBORWEIN);
 
     // Add bodies
@@ -102,7 +102,7 @@ void test2() {
     system.Set_G_acc(ChVector<>(0, 0, 0));
 
     // Set solver settings
-    system.SetMaxItersSolverSpeed(200);
+    system.SetSolverMaxIterations(200);
     system.SetSolverType(ChSolver::Type::BARZILAIBORWEIN);
 
     // Add bodies

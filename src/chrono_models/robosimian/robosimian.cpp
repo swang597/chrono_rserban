@@ -403,8 +403,7 @@ RoboSimian::RoboSimian(ChMaterialSurface::ContactMethod contact_method, bool has
     m_system->Set_G_acc(ChVector<>(0, 0, -9.81));
 
     // Integration and Solver settings
-    m_system->SetMaxItersSolverSpeed(150);
-    m_system->SetMaxItersSolverStab(150);
+    m_system->SetSolverMaxIterations(150);
     m_system->SetMaxPenetrationRecoverySpeed(4.0);
     m_system->SetSolverType(ChSolver::Type::BARZILAIBORWEIN);
 

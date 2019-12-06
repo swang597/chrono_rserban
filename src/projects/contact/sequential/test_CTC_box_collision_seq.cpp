@@ -82,11 +82,11 @@ int main(int argc, char* argv[]) {
     system.Set_G_acc(ChVector<>(0, -10, 0));
 
     // Set solver settings
-    system.SetMaxItersSolverSpeed(100);
-    system.SetMaxPenetrationRecoverySpeed(contact_recovery_speed);
-    system.SetTol(tolerance);
-    system.SetTolForce(tolerance);
     system.SetSolverType(ChSolver::Type::APGD);
+    system.SetSolverMaxIterations(100);
+    system.SetSolverTolerance(tolerance);
+    system.SetSolverForceTolerance(tolerance);
+    system.SetMaxPenetrationRecoverySpeed(contact_recovery_speed);
 
     // ----------
     // Add bodies

@@ -28,7 +28,7 @@
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/physics/ChBody.h"
 #include "chrono/physics/ChLinkMotorLinearSpeed.h"
-#include "chrono/solver/ChSolverMINRES.h"
+#include "chrono/solver/ChIterativeSolverLS.h"
 
 #include "chrono_mkl/ChSolverMKL.h"
 
@@ -63,18 +63,11 @@ using namespace irr;
 
 // --------------------------------------------------
 
-enum class SolverType {
-    MINRES,  // MINRES iterative solver
-    PARDISO  // Pardiso sparse direct solver
-};
-SolverType solver_type = SolverType::PARDISO;
+// Solver type (PARDISO, MINRES, GMRES)
+ChSolver::Type solver_type = ChSolver::Type::PARDISO;
 
-enum class IntegratorType {
-    HHT,  // HHT
-    EI,   // Euler implicit
-    EIL   // euler implicit linearized
-};
-IntegratorType integrator_type = IntegratorType::HHT;
+// Integrator type (HHT, EULER_IMPLICIT, EULER_IMPLICIT_LINEARIZED)
+ChTimestepper::Type integrator_type = ChTimestepper::Type::HHT;
 
 bool use_jacobians = true;
 int num_nonlin_iterations = 20;
@@ -347,7 +340,7 @@ int main(int argc, char* argv[]) {
 
     // Modify integrator
     switch (integrator_type) {
-        case IntegratorType::HHT: {
+        case ChTimestepper::Type::HHT: {
             title += "HHT - ";
             system.SetTimestepperType(ChTimestepper::Type::HHT);
             auto integrator = std::static_pointer_cast<ChTimestepperHHT>(system.GetTimestepper());
@@ -358,7 +351,7 @@ int main(int argc, char* argv[]) {
             integrator->SetVerbose(verbose_integrator);
             break;
         }
-        case IntegratorType::EI: {
+        case ChTimestepper::Type::EULER_IMPLICIT: {
             title += "EI - ";
             system.SetTimestepperType(ChTimestepper::Type::EULER_IMPLICIT);
             auto integrator = std::static_pointer_cast<ChTimestepperEulerImplicit>(system.GetTimestepper());
@@ -367,7 +360,7 @@ int main(int argc, char* argv[]) {
             integrator->SetVerbose(verbose_integrator);
             break;
         }
-        case IntegratorType::EIL: {
+        case ChTimestepper::Type::EULER_IMPLICIT_PROJECTED: {
             title += "EIL - ";
             break;
         }
@@ -375,19 +368,26 @@ int main(int argc, char* argv[]) {
 
     // Modify solver
     switch (solver_type) {
-        case SolverType::MINRES: {
-            title += "MINRES - ";
-            system.SetSolverType(ChSolver::Type::MINRES);
-            system.SetSolverWarmStarting(true);
-            system.SetMaxItersSolverSpeed(200);
-            system.SetMaxItersSolverStab(200);
-            system.SetTolForce(1e-14);
-            auto solver = std::static_pointer_cast<ChSolverMINRES>(system.GetSolver());
-            solver->SetDiagonalPreconditioning(true);
+        case ChSolver::Type::GMRES: {
+            title += "GMRES - ";
+            auto solver = chrono_types::make_shared<ChSolverGMRES>();
+            system.SetSolver(solver);
+            solver->SetMaxIterations(100);
             solver->SetVerbose(verbose_solver);
             break;
         }
-        case SolverType::PARDISO: {
+        case ChSolver::Type::MINRES: {
+            title += "MINRES - ";
+            auto solver = chrono_types::make_shared<ChSolverMINRES>();
+            solver->EnableWarmStart(true);
+            solver->EnableDiagonalPreconditioner(true);
+            solver->SetMaxIterations(200);
+            solver->SetTolerance(1e-10);
+            solver->SetVerbose(verbose_solver);
+            system.SetSolver(solver);
+            break;
+        }
+        case ChSolver::Type::PARDISO: {
             title += "PARDISO - ";
             auto solver = chrono_types::make_shared<ChSolverMKL>();
             solver->LockSparsityPattern(false);

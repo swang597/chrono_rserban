@@ -62,7 +62,7 @@ int main(int argc, char* argv[]) {
     ChSystemNSC sys;
     ////ChSystemSMC sys;
     sys.Set_G_acc(ChVector<>(0, 0, -9.81));
-    sys.SetMaxItersSolverSpeed(150);
+    sys.SetSolverMaxIterations(150);
     sys.SetMaxPenetrationRecoverySpeed(4.0);
     sys.SetSolverType(ChSolver::Type::BARZILAIBORWEIN);
 

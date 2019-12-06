@@ -14,6 +14,7 @@
 #include "chrono/utils/ChFilters.h"
 
 #include <chrono_parallel/physics/ChSystemParallel.h>
+#include "chrono_parallel/solver/ChIterativeSolverParallel.h"
 
 #include <chrono/utils/ChUtilsCreators.h>
 #include <chrono/utils/ChUtilsSamplers.h>
@@ -298,7 +299,6 @@ int main(int argc, char* argv[]) {
     m_sys.Set_G_acc(ChVector<>(0, 0, -grav));
 
     unsigned int num_threads = omp_get_num_procs();
-    m_sys.SetParallelThreadNumber(num_threads);
     omp_set_num_threads(num_threads);
     m_sys.GetSettings()->max_threads = num_threads;
     settings_stream << "OpenMP threads: " << num_threads << endl;
@@ -458,7 +458,7 @@ int main(int argc, char* argv[]) {
 
         double shear_force_motor = motor->GetMotorForce();
         double shear_force_contact = m_sys.GetBodyContactForce(top).x;
-        int iters = std::static_pointer_cast<ChIterativeSolver>(m_sys.GetSolver())->GetTotalIterations();
+        int iters = std::static_pointer_cast<ChIterativeSolverParallel>(m_sys.GetSolver())->GetIterations();
 
         shear_force_motor_filtered = fm_lowpass5.Filter(shear_force_motor);
         shear_area = box_dim_Y * (box_dim_X - 2 * top->GetPos().x());

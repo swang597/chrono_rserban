@@ -19,7 +19,7 @@
 
 #include "chrono/physics/ChBodyEasy.h"
 #include "chrono/physics/ChSystemSMC.h"
-#include "chrono/solver/ChSolverMINRES.h"
+#include "chrono/solver/ChIterativeSolverLS.h"
 
 #include "chrono/fea/ChContactSurfaceMesh.h"
 #include "chrono/fea/ChElementShellANCF.h"
@@ -134,14 +134,13 @@ int main(int argc, char* argv[]) {
     // ---------------
 
     // Setup solver
-    my_system.SetSolverType(ChSolver::Type::MINRES);
-    auto solver = std::static_pointer_cast<ChSolverMINRES>(my_system.GetSolver());
-    solver->SetDiagonalPreconditioning(true);
+    auto solver = chrono_types::make_shared<ChSolverMINRES>();
+    solver->SetMaxIterations(400);
+    solver->SetTolerance(1e-6);
+    solver->EnableDiagonalPreconditioner(true);
+    solver->EnableWarmStart(true);
     solver->SetVerbose(false);
-
-    my_system.SetSolverWarmStarting(true);
-    my_system.SetMaxItersSolverSpeed(4000000);
-    my_system.SetTolForce(1e-6);
+    my_system.SetSolver(solver);
 
     // Setup timestepper
     my_system.SetTimestepperType(ChTimestepper::Type::HHT);

@@ -277,7 +277,6 @@ int main(int argc, char* argv[]) {
     int max_threads = CHOMPfunctions::GetNumProcs();
     if (nthreads > max_threads)
         nthreads = max_threads;
-    sys->SetParallelThreadNumber(nthreads);
     CHOMPfunctions::SetNumThreads(nthreads);
 
     sys->GetSettings()->solver.tolerance = 1e-3;

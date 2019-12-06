@@ -41,7 +41,6 @@ int main(int argc, char* argv[]) {
         my_sys.Set_G_acc(ChVector<double>(0, 0, -9.8));
 
     int num_threads = 1;
-    my_sys.SetParallelThreadNumber(num_threads);
     CHOMPfunctions::SetNumThreads(num_threads);
 
     // Set solver parameters

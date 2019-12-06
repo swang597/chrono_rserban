@@ -51,7 +51,6 @@ MixerTestNSC<N>::MixerTestNSC() : m_system(new ChSystemParallelNSC()), m_step(1e
 
     // Set number of threads.
     int threads = CHOMPfunctions::GetNumProcs();
-    m_system->SetParallelThreadNumber(threads);
     CHOMPfunctions::SetNumThreads(threads);
 
     // Set solver parameters

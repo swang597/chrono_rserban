@@ -202,7 +202,6 @@ int main(int argc, char* argv[]) {
     int max_threads = CHOMPfunctions::GetNumProcs();
     if (threads > max_threads)
         threads = max_threads;
-    msystem->SetParallelThreadNumber(threads);
     CHOMPfunctions::SetNumThreads(threads);
     cout << "Using " << threads << " threads" << endl;
 

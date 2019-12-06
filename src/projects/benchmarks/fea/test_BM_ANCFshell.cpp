@@ -20,7 +20,7 @@
 #include "chrono/utils/ChBenchmark.h"
 
 #include "chrono/physics/ChSystemSMC.h"
-#include "chrono/solver/ChSolverMINRES.h"
+#include "chrono/solver/ChIterativeSolverLS.h"
 
 #include "chrono/fea/ChElementShellANCF.h"
 #include "chrono/fea/ChMesh.h"
@@ -78,11 +78,11 @@ ANCFshell<N>::ANCFshell(ChSolver::Type solver_type) {
 
     switch (solver_type) {
         case ChSolver::Type::MINRES: {
-            m_system->SetSolverType(ChSolver::Type::MINRES);
-            auto minres_solver = std::static_pointer_cast<ChSolverMINRES>(m_system->GetSolver());
-            minres_solver->SetDiagonalPreconditioning(true);
-            m_system->SetMaxItersSolverSpeed(100);
-            m_system->SetTolForce(1e-10);
+            auto minres_solver = chrono_types::make_shared<ChSolverMINRES>();
+            minres_solver->SetMaxIterations(100);
+            minres_solver->SetTolerance(1e-14);
+            minres_solver->EnableDiagonalPreconditioner(true);
+            m_system->SetSolver(minres_solver);
             break;
         }
         case ChSolver::Type::CUSTOM: {

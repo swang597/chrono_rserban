@@ -26,7 +26,6 @@ int main(int argc, char* argv[]) {
     ChSystemParallelSMC my_sys;
 
     int num_threads = 1;
-    my_sys.SetParallelThreadNumber(num_threads);
     CHOMPfunctions::SetNumThreads(num_threads);
 
     my_sys.Set_G_acc(ChVector<double>(0, 0, -9.8));

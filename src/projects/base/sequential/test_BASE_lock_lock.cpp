@@ -75,7 +75,7 @@ int main(int argc, char* argv[]) {
     m_System->Set_G_acc(ChVector<>(0.0, -10., 0.));
 
     ////m_System->SetSolverType(ChSolver::Type::BARZILAIBORWEIN);
-    ////m_System->SetMaxItersSolverSpeed(200);
+    ////m_System->SetSolverMaxIterations(200);
 
     auto m_Link = model1(m_System);
 

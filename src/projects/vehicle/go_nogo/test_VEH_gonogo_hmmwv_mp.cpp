@@ -317,7 +317,6 @@ int main(int argc, char* argv[]) {
     system->SetMaterialCompositionStrategy(std::move(strategy));
 
     // Set number of threads
-    system->SetParallelThreadNumber(threads);
     CHOMPfunctions::SetNumThreads(threads);
 #pragma omp parallel
 #pragma omp master

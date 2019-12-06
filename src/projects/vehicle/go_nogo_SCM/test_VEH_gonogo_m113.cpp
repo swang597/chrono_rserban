@@ -29,7 +29,7 @@
 #include "chrono/geometry/ChLineBezier.h"
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/physics/ChSystemSMC.h"
-#include "chrono/solver/ChIterativeSolver.h"
+#include "chrono/solver/ChIterativeSolverLS.h"
 #include "chrono/utils/ChFilters.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
 
@@ -277,13 +277,10 @@ int main(int argc, char* argv[]) {
     ChSystemSMC* system = new ChSystemSMC();
     system->Set_G_acc(gravity);
 
-    // system->SetMaxItersSolverSpeed(1000);
-    // system->SetMaxItersSolverStab(1000);
-    system->SetSolverType(ChSolver::Type::MINRES);
-    system->SetSolverWarmStarting(true);
-    // vehicle.GetSystem()->SetTolForce(1e-2);
-    auto solver = std::static_pointer_cast<ChIterativeSolver>(system->GetSolver());
-    solver->SetRecordViolation(true);
+    auto solver = chrono_types::make_shared<ChSolverMINRES>();
+    solver->SetTolerance(1e-10);
+    solver->EnableWarmStart(true);
+    system->SetSolver(solver);
 
     // -------------------------------------
     // Create the vehicle

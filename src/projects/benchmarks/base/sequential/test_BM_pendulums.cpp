@@ -21,6 +21,8 @@
 #include "chrono/physics/ChBodyEasy.h"
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/physics/ChSystemSMC.h"
+#include "chrono/solver/ChSolverPSOR.h"
+#include "chrono/solver/ChSolverBB.h"
 
 #include "chrono_mkl/ChSolverMKL.h"
 
@@ -51,7 +53,7 @@ class ChainTest : public utils::ChBenchmarkTest {
 template <int N>
 ChainTest<N>::ChainTest() : m_length(0.25), m_step(1e-3) {
     ChTimestepper::Type integrator_type = ChTimestepper::Type::EULER_IMPLICIT_LINEARIZED;
-    ChSolver::Type solver_type = ChSolver::Type::SOR;
+    ChSolver::Type solver_type = ChSolver::Type::PSOR;
     ChMaterialSurface::ContactMethod contact_method = ChMaterialSurface::NSC;
 
     // Create system
@@ -68,26 +70,26 @@ ChainTest<N>::ChainTest() : m_length(0.25), m_step(1e-3) {
             m_system->SetSolver(mkl_solver);
             break;
         }
-        case ChSolver::Type::SOR: {
-            m_system->SetSolverType(ChSolver::Type::SOR);
-            m_system->SetMaxItersSolverSpeed(50);
-            m_system->SetMaxItersSolverStab(50);
-            m_system->SetTol(0);
+        case ChSolver::Type::PSOR: {
+            auto psor_solver = chrono_types::make_shared<ChSolverPSOR>();
+            psor_solver->SetMaxIterations(50);
+            psor_solver->SetTolerance(1e-12);
+            psor_solver->SetOmega(0.8);
+            psor_solver->SetSharpnessLambda(1.0);
+            m_system->SetSolver(psor_solver);
             m_system->SetMaxPenetrationRecoverySpeed(1.5);
             m_system->SetMinBounceSpeed(2.0);
-            m_system->SetSolverOverrelaxationParam(0.8);
-            m_system->SetSolverSharpnessParam(1.0);
             break;
         }
         case ChSolver::Type::BARZILAIBORWEIN: {
-            m_system->SetSolverType(ChSolver::Type::BARZILAIBORWEIN);
-            m_system->SetMaxItersSolverSpeed(50);
-            m_system->SetMaxItersSolverStab(50);
-            m_system->SetTol(0);
+            auto bb_solver = chrono_types::make_shared<ChSolverPSOR>();
+            bb_solver->SetMaxIterations(50);
+            bb_solver->SetTolerance(1e-12);
+            bb_solver->SetOmega(0.8);
+            bb_solver->SetSharpnessLambda(1.0);
+            m_system->SetSolver(bb_solver);
             m_system->SetMaxPenetrationRecoverySpeed(1.5);
             m_system->SetMinBounceSpeed(2.0);
-            m_system->SetSolverOverrelaxationParam(0.8);
-            m_system->SetSolverSharpnessParam(1.0);
             break;
         }
     }

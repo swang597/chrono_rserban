@@ -369,7 +369,6 @@ int main(int argc, char* argv[]) {
     ////cout << "  OMP_NUM_THREADS = " << std::getenv("OMP_NUM_THREADS") << endl;
 
     // Set number of threads
-    system->SetParallelThreadNumber(threads);
     omp_set_num_threads(threads);
 #pragma omp parallel
 #pragma omp master

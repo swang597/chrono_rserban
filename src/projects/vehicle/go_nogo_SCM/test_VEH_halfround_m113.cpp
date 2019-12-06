@@ -20,6 +20,7 @@
 
 #include "chrono/utils/ChFilters.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
+#include "chrono/solver/ChSolverPSOR.h"
 
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"
@@ -222,14 +223,15 @@ int main(int argc, char* argv[]) {
     // Solver settings
     // ---------------
 
-    vehicle.GetSystem()->SetSolverType(ChSolver::Type::SOR);
-    vehicle.GetSystem()->SetMaxItersSolverSpeed(50);
-    vehicle.GetSystem()->SetMaxItersSolverStab(50);
-    vehicle.GetSystem()->SetTol(0);
+    auto solver = chrono_types::make_shared<ChSolverPSOR>();
+    solver->SetMaxIterations(50);
+    solver->SetTolerance(1e-10);
+    solver->SetOmega(0.8);
+    solver->SetSharpnessLambda(1.0);
+    vehicle.GetSystem()->SetSolver(solver);
+
     vehicle.GetSystem()->SetMaxPenetrationRecoverySpeed(1.5);
     vehicle.GetSystem()->SetMinBounceSpeed(2.0);
-    vehicle.GetSystem()->SetSolverOverrelaxationParam(0.8);
-    vehicle.GetSystem()->SetSolverSharpnessParam(1.0);
 
     // ---------------
     // Simulation loop

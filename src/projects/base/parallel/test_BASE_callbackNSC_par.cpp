@@ -71,7 +71,6 @@ int main(int argc, char* argv[]) {
     system.Set_G_acc(ChVector<>(0, -10, 0));
 
     // Set number of threads
-    system.SetParallelThreadNumber(1);
     CHOMPfunctions::SetNumThreads(1);
 
     // Set solver settings

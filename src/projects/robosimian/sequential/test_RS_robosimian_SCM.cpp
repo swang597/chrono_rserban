@@ -285,7 +285,7 @@ int main(int argc, char* argv[]) {
     // -------------
 
     ChSystemSMC my_sys;
-    my_sys.SetMaxItersSolverSpeed(200);
+    my_sys.SetSolverMaxIterations(200);
     my_sys.SetSolverType(ChSolver::Type::BARZILAIBORWEIN);
     my_sys.Set_G_acc(ChVector<double>(0, 0, -9.8));
     ////my_sys.Set_G_acc(ChVector<double>(0, 0, 0));
