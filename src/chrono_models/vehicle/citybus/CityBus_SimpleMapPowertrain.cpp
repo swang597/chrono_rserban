@@ -50,7 +50,7 @@ void CityBus_SimpleMapPowertrain::SetEngineTorqueMaps(ChFunction_Recorder& map0,
     map0.AddPoint(2000 * rpm2rads, -30.0 * lbft2nm);
     map0.AddPoint(2100 * rpm2rads, -40.0 * lbft2nm);
     map0.AddPoint(2200 * rpm2rads, -100.0 * lbft2nm);
-
+    
     mapF.AddPoint(-100 * rpm2rads, 0.000 * lbft2nm);
     mapF.AddPoint(0 * rpm2rads, 0.0 * lbft2nm);
     mapF.AddPoint(100 * rpm2rads, 300.0 * lbft2nm);
