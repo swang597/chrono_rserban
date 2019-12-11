@@ -11,6 +11,7 @@ endif()
 set(PROGRAMS
     test_CTC_box_collision_par
     test_CTC_rolling_par
+    test_CTC_mesh_par
 )
 
 include_directories(${CH_PARALLEL_INCLUDES})
