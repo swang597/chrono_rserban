@@ -373,7 +373,7 @@ void TerrainNode::Construct() {
     if (m_type == GRANULAR) {
         // Create a particle generator and a mixture entirely made out of spheres
         utils::Generator gen(m_system);
-        std::shared_ptr<utils::MixtureIngredient> m1 = gen.AddMixtureIngredient(utils::SPHERE, 1.0);
+        std::shared_ptr<utils::MixtureIngredient> m1 = gen.AddMixtureIngredient(utils::MixtureType::SPHERE, 1.0);
         m1->setDefaultMaterial(m_material_terrain);
         m1->setDefaultDensity(m_rho_g);
         m1->setDefaultSize(m_radius_g);
@@ -387,7 +387,7 @@ void TerrainNode::Construct() {
         ChVector<> center(0, 0, 2 * r);
 
         for (int il = 0; il < m_num_layers; il++) {
-            gen.createObjectsBox(utils::POISSON_DISK, 2 * r, center, hdims);
+            gen.createObjectsBox(utils::SamplingType::POISSON_DISK, 2 * r, center, hdims);
             cout << m_prefix << " level: " << il << " points: " << gen.getTotalNumBodies() << endl;
             center.z() += 2 * r;
         }

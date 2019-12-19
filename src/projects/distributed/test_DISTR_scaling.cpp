@@ -119,7 +119,7 @@ void Monitor(chrono::ChSystemParallel* system, int rank) {
     int BODS = system->GetNbodies();
     int CNTC = system->GetNcontacts();
     double RESID = std::static_pointer_cast<chrono::ChIterativeSolverParallel>(system->GetSolver())->GetResidual();
-    int ITER = std::static_pointer_cast<chrono::ChIterativeSolverParallel>(system->GetSolver())->GetTotalIterations();
+    int ITER = std::static_pointer_cast<chrono::ChIterativeSolverParallel>(system->GetSolver())->GetIterations();
 
     printf("%d|   %8.5f | %7.4f | E%7.4f | B%7.4f | N%7.4f | %7.4f | %7.4f | %7d | %7d | %7d | %7.4f\n",  ////
            rank, TIME, STEP, EXCH, BROD, NARR, SOLVER, UPDT, BODS, CNTC, ITER, RESID);
@@ -188,13 +188,13 @@ size_t AddFallingBalls(ChSystemDistributed* sys, utils::SamplingType sampling_ty
     std::shared_ptr<utils::Sampler<double>> sampler;
 
     switch (sampling_type) {
-        case utils::POISSON_DISK:
+        case utils::SamplingType::POISSON_DISK:
             sampler = chrono_types::make_shared<utils::PDSampler<double>>(spacing);
             break;
-        case utils::REGULAR_GRID:
+        case utils::SamplingType::REGULAR_GRID:
             sampler = chrono_types::make_shared<utils::GridSampler<double>>(spacing);
             break;
-        case utils::HCP_PACK:
+        case utils::SamplingType::HCP_PACK:
             sampler = chrono_types::make_shared<utils::HCPSampler<double>>(spacing);
     }
 
@@ -241,13 +241,13 @@ int main(int argc, char* argv[]) {
     utils::SamplingType sampling_type;
     switch (isampling) {
         case 0:
-            sampling_type = utils::REGULAR_GRID;
+            sampling_type = utils::SamplingType::REGULAR_GRID;
             break;
         case 1:
-            sampling_type = utils::POISSON_DISK;
+            sampling_type = utils::SamplingType::POISSON_DISK;
             break;
         case 2:
-            sampling_type = utils::HCP_PACK;
+            sampling_type = utils::SamplingType::HCP_PACK;
             break;
     }
 
@@ -288,7 +288,7 @@ int main(int argc, char* argv[]) {
         std::cout << "Number of threads:          " << num_threads << std::endl;
         std::cout << "Domain:                     " << 2 * hx << " x " << 2 * hy << " x " << 2 * height << std::endl;
         std::cout << "Simulation length:          " << time_end << std::endl;
-        std::cout << "Sampling type:              " << sampling_type << std::endl;
+        std::cout << "Sampling type:              " << static_cast<int>(sampling_type) << std::endl;
         std::cout << "Monitor?                    " << monitor << std::endl;
         std::cout << "Output?                     " << output_data << std::endl;
         if (output_data)
@@ -304,7 +304,6 @@ int main(int argc, char* argv[]) {
         std::cout << "Rank: " << my_rank << " Node name: " << my_sys.node_name << std::endl;
     }
 
-    my_sys.SetParallelThreadNumber(num_threads);
     CHOMPfunctions::SetNumThreads(num_threads);
 
     my_sys.Set_G_acc(ChVector<double>(0, 0, -9.8));

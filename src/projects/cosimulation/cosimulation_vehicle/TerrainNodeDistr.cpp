@@ -45,9 +45,9 @@ using namespace chrono;
 
 const std::string TerrainNodeDistr::m_checkpoint_filename = "checkpoint.dat";
 
-utils::SamplingType sampling_type = utils::POISSON_DISK;
-////utils::SamplingType sampling_type = utils::REGULAR_GRID;
-////utils::SamplingType sampling_type = utils::HCP_PACK;
+utils::SamplingType sampling_type = utils::SamplingType::POISSON_DISK;
+////utils::SamplingType sampling_type = utils::SamplingType::REGULAR_GRID;
+////utils::SamplingType sampling_type = utils::SamplingType::HCP_PACK;
 
 // -----------------------------------------------------------------------------
 // Free functions in the cosim namespace
@@ -396,7 +396,7 @@ void TerrainNodeDistr::Construct() {
 
     // Create a particle generator and a mixture entirely made out of spheres
     utils::Generator gen(m_system);
-    std::shared_ptr<utils::MixtureIngredient> m1 = gen.AddMixtureIngredient(utils::SPHERE, 1.0);
+    std::shared_ptr<utils::MixtureIngredient> m1 = gen.AddMixtureIngredient(utils::MixtureType::SPHERE, 1.0);
     m1->setDefaultMaterial(m_material_terrain);
     m1->setDefaultDensity(m_rho_g);
     m1->setDefaultSize(m_radius_g);

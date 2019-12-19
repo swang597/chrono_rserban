@@ -86,7 +86,7 @@ size_t AddFallingBalls(ChSystemParallel* sys) {
     ballMat->SetAdhesion(0);
 
     utils::Generator gen(sys);
-    std::shared_ptr<utils::MixtureIngredient> m1 = gen.AddMixtureIngredient(utils::SPHERE, 1.0);
+    std::shared_ptr<utils::MixtureIngredient> m1 = gen.AddMixtureIngredient(utils::MixtureType::SPHERE, 1.0);
     m1->setDefaultMaterial(ballMat);
     m1->setDefaultDensity(rho);
     m1->setDefaultSize(gran_radius);
@@ -117,7 +117,7 @@ size_t AddFallingBalls(ChSystemParallel* sys) {
     gen.RegisterCreateObjectsCallback(filter);
 
     gen.setBodyIdentifier(0);
-    gen.createObjectsBox(utils::HCP_PACK, spacing, box_center, h_dims);
+    gen.createObjectsBox(utils::SamplingType::HCP_PACK, spacing, box_center, h_dims);
 
     return gen.getTotalNumBodies();
 }
@@ -135,7 +135,6 @@ int main(int argc, char* argv[]) {
     int max_threads = CHOMPfunctions::GetNumProcs();
     if (threads > max_threads)
         threads = max_threads;
-    my_sys.SetParallelThreadNumber(threads);
     CHOMPfunctions::SetNumThreads(threads);
 
     // Set solver parameters
