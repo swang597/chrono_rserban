@@ -95,11 +95,17 @@ int main(int argc, char* argv[]) {
     spring->AddAsset(chrono_types::make_shared<ChPointPointSpring>(0.05, 80, 15));
 
     // Perform equilibrium analysis.
-    auto p1 = body1->GetPos();
-    std::cout << "Body1 pos: " << p1.x() << " " << p1.y() << " " << p1.z() << std::endl;
-    system.DoStaticNonlinear(20);
-    p1 = body1->GetPos();
-    std::cout << "Body1 pos: " << p1.x() << " " << p1.y() << " " << p1.z() << std::endl;
+    std::cout << "Body1 pos: " << body1->GetPos() << std::endl;
+    auto analysis = chrono_types::make_shared<ChStaticNonLinearAnalysis>(system);
+    analysis->SetMaxIterations(50);
+    analysis->SetCorrectionTolerance(1e-4, 1e-8);
+    ///analysis->SetResidualTolerance(1e-8);
+    analysis->SetIncrementalSteps(6);
+    analysis->SetVerbose(true);
+    system.DoStaticNonlinear(analysis);
+    std::cout << "Body1 pos: " << body1->GetPos() << std::endl;
+    std::cout << "Reaction force rev1: " << rev1->Get_react_force() << std::endl;
+    std::cout << std::endl;
 
     // Create Irrlicht window.
     ChIrrApp application(&system, L"Equilibrium demo", core::dimension2d<u32>(800, 600), false, true);
@@ -119,6 +125,8 @@ int main(int argc, char* argv[]) {
         application.DoStep();
         application.EndScene();
     }
+
+    std::cout << "\nReaction force rev1: " << rev1->Get_react_force() << "\n" << std::endl;
 
     return 0;
 }
