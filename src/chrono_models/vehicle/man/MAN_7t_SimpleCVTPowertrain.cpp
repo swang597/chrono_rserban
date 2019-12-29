@@ -12,33 +12,34 @@
 // Authors: Radu Serban, Rainer Gericke
 // =============================================================================
 //
-// Simple powertrain model for the HMMWV vehicle.
+// Simple powertrain model for the MAN 5t vehicle.
 // - hyperbolic speed-torque curve
 // - no torque converter
 // - no transmission box
 //
 // =============================================================================
 
-#include "chrono_models/vehicle/hmmwv/HMMWV_SimpleCVTPowertrain.h"
+#include "chrono_models/vehicle/man/MAN_7t_SimpleCVTPowertrain.h"
 
 namespace chrono {
 namespace vehicle {
-namespace hmmwv {
+namespace man {
 
 // -----------------------------------------------------------------------------
 // Static variables
 // -----------------------------------------------------------------------------
-const double HMMWV_SimpleCVTPowertrain::m_max_torque = 330;
-const double HMMWV_SimpleCVTPowertrain::m_max_power = 110000;
-const double HMMWV_SimpleCVTPowertrain::m_fwd_gear_ratio = 0.3;
-const double HMMWV_SimpleCVTPowertrain::m_rev_gear_ratio = -0.3;
-const double HMMWV_SimpleCVTPowertrain::m_critical_speed =
-    HMMWV_SimpleCVTPowertrain::m_max_power / HMMWV_SimpleCVTPowertrain::m_max_torque;
+const double MAN_7t_SimpleCVTPowertrain::m_max_torque = 890 * 43;
+const double MAN_7t_SimpleCVTPowertrain::m_max_power = 256000;
+const double MAN_7t_SimpleCVTPowertrain::m_fwd_gear_ratio = 1.0;
+const double MAN_7t_SimpleCVTPowertrain::m_rev_gear_ratio = -1.0;
+const double MAN_7t_SimpleCVTPowertrain::m_critical_speed =
+    MAN_7t_SimpleCVTPowertrain::m_max_power / MAN_7t_SimpleCVTPowertrain::m_max_torque;
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-HMMWV_SimpleCVTPowertrain::HMMWV_SimpleCVTPowertrain(const std::string& name) : ChSimpleCVTPowertrain(name) {}
+MAN_7t_SimpleCVTPowertrain::MAN_7t_SimpleCVTPowertrain(const std::string& name, double maxSpeed)
+    : ChSimpleCVTPowertrain(name, maxSpeed) {}
 
-}  // end namespace hmmwv
+}  // namespace man
 }  // end namespace vehicle
 }  // end namespace chrono

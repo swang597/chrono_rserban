@@ -36,6 +36,7 @@
 #include "chrono_models/vehicle/man/MAN_5t_BellcrankSolid3LinkAxle.h"
 #include "chrono_models/vehicle/man/MAN_5t_RotaryArm.h"
 #include "chrono_models/vehicle/man/MAN_5t_Driveline4WD.h"
+#include "chrono_models/vehicle/man/MAN_5t_SimpleDriveline.h"
 #include "chrono_models/vehicle/man/MAN_5t_Wheel.h"
 
 namespace chrono {
@@ -49,11 +50,13 @@ class CH_MODELS_API MAN_5t_Vehicle : public ChWheeledVehicle {
   public:
     MAN_5t_Vehicle(const bool fixed = false,
                    ChMaterialSurface::ContactMethod contact_method = ChMaterialSurface::NSC,
-                   ChassisCollisionType chassis_collision_type = ChassisCollisionType::NONE);
+                   ChassisCollisionType chassis_collision_type = ChassisCollisionType::NONE,
+                   bool useShaftDrivetrain = true);
 
     MAN_5t_Vehicle(ChSystem* system,
                    const bool fixed = false,
-                   ChassisCollisionType chassis_collision_type = ChassisCollisionType::NONE);
+                   ChassisCollisionType chassis_collision_type = ChassisCollisionType::NONE,
+                   bool useShaftDrivetrain = true);
 
     ~MAN_5t_Vehicle();
 
@@ -85,6 +88,7 @@ class CH_MODELS_API MAN_5t_Vehicle : public ChWheeledVehicle {
     void Create(bool fixed, ChassisCollisionType chassis_collision_type);
 
     std::vector<double> m_omega;
+    bool m_use_shafts_drivetrain;
 };
 
 /// @} vehicle_models_man5t

@@ -22,7 +22,7 @@
 // users and the book:
 // P. Ocker: "MAN - Die Allrad-Alleskönner", Heel Verlag, 1999, ISBN 3-89365-705-3
 //
-// The 7t (load capacity) version has three driven rigid axles. The model is unloaded.
+// The 10t (load capacity) version has four driven rigid axles. The model is unloaded.
 //
 // =============================================================================
 
@@ -30,14 +30,14 @@
 
 #include "chrono_vehicle/ChVehicleModelData.h"
 
-#include "chrono_models/vehicle/man/MAN_7t.h"
+#include "chrono_models/vehicle/man/MAN_10t.h"
 
 namespace chrono {
 namespace vehicle {
 namespace man {
 
 // -----------------------------------------------------------------------------
-MAN_7t::MAN_7t()
+MAN_10t::MAN_10t()
     : m_system(nullptr),
       m_vehicle(nullptr),
       m_contactMethod(ChMaterialSurface::NSC),
@@ -47,12 +47,12 @@ MAN_7t::MAN_7t()
       m_tire_step_size(-1),
       m_initFwdVel(0),
       m_initPos(ChCoordsys<>(ChVector<>(0, 0, 1), QUNIT)),
-      m_initOmega({0, 0, 0, 0, 0, 0}),
+      m_initOmega({0, 0, 0, 0, 0, 0, 0, 0}),
       m_use_shafts_drivetrain(false),
       m_drivetrain_max_speed(300),
       m_apply_drag(false) {}
 
-MAN_7t::MAN_7t(ChSystem* system)
+MAN_10t::MAN_10t(ChSystem* system)
     : m_system(system),
       m_vehicle(nullptr),
       m_contactMethod(ChMaterialSurface::NSC),
@@ -62,17 +62,17 @@ MAN_7t::MAN_7t(ChSystem* system)
       m_tire_step_size(-1),
       m_initFwdVel(0),
       m_initPos(ChCoordsys<>(ChVector<>(0, 0, 1), QUNIT)),
-      m_initOmega({0, 0, 0, 0, 0, 0}),
+      m_initOmega({0, 0, 0, 0, 0, 0, 0, 0}),
       m_use_shafts_drivetrain(false),
       m_drivetrain_max_speed(300),
       m_apply_drag(false) {}
 
-MAN_7t::~MAN_7t() {
+MAN_10t::~MAN_10t() {
     delete m_vehicle;
 }
 
 // -----------------------------------------------------------------------------
-void MAN_7t::SetAerodynamicDrag(double Cd, double area, double air_density) {
+void MAN_10t::SetAerodynamicDrag(double Cd, double area, double air_density) {
     m_Cd = Cd;
     m_area = area;
     m_air_density = air_density;
@@ -81,10 +81,10 @@ void MAN_7t::SetAerodynamicDrag(double Cd, double area, double air_density) {
 }
 
 // -----------------------------------------------------------------------------
-void MAN_7t::Initialize() {
-    // Create and initialize the MAN_7t vehicle
-    m_vehicle = m_system ? new MAN_7t_Vehicle(m_system, m_fixed, m_chassisCollisionType)
-                         : new MAN_7t_Vehicle(m_fixed, m_contactMethod, m_chassisCollisionType);
+void MAN_10t::Initialize() {
+    // Create and initialize the MAN_10t vehicle
+    m_vehicle = m_system ? new MAN_10t_Vehicle(m_system, m_fixed, m_chassisCollisionType)
+                         : new MAN_10t_Vehicle(m_fixed, m_contactMethod, m_chassisCollisionType);
 
     m_vehicle->SetInitWheelAngVel(m_initOmega);
     m_vehicle->Initialize(m_initPos, m_initFwdVel);
@@ -134,8 +134,11 @@ void MAN_7t::Initialize() {
         }
 */
         case TireModelType::TMEASY: {
-            auto tire_FL = chrono_types::make_shared<MAN_5t_TMeasyTire>("FL");
-            auto tire_FR = chrono_types::make_shared<MAN_5t_TMeasyTire>("FR");
+            auto tire_FL1 = chrono_types::make_shared<MAN_5t_TMeasyTire>("FL1");
+            auto tire_FR1 = chrono_types::make_shared<MAN_5t_TMeasyTire>("FR1");
+
+            auto tire_FL2 = chrono_types::make_shared<MAN_5t_TMeasyTire>("FL2");
+            auto tire_FR2 = chrono_types::make_shared<MAN_5t_TMeasyTire>("FR2");
 
             auto tire_RL1 = chrono_types::make_shared<MAN_5t_TMeasyTire>("RL1");
             auto tire_RR1 = chrono_types::make_shared<MAN_5t_TMeasyTire>("RR1");
@@ -143,16 +146,19 @@ void MAN_7t::Initialize() {
             auto tire_RL2 = chrono_types::make_shared<MAN_5t_TMeasyTire>("RL2");
             auto tire_RR2 = chrono_types::make_shared<MAN_5t_TMeasyTire>("RR2");
 
-            m_vehicle->InitializeTire(tire_FL, m_vehicle->GetAxle(0)->m_wheels[LEFT], VisualizationType::NONE);
-            m_vehicle->InitializeTire(tire_FR, m_vehicle->GetAxle(0)->m_wheels[RIGHT], VisualizationType::NONE);
+            m_vehicle->InitializeTire(tire_FL1, m_vehicle->GetAxle(0)->m_wheels[LEFT], VisualizationType::NONE);
+            m_vehicle->InitializeTire(tire_FR1, m_vehicle->GetAxle(0)->m_wheels[RIGHT], VisualizationType::NONE);
 
-            m_vehicle->InitializeTire(tire_RL1, m_vehicle->GetAxle(1)->m_wheels[LEFT], VisualizationType::NONE);
-            m_vehicle->InitializeTire(tire_RR1, m_vehicle->GetAxle(1)->m_wheels[RIGHT], VisualizationType::NONE);
+            m_vehicle->InitializeTire(tire_FL2, m_vehicle->GetAxle(1)->m_wheels[LEFT], VisualizationType::NONE);
+            m_vehicle->InitializeTire(tire_FR2, m_vehicle->GetAxle(1)->m_wheels[RIGHT], VisualizationType::NONE);
 
-            m_vehicle->InitializeTire(tire_RL2, m_vehicle->GetAxle(2)->m_wheels[LEFT], VisualizationType::NONE);
-            m_vehicle->InitializeTire(tire_RR2, m_vehicle->GetAxle(2)->m_wheels[RIGHT], VisualizationType::NONE);
+            m_vehicle->InitializeTire(tire_RL1, m_vehicle->GetAxle(2)->m_wheels[LEFT], VisualizationType::NONE);
+            m_vehicle->InitializeTire(tire_RR1, m_vehicle->GetAxle(2)->m_wheels[RIGHT], VisualizationType::NONE);
 
-            m_tire_mass = tire_FL->ReportMass();
+            m_vehicle->InitializeTire(tire_RL2, m_vehicle->GetAxle(3)->m_wheels[LEFT], VisualizationType::NONE);
+            m_vehicle->InitializeTire(tire_RR2, m_vehicle->GetAxle(3)->m_wheels[RIGHT], VisualizationType::NONE);
+
+            m_tire_mass = tire_FL1->ReportMass();
 
             break;
         }
@@ -197,7 +203,7 @@ void MAN_7t::Initialize() {
 }
 
 // -----------------------------------------------------------------------------
-void MAN_7t::SetTireVisualizationType(VisualizationType vis) {
+void MAN_10t::SetTireVisualizationType(VisualizationType vis) {
     for (auto& axle : m_vehicle->GetAxles()) {
         for (auto& wheel : axle->GetWheels()) {
             wheel->GetTire()->SetVisualizationType(vis);
@@ -206,18 +212,18 @@ void MAN_7t::SetTireVisualizationType(VisualizationType vis) {
 }
 
 // -----------------------------------------------------------------------------
-void MAN_7t::Synchronize(double time, const ChDriver::Inputs& driver_inputs, const ChTerrain& terrain) {
+void MAN_10t::Synchronize(double time, const ChDriver::Inputs& driver_inputs, const ChTerrain& terrain) {
     m_vehicle->Synchronize(time, driver_inputs, terrain);
 }
 
 // -----------------------------------------------------------------------------
-void MAN_7t::Advance(double step) {
+void MAN_10t::Advance(double step) {
     m_vehicle->Advance(step);
 }
 
 // -----------------------------------------------------------------------------
-double MAN_7t::GetTotalMass() const {
-    return m_vehicle->GetVehicleMass() + 6 * m_tire_mass;
+double MAN_10t::GetTotalMass() const {
+    return m_vehicle->GetVehicleMass() + 8 * m_tire_mass;
 }
 
 }  // namespace man

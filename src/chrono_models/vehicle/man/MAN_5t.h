@@ -35,6 +35,7 @@
 #include "chrono_models/ChApiModels.h"
 #include "chrono_models/vehicle/man/MAN_5t_Vehicle.h"
 #include "chrono_models/vehicle/man/MAN_5t_SimpleMapPowertrain.h"
+#include "chrono_models/vehicle/man/MAN_5t_SimpleCVTPowertrain.h"
 #include "chrono_models/vehicle/man/MAN_5t_TMeasyTire.h"
 
 namespace chrono {
@@ -61,6 +62,7 @@ class CH_MODELS_API MAN_5t {
     void SetInitPosition(const ChCoordsys<>& pos) { m_initPos = pos; }
     void SetInitFwdVel(double fwdVel) { m_initFwdVel = fwdVel; }
     void SetInitWheelAngVel(const std::vector<double>& omega) { m_initOmega = omega; }
+    void SetShaftBasedDrivetrain(bool val) { m_use_shafts_drivetrain = val; }
 
     void SetTireStepSize(double step_size) { m_tire_step_size = step_size; }
 
@@ -109,6 +111,9 @@ class CH_MODELS_API MAN_5t {
     MAN_5t_Vehicle* m_vehicle;
 
     double m_tire_mass;
+
+    bool m_use_shafts_drivetrain;
+    double m_drivetrain_max_speed;  // (rad/s) max. omega of simple cvt powertrain
 };
 
 /// @} vehicle_models_man5t

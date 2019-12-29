@@ -1,7 +1,7 @@
 // =============================================================================
 // PROJECT CHRONO - http://projectchrono.org
 //
-// Copyright (c) 2019 projectchrono.org
+// Copyright (c) 2014 projectchrono.org
 // All rights reserved.
 //
 // Use of this source code is governed by a BSD-style license that can be found
@@ -9,36 +9,32 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Radu Serban, Rainer Gericke
+// Authors: Radu Serban
 // =============================================================================
 //
-// Simple powertrain model for the HMMWV vehicle.
-// - hyperbolic speed-torque curve
-// - no torque converter
-// - no transmission box
+// MAN 10t simple driveline model.
 //
 // =============================================================================
 
-#include "chrono_models/vehicle/hmmwv/HMMWV_SimpleCVTPowertrain.h"
+#include "chrono_models/vehicle/man/MAN_10t_SimpleDriveline.h"
 
 namespace chrono {
 namespace vehicle {
-namespace hmmwv {
+namespace man {
 
 // -----------------------------------------------------------------------------
 // Static variables
 // -----------------------------------------------------------------------------
-const double HMMWV_SimpleCVTPowertrain::m_max_torque = 330;
-const double HMMWV_SimpleCVTPowertrain::m_max_power = 110000;
-const double HMMWV_SimpleCVTPowertrain::m_fwd_gear_ratio = 0.3;
-const double HMMWV_SimpleCVTPowertrain::m_rev_gear_ratio = -0.3;
-const double HMMWV_SimpleCVTPowertrain::m_critical_speed =
-    HMMWV_SimpleCVTPowertrain::m_max_power / HMMWV_SimpleCVTPowertrain::m_max_torque;
+const double MAN_10t_SimpleDriveline::m_front1_diff_bias = 2.0;
+const double MAN_10t_SimpleDriveline::m_front2_diff_bias = 2.0;
+const double MAN_10t_SimpleDriveline::m_rear1_diff_bias = 2.0;
+const double MAN_10t_SimpleDriveline::m_rear2_diff_bias = 2.0;
 
 // -----------------------------------------------------------------------------
+// Constructor of MAN_10t_SimpleDriveline.
 // -----------------------------------------------------------------------------
-HMMWV_SimpleCVTPowertrain::HMMWV_SimpleCVTPowertrain(const std::string& name) : ChSimpleCVTPowertrain(name) {}
+MAN_10t_SimpleDriveline::MAN_10t_SimpleDriveline(const std::string& name) : ChSimpleDriveline8WD(name) {}
 
-}  // end namespace hmmwv
+}  // namespace man
 }  // end namespace vehicle
 }  // end namespace chrono

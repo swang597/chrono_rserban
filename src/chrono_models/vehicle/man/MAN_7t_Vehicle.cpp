@@ -12,7 +12,7 @@
 // Authors: Radu Serban, Asher Elmquist, Evan Hoerl, Shuo He, Rainer Gericke
 // =============================================================================
 //
-// MAN 5t full vehicle model.
+// MAN7t full vehicle model.
 //
 // =============================================================================
 
@@ -32,13 +32,19 @@ namespace man {
 // -----------------------------------------------------------------------------
 MAN_7t_Vehicle::MAN_7t_Vehicle(const bool fixed,
                                ChMaterialSurface::ContactMethod contact_method,
-                               ChassisCollisionType chassis_collision_type)
-    : ChWheeledVehicle("MAN_7t", contact_method), m_omega({0, 0, 0, 0}) {
+                               ChassisCollisionType chassis_collision_type,
+                               bool useShaftDrivetrain)
+    : ChWheeledVehicle("MAN_7t", contact_method),
+      m_omega({0, 0, 0, 0, 0, 0}),
+      m_use_shafts_drivetrain(useShaftDrivetrain) {
     Create(fixed, chassis_collision_type);
 }
 
-MAN_7t_Vehicle::MAN_7t_Vehicle(ChSystem* system, const bool fixed, ChassisCollisionType chassis_collision_type)
-    : ChWheeledVehicle("MAN_7t", system), m_omega({0, 0, 0, 0}) {
+MAN_7t_Vehicle::MAN_7t_Vehicle(ChSystem* system,
+                               const bool fixed,
+                               ChassisCollisionType chassis_collision_type,
+                               bool useShaftDrivetrain)
+    : ChWheeledVehicle("MAN_7t", system), m_omega({0, 0, 0, 0, 0, 0}), m_use_shafts_drivetrain(useShaftDrivetrain) {
     Create(fixed, chassis_collision_type);
 }
 
@@ -61,8 +67,8 @@ void MAN_7t_Vehicle::Create(bool fixed, ChassisCollisionType chassis_collision_t
     m_axles[0]->m_wheels[1] = chrono_types::make_shared<MAN_5t_WheelRight>("Wheel_FR");
 
     m_axles[1]->m_wheels.resize(2);
-    m_axles[1]->m_wheels[0] = chrono_types::make_shared<MAN_5t_WheelLeft>("Wheel_RL2");
-    m_axles[1]->m_wheels[1] = chrono_types::make_shared<MAN_5t_WheelRight>("Wheel_RR2");
+    m_axles[1]->m_wheels[0] = chrono_types::make_shared<MAN_5t_WheelLeft>("Wheel_RL1");
+    m_axles[1]->m_wheels[1] = chrono_types::make_shared<MAN_5t_WheelRight>("Wheel_RR1");
 
     m_axles[2]->m_wheels.resize(2);
     m_axles[2]->m_wheels[0] = chrono_types::make_shared<MAN_5t_WheelLeft>("Wheel_RL2");
@@ -70,17 +76,23 @@ void MAN_7t_Vehicle::Create(bool fixed, ChassisCollisionType chassis_collision_t
 
     m_axles[0]->m_brake_left = chrono_types::make_shared<MAN_5t_BrakeSimple>("Brake_FL");
     m_axles[0]->m_brake_right = chrono_types::make_shared<MAN_5t_BrakeSimple>("Brake_FR");
+
     m_axles[1]->m_brake_left = chrono_types::make_shared<MAN_5t_BrakeSimple>("Brake_RL1");
     m_axles[1]->m_brake_right = chrono_types::make_shared<MAN_5t_BrakeSimple>("Brake_RR1");
-    m_axles[2]->m_brake_left = chrono_types::make_shared<MAN_5t_BrakeSimple>("Brake_RL1");
-    m_axles[2]->m_brake_right = chrono_types::make_shared<MAN_5t_BrakeSimple>("Brake_RR1");
+
+    m_axles[2]->m_brake_left = chrono_types::make_shared<MAN_5t_BrakeSimple>("Brake_RL2");
+    m_axles[2]->m_brake_right = chrono_types::make_shared<MAN_5t_BrakeSimple>("Brake_RR2");
 
     // Create the steering subsystem
     m_steerings.resize(1);
     m_steerings[0] = chrono_types::make_shared<MAN_5t_RotaryArm>("Steering");
 
     // Create the driveline
-    m_driveline = chrono_types::make_shared<MAN_5t_Driveline4WD>("Driveline");
+    if (m_use_shafts_drivetrain) {
+        m_driveline = chrono_types::make_shared<MAN_5t_Driveline4WD>("Driveline");
+    } else {
+        m_driveline = chrono_types::make_shared<MAN_7t_SimpleDriveline>("Driveline");
+    }
 }
 
 MAN_7t_Vehicle::~MAN_7t_Vehicle() {}
@@ -108,10 +120,18 @@ void MAN_7t_Vehicle::Initialize(const ChCoordsys<>& chassisPos, double chassisFw
 
     // Initialize the driveline subsystem (RWD)
     std::vector<int> driven_susp_indexes;
-    driven_susp_indexes.resize(2);
-    driven_susp_indexes[0] = 0;
-    driven_susp_indexes[1] = 1;
-    m_driveline->Initialize(m_chassis->GetBody(), m_axles, driven_susp_indexes);
+    if (m_use_shafts_drivetrain) {
+        driven_susp_indexes.resize(2);
+        driven_susp_indexes[0] = 0;
+        driven_susp_indexes[1] = 1;
+        m_driveline->Initialize(m_chassis->GetBody(), m_axles, driven_susp_indexes);
+    } else {
+        driven_susp_indexes.resize(3);
+        driven_susp_indexes[0] = 0;
+        driven_susp_indexes[1] = 1;
+        driven_susp_indexes[2] = 2;
+        m_driveline->Initialize(m_chassis->GetBody(), m_axles, driven_susp_indexes);
+    }
 }
 
 // -----------------------------------------------------------------------------

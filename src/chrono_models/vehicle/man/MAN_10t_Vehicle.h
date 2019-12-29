@@ -12,12 +12,12 @@
 // Authors: Radu Serban, Asher Elmquist, Evan Hoerl, Rainer Gericke
 // =============================================================================
 //
-// Base class for the MAN 7t vehicle models
+// Base class for the MAN 10t vehicle models
 //
 // =============================================================================
 
-#ifndef MAN5T_VEHICLE_H
-#define MAN5T_VEHICLE_H
+#ifndef MAN10T_VEHICLE_H
+#define MAN10T_VEHICLE_H
 
 #include <vector>
 
@@ -30,43 +30,45 @@
 
 #include "chrono_vehicle/wheeled_vehicle/ChWheeledVehicle.h"
 
-#include "chrono_models/vehicle/man/MAN_7t_Chassis.h"
+#include "chrono_models/vehicle/man/MAN_10t_Chassis.h"
 #include "chrono_models/vehicle/man/MAN_5t_BrakeSimple.h"
 #include "chrono_models/vehicle/man/MAN_7t_Solid3LinkAxle.h"
-#include "chrono_models/vehicle/man/MAN_5t_BellcrankSolid3LinkAxle.h"
+#include "chrono_models/vehicle/man/MAN_10t_Front1Axle.h"
+#include "chrono_models/vehicle/man/MAN_10t_Front2Axle.h"
 #include "chrono_models/vehicle/man/MAN_5t_RotaryArm.h"
+#include "chrono_models/vehicle/man/MAN_10t_RotaryArm2.h"
 #include "chrono_models/vehicle/man/MAN_5t_Driveline4WD.h"
-#include "chrono_models/vehicle/man/MAN_7t_SimpleDriveline.h"
+#include "chrono_models/vehicle/man/MAN_10t_SimpleDriveline.h"
 #include "chrono_models/vehicle/man/MAN_5t_Wheel.h"
 
 namespace chrono {
 namespace vehicle {
 namespace man {
 
-/// @addtogroup vehicle_models_man7t
+/// @addtogroup vehicle_models_man10t
 /// @{
 
-class CH_MODELS_API MAN_7t_Vehicle : public ChWheeledVehicle {
+class CH_MODELS_API MAN_10t_Vehicle : public ChWheeledVehicle {
   public:
-    MAN_7t_Vehicle(const bool fixed = false,
-                   ChMaterialSurface::ContactMethod contact_method = ChMaterialSurface::NSC,
-                   ChassisCollisionType chassis_collision_type = ChassisCollisionType::NONE,
-                   bool useShaftDrivetrain = true);
+    MAN_10t_Vehicle(const bool fixed = false,
+                    ChMaterialSurface::ContactMethod contact_method = ChMaterialSurface::NSC,
+                    ChassisCollisionType chassis_collision_type = ChassisCollisionType::NONE,
+                    bool useShaftDrivetrain = true);
 
-    MAN_7t_Vehicle(ChSystem* system,
-                   const bool fixed = false,
-                   ChassisCollisionType chassis_collision_type = ChassisCollisionType::NONE,
-                   bool useShaftDrivetrain = true);
+    MAN_10t_Vehicle(ChSystem* system,
+                    const bool fixed = false,
+                    ChassisCollisionType chassis_collision_type = ChassisCollisionType::NONE,
+                    bool useShaftDrivetrain = true);
 
-    ~MAN_7t_Vehicle();
+    ~MAN_10t_Vehicle();
 
-    virtual int GetNumberAxles() const override { return 3; }
-    virtual double GetWheelbase() const override { return 4.5; }  // average wheelbase
+    virtual int GetNumberAxles() const override { return 4; }
+    virtual double GetWheelbase() const override { return 6.3; }  // average wheelbase
     virtual double GetMinTurningRadius() const override { return 13.1; }
     virtual double GetMaxSteeringAngle() const override { return 39.0 * CH_C_DEG_TO_RAD; }
 
     void SetInitWheelAngVel(const std::vector<double>& omega) {
-        assert(omega.size() == 6);
+        assert(omega.size() == 8);
         m_omega = omega;
     }
 

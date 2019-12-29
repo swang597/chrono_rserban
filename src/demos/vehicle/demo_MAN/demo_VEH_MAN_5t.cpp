@@ -111,6 +111,7 @@ int main(int argc, char* argv[]) {
     my_truck.SetInitPosition(ChCoordsys<>(initLoc, initRot));
     my_truck.SetTireType(tire_model);
     my_truck.SetTireStepSize(tire_step_size);
+    my_truck.SetShaftBasedDrivetrain(false);
     my_truck.Initialize();
 
     my_truck.SetChassisVisualizationType(chassis_vis_type);

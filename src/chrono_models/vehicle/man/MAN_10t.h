@@ -20,20 +20,21 @@
 //
 // The model data come from publicly available sources, fora of private Kat 1
 // users and the book:
+//
 // P. Ocker: "MAN - Die Allrad-Alleskönner", Heel Verlag, 1999, ISBN 3-89365-705-3
 //
-// The 7t (load capacity) version has three driven rigid axles. The model is unloaded.
+// The 10t (load capacity) version has four driven rigid axles. The model is unloaded.
 //
 // =============================================================================
 
-#ifndef MAN7T_H
-#define MAN7T_H
+#ifndef MAN10T_H
+#define MAN10T_H
 
 #include <array>
 #include <string>
 
 #include "chrono_models/ChApiModels.h"
-#include "chrono_models/vehicle/man/MAN_7t_Vehicle.h"
+#include "chrono_models/vehicle/man/MAN_10t_Vehicle.h"
 #include "chrono_models/vehicle/man/MAN_7t_SimpleMapPowertrain.h"
 #include "chrono_models/vehicle/man/MAN_7t_SimpleCVTPowertrain.h"
 #include "chrono_models/vehicle/man/MAN_5t_TMeasyTire.h"
@@ -42,15 +43,15 @@ namespace chrono {
 namespace vehicle {
 namespace man {
 
-/// @addtogroup vehicle_models_man5t
+/// @addtogroup vehicle_models_man10t
 /// @{
 
-class CH_MODELS_API MAN_7t {
+class CH_MODELS_API MAN_10t {
   public:
-    MAN_7t();
-    MAN_7t(ChSystem* system);
+    MAN_10t();
+    MAN_10t(ChSystem* system);
 
-    ~MAN_7t();
+    ~MAN_10t();
 
     void SetContactMethod(ChMaterialSurface::ContactMethod val) { m_contactMethod = val; }
 
@@ -108,14 +109,14 @@ class CH_MODELS_API MAN_7t {
     double m_air_density;
 
     ChSystem* m_system;
-    MAN_7t_Vehicle* m_vehicle;
+    MAN_10t_Vehicle* m_vehicle;
 
     double m_tire_mass;
     bool m_use_shafts_drivetrain;
     double m_drivetrain_max_speed;  // (rad/s) max. omega of simple cvt powertrain
 };
 
-/// @} vehicle_models_man5t
+/// @} vehicle_models_man10t
 
 }  // namespace man
 }  // end namespace vehicle

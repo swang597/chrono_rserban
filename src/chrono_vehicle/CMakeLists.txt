@@ -319,6 +319,10 @@ set(CV_WV_DRIVELINE_FILES
     wheeled_vehicle/driveline/ChShaftsDriveline2WD.cpp
     wheeled_vehicle/driveline/ChShaftsDriveline4WD.h
     wheeled_vehicle/driveline/ChShaftsDriveline4WD.cpp
+    wheeled_vehicle/driveline/ChSimpleDriveline6WD.h
+    wheeled_vehicle/driveline/ChSimpleDriveline6WD.cpp
+    wheeled_vehicle/driveline/ChSimpleDriveline8WD.h
+    wheeled_vehicle/driveline/ChSimpleDriveline8WD.cpp
     wheeled_vehicle/driveline/ChSimpleDriveline.h
     wheeled_vehicle/driveline/ChSimpleDriveline.cpp
 

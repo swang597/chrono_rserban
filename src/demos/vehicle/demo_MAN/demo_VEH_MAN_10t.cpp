@@ -12,7 +12,7 @@
 // Authors: Radu Serban, Rainer Gericke
 // =============================================================================
 //
-// Main driver function for the MAN 7t full model.
+// Main driver function for the MAN 10t full model.
 //
 // The vehicle reference frame has Z up, X towards the front of the vehicle, and
 // Y pointing to the left.
@@ -30,7 +30,7 @@
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 #include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
 
-#include "chrono_models/vehicle/man/MAN_7t.h"
+#include "chrono_models/vehicle/man/MAN_10t.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 
@@ -85,7 +85,7 @@ double t_end = 1000;
 double render_step_size = 1.0 / 50;  // FPS = 50
 
 // Output directories
-const std::string out_dir = GetChronoOutputPath() + "CityBus";
+const std::string out_dir = GetChronoOutputPath() + "Man_10t";
 const std::string pov_dir = out_dir + "/POVRAY";
 
 // Debug logging
@@ -104,14 +104,14 @@ int main(int argc, char* argv[]) {
     // Create systems
     // --------------
     // Create the City Bus vehicle, set parameters, and initialize
-    MAN_7t my_truck;
+    MAN_10t my_truck;
     my_truck.SetContactMethod(contact_method);
     my_truck.SetChassisCollisionType(chassis_collision_type);
     my_truck.SetChassisFixed(false);
     my_truck.SetInitPosition(ChCoordsys<>(initLoc, initRot));
     my_truck.SetTireType(tire_model);
     my_truck.SetTireStepSize(tire_step_size);
-    my_truck.SetShaftBasedDrivetrain(false);
+    my_truck.SetShaftBasedDrivetrain(true);
     my_truck.Initialize();
 
     my_truck.SetChassisVisualizationType(chassis_vis_type);

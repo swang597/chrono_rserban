@@ -148,6 +148,10 @@ set(CVM_MAN_FILES
     man/MAN_5t_Driveline4WD.h
     man/MAN_5t_RotaryArm.cpp
     man/MAN_5t_RotaryArm.h
+    man/MAN_5t_SimpleDriveline.cpp
+    man/MAN_5t_SimpleDriveline.h
+    man/MAN_5t_SimpleCVTPowertrain.cpp
+    man/MAN_5t_SimpleCVTPowertrain.h
     man/MAN_5t_SimpleMapPowertrain.cpp
     man/MAN_5t_SimpleMapPowertrain.h
     man/MAN_5t_Solid3LinkAxle.cpp
@@ -163,6 +167,10 @@ set(CVM_MAN_FILES
 
     man/MAN_7t_Chassis.cpp
     man/MAN_7t_Chassis.h
+    man/MAN_7t_SimpleDriveline.cpp
+    man/MAN_7t_SimpleDriveline.h
+    man/MAN_7t_SimpleCVTPowertrain.cpp
+    man/MAN_7t_SimpleCVTPowertrain.h
     man/MAN_7t_SimpleMapPowertrain.cpp
     man/MAN_7t_SimpleMapPowertrain.h
     man/MAN_7t_Solid3LinkAxle.cpp
@@ -171,6 +179,21 @@ set(CVM_MAN_FILES
     man/MAN_7t_Vehicle.h
     man/MAN_7t.cpp
     man/MAN_7t.h
+
+    man/MAN_10t_Chassis.cpp
+    man/MAN_10t_Chassis.h
+    man/MAN_10t_Front1Axle.cpp
+    man/MAN_10t_Front1Axle.h
+    man/MAN_10t_Front2Axle.cpp
+    man/MAN_10t_Front2Axle.h
+    man/MAN_10t_RotaryArm2.cpp
+    man/MAN_10t_RotaryArm2.h
+    man/MAN_10t_SimpleDriveline.cpp
+    man/MAN_10t_SimpleDriveline.h
+    man/MAN_10t_Vehicle.cpp
+    man/MAN_10t_Vehicle.h
+    man/MAN_10t.cpp
+    man/MAN_10t.h
 )
 source_group("man" FILES ${CVM_MAN_FILES})
 
