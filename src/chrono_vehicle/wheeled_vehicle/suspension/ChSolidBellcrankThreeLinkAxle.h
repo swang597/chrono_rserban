@@ -205,7 +205,6 @@ class CH_VEHICLE_API ChSolidBellcrankThreeLinkAxle : public ChSuspension {
     std::shared_ptr<ChBody> m_knuckle[2];  ///< handles to the knuckle body
     std::shared_ptr<ChBody> m_draglink;    ///< handles to the draglink body
 
-    std::shared_ptr<ChLinkLockFree> m_axleTubeGuide;           ///< allows all translations and rotations
     std::shared_ptr<ChLinkLockRevolute> m_revBellcrank;        ///< rotation about z-axis
     std::shared_ptr<ChLinkLockSpherical> m_sphericalDraglink;  ///< connection draglink/steering
     std::shared_ptr<ChLinkUniversal> m_universalDraglink;      ///< connection draglink/bellcrank

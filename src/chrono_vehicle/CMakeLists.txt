@@ -402,6 +402,10 @@ set(CV_WV_SUSPENSION_FILES
     wheeled_vehicle/suspension/ThreeLinkIRS.cpp
     wheeled_vehicle/suspension/LeafspringAxle.h
     wheeled_vehicle/suspension/LeafspringAxle.cpp
+    wheeled_vehicle/suspension/SolidBellcrankThreeLinkAxle.h
+    wheeled_vehicle/suspension/SolidBellcrankThreeLinkAxle.cpp
+    wheeled_vehicle/suspension/SolidThreeLinkAxle.h
+    wheeled_vehicle/suspension/SolidThreeLinkAxle.cpp
     wheeled_vehicle/suspension/ToeBarLeafspringAxle.h
     wheeled_vehicle/suspension/ToeBarLeafspringAxle.cpp
 )
