@@ -38,7 +38,7 @@
 #include "chrono_models/vehicle/man/MAN_5t_RotaryArm.h"
 #include "chrono_models/vehicle/man/MAN_10t_RotaryArm2.h"
 #include "chrono_models/vehicle/man/MAN_5t_Driveline4WD.h"
-#include "chrono_models/vehicle/man/MAN_10t_SimpleDriveline.h"
+#include "chrono_models/vehicle/man/MAN_5t_SimpleDrivelineXWD.h"
 #include "chrono_models/vehicle/man/MAN_5t_Wheel.h"
 
 namespace chrono {

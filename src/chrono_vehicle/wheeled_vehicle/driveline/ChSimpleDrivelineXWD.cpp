@@ -12,55 +12,54 @@
 // Authors: Radu Serban, Rainer Gericke
 // =============================================================================
 //
-// Simple driveline model. This template can be used to model a 6WD driveline.
-// It uses a constant front/mid/rear torque split (a fixed value of 1/3) and a
+// Simple driveline model. This template can be used to model a XWD driveline.
+// Number of axles can be 1 to X.
+// It uses a constant torque split depending on the number of axles driven and a
 // simple model for Torsen limited-slip differentials.
 //
 // =============================================================================
 
 #include <cmath>
 
-#include "chrono_vehicle/wheeled_vehicle/driveline/ChSimpleDriveline6WD.h"
+#include "chrono_vehicle/wheeled_vehicle/driveline/ChSimpleDrivelineXWD.h"
 
 namespace chrono {
 namespace vehicle {
 
 // -----------------------------------------------------------------------------
-// Construct a default 6WD simple driveline.
+// Construct a default 4WD simple driveline.
 // -----------------------------------------------------------------------------
-ChSimpleDriveline6WD::ChSimpleDriveline6WD(const std::string& name) : ChDrivelineWV(name) {}
+ChSimpleDrivelineXWD::ChSimpleDrivelineXWD(const std::string& name) : ChDrivelineWV(name) {}
 
 // -----------------------------------------------------------------------------
 // Initialize the driveline subsystem.
 // This function connects this driveline to the specified axles.
 // -----------------------------------------------------------------------------
-void ChSimpleDriveline6WD::Initialize(std::shared_ptr<ChBody> chassis,
+void ChSimpleDrivelineXWD::Initialize(std::shared_ptr<ChBody> chassis,
                                       const ChAxleList& axles,
                                       const std::vector<int>& driven_axles) {
-    assert(axles.size() >= 3);
+    assert(axles.size() >= 1);
 
     m_driven_axles = driven_axles;
 
-    // Grab handles to the suspension wheel shafts.
-    m_front_left = axles[m_driven_axles[0]]->m_suspension->GetAxle(LEFT);
-    m_front_right = axles[m_driven_axles[0]]->m_suspension->GetAxle(RIGHT);
-
-    m_mid_left = axles[m_driven_axles[1]]->m_suspension->GetAxle(LEFT);
-    m_mid_right = axles[m_driven_axles[1]]->m_suspension->GetAxle(RIGHT);
-
-    m_rear_left = axles[m_driven_axles[2]]->m_suspension->GetAxle(LEFT);
-    m_rear_right = axles[m_driven_axles[2]]->m_suspension->GetAxle(RIGHT);
+    for (int i = 0; i < driven_axles.size(); i++) {
+        // Grab handles to the suspension wheel shafts.
+        m_shaft_left.push_back(axles[m_driven_axles[i]]->m_suspension->GetAxle(LEFT));
+        m_shaft_right.push_back(axles[m_driven_axles[i]]->m_suspension->GetAxle(RIGHT));
+    }
 }
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-double ChSimpleDriveline6WD::GetDriveshaftSpeed() const {
-    double speed_front = 0.5 * (m_front_left->GetPos_dt() + m_front_right->GetPos_dt());
-    double speed_mid = 0.5 * (m_mid_left->GetPos_dt() + m_mid_right->GetPos_dt());
-    double speed_rear = 0.5 * (m_rear_left->GetPos_dt() + m_rear_right->GetPos_dt());
-    double alpha = 1.0 / 3.0;
+double ChSimpleDrivelineXWD::GetDriveshaftSpeed() const {
+    double alpha = 1.0 / double(m_shaft_left.size());
+    double speed = 0;
 
-    return alpha * speed_front + alpha * speed_mid + alpha * speed_rear;
+    for (int i = 0; i < m_shaft_left.size(); i++) {
+        speed += alpha * 0.5 * (m_shaft_left[i]->GetPos_dt() + m_shaft_right[i]->GetPos_dt());
+    }
+
+    return speed;
 }
 
 // -----------------------------------------------------------------------------
@@ -69,7 +68,7 @@ double ChSimpleDriveline6WD::GetDriveshaftSpeed() const {
 // We hardcode the speed difference range over which the torque bias grows from
 // a value of 1 to a value of max_bias to the interval [0.25, 0.5].
 // -----------------------------------------------------------------------------
-void differentialSplit6WD(double torque,
+void differentialSplitXWD(double torque,
                           double max_bias,
                           double speed_left,
                           double speed_right,
@@ -100,58 +99,31 @@ void differentialSplit6WD(double torque,
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-void ChSimpleDriveline6WD::Synchronize(double torque) {
-    // Split the input torque front/back.
-    const double alpha = 1.0 / 3.0;
-    double torque_front = alpha * torque;
-    double torque_mid = alpha * torque;
-    double torque_rear = alpha * torque;
+void ChSimpleDrivelineXWD::Synchronize(double torque) {
+    double alpha = 1.0 / double(m_shaft_left.size());
+    double torque_axle = alpha * torque;
 
     // Split the axle torques for the corresponding left/right wheels and apply
     // them to the suspension wheel shafts.
-    double torque_left;
-    double torque_right;
 
-    differentialSplit6WD(torque_front, GetFrontDifferentialMaxBias(), m_front_left->GetPos_dt(),
-                         m_front_right->GetPos_dt(), torque_left, torque_right);
-    m_front_left->SetAppliedTorque(-torque_left);
-    m_front_right->SetAppliedTorque(-torque_right);
-
-    differentialSplit6WD(torque_front, GetMidDifferentialMaxBias(), m_mid_left->GetPos_dt(), m_mid_right->GetPos_dt(),
-                         torque_left, torque_right);
-    m_mid_left->SetAppliedTorque(-torque_left);
-    m_mid_right->SetAppliedTorque(-torque_right);
-
-    differentialSplit6WD(torque_rear, GetRearDifferentialMaxBias(), m_rear_left->GetPos_dt(), m_rear_right->GetPos_dt(),
-                         torque_left, torque_right);
-    m_rear_left->SetAppliedTorque(-torque_left);
-    m_rear_right->SetAppliedTorque(-torque_right);
+    for (int axle = 0; axle < m_shaft_left.size(); axle++) {
+        double torque_left;
+        double torque_right;
+        differentialSplitXWD(torque_axle, GetDifferentialMaxBias(), m_shaft_left[axle]->GetPos_dt(),
+                             m_shaft_right[axle]->GetPos_dt(), torque_left, torque_right);
+        m_shaft_left[axle]->SetAppliedTorque(-torque_left);
+        m_shaft_right[axle]->SetAppliedTorque(-torque_right);
+    }
 }
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-double ChSimpleDriveline6WD::GetSpindleTorque(int axle, VehicleSide side) const {
-    if (axle == m_driven_axles[0]) {
-        switch (side) {
-            case LEFT:
-                return -m_front_left->GetAppliedTorque();
-            case RIGHT:
-                return -m_front_right->GetAppliedTorque();
-        }
-    } else if (axle == m_driven_axles[1]) {
-        switch (side) {
-            case LEFT:
-                return -m_mid_left->GetAppliedTorque();
-            case RIGHT:
-                return -m_mid_right->GetAppliedTorque();
-        }
-    } else if (axle == m_driven_axles[2]) {
-        switch (side) {
-            case LEFT:
-                return -m_rear_left->GetAppliedTorque();
-            case RIGHT:
-                return -m_rear_right->GetAppliedTorque();
-        }
+double ChSimpleDrivelineXWD::GetSpindleTorque(int axle, VehicleSide side) const {
+    switch (side) {
+        case LEFT:
+            return -m_shaft_left[axle]->GetAppliedTorque();
+        case RIGHT:
+            return -m_shaft_right[axle]->GetAppliedTorque();
     }
 
     return 0;

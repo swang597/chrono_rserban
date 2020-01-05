@@ -60,7 +60,9 @@ using namespace chrono::vehicle;
 // =============================================================================
 
 // JSON file for vehicle model
-std::string vehicle_file("MAN_Kat1/vehicle/MAN_5t_Vehicle_4WD.json");
+// std::string vehicle_file("MAN_Kat1/vehicle/MAN_5t_Vehicle_4WD.json");
+// std::string vehicle_file("MAN_Kat1/vehicle/MAN_7t_Vehicle_6WD.json");
+std::string vehicle_file("MAN_Kat1/vehicle/MAN_10t_Vehicle_8WD.json");
 ////std::string vehicle_file("hmmwv/vehicle/HMMWV_Vehicle_simple_lugged.json");
 ////std::string vehicle_file("hmmwv/vehicle/HMMWV_Vehicle_4WD.json");
 ////std::string vehicle_file("generic/vehicle/Vehicle_DoubleWishbones.json");
@@ -85,7 +87,8 @@ std::string rigidterrain_file("terrain/RigidPlane.json");
 std::string simplepowertrain_file("generic/powertrain/SimplePowertrain.json");
 
 // JSON file for cvt powertrain (simple)
-std::string simplecvtpowertrain_file("MAN_Kat1/powertrain/MAN_5t_SimpleCVTPowertrain.json");
+// std::string simplecvtpowertrain_file("MAN_Kat1/powertrain/MAN_5t_SimpleCVTPowertrain.json");
+std::string simplecvtpowertrain_file("MAN_Kat1/powertrain/MAN_7t_SimpleCVTPowertrain.json");
 
 // JSON files tire models (rigid)
 std::string rigidtire_file("hmmwv/tire/HMMWV_RigidTire.json");
@@ -209,7 +212,7 @@ int main(int argc, char* argv[]) {
 
 #ifdef USE_IRRLICHT
 
-    ChWheeledVehicleIrrApp app(&vehicle, L"MAN 5t Demo");
+    ChWheeledVehicleIrrApp app(&vehicle, L"MAN 10t Demo");
 
     app.SetSkyBox();
     app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);

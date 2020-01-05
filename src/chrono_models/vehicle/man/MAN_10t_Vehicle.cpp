@@ -103,7 +103,7 @@ void MAN_10t_Vehicle::Create(bool fixed, ChassisCollisionType chassis_collision_
     if (m_use_shafts_drivetrain) {
         m_driveline = chrono_types::make_shared<MAN_5t_Driveline4WD>("Driveline");
     } else {
-        m_driveline = chrono_types::make_shared<MAN_10t_SimpleDriveline>("Driveline");
+        m_driveline = chrono_types::make_shared<MAN_5t_SimpleDrivelineXWD>("Driveline");
     }
 }
 
@@ -144,7 +144,7 @@ void MAN_10t_Vehicle::Initialize(const ChCoordsys<>& chassisPos, double chassisF
         driven_susp_indexes[1] = 3;
         m_driveline->Initialize(m_chassis->GetBody(), m_axles, driven_susp_indexes);
     } else {
-        driven_susp_indexes.resize(3);
+        driven_susp_indexes.resize(4);
         driven_susp_indexes[0] = 0;
         driven_susp_indexes[1] = 1;
         driven_susp_indexes[2] = 2;

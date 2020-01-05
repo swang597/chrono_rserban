@@ -36,7 +36,7 @@
 #include "chrono_models/vehicle/man/MAN_5t_BellcrankSolid3LinkAxle.h"
 #include "chrono_models/vehicle/man/MAN_5t_RotaryArm.h"
 #include "chrono_models/vehicle/man/MAN_5t_Driveline4WD.h"
-#include "chrono_models/vehicle/man/MAN_7t_SimpleDriveline.h"
+#include "chrono_models/vehicle/man/MAN_5t_SimpleDrivelineXWD.h"
 #include "chrono_models/vehicle/man/MAN_5t_Wheel.h"
 
 namespace chrono {

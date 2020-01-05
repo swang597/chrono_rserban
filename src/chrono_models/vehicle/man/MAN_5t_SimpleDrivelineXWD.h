@@ -12,14 +12,14 @@
 // Authors: Radu Serban
 // =============================================================================
 //
-// MAN 7t simple driveline model.
+// MAN 5t simple driveline model.
 //
 // =============================================================================
 
-#ifndef MAN7T_SIMPLEDRIVELINE_H
-#define MAN7T_SIMPLEDRIVELINE_H
+#ifndef MAN5T_SIMPLEDRIVELINE_XWD_H
+#define MAN5T_SIMPLEDRIVELINE_XWD_H
 
-#include "chrono_vehicle/wheeled_vehicle/driveline/ChSimpleDriveline6WD.h"
+#include "chrono_vehicle/wheeled_vehicle/driveline/ChSimpleDrivelineXWD.h"
 
 #include "chrono_models/ChApiModels.h"
 
@@ -31,20 +31,16 @@ namespace man {
 /// @{
 
 /// Simple MAN 5t driveline subsystem (purely kinematic).
-class CH_MODELS_API MAN_7t_SimpleDriveline : public ChSimpleDriveline6WD {
+class CH_MODELS_API MAN_5t_SimpleDrivelineXWD : public ChSimpleDrivelineXWD {
   public:
-    MAN_7t_SimpleDriveline(const std::string& name);
+    MAN_5t_SimpleDrivelineXWD(const std::string& name);
 
-    ~MAN_7t_SimpleDriveline() {}
+    ~MAN_5t_SimpleDrivelineXWD() {}
 
-    virtual double GetFrontDifferentialMaxBias() const override { return m_front_diff_bias; }
-    virtual double GetMidDifferentialMaxBias() const override { return m_mid_diff_bias; }
-    virtual double GetRearDifferentialMaxBias() const override { return m_rear_diff_bias; }
+    virtual double GetDifferentialMaxBias() const override { return m_diff_bias; }
 
   private:
-    static const double m_front_diff_bias;
-    static const double m_mid_diff_bias;
-    static const double m_rear_diff_bias;
+    static const double m_diff_bias;
 };
 
 /// @} vehicle_models_man

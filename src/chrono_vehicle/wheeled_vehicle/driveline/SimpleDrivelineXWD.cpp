@@ -12,29 +12,40 @@
 // Authors: Radu Serban
 // =============================================================================
 //
-// MAN 10t simple driveline model.
+// Simple driveline model template using data from file (JSON format).
 //
 // =============================================================================
 
-#include "chrono_models/vehicle/man/MAN_10t_SimpleDriveline.h"
+#include "chrono_vehicle/wheeled_vehicle/driveline/SimpleDrivelineXWD.h"
+#include "chrono_vehicle/utils/ChUtilsJSON.h"
+
+using namespace rapidjson;
 
 namespace chrono {
 namespace vehicle {
-namespace man {
 
 // -----------------------------------------------------------------------------
-// Static variables
 // -----------------------------------------------------------------------------
-const double MAN_10t_SimpleDriveline::m_front1_diff_bias = 2.0;
-const double MAN_10t_SimpleDriveline::m_front2_diff_bias = 2.0;
-const double MAN_10t_SimpleDriveline::m_rear1_diff_bias = 2.0;
-const double MAN_10t_SimpleDriveline::m_rear2_diff_bias = 2.0;
+SimpleDrivelineXWD::SimpleDrivelineXWD(const std::string& filename) : ChSimpleDrivelineXWD("") {
+    Document d = ReadFileJSON(filename);
+    if (d.IsNull())
+        return;
 
-// -----------------------------------------------------------------------------
-// Constructor of MAN_10t_SimpleDriveline.
-// -----------------------------------------------------------------------------
-MAN_10t_SimpleDriveline::MAN_10t_SimpleDriveline(const std::string& name) : ChSimpleDriveline8WD(name) {}
+    Create(d);
 
-}  // namespace man
+    GetLog() << "Loaded JSON: " << filename.c_str() << "\n";
+}
+
+SimpleDrivelineXWD::SimpleDrivelineXWD(const rapidjson::Document& d) : ChSimpleDrivelineXWD("") {
+    Create(d);
+}
+
+void SimpleDrivelineXWD::Create(const rapidjson::Document& d) {
+    // Invoke base class method.
+    ChPart::Create(d);
+
+    m_diff_bias = d["Differential Max Bias"].GetDouble();
+}
+
 }  // end namespace vehicle
 }  // end namespace chrono

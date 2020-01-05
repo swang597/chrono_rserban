@@ -150,6 +150,8 @@ set(CVM_MAN_FILES
     man/MAN_5t_RotaryArm.h
     man/MAN_5t_SimpleDriveline.cpp
     man/MAN_5t_SimpleDriveline.h
+    man/MAN_5t_SimpleDrivelineXWD.cpp
+    man/MAN_5t_SimpleDrivelineXWD.h
     man/MAN_5t_SimpleCVTPowertrain.cpp
     man/MAN_5t_SimpleCVTPowertrain.h
     man/MAN_5t_SimpleMapPowertrain.cpp
@@ -167,8 +169,6 @@ set(CVM_MAN_FILES
 
     man/MAN_7t_Chassis.cpp
     man/MAN_7t_Chassis.h
-    man/MAN_7t_SimpleDriveline.cpp
-    man/MAN_7t_SimpleDriveline.h
     man/MAN_7t_SimpleCVTPowertrain.cpp
     man/MAN_7t_SimpleCVTPowertrain.h
     man/MAN_7t_SimpleMapPowertrain.cpp
@@ -188,8 +188,6 @@ set(CVM_MAN_FILES
     man/MAN_10t_Front2Axle.h
     man/MAN_10t_RotaryArm2.cpp
     man/MAN_10t_RotaryArm2.h
-    man/MAN_10t_SimpleDriveline.cpp
-    man/MAN_10t_SimpleDriveline.h
     man/MAN_10t_Vehicle.cpp
     man/MAN_10t_Vehicle.h
     man/MAN_10t.cpp

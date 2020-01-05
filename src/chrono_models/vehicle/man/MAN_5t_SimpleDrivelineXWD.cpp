@@ -12,11 +12,11 @@
 // Authors: Radu Serban
 // =============================================================================
 //
-// MAN 7t simple driveline model.
+// MAN 5t simple driveline model.
 //
 // =============================================================================
 
-#include "chrono_models/vehicle/man/MAN_7t_SimpleDriveline.h"
+#include "chrono_models/vehicle/man/MAN_5t_SimpleDrivelineXWD.h"
 
 namespace chrono {
 namespace vehicle {
@@ -25,14 +25,12 @@ namespace man {
 // -----------------------------------------------------------------------------
 // Static variables
 // -----------------------------------------------------------------------------
-const double MAN_7t_SimpleDriveline::m_front_diff_bias = 2.0;
-const double MAN_7t_SimpleDriveline::m_mid_diff_bias = 2.0;
-const double MAN_7t_SimpleDriveline::m_rear_diff_bias = 2.0;
+const double MAN_5t_SimpleDrivelineXWD::m_diff_bias = 2.0;
 
 // -----------------------------------------------------------------------------
-// Constructor of MAN_7t_SimpleDriveline.
+// Constructor of MAN_5t_SimpleDriveline.
 // -----------------------------------------------------------------------------
-MAN_7t_SimpleDriveline::MAN_7t_SimpleDriveline(const std::string& name) : ChSimpleDriveline6WD(name) {}
+MAN_5t_SimpleDrivelineXWD::MAN_5t_SimpleDrivelineXWD(const std::string& name) : ChSimpleDrivelineXWD(name) {}
 
 }  // namespace man
 }  // end namespace vehicle

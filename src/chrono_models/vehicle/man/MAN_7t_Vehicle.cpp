@@ -91,7 +91,7 @@ void MAN_7t_Vehicle::Create(bool fixed, ChassisCollisionType chassis_collision_t
     if (m_use_shafts_drivetrain) {
         m_driveline = chrono_types::make_shared<MAN_5t_Driveline4WD>("Driveline");
     } else {
-        m_driveline = chrono_types::make_shared<MAN_7t_SimpleDriveline>("Driveline");
+        m_driveline = chrono_types::make_shared<MAN_5t_SimpleDrivelineXWD>("Driveline");
     }
 }
 
