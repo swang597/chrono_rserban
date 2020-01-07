@@ -29,7 +29,7 @@ namespace chrono {
 namespace vehicle {
 namespace man {
 
-/// @addtogroup vehicle_models_citybus
+/// @addtogroup vehicle_models_man
 /// @{
 
 /// TMeasy tire model for the MAN 5t truck vehicle.
@@ -59,7 +59,7 @@ class CH_MODELS_API MAN_5t_TMeasyTire : public ChTMeasyTire {
     ChFunction_Recorder m_stiffnessMap;
 };
 
-/// @} vehicle_models_citybus
+/// @} vehicle_models_man
 
 }  // namespace man
 }  // end namespace vehicle

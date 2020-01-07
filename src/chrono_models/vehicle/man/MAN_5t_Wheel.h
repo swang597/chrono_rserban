@@ -31,10 +31,10 @@ namespace chrono {
 namespace vehicle {
 namespace man {
 
-/// @addtogroup vehicle_models_man5t
+/// @addtogroup vehicle_models_man
 /// @{
 
-/// MAN 5t wheel base class.
+/// MAN wheel base class.
 class CH_MODELS_API MAN_5t_Wheel : public ChWheel {
   public:
     MAN_5t_Wheel(const std::string& name);
@@ -60,7 +60,7 @@ class CH_MODELS_API MAN_5t_Wheel : public ChWheel {
     static const ChVector<> m_inertia;
 };
 
-/// CityBus left wheel (front or rear).
+/// MAN left wheel (front or rear).
 class CH_MODELS_API MAN_5t_WheelLeft : public MAN_5t_Wheel {
   public:
     MAN_5t_WheelLeft(const std::string& name);
@@ -74,7 +74,7 @@ class CH_MODELS_API MAN_5t_WheelLeft : public MAN_5t_Wheel {
     static const std::string m_meshFile;
 };
 
-/// CityBus right wheel (front or rear).
+/// MAN right wheel (front or rear).
 class CH_MODELS_API MAN_5t_WheelRight : public MAN_5t_Wheel {
   public:
     MAN_5t_WheelRight(const std::string& name);
@@ -88,7 +88,7 @@ class CH_MODELS_API MAN_5t_WheelRight : public MAN_5t_Wheel {
     static const std::string m_meshFile;
 };
 
-/// @} vehicle_models_citybus
+/// @} vehicle_models_man
 
 }  // namespace man
 }  // end namespace vehicle

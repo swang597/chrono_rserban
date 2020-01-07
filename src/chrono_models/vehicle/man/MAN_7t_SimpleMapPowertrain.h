@@ -12,7 +12,7 @@
 // Authors: Radu Serban, Rainer Gericke
 // =============================================================================
 //
-// Simple powertrain model for the CityBus vehicle.
+// Simple powertrain model for the MAN 7t vehicle.
 // - based on torque-speed engine maps
 // - both power and torque limited
 // - no torque converter
@@ -30,10 +30,10 @@ namespace chrono {
 namespace vehicle {
 namespace man {
 
-/// @addtogroup vehicle_models_man7t
+/// @addtogroup vehicle_models_man
 /// @{
 
-/// Simple CityBus powertrain subsystem (based on engine speed-torque maps).
+/// Simple MAN 7t powertrain subsystem (based on engine speed-torque maps).
 class CH_MODELS_API MAN_7t_SimpleMapPowertrain : public ChSimpleMapPowertrain {
   public:
     MAN_7t_SimpleMapPowertrain(const std::string& name);
@@ -63,7 +63,7 @@ class CH_MODELS_API MAN_7t_SimpleMapPowertrain : public ChSimpleMapPowertrain {
         ) override;
 };
 
-/// @} vehicle_models_citybus
+/// @} vehicle_models_man
 
 }  // namespace man
 }  // end namespace vehicle

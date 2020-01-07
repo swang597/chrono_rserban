@@ -12,7 +12,7 @@
 // Authors: Alessandro Tasora, Rainer Gericke
 // =============================================================================
 //
-// MAN 5t simple brake models (front and rear).
+// MAN simple brake models (front and rear).
 //
 // =============================================================================
 
@@ -27,10 +27,10 @@ namespace chrono {
 namespace vehicle {
 namespace man {
 
-/// @addtogroup vehicle_models_citybus
+/// @addtogroup vehicle_models_man
 /// @{
 
-/// Simple CityBus brake subsystem (torque applied directly to the spindle joint).
+/// Simple MAN brake subsystem (torque applied directly to the spindle joint).
 class CH_MODELS_API MAN_5t_BrakeSimple : public ChBrakeSimple {
   public:
     MAN_5t_BrakeSimple(const std::string& name);
@@ -42,7 +42,7 @@ class CH_MODELS_API MAN_5t_BrakeSimple : public ChBrakeSimple {
     static const double m_maxtorque;
 };
 
-/// @} vehicle_models_citybus
+/// @} vehicle_models_man
 
 }  // namespace man
 }  // end namespace vehicle

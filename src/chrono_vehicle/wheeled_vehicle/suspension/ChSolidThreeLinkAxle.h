@@ -46,7 +46,6 @@ namespace vehicle {
 /// @{
 
 /// Base class for a coil-spring or air-spring solid axle suspension.
-/// Derived from ChSuspension, but still an abstract base class.
 ///
 /// The suspension subsystem is modeled with respect to a right-handed frame,
 /// with X pointing towards the front, Y to the left, and Z up (ISO standard).

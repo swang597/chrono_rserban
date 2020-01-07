@@ -45,7 +45,7 @@ namespace chrono {
 namespace vehicle {
 namespace man {
 
-/// @addtogroup vehicle_models_man10t
+/// @addtogroup vehicle_models_man
 /// @{
 
 class CH_MODELS_API MAN_10t_Vehicle : public ChWheeledVehicle {
@@ -94,7 +94,7 @@ class CH_MODELS_API MAN_10t_Vehicle : public ChWheeledVehicle {
     bool m_use_shafts_drivetrain;
 };
 
-/// @} vehicle_models_man5t
+/// @} vehicle_models_man
 
 }  // namespace man
 }  // end namespace vehicle

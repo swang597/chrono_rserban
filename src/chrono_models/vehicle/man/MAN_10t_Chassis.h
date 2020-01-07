@@ -30,10 +30,10 @@ namespace chrono {
 namespace vehicle {
 namespace man {
 
-/// @addtogroup vehicle_models_man10t
+/// @addtogroup vehicle_models_man
 /// @{
 
-/// CityBus chassis subsystem.
+/// MAN 10t chassis subsystem.
 class CH_MODELS_API MAN_10t_Chassis : public ChRigidChassis {
   public:
     MAN_10t_Chassis(const std::string& name,
@@ -64,7 +64,7 @@ class CH_MODELS_API MAN_10t_Chassis : public ChRigidChassis {
     static const ChCoordsys<> m_driverCsys;
 };
 
-/// @} vehicle_models_man10t
+/// @} vehicle_models_man
 
 }  // namespace man
 }  // end namespace vehicle

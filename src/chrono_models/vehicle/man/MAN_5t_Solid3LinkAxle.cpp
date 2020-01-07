@@ -56,7 +56,7 @@ const double MAN_5t_Solid3LinkAxle::m_axleShaftInertia = 0.4 * 6.56;
 const double MAN_5t_Solid3LinkAxle::m_twin_tire_dist = 0.0;
 
 // ---------------------------------------------------------------------------------------
-// CityBus spring functor class - implements a linear spring + bump stop + rebound stop
+// MAN spring functor class - implements a linear spring + bump stop + rebound stop
 // ---------------------------------------------------------------------------------------
 class MAN_5t_SpringForceRear : public ChLinkTSDA::ForceFunctor {
   public:

@@ -16,9 +16,9 @@
 // (including the vehicle itself, the powertrain, and the tires).
 //
 // The MAN Kat 1 truck family has been designed for offroad service.
-// The development stems from the 60s, the begin of servce was ca. 1976
+// The development stems from the 60s, the begin of service was ca. 1976
 //
-// The model data come from publicly available sources, fora of private Kat 1
+// The model data come from publicly available sources; forums of private Kat 1
 // users and the book:
 // P. Ocker: "MAN - Die Allrad-Alleskönner", Heel Verlag, 1999, ISBN 3-89365-705-3
 //
@@ -42,9 +42,11 @@ namespace chrono {
 namespace vehicle {
 namespace man {
 
-/// @addtogroup vehicle_models_man5t
+/// @addtogroup vehicle_models_man
 /// @{
 
+/// Wrapper class for modeling an entire MAN 5t vehicle assembly
+/// (including the vehicle itself, the powertrain, and the tires).
 class CH_MODELS_API MAN_5t {
   public:
     MAN_5t();
@@ -116,7 +118,7 @@ class CH_MODELS_API MAN_5t {
     double m_drivetrain_max_speed;  // (rad/s) max. omega of simple cvt powertrain
 };
 
-/// @} vehicle_models_man5t
+/// @} vehicle_models_man
 
 }  // namespace man
 }  // end namespace vehicle

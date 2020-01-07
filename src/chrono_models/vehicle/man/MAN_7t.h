@@ -42,7 +42,7 @@ namespace chrono {
 namespace vehicle {
 namespace man {
 
-/// @addtogroup vehicle_models_man5t
+/// @addtogroup vehicle_models_man
 /// @{
 
 class CH_MODELS_API MAN_7t {
@@ -115,7 +115,7 @@ class CH_MODELS_API MAN_7t {
     double m_drivetrain_max_speed;  // (rad/s) max. omega of simple cvt powertrain
 };
 
-/// @} vehicle_models_man5t
+/// @} vehicle_models_man
 
 }  // namespace man
 }  // end namespace vehicle

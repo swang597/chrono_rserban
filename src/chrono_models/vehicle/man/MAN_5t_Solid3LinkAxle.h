@@ -27,7 +27,7 @@ namespace chrono {
 namespace vehicle {
 namespace man {
 
-/// @addtogroup vehicle_models_man5t
+/// @addtogroup vehicle_models_man
 /// @{
 
 class CH_MODELS_API MAN_5t_Solid3LinkAxle : public ChSolidThreeLinkAxle {
@@ -89,7 +89,7 @@ class CH_MODELS_API MAN_5t_Solid3LinkAxle : public ChSolidThreeLinkAxle {
     static const double m_twin_tire_dist;
 };
 
-/// @} vehicle_models_citybus
+/// @} vehicle_models_man
 
 }  // namespace man
 }  // end namespace vehicle

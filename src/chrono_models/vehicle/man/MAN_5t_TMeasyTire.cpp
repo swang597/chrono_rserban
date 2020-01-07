@@ -30,7 +30,7 @@ namespace man {
 // Static variables
 // -----------------------------------------------------------------------------
 
-const std::string MAN_5t_TMeasyTire::m_meshName = "citybus_tire_POV_geom";
+const std::string MAN_5t_TMeasyTire::m_meshName = "man_tire_POV_geom";
 const std::string MAN_5t_TMeasyTire::m_meshFile = "man/MAN_5t_wheel_L.obj";
 
 const double MAN_5t_TMeasyTire::m_mass = 104.0;

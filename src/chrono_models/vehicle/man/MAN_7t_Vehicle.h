@@ -16,8 +16,8 @@
 //
 // =============================================================================
 
-#ifndef MAN5T_VEHICLE_H
-#define MAN5T_VEHICLE_H
+#ifndef MAN7T_VEHICLE_H
+#define MAN7T_VEHICLE_H
 
 #include <vector>
 
@@ -43,7 +43,7 @@ namespace chrono {
 namespace vehicle {
 namespace man {
 
-/// @addtogroup vehicle_models_man7t
+/// @addtogroup vehicle_models_man
 /// @{
 
 class CH_MODELS_API MAN_7t_Vehicle : public ChWheeledVehicle {
@@ -92,7 +92,7 @@ class CH_MODELS_API MAN_7t_Vehicle : public ChWheeledVehicle {
     bool m_use_shafts_drivetrain;
 };
 
-/// @} vehicle_models_man5t
+/// @} vehicle_models_man
 
 }  // namespace man
 }  // end namespace vehicle
