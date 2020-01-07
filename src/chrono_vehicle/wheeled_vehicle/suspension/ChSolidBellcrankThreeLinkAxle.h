@@ -12,7 +12,7 @@
 // Authors: Rainer Gericke, Radu Serban
 // =============================================================================
 //
-// Base class for a leaf-spring solid axle suspension, typically combined
+// Base class for a coil-spring or air-spring solid axle suspension
 // with the rotary arm steering.
 //
 // Derived from ChSuspension, but still an abstract base class.
@@ -47,7 +47,7 @@ namespace vehicle {
 /// @addtogroup vehicle_wheeled_suspension
 /// @{
 
-/// Base class for a leaf-spring solid axle suspension.
+/// Base class for a coil-spring or air-spring solid axle suspension.
 /// Derived from ChSuspension, but still an abstract base class.
 ///
 /// The suspension subsystem is modeled with respect to a right-handed frame,
