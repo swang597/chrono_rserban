@@ -21,7 +21,7 @@ global_settings { ambient_light rgb<1, 1, 1> }
 //
 // ============================================================================================
 
-//#declare datafile = "ThreeLinkIRS.dat"
+//#declare datafile = "DoubleWishbone.dat"
 //#declare cam_perspective = true;
 //#declare cam_lookat = <-1.25, 0, 0>;
 //#declare cam_loc = <-3.25, -1.75, 1>;
@@ -34,18 +34,25 @@ global_settings { ambient_light rgb<1, 1, 1> }
 // Render static objects?
 #declare render_static = false;
 
-//Render links?
-#declare render_links = true;
+// Render links?
+#declare render_links = true;  
+
+// Render TSDAs?
+#declare render_tsda = true;
 
 
 // -------------------------------------------------------
 // Dimensions for rendering links
 #declare revolute_radius = 0.015;
 #declare revolute_halflen = 0.04;
+
+#declare cyl_radius = 0.04;
+#declare cyl_halflen = 0.05;
  
 #declare spherical_radius = 0.035;
  
-#declare spring_radius = 0.02;
+#declare spring_radius = 0.05;
+#declare damper_radius = 0.016;
   
 #declare distance_cnstr_radius = 0.007;
 
@@ -97,7 +104,9 @@ camera {
 #include "shapes.inc"
 #include "strings.inc"
 #include "textures.inc"
-#include "colors.inc"
+#include "colors.inc"        
+#include "functions.inc"  
+#include "transforms.inc"
 
 // ============================================================================================ 
 //
@@ -253,6 +262,36 @@ camera {
     Parse_String(concat(curve_name, " position(pos,rot)"))
 #end
 
+             
+// --------------------------------------------------------------------------------------------          
+// Render a coil spring of specified (radius) between the two specified points          
+#macro CoilSpring(p1, p2, rad)
+  #local IsoTexture = texture { pigment { rgb <1.0, 0.6, 0.6> } finish {phong 0.6 phong_size 250 } }
+                         
+  #local center = 0.5 * (p1 + p2);
+  #local dir = p2-p1;
+  #local len = vlength(dir);                     
+  #local LCorner = 1.1 * <-rad, -len/2, -rad>;
+  #local RCorner = 1.1 * <rad, len/2,  rad>;
+  isosurface {
+     function { f_helix1(x,y,z, 1, 100, 0.004, rad, 1, 1, 0) }
+         //P0= number of helixes
+         //P1= frequency
+         //P2= minor radius
+         //P3= major radius
+         //P4= Y scale cross section
+         //P5= cross section
+         //P6= cross section rotation (¡)
+     contained_by { box { LCorner, RCorner } }
+     max_gradient 1.5
+     texture { IsoTexture }
+     no_shadow
+
+     // Apply transform (translation + rotation) directly in POV-Ray frame
+     Point_At_Trans(<dir.x, dir.z, dir.y>)
+     translate <center.x, center.z, center.y>
+  }
+#end
 
 // ============================================================================================
 //
@@ -265,7 +304,7 @@ camera {
 #fopen MyDataFile datafile read 
 
 // Read first line: number of bodies, visualization objects, and links
-#read (MyDataFile, numBodies, numObjects, numLinks)
+#read (MyDataFile, numBodies, numObjects, numLinks, numTSDA)
 
         // ---------------------------------------------
         // RENDER BODY FRAMES
@@ -406,7 +445,7 @@ camera {
             #read (MyDataFile, px, py, pz)
             sphere {
             <px,pz,py>, spherical_radius
-            pigment{Bronze2}
+            pigment{color Bronze2 transmit 0.3}
         }
         #break
   
@@ -417,7 +456,18 @@ camera {
                   <px-revolute_halflen*dx,  pz-revolute_halflen*dz, py-revolute_halflen*dy>, 
                   <px+revolute_halflen*dx,  pz+revolute_halflen*dz, py+revolute_halflen*dy>, 
                   revolute_radius   
-                  pigment{Bronze2}
+                  pigment{color Bronze2 transmit 0.3}
+            }
+        #break
+
+        // Cylindrical -------
+        #case (8)
+            #read (MyDataFile, px, py, pz, dx, dy, dz)
+            cylinder {
+                  <px-cyl_halflen*dx,  pz-cyl_halflen*dz, py-cyl_halflen*dy>, 
+                  <px+cyl_halflen*dx,  pz+cyl_halflen*dz, py+cyl_halflen*dy>, 
+                  cyl_radius   
+                  pigment{color Bronze2 transmit 0.3}
             }
         #break
   
@@ -428,7 +478,7 @@ camera {
                   <px-prismatic_halflen*dx,  pz-prismatic_halflen*dz, py-prismatic_halflen*dy>, 
                   <px+prismatic_halflen*dx,  pz+prismatic_halflen*dz, py+prismatic_halflen*dy>, 
                   prismatic_radius
-                  pigment {color Bronze2}
+                  pigment {color Bronze2 transmit 0.3}
               }
         #break
   
@@ -439,38 +489,29 @@ camera {
                   <px-revolute_halflen*ux,  pz-revolute_halflen*uz, py-revolute_halflen*uy>, 
                   <px+revolute_halflen*ux,  pz+revolute_halflen*uz, py+revolute_halflen*uy>, 
                   revolute_radius   
-                  pigment{Bronze2}
+                  pigment{color Bronze2 transmit 0.3}
             }  
             cylinder {
                   <px-revolute_halflen*vx,  pz-revolute_halflen*vz, py-revolute_halflen*vy>, 
                   <px+revolute_halflen*vx,  pz+revolute_halflen*vz, py+revolute_halflen*vy>, 
                   revolute_radius
-                  pigment{Bronze2}
+                  pigment{color Bronze2 transmit 0.3}
             }
         #break
   
         // LinkSpring ------
         #case (6)
             #read (MyDataFile, p1x, p1y, p1z, p2x, p2y, p2z)
-            cylinder {
-              <p1x,p1z,p1y>, <p2x,p2z,p2y>, spring_radius
-              ////pigment {color Orange }
-              texture{Peel scale revolute_halflen/2}
-            } 
-            //sphere {<p1x,p1z,p1y> 1.01 * spring_radius pigment{Orange}} 
-            //sphere {<p2x,p2z,p2y> 1.01 * spring_radius pigment{Orange}} 
+            //cylinder {
+            //  <p1x,p1z,p1y>, <p2x,p2z,p2y>, spring_radius
+            //  texture{Peel scale revolute_halflen/2}
+            //}  
         #break
     
         // TSDA ------
         #case (7)
             #read (MyDataFile, p1x, p1y, p1z, p2x, p2y, p2z)
-            cylinder {
-              <p1x,p1z,p1y>, <p2x,p2z,p2y>, spring_radius 
-              ////pigment {color Orange } 
-              texture{Peel scale revolute_halflen/2}
-            }
-            //sphere {<p1x,p1z,p1y> 1.01 * spring_radius pigment{Orange}} 
-            //sphere {<p2x,p2z,p2y> 1.01 * spring_radius pigment{Orange}} 
+            //CoilSpring(<p1x,p1y,p1z>, <p2x,p2y,p2z>, spring_radius)
         #break
   
         // LinkEngine ------
@@ -480,7 +521,7 @@ camera {
                   <px-revolute_halflen*dx,  pz-revolute_halflen*dz, py-revolute_halflen*dy>, 
                   <px+revolute_halflen*dx,  pz+revolute_halflen*dz, py+revolute_halflen*dy>, 
                   spring_radius   
-                  pigment{Scarlet}
+                  pigment{color Scarlet transmit 0.5}
             }
         #break
   
@@ -496,7 +537,35 @@ camera {
     #end  // switch (link)
       
   #end  // for links
-#end  // if (render_links)
+#end  // if (render_links)     
+
+
+        // ---------------------------------------------
+        //    RENDER TSDA
+        // ---------------------------------------------   
+
+#if (render_tsda)
+  #for (i, 1, numTSDA)
+
+    #read (MyDataFile, tsda, p1x, p1y, p1z, p2x, p2y, p2z)
+
+    #switch (tsda)
+      // segment
+      #case (0)
+         cylinder {
+           <p1x,p1z,p1y>, <p2x,p2z,p2y>, damper_radius 
+           pigment{color rgb <1.0, 0.6, 0.6> transmit 0.3}
+         }
+      #break
+
+      // coil
+      #case (1)
+        CoilSpring(<p1x,p1y,p1z>, <p2x,p2y,p2z>, spring_radius)
+      #break
+
+    #end // switch (tsda)
+  #end // for tsda
+#end // if (render_tsda)
 
 // Done processing data file.
 #fclose MyDataFile
@@ -508,7 +577,7 @@ camera {
     XYZframe(global_frame_len, global_frame_radius)
 #end 
 
-
+        
 // ============================================================================================     
 //
 // ENVIRONMENT

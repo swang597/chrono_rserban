@@ -25,9 +25,9 @@
 // - For a suspension template name 'XXX', the following files are generated:
 //      XXX.dat     - contains the data with body and asset information
 //      XXX_inc.pov - an automatically generated POV-Ray header which specifies
-//                    the data filename and camera settings (the view is always 
+//                    the data filename and camera settings (the view is always
 //                    pointing at the axle center, from behind)
-//      XXX.ini     - the POV-Ray ini file 
+//      XXX.ini     - the POV-Ray ini file
 // - Copy the POV-Ray script 'render_suspension.pov' into the output directory
 // - Run POV-Ray specifying the ini file; for example:
 //      povray /EXIT /RENDER XXX.ini
@@ -134,6 +134,17 @@ int main(int argc, char* argv[]) {
 
         // Save POV-Ray file once the rig is at specified ride height
         if (ride_height < 0 || driver->Started()) {
+            // Hack: create a dummy body (to render a global reference frame)
+            auto loc_spindleL = rig->GetSuspension()->GetSpindlePos(LEFT);
+            auto loc_spindleR = rig->GetSuspension()->GetSpindlePos(RIGHT);
+            auto loc = 0.5 * (loc_spindleL + loc_spindleR);
+            loc.x() -= 0.5;
+            loc.z() -= 0.1;
+            auto dummy = std::shared_ptr<ChBody>(rig->GetSystem()->NewBody());
+            dummy->SetPos(loc);
+            dummy->SetIdentifier(-1);
+            rig->GetSystem()->AddBody(dummy);
+
             std::string filename = out_dir + "/" + susp_name + ".dat";
             utils::WriteShapesPovray(rig->GetSystem(), filename);
             break;
@@ -163,7 +174,6 @@ int main(int argc, char* argv[]) {
         inc_file << "#declare cam_loc = <" << loc.x() - 2 << ", -1.75, 1>;\n";
         inc_file << "#declare cam_angle = 50;\n";
     }
-
 
     return 0;
 }
