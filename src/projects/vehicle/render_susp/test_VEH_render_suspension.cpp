@@ -59,6 +59,8 @@ std::string vehicle_file("hmmwv/vehicle/HMMWV_Vehicle.json");
 ////std::string vehicle_file("generic/vehicle/Vehicle_SemiTrailingArm.json");
 ////std::string vehicle_file("generic/vehicle/Vehicle_ThreeLinkIRS.json");
 ////std::string vehicle_file("generic/vehicle/Vehicle_SolidAxles.json");
+////std::string vehicle_file("generic/vehicle/Vehicle_RigidSuspension.json");
+////std::string vehicle_file("generic/vehicle/Vehicle_RigidPinnedAxle.json");
 
 // Vehicle axle (starting with 0 in front)
 int axle_index = 1;
