@@ -61,6 +61,7 @@ std::string vehicle_file("hmmwv/vehicle/HMMWV_Vehicle.json");
 ////std::string vehicle_file("generic/vehicle/Vehicle_SolidAxles.json");
 ////std::string vehicle_file("generic/vehicle/Vehicle_RigidSuspension.json");
 ////std::string vehicle_file("generic/vehicle/Vehicle_RigidPinnedAxle.json");
+////std::string vehicle_file("generic/vehicle/Vehicle_HendricksonPRIMAXX.json");
 
 // Vehicle axle (starting with 0 in front)
 int axle_index = 1;
@@ -140,7 +141,7 @@ int main(int argc, char* argv[]) {
             auto loc_spindleL = rig->GetSuspension()->GetSpindlePos(LEFT);
             auto loc_spindleR = rig->GetSuspension()->GetSpindlePos(RIGHT);
             auto loc = 0.5 * (loc_spindleL + loc_spindleR);
-            loc.x() -= 0.5;
+            loc.x() -= 0.75;
             loc.z() -= 0.1;
             auto dummy = std::shared_ptr<ChBody>(rig->GetSystem()->NewBody());
             dummy->SetPos(loc);
