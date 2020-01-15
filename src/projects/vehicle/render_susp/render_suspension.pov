@@ -61,9 +61,9 @@ global_settings { ambient_light rgb<1, 1, 1> }
 
 // -------------------------------------------------------
 // Draw global frame?
-#declare draw_global_frame = false;
+#declare draw_global_frame = true;
 #declare global_frame_radius = 0.004;
-#declare global_frame_len = 1;
+#declare global_frame_len = 0.15;
 
 // Draw body frames?
 #declare draw_body_frame = true;
@@ -312,17 +312,18 @@ camera {
 
 #for (i, 1, numBodies)
     #read (MyDataFile, id, active, ax, ay, az, e0, e1, e2, e3)
-    #if (draw_body_frame & (active | render_static))
-       object {
+    #if (draw_body_frame & (active | render_static))  
+       #if (draw_global_frame & (id = -1))
+         object {
+            XYZframe(0.15, body_frame_radius * 1.5) 
+            position(<ax,ay,az>,<e0,e1,e2,e3>)  
+         }        
+       #else             
+         object {
             XYZframe(body_frame_len, body_frame_radius) 
             position(<ax,ay,az>,<e0,e1,e2,e3>)  
-       }
-    #end
-
-    // Save the location of body 0 as 'chassis_loc'.
-    // This can be used to move the camera relative to this body (see "CAMERA" section below)
-    #if (id = 0) 
-       #declare chassis_loc = <ax, ay, az>;
+         }    
+       #end
     #end
 #end
 
@@ -569,13 +570,6 @@ camera {
 
 // Done processing data file.
 #fclose MyDataFile
-
-// ---------------------------------------
-// Draw axes (RHF with z up)
-
-#if (draw_global_frame)
-    XYZframe(global_frame_len, global_frame_radius)
-#end 
 
         
 // ============================================================================================     

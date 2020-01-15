@@ -166,8 +166,13 @@ int main(int argc, char* argv[]) {
         ini_file << "Input_File_Name=\"render_suspension.pov\"\n";
         ini_file << "Include_Header=\"" << susp_name << "_inc.pov\"\n";
         ini_file << "Output_File_Name=\"" << susp_name << ".png\"\n";
+        ini_file << "Height = 1200\n";
+        ini_file << "Width = 1600\n";
+        ini_file << "Antialias = On\n";
+        ini_file << "Antialias_Threshold = 0.3\n";
     }
 
+    // Camera position for viewing entire suspension assembly
     {
         std::string filename = out_dir + "/" + susp_name + "_inc.pov";
         ChStreamOutAsciiFile inc_file(filename.c_str());
@@ -177,6 +182,17 @@ int main(int argc, char* argv[]) {
         inc_file << "#declare cam_loc = <" << loc.x() - 2 << ", -1.75, 1>;\n";
         inc_file << "#declare cam_angle = 50;\n";
     }
+
+    // Camera position for zooming on left side
+    ////{
+    ////    std::string filename = out_dir + "/" + susp_name + "_inc.pov";
+    ////    ChStreamOutAsciiFile inc_file(filename.c_str());
+    ////    inc_file << "#declare datafile = \"" << susp_name << ".dat\"\n";
+    ////    inc_file << "#declare cam_perspective = true;\n";
+    ////    inc_file << "#declare cam_lookat = <" << loc.x() << "," << loc.y() - 0.25 << "," << loc.z() << ">;\n";
+    ////    inc_file << "#declare cam_loc = <" << loc.x() - 1 << ", -0.7, 1>;\n";
+    ////    inc_file << "#declare cam_angle = 50;\n";
+    ////}
 
     return 0;
 }
