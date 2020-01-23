@@ -535,6 +535,15 @@ camera {
             }
         #break
   
+        // Revolute-spherical joint -------
+        #case (9)
+            #read (MyDataFile, p1x, p1y, p1z, p2x, p2y, p2z)
+            cylinder {
+              <p1x,p1z,p1y>, <p2x,p2z,p2y>, 2 * distance_cnstr_radius
+              pigment {color Bronze2}
+            }
+        #break
+  
     #end  // switch (link)
       
   #end  // for links

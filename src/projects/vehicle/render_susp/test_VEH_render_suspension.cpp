@@ -138,13 +138,8 @@ int main(int argc, char* argv[]) {
         // Save POV-Ray file once the rig is at specified ride height
         if (ride_height < 0 || driver->Started()) {
             // Hack: create a dummy body (to render a global reference frame)
-            auto loc_spindleL = rig->GetSuspension()->GetSpindlePos(LEFT);
-            auto loc_spindleR = rig->GetSuspension()->GetSpindlePos(RIGHT);
-            auto loc = 0.5 * (loc_spindleL + loc_spindleR);
-            loc.x() -= 0.75;
-            loc.z() -= 0.1;
             auto dummy = std::shared_ptr<ChBody>(rig->GetSystem()->NewBody());
-            dummy->SetPos(loc);
+            dummy->SetPos(rig->GetSuspension()->GetLocation());
             dummy->SetIdentifier(-1);
             rig->GetSystem()->AddBody(dummy);
 
@@ -155,9 +150,9 @@ int main(int argc, char* argv[]) {
     }
 
     // Left spindle location
-    auto loc = rig->GetSuspension()->GetSpindlePos(LEFT);
+    auto locL = rig->GetSuspension()->GetSpindlePos(LEFT);
     std::cout << "\n\nSuspension template:  " << susp_name << "\n";
-    std::cout << "Suspension location:  " << loc << std::endl;
+    std::cout << "Suspension left spindle location:  " << locL << std::endl;
 
     // Generate wrapper scripts
     {
@@ -178,8 +173,8 @@ int main(int argc, char* argv[]) {
         ChStreamOutAsciiFile inc_file(filename.c_str());
         inc_file << "#declare datafile = \"" << susp_name << ".dat\"\n";
         inc_file << "#declare cam_perspective = true;\n";
-        inc_file << "#declare cam_lookat = <" << loc.x() << ", 0, 0>;\n";
-        inc_file << "#declare cam_loc = <" << loc.x() - 2 << ", -1.75, 1>;\n";
+        inc_file << "#declare cam_lookat = <" << locL.x() << ", 0, 0>;\n";
+        inc_file << "#declare cam_loc = <" << locL.x() - 2 << ", -1.75, 1>;\n";
         inc_file << "#declare cam_angle = 50;\n";
     }
 
@@ -189,8 +184,8 @@ int main(int argc, char* argv[]) {
     ////    ChStreamOutAsciiFile inc_file(filename.c_str());
     ////    inc_file << "#declare datafile = \"" << susp_name << ".dat\"\n";
     ////    inc_file << "#declare cam_perspective = true;\n";
-    ////    inc_file << "#declare cam_lookat = <" << loc.x() << "," << loc.y() - 0.25 << "," << loc.z() << ">;\n";
-    ////    inc_file << "#declare cam_loc = <" << loc.x() - 1 << ", -0.7, 1>;\n";
+    ////    inc_file << "#declare cam_lookat = <" << locL.x() << "," << locL.y() - 0.25 << "," << locL.z() << ">;\n";
+    ////    inc_file << "#declare cam_loc = <" << locL.x() - 1 << ", -0.7, 1>;\n";
     ////    inc_file << "#declare cam_angle = 50;\n";
     ////}
 
