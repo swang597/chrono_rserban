@@ -45,41 +45,13 @@ class CH_MODELS_API WVP_Wheel : public ChWheel {
     virtual void RemoveVisualizationAssets() override;
 
   protected:
-    virtual std::string GetMeshName() const = 0;
-    virtual std::string GetMeshFile() const = 0;
-
+    static const std::string m_meshFile;
     std::shared_ptr<ChTriangleMeshShape> m_trimesh_shape;
 
     static const double m_radius;
     static const double m_width;
     static const double m_mass;
     static const ChVector<> m_inertia;
-};
-
-class CH_MODELS_API WVP_WheelLeft : public WVP_Wheel {
-  public:
-    WVP_WheelLeft(const std::string& name);
-    ~WVP_WheelLeft() {}
-
-    virtual std::string GetMeshName() const override { return m_meshName; }
-    virtual std::string GetMeshFile() const override { return GetDataFile(m_meshFile); }
-
-  private:
-    static const std::string m_meshName;
-    static const std::string m_meshFile;
-};
-
-class CH_MODELS_API WVP_WheelRight : public WVP_Wheel {
-  public:
-    WVP_WheelRight(const std::string& name);
-    ~WVP_WheelRight() {}
-
-    virtual std::string GetMeshName() const override { return m_meshName; }
-    virtual std::string GetMeshFile() const override { return GetDataFile(m_meshFile); }
-
-  private:
-    static const std::string m_meshName;
-    static const std::string m_meshFile;
 };
 
 }  // end namespace wvp

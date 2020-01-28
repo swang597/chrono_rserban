@@ -64,8 +64,8 @@ class CH_MODELS_API FEDA_Pac02Tire : public ChPac02Tire {
     bool m_use_bott_map;
     unsigned int m_tire_inflation_pressure_level;
 
-    static const std::string m_meshName;
-    static const std::string m_meshFile;
+    static const std::string m_meshFile_left;
+    static const std::string m_meshFile_right;
     std::shared_ptr<ChTriangleMeshShape> m_trimesh_shape;
 
     void SetParametersLevel1();

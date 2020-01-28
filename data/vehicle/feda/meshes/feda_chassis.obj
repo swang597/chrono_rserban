@@ -1,6 +1,6 @@
 # Blender v2.79 (sub 0) OBJ File: 'feda_small.blend'
 # www.blender.org
-mtllib feda_small.mtl
+mtllib feda_chassis.mtl
 o FEDAlphaBody
 v 0.468771 -1.022510 0.691880
 v 0.597483 -0.704427 0.622930

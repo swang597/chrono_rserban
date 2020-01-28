@@ -34,7 +34,7 @@ namespace feda {
 /// @addtogroup vehicle_models_feda
 /// @{
 
-/// FEDA wheel base class.
+/// FEDA wheel (can be used on any axle, left or right).
 class CH_MODELS_API FEDA_Wheel : public ChWheel {
   public:
     FEDA_Wheel(const std::string& name);
@@ -49,43 +49,13 @@ class CH_MODELS_API FEDA_Wheel : public ChWheel {
     virtual void RemoveVisualizationAssets() override;
 
   protected:
-    virtual std::string GetMeshName() const = 0;
-    virtual std::string GetMeshFile() const = 0;
-
+    static const std::string m_meshFile;
     std::shared_ptr<ChTriangleMeshShape> m_trimesh_shape;
 
     static const double m_radius;
     static const double m_width;
     static const double m_mass;
     static const ChVector<> m_inertia;
-};
-
-/// FEDA left wheel (front or rear).
-class CH_MODELS_API FEDA_WheelLeft : public FEDA_Wheel {
-  public:
-    FEDA_WheelLeft(const std::string& name);
-    ~FEDA_WheelLeft() {}
-
-    virtual std::string GetMeshName() const override { return m_meshName; }
-    virtual std::string GetMeshFile() const override { return GetDataFile(m_meshFile); }
-
-  private:
-    static const std::string m_meshName;
-    static const std::string m_meshFile;
-};
-
-/// FEDA right wheel (front or rear).
-class CH_MODELS_API FEDA_WheelRight : public FEDA_Wheel {
-  public:
-    FEDA_WheelRight(const std::string& name);
-    ~FEDA_WheelRight() {}
-
-    virtual std::string GetMeshName() const override { return m_meshName; }
-    virtual std::string GetMeshFile() const override { return GetDataFile(m_meshFile); }
-
-  private:
-    static const std::string m_meshName;
-    static const std::string m_meshFile;
 };
 
 /// @} vehicle_models_feda

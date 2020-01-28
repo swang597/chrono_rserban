@@ -67,8 +67,7 @@ FEDA_Chassis::FEDA_Chassis(const std::string& name, bool fixed, ChassisCollision
     m_vis_boxes.push_back(box1);
 
     m_has_mesh = true;
-    m_vis_mesh_name = "FEDA_chassis_POV_geom";
-    m_vis_mesh_file = "feda/meshes/feda_small.obj";
+    m_vis_mesh_file = "feda/meshes/feda_chassis.obj";
 
     m_has_collision = (chassis_collision_type != ChassisCollisionType::NONE);
     switch (chassis_collision_type) {
@@ -76,7 +75,7 @@ FEDA_Chassis::FEDA_Chassis(const std::string& name, bool fixed, ChassisCollision
             m_coll_boxes.push_back(box1);
             break;
         case ChassisCollisionType::MESH:
-            m_coll_mesh_names.push_back("feda/meshes/FEDA_chassis_col.obj");
+            m_coll_mesh_names.push_back("feda/meshes/feda_chassis_simple.obj");
             break;
         default:
             break;

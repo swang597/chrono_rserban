@@ -52,7 +52,6 @@ class CH_MODELS_API FEDA_RigidTire : public ChRigidTire {
     static const double m_mass;
     static const ChVector<> m_inertia;
 
-    static const std::string m_meshName;
     static const std::string m_meshFile;
     std::shared_ptr<ChTriangleMeshShape> m_trimesh_shape;
 };

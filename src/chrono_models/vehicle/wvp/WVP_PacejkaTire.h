@@ -47,8 +47,8 @@ class CH_MODELS_API WVP_PacejkaTire : public ChPacejkaTire {
 
     static const std::string m_pacTireFile;
 
-    static const std::string m_meshName;
-    static const std::string m_meshFile;
+    static const std::string m_meshFile_left;
+    static const std::string m_meshFile_right;
     std::shared_ptr<ChTriangleMeshShape> m_trimesh_shape;
 };
 

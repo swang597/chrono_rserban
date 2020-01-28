@@ -59,8 +59,7 @@ WVP_Chassis::WVP_Chassis(const std::string& name, bool fixed, ChassisCollisionTy
     m_vis_boxes.push_back(box1);
 
     m_has_mesh = true;
-    m_vis_mesh_name = "hmmwv_chassis_POV_geom";
-    m_vis_mesh_file = "hmmwv/hmmwv_chassis.obj";
+    m_vis_mesh_file = "wvp/wvp_chassis.obj";
 
     m_has_collision = (chassis_collision_type != ChassisCollisionType::NONE);
     switch (chassis_collision_type) {
@@ -68,7 +67,7 @@ WVP_Chassis::WVP_Chassis(const std::string& name, bool fixed, ChassisCollisionTy
             m_coll_boxes.push_back(box1);
             break;
         case ChassisCollisionType::MESH:
-            m_coll_mesh_names.push_back("hmmwv/hmmwv_chassis_simple.obj");
+            m_coll_mesh_names.push_back("wvp/wvp_chassis_simple.obj");
             break;
     }
 }

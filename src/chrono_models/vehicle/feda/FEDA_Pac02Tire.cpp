@@ -36,8 +36,8 @@ namespace feda {
 const double FEDA_Pac02Tire::m_mass = 55.4;
 const ChVector<> FEDA_Pac02Tire::m_inertia(6.39, 11.31, 6.39);
 
-const std::string FEDA_Pac02Tire::m_meshName = "FEDA_tire_POV_geom";
-const std::string FEDA_Pac02Tire::m_meshFile = "feda/tire.obj";
+const std::string FEDA_Pac02Tire::m_meshFile_left = "feda/feda_tire_left.obj";
+const std::string FEDA_Pac02Tire::m_meshFile_right = "feda/feda_tire_right.obj";
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
@@ -665,14 +665,8 @@ double FEDA_Pac02Tire::GetNormalStiffnessForce(double depth) const {
 // -----------------------------------------------------------------------------
 void FEDA_Pac02Tire::AddVisualizationAssets(VisualizationType vis) {
     if (vis == VisualizationType::MESH) {
-        auto trimesh = chrono_types::make_shared<geometry::ChTriangleMeshConnected>();
-        trimesh->LoadWavefrontMesh(vehicle::GetDataFile(m_meshFile), false, false);
-        trimesh->Transform(ChVector<>(0, GetOffset(), 0), ChMatrix33<>(1));
-        m_trimesh_shape = chrono_types::make_shared<ChTriangleMeshShape>();
-        m_trimesh_shape->SetMesh(trimesh);
-        m_trimesh_shape->SetName(m_meshName);
-        m_trimesh_shape->SetStatic(true);
-        m_wheel->GetSpindle()->AddAsset(m_trimesh_shape);
+        m_trimesh_shape = AddVisualizationMesh(vehicle::GetDataFile(m_meshFile_left),    // left side
+                                               vehicle::GetDataFile(m_meshFile_right));  // right side
     } else {
         ChPac02Tire::AddVisualizationAssets(vis);
     }
@@ -680,14 +674,7 @@ void FEDA_Pac02Tire::AddVisualizationAssets(VisualizationType vis) {
 
 void FEDA_Pac02Tire::RemoveVisualizationAssets() {
     ChPac02Tire::RemoveVisualizationAssets();
-
-    // Make sure we only remove the assets added by FEDA_Pac02Tire::AddVisualizationAssets.
-    // This is important for the ChTire object because a wheel may add its own assets
-    // to the same body (the spindle/wheel).
-    auto& assets = m_wheel->GetSpindle()->GetAssets();
-    auto it = std::find(assets.begin(), assets.end(), m_trimesh_shape);
-    if (it != assets.end())
-        assets.erase(it);
+    RemoveVisualizationMesh(m_trimesh_shape);
 }
 
 }  // namespace feda

@@ -34,10 +34,10 @@ namespace wvp {
 const double WVP_PacejkaTire::m_mass = 71.1;
 const ChVector<> WVP_PacejkaTire::m_inertia(9.62, 16.84, 9.62);
 
-const std::string WVP_PacejkaTire::m_pacTireFile = "hmmwv/tire/HMMWV_pacejka.tir";
+const std::string WVP_PacejkaTire::m_pacTireFile = "wvp/tire/WVP_pacejka.tir";
 
-const std::string WVP_PacejkaTire::m_meshName = "hmmwv_tire_POV_geom";
-const std::string WVP_PacejkaTire::m_meshFile = "hmmwv/hmmwv_tire.obj";
+const std::string WVP_PacejkaTire::m_meshFile_left = "wvp/wvp_tire_left.obj";
+const std::string WVP_PacejkaTire::m_meshFile_right = "wvp/wvp_tire_right.obj";
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
@@ -47,13 +47,8 @@ WVP_PacejkaTire::WVP_PacejkaTire(const std::string& name) : ChPacejkaTire(name, 
 // -----------------------------------------------------------------------------
 void WVP_PacejkaTire::AddVisualizationAssets(VisualizationType vis) {
     if (vis == VisualizationType::MESH) {
-        auto trimesh = chrono_types::make_shared<geometry::ChTriangleMeshConnected>();
-        trimesh->LoadWavefrontMesh(vehicle::GetDataFile(m_meshFile), false, false);
-        trimesh->Transform(ChVector<>(0, GetOffset(), 0), ChMatrix33<>(1));
-        m_trimesh_shape = chrono_types::make_shared<ChTriangleMeshShape>();
-        m_trimesh_shape->SetMesh(trimesh);
-        m_trimesh_shape->SetName(m_meshName);
-        m_wheel->GetSpindle()->AddAsset(m_trimesh_shape);
+        m_trimesh_shape = AddVisualizationMesh(vehicle::GetDataFile(m_meshFile_left),    // left side
+                                               vehicle::GetDataFile(m_meshFile_right));  // right side
     } else {
         ChPacejkaTire::AddVisualizationAssets(vis);
     }
@@ -61,14 +56,7 @@ void WVP_PacejkaTire::AddVisualizationAssets(VisualizationType vis) {
 
 void WVP_PacejkaTire::RemoveVisualizationAssets() {
     ChPacejkaTire::RemoveVisualizationAssets();
-
-    // Make sure we only remove the assets added by HMMWV_Pac02Tire::AddVisualizationAssets.
-    // This is important for the ChTire object because a wheel may add its own assets
-    // to the same body (the spindle/wheel).
-    auto& assets = m_wheel->GetSpindle()->GetAssets();
-    auto it = std::find(assets.begin(), assets.end(), m_trimesh_shape);
-    if (it != assets.end())
-        assets.erase(it);
+    RemoveVisualizationMesh(m_trimesh_shape);
 }
 
 }  // end namespace wvp
