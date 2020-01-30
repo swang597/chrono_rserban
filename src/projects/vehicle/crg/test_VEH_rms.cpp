@@ -115,7 +115,7 @@ int main(int argc, char* argv[]) {
     terrain.ExportMeshPovray(out_dir);
 
     // Get the vehicle path (middle of the road)
-    auto path = terrain.GetPath();
+    auto path = terrain.GetRoadCenterLine();
     bool path_is_closed = terrain.IsPathClosed();
     double road_length = terrain.GetLength();
 

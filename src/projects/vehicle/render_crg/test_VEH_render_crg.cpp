@@ -12,7 +12,7 @@
 // Authors: Radu Serban, Rainer Gericke
 // =============================================================================
 //
-// Demonstration of an OpenCRG terrain and the ChHumanDirver
+// Program for exporting POV-Ray visualization data for CRG terrain
 //
 // The vehicle reference frame has Z up, X towards the front of the vehicle, and
 // Y pointing to the left.
@@ -20,7 +20,7 @@
 // =============================================================================
 
 #include "chrono_vehicle/ChVehicleModelData.h"
-#include "chrono_vehicle/driver/ChHumanDriver.h"
+#include "chrono_vehicle/driver/ChPathFollowerDriver.h"
 #include "chrono_vehicle/terrain/CRGTerrain.h"
 #include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
 
@@ -32,8 +32,6 @@ using namespace chrono;
 using namespace chrono::vehicle;
 using namespace chrono::vehicle::hmmwv;
 
-#define READ_JSON_FILE
-
 // =============================================================================
 // Problem parameters
 
@@ -42,25 +40,24 @@ TireModelType tire_model = TireModelType::TMEASY;
 
 // OpenCRG input file
 std::string crg_road_file = "terrain/crg_roads/Barber.crg";
+////std::string crg_road_file = "terrain/crg_roads/Horstwalde.crg";
+////std::string crg_road_file = "terrain/crg_roads/handmade_arc.crg";
+////std::string crg_road_file = "terrain/crg_roads/handmade_banked.crg";
+////std::string crg_road_file = "terrain/crg_roads/handmade_circle.crg";
+////std::string crg_road_file = "terrain/crg_roads/handmade_sloped.crg";
 
 // Road visualization (mesh or boundary lines)
 bool useMesh = false;
 
-// Desired minimal vehicle speed (m/s)
-double minimum_speed = 12;
-
-// Desired minimal vehicle speed (m/s)
-double maximum_speed = 30;
+// Desired vehicle speed (m/s)
+double target_speed = 12;
 
 // Simulation step size
 double step_size = 3e-3;
 double tire_step_size = 1e-3;
 
 // Output frame images
-bool output_images = false;
-double fps = 60;
-const std::string out_dir = GetChronoOutputPath() + "OPENCRG_DEMO";
-const std::string json_file = "hmmwv/driver/HumanController.json";
+const std::string out_dir = "../RENDER_CRG";
 
 // =============================================================================
 
@@ -100,28 +97,23 @@ int main(int argc, char* argv[]) {
     double road_length = terrain.GetLength();
     double road_width = terrain.GetWidth();
 
-#ifdef READ_JSON_FILE
-    ChHumanDriver driver(vehicle::GetDataFile(json_file), my_hmmwv.GetVehicle(), path, "my_path", path_is_closed,
-                         road_width, my_hmmwv.GetVehicle().GetMaxSteeringAngle(), 3.2);
-#else
-    ChHumanDriver driver(my_hmmwv.GetVehicle(), path, "my_path", path_is_closed, road_width,
-                         my_hmmwv.GetVehicle().GetMaxSteeringAngle(), 3.2);
-    driver.SetPreviewTime(0.5);
-    driver.SetLateralGains(0.1, 2);
-    driver.SetLongitudinalGains(0.1, 0.1, 0.2);
-    driver.SetSpeedRange(minimum_speed, maximum_speed);
-#endif
-    // driver.GetSteeringController().SetGains(0.1, 5);
-    // driver.GetSteeringController().SetPreviewTime(0.5);
-    // driver.GetSpeedController().SetGains(0.4, 0, 0);
+    ChPathFollowerDriverSR driver(my_hmmwv.GetVehicle(), path, "road_center", target_speed, path_is_closed,
+                                  my_hmmwv.GetVehicle().GetMaxSteeringAngle(), 3.2);
+    driver.GetSteeringController().SetGains(0.1, 5);
+    driver.GetSteeringController().SetPreviewTime(0.5);
+    driver.GetSpeedController().SetGains(0.4, 0, 0);
     driver.Initialize();
+
+    // Export paths to POV-Ray
+    driver.ExportPathPovray(out_dir);
+    terrain.ExportCurvesPovray(out_dir);
 
     // ---------------------------------------
     // Create the vehicle Irrlicht application
     // ---------------------------------------
+    ChWheeledVehicleIrrApp app(&my_hmmwv.GetVehicle(), L"OpenCRG Demo SR Steering",
+                               irr::core::dimension2d<irr::u32>(1600, 1200));
 
-    ChWheeledVehicleIrrApp app(&my_hmmwv.GetVehicle(), L"OpenCRG Demo Simple Realistic Human Driver",
-                               irr::core::dimension2d<irr::u32>(800, 640));
     app.SetHUDLocation(500, 20);
     app.SetSkyBox();
     app.AddTypicalLogo();
@@ -133,25 +125,14 @@ int main(int argc, char* argv[]) {
 
     app.SetTimestep(step_size);
 
-    // Visualization of controller points (sentinel & target)
-    irr::scene::IMeshSceneNode* ballS = app.GetSceneManager()->addSphereSceneNode(0.1f);
-    irr::scene::IMeshSceneNode* ballT = app.GetSceneManager()->addSphereSceneNode(0.1f);
-    ballS->getMaterial(0).EmissiveColor = irr::video::SColor(0, 255, 0, 0);
-    ballT->getMaterial(0).EmissiveColor = irr::video::SColor(0, 0, 255, 0);
-
     // Finalize construction of visualization assets
     app.AssetBindAll();
     app.AssetUpdateAll();
 
-    // ----------------
     // Output directory
-    // ----------------
-
-    if (output_images) {
-        if (!filesystem::create_directory(filesystem::path(out_dir))) {
-            std::cout << "Error creating directory " << out_dir << std::endl;
-            return 1;
-        }
+    if (!filesystem::create_directory(filesystem::path(out_dir))) {
+        std::cout << "Error creating directory " << out_dir << std::endl;
+        return 1;
     }
 
     // ---------------
@@ -159,20 +140,19 @@ int main(int argc, char* argv[]) {
     // ---------------
 
     // Final time
-    double t_end = 300.0;
-
+    double t_end = 2 + road_length / target_speed;
+    if (path_is_closed) {
+        t_end += 30.0;
+    }
     std::cout << "Road length:     " << road_length << std::endl;
     std::cout << "Road width:      " << road_width << std::endl;
     std::cout << "Closed loop?     " << path_is_closed << std::endl;
     std::cout << "Set end time to: " << t_end << std::endl;
 
-    // Number of simulation steps between image outputs
-    double render_step_size = 1 / fps;
-    int render_steps = (int)std::ceil(render_step_size / step_size);
-
-    // Initialize frame counters
-    int sim_frame = 0;
-    int render_frame = 0;
+    app.SetChaseCameraPosition(ChVector<>(450, 35, 15));
+    app.SetChaseCameraState(utils::ChChaseCamera::State::Free);
+    app.SetChaseCameraAngle(-150.0 * CH_C_DEG_TO_RAD);
+    app.EnableStats(false);
 
     while (app.GetDevice()->run()) {
         double time = my_hmmwv.GetSystem()->GetChTime();
@@ -182,23 +162,10 @@ int main(int argc, char* argv[]) {
         // Driver inputs
         ChDriver::Inputs driver_inputs = driver.GetInputs();
 
-        // Update sentinel and target location markers for the path-follower controller.
-        // Note that we do this whether or not we are currently using the path-follower driver.
-        const ChVector<>& pS = driver.GetSentinelLocation();
-        const ChVector<>& pT = driver.GetTargetLocation();
-        ballS->setPosition(irr::core::vector3df((irr::f32)pS.x(), (irr::f32)pS.y(), (irr::f32)pS.z()));
-        ballT->setPosition(irr::core::vector3df((irr::f32)pT.x(), (irr::f32)pT.y(), (irr::f32)pT.z()));
-
-        // Render scene and output images
+        // Render scene
         app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
         app.DrawAll();
-
-        if (output_images && sim_frame % render_steps == 0) {
-            char filename[200];
-            sprintf(filename, "%s/image_%05d.bmp", out_dir.c_str(), render_frame++);
-            app.WriteImageToFile(filename);
-            render_frame++;
-        }
+        app.EndScene();
 
         // Update modules (process inputs from other modules)
         driver.Synchronize(time);
@@ -212,17 +179,19 @@ int main(int argc, char* argv[]) {
         my_hmmwv.Advance(step_size);
         app.Advance(step_size);
 
-        // Increment simulation frame number
-        sim_frame++;
-
-        app.EndScene();
+        if (time > 1) {
+            break;
+        }
     }
 
-    GetLog() << "Traveled Distance = " << driver.GetTraveledDistance() << " m\n";
-    GetLog() << "Average Speed = " << driver.GetAverageSpeed() << " m/s\n";
-    GetLog() << "Max. Speed = " << driver.GetMaxSpeed() << " m/s\n";
-    GetLog() << "Min. Speed = " << driver.GetMinSpeed() << " m/s\n";
-    GetLog() << "Max. Lateral Acc. = " << driver.GetMaxLatAcc() << " m^2/s\n";
-    GetLog() << "Min. Lateral Acc. = " << driver.GetMinLatAcc() << " m^2/s\n";
+    std::cout << my_hmmwv.GetVehicle().GetVehiclePos() << std::endl;
+
+    std::string filename1 = out_dir + "/" + filesystem::path(crg_road_file).stem() + ".dat";
+    utils::WriteShapesPovray(my_hmmwv.GetSystem(), filename1);
+
+    std::string filename2 = out_dir + "/" + filesystem::path(crg_road_file).stem() + ".jpg";
+    app.WriteImageToFile(filename2);
+
+
     return 0;
 }
