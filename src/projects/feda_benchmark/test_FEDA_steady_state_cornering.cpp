@@ -244,6 +244,7 @@ int main(int argc, char* argv[]) {
         feda.Synchronize(time, driver_inputs, terrain);
         app.Synchronize("Path Follower Driver", driver_inputs);
 
+#ifdef CHRONO_POSTPROCESS
         if ((time >= T1) && (step_number % 5000 == 0)) {
             double steering_wheel_input = steering_gear_ratio * driver_inputs.m_steering;
             double speed = feda.GetVehicle().GetVehicleSpeed();
@@ -255,6 +256,7 @@ int main(int argc, char* argv[]) {
                 ay *= -1.0;
             csv << time << steering_wheel_input << speed << ay << roll << yawrate << std::endl;
         }
+#endif
 
         // Update sentinel and target location markers for the path-follower controller.
         // Note that we do this whether or not we are currently using the path-follower driver.
@@ -311,9 +313,12 @@ int main(int argc, char* argv[]) {
     double rideHeightRear = bodyHeightRear - refHeightRear;
     GetLog() << "Ride Height Front = " << rideHeightFront << " m, Rear = " << rideHeightRear << " m\n";
 
+#ifdef CHRONO_POSTPROCESS
     if (turn_left)
         csv.write_to_file(out_dir + "/feda_steady_state_cornering_left.txt");
     else
         csv.write_to_file(out_dir + "/feda_steady_state_cornering_right.txt");
+#endif
+
     return 0;
 }
