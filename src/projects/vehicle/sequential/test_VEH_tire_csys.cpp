@@ -17,17 +17,46 @@
 // and a setup with X forward and Y up.
 //
 // Create two mechanisms (in disjunct Chrono systems) and simulate them concurrently.
-// Each mechanism has a HMMWV TMeasy tire attached to a wheel body which is 
-// constrained to move in a vertical plane.
+// Each mechanism has a HMMWV TMeasy tire attached to a spindle body which is
+// constrained to move in a vertical plane.  The spindle body is given an initial
+// angular velocity to initiate motion in the forward direction.
 //
+// In both cases, the tire force calculation is done in an ISO frame.
+//
+// The ISO mechanism mimics exactly what is done within a Chrono::Vehicle wheeled
+// vehicle.
+//
+// In the case of the YUP mechanism, wheel states expressed in an ISO frame are
+// made available to the tire calculation through a "dummy" spindle body.
+// At construction, the wheel object is associated with the "dummy" spindle body.
+// At each simulation step (see MechanismYUP::Advance), a WheelState (expressed
+// in the YUP frame) is first calculated from the state of the "real" spindle body
+// (the one being actually simulated).  This WheelState is converted to ISO frame
+// and used to overrite the state of the "dummy" spindle body.  The tire then
+// performs its force calculation in an ISO frame (and internally requests a
+// WheelState from the associated wheel object; the wheel calculates this based
+// on the "dummy" spindle body thus passing an ISO WheelState to the tire).
+// The tire forces, reported back in an ISO frame, are converted to the YUP frame
+// and applied, as external forces, to the "real" spindle object.
+//
+// Note that, to exactly match simulations between the two systems, the mass and
+// inertia of the spindle body in the YUP system must be overwritten to include
+// the (properly transformed) masses and inertias of the spindle, the wheel, and
+// the tire.
 // =============================================================================
 
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
-#include "chrono_irrlicht/ChIrrApp.h"
-#include "chrono_models/vehicle/hmmwv/HMMWV_TMeasyTire.h"
-#include "chrono_thirdparty/filesystem/path.h"
+
 #include "chrono_vehicle/ChVehicleModelData.h"
+#include "chrono_vehicle/wheeled_vehicle/ChWheel.h"
+
+#include "chrono_models/vehicle/hmmwv/HMMWV_Wheel.h"
+#include "chrono_models/vehicle/hmmwv/HMMWV_TMeasyTire.h"
+
+#include "chrono_irrlicht/ChIrrApp.h"
+
+#include "chrono_thirdparty/filesystem/path.h"
 
 using namespace chrono;
 using namespace chrono::vehicle;
@@ -39,13 +68,15 @@ double grav = 9.8;
 double step_size = 1e-3;
 double tire_step_size = 1e-3;
 
-double wheel_mass = 500;  // wheel mass (large to account for chassis load)
-double wheel_I1 = 0.05;   // moment of inertia about rotation axis
-double wheel_I2 = 0.1;    // moments of inertia about other 2 axes
+double spindle_mass = 500;  // spindle mass (large to account for chassis load)
+double spindle_I1 = 0.05;   // moment of inertia about rotation axis
+double spindle_I2 = 0.1;    // moments of inertia about other 2 axes
+
 double wheel_init_height = 0.6;
 double wheel_init_omega = 10;
 
 // =============================================================================
+// Tire-wheel-spindle mechanism in ISO frame
 
 class MechanismISO {
   public:
@@ -53,6 +84,7 @@ class MechanismISO {
     void Advance(double step);
     const WheelState& GetWheelState() const { return m_wheelstate; }
     const TerrainForce& GetTireForce() const { return m_tireforce; }
+
   private:
     class Terrain : public ChTerrain {
       public:
@@ -63,7 +95,8 @@ class MechanismISO {
     };
 
     ChSystem* m_sys;
-    std::shared_ptr<ChBody> m_wheel;
+    std::shared_ptr<ChBody> m_spindle;
+    std::shared_ptr<ChWheel> m_wheel;
     std::shared_ptr<ChTire> m_tire;
     WheelState m_wheelstate;
     TerrainForce m_tireforce;
@@ -71,8 +104,6 @@ class MechanismISO {
 };
 
 MechanismISO::MechanismISO(ChSystem* sys) : m_sys(sys) {
-    m_tire = chrono_types::make_shared<hmmwv::HMMWV_TMeasyTire>("TMeasy tire");
-
     auto ground = std::shared_ptr<ChBody>(m_sys->NewBody());
     m_sys->AddBody(ground);
     ground->SetBodyFixed(true);
@@ -83,47 +114,59 @@ MechanismISO::MechanismISO(ChSystem* sys) : m_sys(sys) {
         ground->AddAsset(box);
     }
 
-    m_wheel = std::shared_ptr<ChBody>(m_sys->NewBody());
-    m_sys->AddBody(m_wheel);
-    m_wheel->SetMass(wheel_mass);
-    m_wheel->SetInertiaXX(ChVector<>(wheel_I2, wheel_I1, wheel_I2));
-    m_wheel->SetPos(ChVector<>(0, 0, wheel_init_height));
-    m_wheel->SetWvel_loc(ChVector<>(0, +wheel_init_omega, 0));  // for the wheel to rotate in positive X
+    // Create the spindle body (the wheel and tire objects will add to its mass and inertia).
+    m_spindle = std::shared_ptr<ChBody>(m_sys->NewBody());
+    m_sys->AddBody(m_spindle);
+    m_spindle->SetMass(spindle_mass);
+    m_spindle->SetInertiaXX(ChVector<>(spindle_I2, spindle_I1, spindle_I2));
+    m_spindle->SetPos(ChVector<>(0, 0, wheel_init_height));
+    m_spindle->SetWvel_loc(ChVector<>(0, +wheel_init_omega, 0));  // for the wheel to move in positive X
     {
         auto cyl = chrono_types::make_shared<ChCylinderShape>();
         cyl->GetCylinderGeometry().rad = 0.1;
         cyl->GetCylinderGeometry().p1 = ChVector<>(0, -0.1, 0);
         cyl->GetCylinderGeometry().p2 = ChVector<>(0, +0.1, 0);
-        m_wheel->AddAsset(cyl);
+        m_spindle->AddAsset(cyl);
     }
 
+    // Connect spindle to ground.
     auto link = chrono_types::make_shared<ChLinkLockPlanePlane>();
-    link->Initialize(ground, m_wheel, ChCoordsys<>(VNULL, Q_from_AngX(CH_C_PI_2)));
+    link->Initialize(ground, m_spindle, ChCoordsys<>(VNULL, Q_from_AngX(CH_C_PI_2)));
     m_sys->AddLink(link);
 
+    // Create a wheel object and associate it with the spindle body.
+    m_wheel = chrono_types::make_shared<hmmwv::HMMWV_Wheel>("Wheel");
+    m_wheel->Initialize(m_spindle, LEFT);
+    m_wheel->SetVisualizationType(VisualizationType::NONE);
+
+    // Create the tire object and associate it with the wheel body.
+    m_tire = chrono_types::make_shared<hmmwv::HMMWV_TMeasyTire>("TMeasy tire");
     m_tire->SetStepsize(tire_step_size);
-    m_tire->Initialize(m_wheel, LEFT);
+    m_tire->Initialize(m_wheel);
     m_tire->SetVisualizationType(VisualizationType::MESH);
+
+    // This is only needed if we want to call m_wheel->Synchronize in MechanismISO::Advance
+    // (in which case the wheel must be able to obtain the tire forces).
+    m_wheel->SetTire(m_tire);
 }
 
 void MechanismISO::Advance(double step) {
     double time = m_sys->GetChTime();
-    
-    m_wheelstate.pos = m_wheel->GetPos();
-    m_wheelstate.rot = m_wheel->GetRot();
-    m_wheelstate.lin_vel = m_wheel->GetPos_dt();
-    m_wheelstate.ang_vel = m_wheel->GetWvel_par();
-    ChVector<> ang_vel_loc = m_wheelstate.rot.RotateBack(m_wheelstate.ang_vel);
-    m_wheelstate.omega = ang_vel_loc.y();
 
+    // Get current wheel state
+    m_wheelstate = m_wheel->GetState();
+
+    // Get tire forces
     m_tireforce = m_tire->ReportTireForce(&m_terrain);
-    auto tireforce = m_tire->GetTireForce();
 
     // Synchronize and advance subsystems
-    m_tire->Synchronize(time, m_wheelstate, m_terrain);
-    m_wheel->Empty_forces_accumulators();
-    m_wheel->Accumulate_force(tireforce.force, tireforce.point, false);
-    m_wheel->Accumulate_torque(tireforce.moment, false);
+    m_tire->Synchronize(time, m_terrain);
+
+    // Apply tire forces to spindle body
+    // (we could simply call m_wheel->Synchronize which does precisely this)
+    m_spindle->Empty_forces_accumulators();
+    m_spindle->Accumulate_force(m_tireforce.force, m_tireforce.point, false);
+    m_spindle->Accumulate_torque(m_tireforce.moment, false);
 
     m_tire->Advance(step);
     m_sys->DoStepDynamics(step);
@@ -135,7 +178,7 @@ WheelState ConvertState_YUP_to_ISO(const WheelState& ws_YUP) {
     // Coordinate transforms
     ChFrame<> iso_X_yup(VNULL, Q_from_AngX(CH_C_PI_2));           // YUP -> ISO
     ChFrame<> wiso_X_wyup = iso_X_yup;                            // Wheel_YUP -> Wheel_ISO
-    ChFrame<> wyup_X_wiso = wiso_X_wyup.GetInverse();             // Wheel_ISO -> Wheel_Wheel_YUP
+    ChFrame<> wyup_X_wiso = wiso_X_wyup.GetInverse();             // Wheel_ISO -> Wheel_YUP
     ChFrame<> yup_X_wyup(ws_YUP.pos, ws_YUP.rot);                 // Wheel_YUP -> YUP
     ChFrame<> iso_X_wiso = iso_X_yup * yup_X_wyup * wyup_X_wiso;  // Wheel_ISO -> ISO
 
@@ -203,12 +246,14 @@ ChVector<> ConvertInertia_ISO_to_YUP(const ChVector<>& inertia_ISO) {
 }
 
 // =============================================================================
+// Tire-wheel-spindle mechanism in YUP frame
 
 class MechanismYUP {
   public:
     MechanismYUP(ChSystem* sys);
     void Advance(double step);
     void Advance(double step, const WheelState& ws_ISO);
+    const WheelState& GetWheelState() const { return m_wheelstate; }
     const TerrainForce& GetTireForce() const { return m_tireforce; }
 
   private:
@@ -221,15 +266,16 @@ class MechanismYUP {
     };
 
     ChSystem* m_sys;
-    std::shared_ptr<ChBody> m_wheel;
+    std::shared_ptr<ChBody> m_spindle;
+    std::shared_ptr<ChBody> m_spindle_dummy;
+    std::shared_ptr<ChWheel> m_wheel;
     std::shared_ptr<ChTire> m_tire;
+    WheelState m_wheelstate;
     TerrainForce m_tireforce;
     Terrain m_terrain;
 };
 
 MechanismYUP::MechanismYUP(ChSystem* sys) : m_sys(sys) {
-    m_tire = chrono_types::make_shared<hmmwv::HMMWV_TMeasyTire>("TMeasy tire");
-
     auto ground = std::shared_ptr<ChBody>(m_sys->NewBody());
     m_sys->AddBody(ground);
     ground->SetBodyFixed(true);
@@ -240,72 +286,101 @@ MechanismYUP::MechanismYUP(ChSystem* sys) : m_sys(sys) {
         ground->AddAsset(box);
     }
 
-    m_wheel = std::shared_ptr<ChBody>(m_sys->NewBody());
-    m_sys->AddBody(m_wheel);
-    m_wheel->SetMass(wheel_mass);
-    m_wheel->SetInertiaXX(ChVector<>(wheel_I2, wheel_I2, wheel_I1));
-    m_wheel->SetPos(ChVector<>(0, wheel_init_height, 0));
-    m_wheel->SetWvel_loc(ChVector<>(0, 0, -wheel_init_omega));  // for the wheel to rotate in positive X
+    // Create the spindle body (mass and inertia properly set below).
+    m_spindle = std::shared_ptr<ChBody>(m_sys->NewBody());
+    m_sys->AddBody(m_spindle);
+    m_spindle->SetPos(ChVector<>(0, wheel_init_height, 0));
+    m_spindle->SetWvel_loc(ChVector<>(0, 0, -wheel_init_omega));  // for the wheel to move in positive X
     {
         auto cyl = chrono_types::make_shared<ChCylinderShape>();
         cyl->GetCylinderGeometry().rad = 0.1;
         cyl->GetCylinderGeometry().p1 = ChVector<>(0, 0, -0.1);
         cyl->GetCylinderGeometry().p2 = ChVector<>(0, 0, +0.1);
-        m_wheel->AddAsset(cyl);
+        m_spindle->AddAsset(cyl);
     }
 
+    // Connect spindle to ground.
     auto link = chrono_types::make_shared<ChLinkLockPlanePlane>();
-    link->Initialize(ground, m_wheel, ChCoordsys<>(VNULL, QUNIT));
+    link->Initialize(ground, m_spindle, ChCoordsys<>(VNULL, QUNIT));
     m_sys->AddLink(link);
 
+    // Create the "dummy" spindle body, used to provide wheel state information to the tire in an ISO frame.
+    // We will manually overwrite the state of this body (in MechanismYUP::Advance).
+    m_spindle_dummy = std::shared_ptr<ChBody>(m_sys->NewBody());
+    m_sys->AddBody(m_spindle_dummy);
+    m_spindle_dummy->SetBodyFixed(true);
+
+    // Create a wheel object and associate it with the "dummy" spindle body.
+    m_wheel = chrono_types::make_shared<hmmwv::HMMWV_Wheel>("Wheel");
+    m_wheel->Initialize(m_spindle_dummy, LEFT);
+    m_wheel->SetVisualizationType(VisualizationType::NONE);
+
+    // Create the tire object and associate it with the wheel body.
+    m_tire = chrono_types::make_shared<hmmwv::HMMWV_TMeasyTire>("TMeasy tire");
     m_tire->SetStepsize(tire_step_size);
-    m_tire->Initialize(m_wheel, LEFT);
+    m_tire->Initialize(m_wheel);
 
-    // IMPORTANT: override wheel body inertia!
-    m_wheel->SetInertiaXX(ChVector<>(wheel_I2, wheel_I2, wheel_I1) + ConvertInertia_ISO_to_YUP(m_tire->GetInertia()));
+    // This is actually not needed here (we have to explicitly add tire forces to the spindle body anyway).
+    m_wheel->SetTire(m_tire);
 
-    // Cannot directly use tire visualization (incorrect rotation)
+    // IMPORTANT: override spindle body mass and inertia!
+    // This must be done manually here because the wheel and tire objects append to the spindle's properties (but
+    // assuming an ISO frame)
+    ChVector<> spindle_Ixx(spindle_I2, spindle_I2, spindle_I1);
+    ChVector<> wheel_Ixx = ConvertInertia_ISO_to_YUP(m_wheel->GetInertia());
+    ChVector<> tire_Ixx = ConvertInertia_ISO_to_YUP(m_tire->GetInertia());
+    m_spindle->SetMass(spindle_mass + m_wheel->GetMass() + m_tire->GetMass());
+    m_spindle->SetInertiaXX(spindle_Ixx + wheel_Ixx + tire_Ixx);
+
+    // Cannot directly use tire visualization (incorrect rotation).
     m_tire->SetVisualizationType(VisualizationType::NONE);
     {
         auto trimesh = chrono_types::make_shared<geometry::ChTriangleMeshConnected>();
-        trimesh->LoadWavefrontMesh(vehicle::GetDataFile("hmmwv/hmmwv_tire.obj"), false, false);
+        trimesh->LoadWavefrontMesh(vehicle::GetDataFile("hmmwv/hmmwv_tire_left.obj"), false, false);
         trimesh->Transform(VNULL, ChMatrix33<>(Q_from_AngX(-CH_C_PI_2)));
         auto trimesh_shape = chrono_types::make_shared<ChTriangleMeshShape>();
         trimesh_shape->SetMesh(trimesh);
-        trimesh_shape->SetName("hmmwv_tire_POV_geom");
+        trimesh_shape->SetName("hmmwv_tire_geom");
         trimesh_shape->SetStatic(true);
-        m_wheel->AddAsset(trimesh_shape);
+        m_spindle->AddAsset(trimesh_shape);
+
+        m_spindle->AddAsset(chrono_types::make_shared<ChColorAsset>(1.0f, 0.0f, 0.0f));
     }
 }
 
 void MechanismYUP::Advance(double step) {
     double time = m_sys->GetChTime();
 
-    // Wheel body state in YUP frame
-    WheelState ws_YUP;
-    ws_YUP.pos = m_wheel->GetPos();
-    ws_YUP.rot = m_wheel->GetRot();
-    ws_YUP.lin_vel = m_wheel->GetPos_dt();
-    ws_YUP.ang_vel = m_wheel->GetWvel_par();
-    auto ang_vel_loc = ws_YUP.rot.RotateBack(ws_YUP.ang_vel);
-    ws_YUP.omega = ang_vel_loc.z();
+    // Wheel (spindle) body state in YUP frame
+    m_wheelstate.pos = m_spindle->GetPos();
+    m_wheelstate.rot = m_spindle->GetRot();
+    m_wheelstate.lin_vel = m_spindle->GetPos_dt();
+    m_wheelstate.ang_vel = m_spindle->GetWvel_par();
+    auto ang_vel_loc = m_wheelstate.rot.RotateBack(m_wheelstate.ang_vel);
+    m_wheelstate.omega = ang_vel_loc.z();
 
     // Wheel body state in ISO frame
-    WheelState ws_ISO = ConvertState_YUP_to_ISO(ws_YUP);
+    WheelState ws_ISO = ConvertState_YUP_to_ISO(m_wheelstate);
 
-    // Tire forces in ISO frame
-    auto tf_ISO = m_tire->GetTireForce();                // forces to be applied to wheel body
-    auto tfR_ISO = m_tire->ReportTireForce(&m_terrain);  // reporting
+    // Overwrite state of "dummy" spindle body
+    m_spindle_dummy->SetPos(ws_ISO.pos);
+    m_spindle_dummy->SetRot(ws_ISO.rot);
+    m_spindle_dummy->SetPos_dt(ws_ISO.lin_vel);
+    m_spindle_dummy->SetWvel_par(ws_ISO.ang_vel);
 
-    // Tire forces in YUP frame
-    auto tf_YUP = ConvertForce_ISO_to_YUP(tf_ISO);
-    m_tireforce = ConvertForce_ISO_to_YUP(tfR_ISO);
+    // Get tire forces in ISO frame and convert to YUP frame
+    auto tf_ISO = m_tire->ReportTireForce(&m_terrain);
+    m_tireforce = ConvertForce_ISO_to_YUP(tf_ISO);
 
-    // Synchronize and advance subsystems
-    m_tire->Synchronize(time, ws_ISO, m_terrain);
-    m_wheel->Empty_forces_accumulators();
-    m_wheel->Accumulate_force(tf_YUP.force, tf_YUP.point, false);
-    m_wheel->Accumulate_torque(tf_YUP.moment, false);
+    // Let tire update itself given current wheel state (these will correspond to the state of the "dummy" spindle).
+    // In Synchronize, the tire requests the WheelState from the associated wheel object, which will calculate it
+    // based on the state of the "dummy" spindle, thus reproducing ws_ISO.
+    m_tire->Synchronize(time, m_terrain);
+
+    // Apply tire forces to spindle body
+    m_spindle->Empty_forces_accumulators();
+    m_spindle->Accumulate_force(m_tireforce.force, m_tireforce.point, false);
+    m_spindle->Accumulate_torque(m_tireforce.moment, false);
 
     m_tire->Advance(step);
     m_sys->DoStepDynamics(step);
@@ -315,19 +390,25 @@ void MechanismYUP::Advance(double step) {
 void MechanismYUP::Advance(double step, const WheelState& ws_ISO) {
     double time = m_sys->GetChTime();
 
-    // Tire forces in ISO frame
-    auto tf_ISO = m_tire->GetTireForce();                // forces to be applied to wheel body
-    auto tfR_ISO = m_tire->ReportTireForce(&m_terrain);  // reporting
+    // Overwrite state of "dummy" spindle body
+    m_spindle_dummy->SetPos(ws_ISO.pos);
+    m_spindle_dummy->SetRot(ws_ISO.rot);
+    m_spindle_dummy->SetPos_dt(ws_ISO.lin_vel);
+    m_spindle_dummy->SetWvel_par(ws_ISO.ang_vel);
 
-    // Tire forces in YUP frame
-    auto tf_YUP = ConvertForce_ISO_to_YUP(tf_ISO);
-    m_tireforce = ConvertForce_ISO_to_YUP(tfR_ISO);
+    // Get tire forces in ISO frame and convert to YUP frame
+    auto tf_ISO = m_tire->ReportTireForce(&m_terrain);
+    m_tireforce = ConvertForce_ISO_to_YUP(tf_ISO);
 
-    // Synchronize and advance subsystems
-    m_tire->Synchronize(time, ws_ISO, m_terrain);
-    m_wheel->Empty_forces_accumulators();
-    m_wheel->Accumulate_force(tf_YUP.force, tf_YUP.point, false);
-    m_wheel->Accumulate_torque(tf_YUP.moment, false);
+    // Let tire update itself given current wheel state (these will correspond to the state of the "dummy" spindle).
+    // In Synchronize, the tire requests the WheelState from the associated wheel object, which will calculate it
+    // based on the state of the "dummy" spindle, thus reproducing ws_ISO.
+    m_tire->Synchronize(time, m_terrain);
+
+    // Apply tire forces to spindle body
+    m_spindle->Empty_forces_accumulators();
+    m_spindle->Accumulate_force(m_tireforce.force, m_tireforce.point, false);
+    m_spindle->Accumulate_torque(m_tireforce.moment, false);
 
     m_tire->Advance(step);
     m_sys->DoStepDynamics(step);
@@ -363,7 +444,7 @@ int main(int argc, char* argv[]) {
 
     ChSystemNSC sysISO;
     sysISO.Set_G_acc(ChVector<>(0, 0, -grav));
-    sysISO.SetMaxItersSolverSpeed(150);
+    sysISO.SetSolverMaxIterations(150);
     sysISO.SetMaxPenetrationRecoverySpeed(4.0);
     sysISO.SetSolverType(ChSolver::Type::BARZILAIBORWEIN);
 
@@ -371,7 +452,7 @@ int main(int argc, char* argv[]) {
 
     ChSystemNSC sysYUP;
     sysYUP.Set_G_acc(ChVector<>(0, -grav, 0));
-    sysYUP.SetMaxItersSolverSpeed(150);
+    sysYUP.SetSolverMaxIterations(150);
     sysYUP.SetMaxPenetrationRecoverySpeed(4.0);
     sysYUP.SetSolverType(ChSolver::Type::BARZILAIBORWEIN);
 
@@ -407,16 +488,29 @@ int main(int argc, char* argv[]) {
         mISO.Advance(step_size);
         mYUP.Advance(step_size);
 
+        auto wsISO = mISO.GetWheelState();
+        auto wsYUP = mYUP.GetWheelState();
+
         auto tfISO = mISO.GetTireForce();
         auto tfYUP = mYUP.GetTireForce();
 
-        ////std::cout << sysISO.GetChTime() << std::endl;
-        ////std::cout << "   ISO  " << tfISO.force.x() << "  " << tfISO.force.y() << "  " << tfISO.force.z() << std::endl;
-        ////std::cout << "        " << tfISO.point.x() << "  " << tfISO.point.y() << "  " << tfISO.point.z() << std::endl;
-        ////std::cout << "        " << tfISO.moment.x() << "  " << tfISO.moment.y() << "  " << tfISO.moment.z() << std::endl;
-        ////std::cout << "   YUP  " << tfYUP.force.x() << "  " << tfYUP.force.y() << "  " << tfYUP.force.z() << std::endl;
-        ////std::cout << "        " << tfYUP.point.x() << "  " << tfYUP.point.y() << "  " << tfYUP.point.z() << std::endl;
-        ////std::cout << "        " << tfYUP.moment.x() << "  " << tfYUP.moment.y() << "  " << tfYUP.moment.z() << std::endl;
+        std::cout << "\n" << sysISO.GetChTime() << std::endl;
+        std::cout << "Wheel states (pos, rot, lin vel, ang vel)" << std::endl;
+        std::cout << "   ISO  " << wsISO.pos << std::endl;
+        std::cout << "        " << wsISO.rot << std::endl;
+        std::cout << "        " << wsISO.lin_vel << std::endl;
+        std::cout << "        " << wsISO.ang_vel << std::endl;
+        std::cout << "   YUP  " << wsYUP.pos << std::endl;
+        std::cout << "        " << wsYUP.rot << std::endl;
+        std::cout << "        " << wsYUP.lin_vel << std::endl;
+        std::cout << "        " << wsYUP.ang_vel << std::endl;
+        std::cout << "Tire forces (force, point, moment)" << std::endl;
+        std::cout << "   ISO  " << tfISO.force << std::endl;
+        std::cout << "        " << tfISO.point << std::endl;
+        std::cout << "        " << tfISO.moment << std::endl;
+        std::cout << "   YUP  " << tfYUP.force << std::endl;
+        std::cout << "        " << tfYUP.point << std::endl;
+        std::cout << "        " << tfYUP.moment << std::endl;
     }
 
     return 0;
