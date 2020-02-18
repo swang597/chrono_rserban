@@ -208,7 +208,7 @@ std::shared_ptr<vehicle::SCMDeformableTerrain> CreateTerrain(robosimian::RoboSim
 
     auto terrain = chrono_types::make_shared<vehicle::SCMDeformableTerrain>(robot->GetSystem());
     terrain->SetPlane(ChCoordsys<>(ChVector<>(length / 2 - offset, 0, 0), Q_from_AngX(CH_C_PI_2)));
-    terrain->SetSoilParametersSCM(Kphi, Kc, n, coh, phi, K, E_elastic, damping);
+    terrain->SetSoilParameters(Kphi, Kc, n, coh, phi, K, E_elastic, damping);
     terrain->SetPlotType(vehicle::SCMDeformableTerrain::PLOT_SINKAGE, 0, 0.15);
     terrain->Initialize(height, length, width, ndivX, ndivY);
     terrain->SetAutomaticRefinement(true);

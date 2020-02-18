@@ -341,7 +341,7 @@ int main(int argc, char* argv[]) {
 
     SCMDeformableTerrain terrain(system);
     terrain.SetPlane(ChCoordsys<>(VNULL, Q_from_AngX(CH_C_PI_2)));
-    terrain.SetSoilParametersSCM(Bekker_Kphi, Bekker_Kc, Bekker_n, Mohr_coh, Mohr_phi, K, E_elastic, damping);
+    terrain.SetSoilParameters(Bekker_Kphi, Bekker_Kc, Bekker_n, Mohr_coh, Mohr_phi, K, E_elastic, damping);
     ////terrain.SetPlotType(vehicle::SCMDeformableTerrain::PLOT_PRESSURE_YELD, 0, 30000.2);
     terrain.SetPlotType(vehicle::SCMDeformableTerrain::PLOT_SINKAGE, 0, 0.15);
     terrain.Initialize(0, 2 * hdimX, 2 * hdimY, ndivX, ndivY);
