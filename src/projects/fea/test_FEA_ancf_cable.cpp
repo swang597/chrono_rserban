@@ -58,7 +58,7 @@ int main(int argc, char* argv[]) {
     double delta = 0.1;
 
     auto my_mesh = chrono_types::make_shared<fea::ChMesh>();
-    fea::ChBuilderBeamANCF builder;
+    fea::ChBuilderCableANCF builder;
     std::vector<std::shared_ptr<fea::ChNodeFEAxyzD>> base_nodes;
     std::vector<std::shared_ptr<fea::ChNodeFEAxyzD>> tip_nodes;
 

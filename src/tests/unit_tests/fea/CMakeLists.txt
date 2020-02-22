@@ -4,17 +4,19 @@
 set(TESTS
     utest_FEA_ANCFCable
     utest_FEA_ANCFBeam
-	utest_FEA_IGABeam
+    utest_FEA_ANCFbeam_Twist
+    utest_FEA_IGABeam
     utest_FEA_ANCFShell_Iso
     utest_FEA_ANCFShell_Ort
     utest_FEA_ANCFShell_OrtGrav
     utest_FEA_EASBrickIso
     utest_FEA_EASBrickIso_Grav
     utest_FEA_EASBrickMooneyR_Grav
+    utest_FEA_Brick9
     utest_FEA_ANCFConstraints
     utest_FEA_ANCFContact
     utest_FEA_compute_contact_mesh
-    utest_FEA_Brick9
+    utest_FEA_beams_static
 )
 
 # Tests that REQUIRE Chrono::MKL

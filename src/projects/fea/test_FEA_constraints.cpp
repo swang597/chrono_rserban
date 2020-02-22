@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
     std::vector<std::shared_ptr<fea::ChNodeFEAxyzD>> tip_nodes;
 
     for (int j = 0; j < 1; ++j) {
-        fea::ChBuilderBeamANCF builder;
+        fea::ChBuilderCableANCF builder;
         builder.BuildBeam(mesh,                            //
                           section,                         //
                           4,                               //
