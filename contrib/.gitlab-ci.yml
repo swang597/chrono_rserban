@@ -67,7 +67,7 @@ linux:arch-gcc:test:
 
 linux:arch-gcc:deploy:
   stage: deploy
-  needs: ["linux:arch-gcc:test"]
+  needs: []
   extends: .archlinux
   script:
 # Clean up the docker image because it is very large and pychrono won't fit
@@ -292,7 +292,7 @@ linux:ubuntu1804:test:
 
 linux:ubuntu1804:deploy:
   stage: deploy
-  needs: ["linux:ubuntu1804:test"]
+  needs: []
   extends: .ubuntu
   script:
     - echo "Build PyChrono and deploy via Anaconda..."
@@ -312,8 +312,10 @@ linux:ubuntu1804:deploy:
     - conda install -c conda-forge -c dlr-sc -c pythonocc -c oce -c 3dhubs oce=0.18.2 --yes
     - conda install -c intel mkl-devel --yes
     - conda build ./contrib/packaging-python/conda --no-remove-work-dir --dirty --python=3.6
-    - conda build ./contrib/packaging-python/conda --no-remove-work-dir --dirty --python=3.8
     - anaconda -t $ANACONDA_TOKEN upload $HOME/miniconda3/conda-bld/linux-64/pychrono*.bz2 -l develop --force
+    #- conda build purge
+    #- conda build ./contrib/packaging-python/conda --no-remove-work-dir --dirty --python=3.8
+    #- anaconda -t $ANACONDA_TOKEN upload $HOME/miniconda3/conda-bld/linux-64/pychrono*.bz2 -l develop --force
   environment:
     name: pychrono-ubuntu1804
     url: https://anaconda.org/projectchrono/pychrono
@@ -395,10 +397,13 @@ windows:vs2019:test:
 
 windows:vs2019:deploy:
   stage: deploy
-  needs: ["windows:vs2019:test"]
+  needs: []
   extends: .windows
   script:
     - rm -r build
+    # get libiomp5md.lib
+    - $libiomppth=Join-Path -Path $Env:CONDA_INSTALL_LOCN -ChildPath "\Library\lib\libiomp5md.lib"
+    - Invoke-WebRequest -Uri http://www.projectchrono.org/assets/downloads/libiomp5md.lib  -OutFile $libiomppth
     - mkdir ./logs
     - $Env:LOG_DIR=Join-Path -Path $pwd -ChildPath "\logs"
     # Uncomment the following lines to get a fresh install of Miniconda
