@@ -53,6 +53,7 @@ using namespace chrono::vehicle;
 // JSON file for vehicle and axle index (axle_index=0: front axle, axle_index=1: rear axle)
 std::string vehicle_file("hmmwv/vehicle/HMMWV_Vehicle.json");
 ////std::string vehicle_file("uaz/vehicle/UAZBUS_Vehicle.json");
+////std::string vehicle_file("uaz/vehicle/UAZBUS_SAEVehicle.json");
 ////std::string vehicle_file("MAN_Kat1/vehicle/MAN_5t_Vehicle_4WD.json");
 ////std::string vehicle_file("generic/vehicle/Vehicle_MacPhersonStruts.json");
 ////std::string vehicle_file("generic/vehicle/Vehicle_MultiLinks.json");
