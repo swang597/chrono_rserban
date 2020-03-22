@@ -19,6 +19,7 @@
 #include "chrono/ChConfig.h"
 #include "chrono/assets/ChColorAsset.h"
 #include "chrono/assets/ChBoxShape.h"
+#include "chrono/assets/ChSphereShape.h"
 
 #include "chrono_parallel/physics/ChSystemParallel.h"
 #include "chrono_parallel/solver/ChIterativeSolverParallel.h"
@@ -47,12 +48,10 @@ int main(int argc, char* argv[]) {
     uint max_iteration_sliding = 0;
     uint max_iteration_spinning = 100;
     uint max_iteration_bilateral = 0;
-
-    enum class ContactType {
-        MESH_BOX,  // use box for ground collision model
-        MESH_MESH  // use mesh for ground collision model
-    };
-    ContactType contact_type = ContactType::MESH_BOX;
+    
+    enum class GeometryType { PRIMITIVE, MESH };
+    GeometryType ground_geometry = GeometryType::PRIMITIVE;  // box or ramp mesh
+    GeometryType object_geometry = GeometryType::MESH;       // sphere or tire mesh
 
     double mesh_swept_sphere_radius = 0.005;
 
@@ -64,7 +63,7 @@ int main(int argc, char* argv[]) {
     bool use_mat_properties = true;
 
     float object_friction = 0.9f;
-    float object_restitution = 0.1f;
+    float object_restitution = 0.0f;
     float object_young_modulus = 2e7f;
     float object_poisson_ratio = 0.3f;
     float object_adhesion = 0.0f;
@@ -87,7 +86,7 @@ int main(int argc, char* argv[]) {
     // Parameters for the falling object
     // ---------------------------------
 
-    ChVector<> pos(0, 0.55, 0);
+    ChVector<> pos(0.2, 0.55, 0.2);
     ChVector<> init_vel(0, 0, 0);
     ChVector<> init_omg(0, 0, 0);
 
@@ -147,7 +146,7 @@ int main(int argc, char* argv[]) {
     system->GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
     system->GetSettings()->collision.bins_per_axis = vec3(10, 10, 10);
 
-    // Rotation Z->Y (becauset meshes used here assume Z up)
+    // Rotation Z->Y (because meshes used here assume Z up)
     ChQuaternion<> z2y = Q_from_AngX(-CH_C_PI_2);
 
     // Create the falling object
@@ -180,22 +179,39 @@ int main(int argc, char* argv[]) {
             break;
     }
 
-    auto trimesh = chrono_types::make_shared<geometry::ChTriangleMeshConnected>();
-    trimesh->LoadWavefrontMesh(GetChronoDataFile("vehicle/hmmwv/hmmwv_tire.obj"), true, false);
+    switch (object_geometry) {
+        case GeometryType::MESH: {
+            auto trimesh = chrono_types::make_shared<geometry::ChTriangleMeshConnected>();
+            trimesh->LoadWavefrontMesh(GetChronoDataFile("vehicle/hmmwv/hmmwv_tire_coarse.obj"), true, false);
 
-    object->GetCollisionModel()->ClearModel();
-    object->GetCollisionModel()->AddTriangleMesh(trimesh, false, false, ChVector<>(0), ChMatrix33<>(1),
-                                                 mesh_swept_sphere_radius);
-    object->GetCollisionModel()->BuildModel();
+            object->GetCollisionModel()->ClearModel();
+            object->GetCollisionModel()->AddTriangleMesh(trimesh, false, false, ChVector<>(0), ChMatrix33<>(1),
+                                                         mesh_swept_sphere_radius);
+            object->GetCollisionModel()->BuildModel();
 
-    auto trimesh_shape = chrono_types::make_shared<ChTriangleMeshShape>();
-    trimesh_shape->SetMesh(trimesh);
-    trimesh_shape->SetName("tire");
-    object->AddAsset(trimesh_shape);
+            auto trimesh_shape = chrono_types::make_shared<ChTriangleMeshShape>();
+            trimesh_shape->SetMesh(trimesh);
+            trimesh_shape->SetName("tire");
+            object->AddAsset(trimesh_shape);
 
-    std::shared_ptr<ChColorAsset> mcol(new ChColorAsset);
-    mcol->SetColor(ChColor(0.3f, 0.3f, 0.3f));
-    object->AddAsset(mcol);
+            std::shared_ptr<ChColorAsset> mcol(new ChColorAsset);
+            mcol->SetColor(ChColor(0.3f, 0.3f, 0.3f));
+            object->AddAsset(mcol);
+
+            break;
+        }
+        case GeometryType::PRIMITIVE: {
+            object->GetCollisionModel()->ClearModel();
+            object->GetCollisionModel()->AddSphere(0.2, ChVector<>(0, 0, 0));
+            object->GetCollisionModel()->BuildModel();
+
+            auto sphere = chrono_types::make_shared<ChSphereShape>();
+            sphere->GetSphereGeometry().rad = 0.2;
+            object->AddAsset(sphere);
+
+            break;
+        }
+    }
 
     // Create ground body
     auto ground = std::shared_ptr<ChBody>(system->NewBody());
@@ -224,20 +240,21 @@ int main(int argc, char* argv[]) {
             break;
     }
 
-    switch (contact_type) {
-        case ContactType::MESH_BOX: {
+    switch (ground_geometry) {
+        case GeometryType::PRIMITIVE: {
             ground->GetCollisionModel()->ClearModel();
             ground->GetCollisionModel()->AddBox(width, length, thickness, ChVector<>(0, 0, -thickness));
             ground->GetCollisionModel()->BuildModel();
 
             auto box = chrono_types::make_shared<ChBoxShape>();
             box->GetBoxGeometry().Size = ChVector<>(width, length, thickness);
-            box->GetBoxGeometry().Pos = ChVector<>(0, 0, -thickness);
+            ////box->GetBoxGeometry().Pos = ChVector<>(0, 0, -thickness); // not interpreted in parallel collision sys
+            box->Pos = ChVector<>(0, 0, -thickness);
             ground->AddAsset(box);
 
             break;
         }
-        case ContactType::MESH_MESH: {
+        case GeometryType::MESH: {
             auto trimesh_ground = chrono_types::make_shared<geometry::ChTriangleMeshConnected>();
             trimesh_ground->LoadWavefrontMesh(GetChronoDataFile("vehicle/terrain/meshes/ramp_10x1.obj"), true, false);
 
