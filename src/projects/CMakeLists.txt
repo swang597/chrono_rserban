@@ -114,6 +114,12 @@ if(BUILD_PROJECTS_FEDA)
   add_subdirectory(feda_benchmark)
 endif()
 
+option(BUILD_PROJECTS_MTV "Build MTV projects" ON)
+mark_as_advanced(FORCE BUILD_PROJECTS_MTV)
+if(BUILD_PROJECTS_MTV)
+  add_subdirectory(mtv_tests)
+endif()
+
 option(BUILD_PROJECTS_CORRIDOR "Build AV corridor projects" ON)
 mark_as_advanced(FORCE BUILD_PROJECTS_CORRIDOR)
 if(BUILD_PROJECTS_CORRIDOR)
