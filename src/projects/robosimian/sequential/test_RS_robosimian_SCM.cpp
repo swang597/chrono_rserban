@@ -207,7 +207,7 @@ std::shared_ptr<vehicle::SCMDeformableTerrain> CreateTerrain(robosimian::RoboSim
     int ndivY = (int)std::ceil(width * factor);
 
     auto terrain = chrono_types::make_shared<vehicle::SCMDeformableTerrain>(robot->GetSystem());
-    terrain->SetPlane(ChCoordsys<>(ChVector<>(length / 2 - offset, 0, 0), Q_from_AngX(CH_C_PI_2)));
+    terrain->SetPlane(ChCoordsys<>(ChVector<>(length / 2 - offset, 0, 0), QUNIT));
     terrain->SetSoilParameters(Kphi, Kc, n, coh, phi, K, E_elastic, damping);
     terrain->SetPlotType(vehicle::SCMDeformableTerrain::PLOT_SINKAGE, 0, 0.15);
     terrain->Initialize(height, length, width, ndivX, ndivY);
@@ -609,9 +609,9 @@ bool GetProblemSpecs(int argc,
                      bool& image_output,
                      bool& povray_output) {
     // Default values
-    time_step = 1e-3;
+    time_step = 1e-4;
     render = true;
-    mode = robosimian::LocomotionMode::DRIVE;
+    mode = robosimian::LocomotionMode::WALK;
     num_cycles = 2;
     dpb_incr = 0.04;
     terrain_length = 8.0;
