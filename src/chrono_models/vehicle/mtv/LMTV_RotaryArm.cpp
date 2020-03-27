@@ -30,7 +30,7 @@ const double LMTV_RotaryArm::m_pitmanArmMass = 1.605;
 
 const double LMTV_RotaryArm::m_pitmanArmRadius = 0.02;
 
-const double LMTV_RotaryArm::m_maxAngle = 25.0 * (CH_C_PI / 180);
+const double LMTV_RotaryArm::m_maxAngle = 22.7 * (CH_C_PI / 180);
 
 const ChVector<> LMTV_RotaryArm::m_pitmanArmInertiaMoments(0.00638, 0.00756, 0.00150);
 const ChVector<> LMTV_RotaryArm::m_pitmanArmInertiaProducts(0.0, 0.0, 0.0);

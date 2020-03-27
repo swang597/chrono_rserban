@@ -60,6 +60,9 @@ class CH_MODELS_API LMTV_LeafspringAxle : public ChLeafspringAxle {
     /// Return the functor object for shock force.
     virtual ChLinkTSDA::ForceFunctor* getShockForceFunctor() const override { return m_shockForceCB; }
 
+    virtual std::shared_ptr<ChBody> GetLeftBody() const override { return m_axleTube; }
+    virtual std::shared_ptr<ChBody> GetRightBody() const override { return m_axleTube; }
+
   private:
     ChLinkTSDA::ForceFunctor* m_springForceCB;
     ChLinkTSDA::ForceFunctor* m_shockForceCB;

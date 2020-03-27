@@ -23,6 +23,7 @@ SET(LIBRARIES
 
 SET(DEMOS
     test_LMTV_sequential
+    test_LMTV_wall2wall_turning
 )
 
 # ------------------------------------------------------------------------------

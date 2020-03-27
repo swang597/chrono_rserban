@@ -34,6 +34,7 @@
 #include "chrono_models/vehicle/mtv/LMTV_Chassis.h"
 #include "chrono_models/vehicle/mtv/LMTV_Driveline4WD.h"
 #include "chrono_models/vehicle/mtv/LMTV_LeafspringAxle.h"
+#include "chrono_models/vehicle/mtv/LMTV_AntiRollBar.h"
 #include "chrono_models/vehicle/mtv/LMTV_RotaryArm.h"
 #include "chrono_models/vehicle/mtv/LMTV_SimpleMapPowertrain.h"
 #include "chrono_models/vehicle/mtv/LMTV_ToebarLeafspringAxle.h"
@@ -63,9 +64,9 @@ class CH_MODELS_API LMTV_Vehicle : public ChWheeledVehicle {
 
     virtual int GetNumberAxles() const override { return 2; }
 
-    virtual double GetWheelbase() const override { return 2.3; }
-    virtual double GetMinTurningRadius() const override { return 5.8; }
-    virtual double GetMaxSteeringAngle() const override { return 27 * CH_C_DEG_TO_RAD; }
+    virtual double GetWheelbase() const override { return 3.8; }
+    virtual double GetMinTurningRadius() const override { return 11.0; }
+    virtual double GetMaxSteeringAngle() const override { return 24.6 * CH_C_DEG_TO_RAD; }
 
     void SetInitWheelAngVel(const std::vector<double>& omega) {
         assert(omega.size() == 4);
@@ -79,6 +80,11 @@ class CH_MODELS_API LMTV_Vehicle : public ChWheeledVehicle {
     double GetShockForce(int axle, VehicleSide side) const;
     double GetShockLength(int axle, VehicleSide side) const;
     double GetShockVelocity(int axle, VehicleSide side) const;
+
+    /// Get the vehicle total mass.
+    /// This includes the mass of the chassis and all vehicle subsystems, but not the mass of tires.
+    /// ChTorsionChassis needs special attention
+    virtual double GetVehicleMass() const override;
 
     virtual void Initialize(const ChCoordsys<>& chassisPos, double chassisFwdVel = 0) override;
 

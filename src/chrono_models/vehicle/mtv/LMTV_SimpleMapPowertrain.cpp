@@ -72,15 +72,15 @@ void LMTV_SimpleMapPowertrain::SetEngineTorqueMaps(ChFunction_Recorder& map0, Ch
 }
 
 void LMTV_SimpleMapPowertrain::SetGearRatios(std::vector<double>& fwd_gear_ratios, double& reverse_gear_ratio) {
-    reverse_gear_ratio = -1.0 / 4.8;
+    reverse_gear_ratio = -1.0 / 11.8;
 
-    fwd_gear_ratios.push_back(1.0 / 7.63);
-    fwd_gear_ratios.push_back(1.0 / 3.51);
-    fwd_gear_ratios.push_back(1.0 / 1.91);
-    fwd_gear_ratios.push_back(1.0 / 1.43);
+    fwd_gear_ratios.push_back(1.0 / 11.921875);
+    fwd_gear_ratios.push_back(1.0 / 5.484375);
+    fwd_gear_ratios.push_back(1.0 / 2.984375);
+    fwd_gear_ratios.push_back(1.0 / 2.234375);
+    fwd_gear_ratios.push_back(1.0 / 1.5625);
+    fwd_gear_ratios.push_back(1.0 / 1.15625);
     fwd_gear_ratios.push_back(1.0);
-    fwd_gear_ratios.push_back(1.0 / 0.72);
-    fwd_gear_ratios.push_back(1.0 / 0.64);
 }
 
 void LMTV_SimpleMapPowertrain::SetShiftPoints(std::vector<std::pair<double, double>>& shift_bands) {

@@ -74,6 +74,9 @@ void LMTV_Vehicle::Create(bool fixed, SteeringType steering_model, ChassisCollis
     m_axles[1]->m_brake_left = chrono_types::make_shared<LMTV_BrakeSimple>("Brake_RL");
     m_axles[1]->m_brake_right = chrono_types::make_shared<LMTV_BrakeSimple>("Brake_RR");
 
+    // Create the antirollbar system
+    m_axles[1]->m_antirollbar = chrono_types::make_shared<LMTV_AntirollBarRSD>("AntirollBar");
+
     // Create the driveline
     m_driveline = chrono_types::make_shared<LMTV_Driveline4WD>("Driveline");
     ////m_driveline = chrono_types::make_shared<LMTV_SimpleDriveline>("Driveline");
@@ -92,7 +95,7 @@ void LMTV_Vehicle::Initialize(const ChCoordsys<>& chassisPos, double chassisFwdV
     // frame).
     ChVector<> offset = ChVector<>(0, 0, 0);
     ChQuaternion<> rotation = Q_from_AngAxis(0, ChVector<>(0, 1, 0));
-    m_steerings[0]->Initialize(m_chassis->GetBody(), offset, rotation);
+    m_steerings[0]->Initialize(chassis->GetBody(), offset, rotation);
 
     // Initialize the axle subsystems.
     m_axles[0]->Initialize(chassis->GetBody(), ChVector<>(0, 0, 0), ChVector<>(0), m_steerings[0]->GetSteeringLink(), 0,
@@ -100,6 +103,11 @@ void LMTV_Vehicle::Initialize(const ChCoordsys<>& chassisPos, double chassisFwdV
     // rear axles, rear axle is 'mounted' to the rear schassis body
     m_axles[1]->Initialize(chassis->GetRearBody(), ChVector<>(-3.9, 0, 0), ChVector<>(0), chassis->GetRearBody(), -1,
                            0.0, m_omega[2], m_omega[3]);
+
+    // Initialize the anti roll bar system.
+    auto sus = std::static_pointer_cast<ChLeafspringAxle>(m_axles[1]->m_suspension);
+    m_axles[1]->m_antirollbar->Initialize(chassis->GetRearBody(), ChVector<>(-3.7, 0, 0.2), sus->GetLeftBody(),
+                                          sus->GetRightBody());
     // Initialize the driveline subsystem
     std::vector<int> driven_susp_indexes(m_driveline->GetNumDrivenAxles());
 
@@ -193,6 +201,27 @@ void LMTV_Vehicle::DebugLog(int what) {
     }
 
     GetLog().SetNumFormat("%g");
+}
+
+// -----------------------------------------------------------------------------
+// Calculate and return the total vehicle mass considering rear mass of chassis
+// Note: do not include the wheels, as these are already accounted for through
+// the associated spindle body.
+// -----------------------------------------------------------------------------
+double LMTV_Vehicle::GetVehicleMass() const {
+    auto chassis = std::static_pointer_cast<ChTorsionChassis>(m_chassis);
+    double mass = chassis->GetMass() + chassis->GetRearMass();
+
+    for (auto& axle : m_axles) {
+        mass += axle->m_suspension->GetMass();
+        if (axle->m_antirollbar)
+            mass += axle->m_antirollbar->GetMass();
+    }
+    for (auto& steering : m_steerings) {
+        mass += steering->GetMass();
+    }
+
+    return mass;
 }
 
 }  // namespace mtv

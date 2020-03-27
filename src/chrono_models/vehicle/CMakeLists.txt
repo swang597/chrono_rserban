@@ -106,6 +106,8 @@ set(CVM_FEDA_FILES
 source_group("feda" FILES ${CVM_FEDA_FILES})
 
 set(CVM_MTV_FILES
+    mtv/LMTV_AntiRollBar.cpp
+    mtv/LMTV_AntiRollBar.h
     mtv/LMTV_BrakeSimple.cpp
     mtv/LMTV_BrakeSimple.h
     mtv/LMTV_Chassis.cpp
