@@ -34,7 +34,11 @@ namespace vehicle {
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 ChTorsionChassis::ChTorsionChassis(const std::string& name, bool fixed)
-    : ChChassis(name, fixed), m_has_primitives(false), m_has_mesh(false), m_has_collision(false) {}
+    : ChChassis(name, fixed),
+      m_has_primitives(false),
+      m_has_rear_primitives(false),
+      m_has_mesh(false),
+      m_has_collision(false) {}
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
@@ -127,6 +131,15 @@ void ChTorsionChassis::Initialize(ChSystem* system,
         m_body->GetCollisionModel()->BuildModel();
     }
 }
+// -----------------------------------------------------------------------------
+// Get the current COM location of the suspension subsystem.
+// -----------------------------------------------------------------------------
+ChVector<> ChTorsionChassis::GetTotalCOMPos() {
+    ChVector<> com(0, 0, 0);
+    com += GetMass() * m_body->GetPos();
+    com += GetRearMass() * m_rear_body->GetPos();
+    return com / GetTotalMass();
+}
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
@@ -170,18 +183,49 @@ void ChTorsionChassis::AddVisualizationAssets(VisualizationType vis) {
             cyl_shape->Rot = cyl.m_rot;
             m_body->AddAsset(cyl_shape);
         }
-
-        return;
     }
 
-    auto sphere_shape = chrono_types::make_shared<ChSphereShape>();
-    sphere_shape->GetSphereGeometry().rad = 0.1;
-    sphere_shape->Pos = GetLocalPosCOM();
-    m_body->AddAsset(sphere_shape);
+    if (vis == VisualizationType::PRIMITIVES && m_has_rear_primitives) {
+        for (auto sphere : m_rear_vis_spheres) {
+            auto sphere_shape = chrono_types::make_shared<ChSphereShape>();
+            sphere_shape->GetSphereGeometry().rad = sphere.m_radius;
+            sphere_shape->Pos = sphere.m_pos;
+            m_rear_body->AddAsset(sphere_shape);
+        }
+
+        for (auto box : m_rear_vis_boxes) {
+            auto box_shape = chrono_types::make_shared<ChBoxShape>();
+            box_shape->GetBoxGeometry().SetLengths(box.m_dims);
+            box_shape->Pos = box.m_pos;
+            box_shape->Rot = box.m_rot;
+            m_rear_body->AddAsset(box_shape);
+        }
+
+        for (auto cyl : m_rear_vis_cylinders) {
+            auto cyl_shape = chrono_types::make_shared<ChCylinderShape>();
+            cyl_shape->GetCylinderGeometry().rad = cyl.m_radius;
+            cyl_shape->GetCylinderGeometry().p1 = ChVector<>(0, cyl.m_length / 2, 0);
+            cyl_shape->GetCylinderGeometry().p2 = ChVector<>(0, -cyl.m_length / 2, 0);
+            cyl_shape->Pos = cyl.m_pos;
+            cyl_shape->Rot = cyl.m_rot;
+            m_rear_body->AddAsset(cyl_shape);
+        }
+    }
+
+    auto sphere_shape_front = chrono_types::make_shared<ChSphereShape>();
+    sphere_shape_front->GetSphereGeometry().rad = 0.1;
+    sphere_shape_front->Pos = GetLocalPosCOM();
+    m_body->AddAsset(sphere_shape_front);
+
+    auto sphere_shape_rear = chrono_types::make_shared<ChSphereShape>();
+    sphere_shape_rear->GetSphereGeometry().rad = 0.1;
+    sphere_shape_rear->Pos = GetRearLocalPosCOM();
+    m_rear_body->AddAsset(sphere_shape_rear);
 }
 
 void ChTorsionChassis::RemoveVisualizationAssets() {
     m_body->GetAssets().clear();
+    m_rear_body->GetAssets().clear();
 }
 
 void ChTorsionChassis::ExportComponentList(rapidjson::Document& jsonDocument) const {
@@ -189,6 +233,7 @@ void ChTorsionChassis::ExportComponentList(rapidjson::Document& jsonDocument) co
 
     std::vector<std::shared_ptr<ChBody>> bodies;
     bodies.push_back(m_body);
+    bodies.push_back(m_rear_body);
     ChPart::ExportBodyList(jsonDocument, bodies);
 
     ChPart::ExportMarkerList(jsonDocument, m_markers);
@@ -200,6 +245,7 @@ void ChTorsionChassis::Output(ChVehicleOutput& database) const {
 
     std::vector<std::shared_ptr<ChBodyAuxRef>> bodies;
     bodies.push_back(m_body);
+    bodies.push_back(m_rear_body);
     database.WriteAuxRefBodies(bodies);
 
     database.WriteMarkers(m_markers);

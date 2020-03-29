@@ -35,14 +35,14 @@ const double LMTV_Chassis::m_mass = 3796;
 const ChVector<> LMTV_Chassis::m_inertiaXX(3.1721e3, 5.1645e3, 4.4865e3);
 const ChVector<> LMTV_Chassis::m_inertiaXY(0, -0.4154e3, 0);
 const ChVector<> LMTV_Chassis::m_COM_loc(-0.7079, 0, 0.6790);
-const ChCoordsys<> LMTV_Chassis::m_driverCsys(ChVector<>(0.0, 0.7, 1.2), ChQuaternion<>(1, 0, 0, 0));
+const ChCoordsys<> LMTV_Chassis::m_driverCsys(ChVector<>(0.4, 0.7, 1.18), ChQuaternion<>(1, 0, 0, 0));
 
 const double LMTV_Chassis::m_rear_mass = 1788.333;
 const ChVector<> LMTV_Chassis::m_rear_inertiaXX(2.3677e3, 2.3766e3, 3.2246e3);
 const ChVector<> LMTV_Chassis::m_rear_inertiaXY(0, -0.0915e3, 0);
 const ChVector<> LMTV_Chassis::m_rear_COM_loc(-3.1765, 0, 0.8799);
 
-const ChVector<> LMTV_Chassis::m_torsion_joint_pos(-1.748, 0, 0.744);
+const ChVector<> LMTV_Chassis::m_torsion_joint_pos(-1.748, 0, 0.466);
 const double LMTV_Chassis::m_torsion_stiffness = 7085;
 
 // -----------------------------------------------------------------------------
@@ -92,14 +92,26 @@ LMTV_Chassis::LMTV_Chassis(const std::string& name, bool fixed, ChassisCollision
             break;
     }
      */
-    BoxShape box1(ChVector<>(0.0, 0.0, 0.1), ChQuaternion<>(1, 0, 0, 0), ChVector<>(1.0, 0.5, 0.2));
+    // BoxShape box1(ChVector<>(0.0, 0.0, 0.1), ChQuaternion<>(1, 0, 0, 0), ChVector<>(1.0, 0.5, 0.2));
+    double widthFrame = 0.905;
+    double heightFrame = 0.2;
+    double lx_front = 1.0 - m_torsion_joint_pos.x();
+    ChVector<> frontBoxPos((1.0 + m_torsion_joint_pos.x()) / 2, 0, m_torsion_joint_pos.z());
+    BoxShape boxFront(frontBoxPos, ChQuaternion<>(1, 0, 0, 0), ChVector<>(lx_front, widthFrame, heightFrame));
+
+    double lx_rear = m_torsion_joint_pos.x() + 4.9;
+    ChVector<> rearBoxPos((-4.9 + m_torsion_joint_pos.x()) / 2, 0, m_torsion_joint_pos.z());
+    BoxShape boxRear(rearBoxPos, ChQuaternion<>(1, 0, 0, 0), ChVector<>(lx_rear, widthFrame, heightFrame));
 
     m_has_collision = false;
 
     m_has_primitives = true;
-    m_vis_boxes.push_back(box1);
+    m_vis_boxes.push_back(boxFront);
 
-    m_has_mesh = true;
+    m_has_rear_primitives = true;
+    m_rear_vis_boxes.push_back(boxRear);
+
+    m_has_mesh = false;
     m_vis_mesh_file = "mtv/meshes/LMTV_Chassis.obj";
 }
 

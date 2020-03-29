@@ -51,6 +51,9 @@ class CH_VEHICLE_API ChTorsionChassis : public ChChassis {
     /// Get the location of the center of rear mass in the chassis frame.
     virtual const ChVector<>& GetRearLocalPosCOM() const = 0;
 
+    /// Get the location of the total center of rear mass in the chassis frame.
+    ChVector<> GetTotalCOMPos();
+
     /// Get a handle to the vehicle's rear chassis body.
     std::shared_ptr<ChBodyAuxRef> GetRearBody() const { return m_rear_body; }
 
@@ -65,6 +68,9 @@ class CH_VEHICLE_API ChTorsionChassis : public ChChassis {
 
     /// Specifies whether or not visualization primitives were defined.
     bool HasPrimitives() const { return m_has_primitives; }
+
+    /// Specifies whether or not visualization primitives were defined.
+    bool HasRearPrimitives() const { return m_has_rear_primitives; }
 
     /// Specifies whether or not a visualization mesh was defined.
     bool HasMesh() const { return m_has_mesh; }
@@ -89,6 +95,9 @@ class CH_VEHICLE_API ChTorsionChassis : public ChChassis {
 
     /// Remove all visualization assets from this subsystem.
     virtual void RemoveVisualizationAssets() override final;
+
+    /// Get the total chassis mass.
+    virtual double GetTotalMass() const { return m_body->GetMass() + m_rear_body->GetMass(); };
 
   protected:
     std::shared_ptr<ChBodyAuxRef> m_rear_body;            ///< handle to the rear chassis body
@@ -132,6 +141,11 @@ class CH_VEHICLE_API ChTorsionChassis : public ChChassis {
     std::vector<BoxShape> m_vis_boxes;
     std::vector<SphereShape> m_vis_spheres;
     std::vector<CylinderShape> m_vis_cylinders;
+
+    bool m_has_rear_primitives;
+    std::vector<BoxShape> m_rear_vis_boxes;
+    std::vector<SphereShape> m_rear_vis_spheres;
+    std::vector<CylinderShape> m_rear_vis_cylinders;
 
     bool m_has_mesh;
     std::string m_vis_mesh_file;

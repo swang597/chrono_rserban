@@ -30,7 +30,7 @@ namespace mtv {
 // Static variables
 // -----------------------------------------------------------------------------
 
-const std::string LMTV_TMeasyTire::m_meshFile = "mtv/meshes/LMTV_tire.obj";
+const std::string LMTV_TMeasyTire::m_meshFile = "mtv/meshes/MTV_tire.obj";
 
 const double LMTV_TMeasyTire::m_mass = 110.0;
 const ChVector<> LMTV_TMeasyTire::m_inertia(16.9, 29.5, 16.9);

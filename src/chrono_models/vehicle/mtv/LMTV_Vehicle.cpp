@@ -34,7 +34,7 @@ LMTV_Vehicle::LMTV_Vehicle(const bool fixed,
                            SteeringType steering_model,
                            ChMaterialSurface::ContactMethod contact_method,
                            ChassisCollisionType chassis_collision_type)
-    : ChWheeledVehicle("UAZBUS", contact_method), m_omega({0, 0, 0, 0}) {
+    : ChWheeledVehicle("LMTV", contact_method), m_omega({0, 0, 0, 0}) {
     Create(fixed, steering_model, chassis_collision_type);
 }
 
@@ -42,7 +42,7 @@ LMTV_Vehicle::LMTV_Vehicle(ChSystem* system,
                            const bool fixed,
                            SteeringType steering_model,
                            ChassisCollisionType chassis_collision_type)
-    : ChWheeledVehicle("UAZBUS", system), m_omega({0, 0, 0, 0}) {
+    : ChWheeledVehicle("LMTV", system), m_omega({0, 0, 0, 0}) {
     Create(fixed, steering_model, chassis_collision_type);
 }
 
@@ -209,8 +209,8 @@ void LMTV_Vehicle::DebugLog(int what) {
 // the associated spindle body.
 // -----------------------------------------------------------------------------
 double LMTV_Vehicle::GetVehicleMass() const {
-    auto chassis = std::static_pointer_cast<ChTorsionChassis>(m_chassis);
-    double mass = chassis->GetMass() + chassis->GetRearMass();
+    std::shared_ptr<ChTorsionChassis> chassis = std::static_pointer_cast<ChTorsionChassis>(m_chassis);
+    double mass = chassis->GetTotalMass();
 
     for (auto& axle : m_axles) {
         mass += axle->m_suspension->GetMass();

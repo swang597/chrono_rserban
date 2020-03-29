@@ -36,7 +36,7 @@ const ChVector<> LMTV_Wheel::m_inertia(.6, .63, .6);
 const double LMTV_Wheel::m_radius = 0.254;
 const double LMTV_Wheel::m_width = 0.254;
 
-const std::string LMTV_Wheel::m_meshFile = "mtv/meshes/LMTV_rim.obj";
+const std::string LMTV_Wheel::m_meshFile = "mtv/meshes/MTV_rim.obj";
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------

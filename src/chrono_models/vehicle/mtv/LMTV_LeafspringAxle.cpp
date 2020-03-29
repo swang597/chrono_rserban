@@ -184,13 +184,13 @@ LMTV_LeafspringAxle::~LMTV_LeafspringAxle() {
 const ChVector<> LMTV_LeafspringAxle::getLocation(PointId which) {
     switch (which) {
         case SPRING_A:
-            return ChVector<>(0.0, 0.6075, m_axleTubeRadius);
+            return ChVector<>(0.0, 0.529, m_axleTubeRadius);
         case SPRING_C:
-            return ChVector<>(0.0, 0.6075, m_axleTubeRadius + m_springDesignLength);
+            return ChVector<>(0.0, 0.529, m_axleTubeRadius + m_springDesignLength);
         case SHOCK_A:
             return ChVector<>(-0.15, 0.7075, m_axleTubeRadius - 0.05);
         case SHOCK_C:
-            return ChVector<>(0.0, 0.6075, m_axleTubeRadius + m_springDesignLength + 0.2);
+            return ChVector<>(0.0, 0.529, m_axleTubeRadius + m_springDesignLength + 0.2);
         case SPINDLE:
             return ChVector<>(0.0, 1.0025, 0.0);
         default:
