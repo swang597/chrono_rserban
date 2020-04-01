@@ -149,6 +149,9 @@ class CH_VEHICLE_API ChTorsionChassis : public ChChassis {
 
     bool m_has_mesh;
     std::string m_vis_mesh_file;
+
+    bool m_has_rear_mesh;
+    std::string m_vis_rear_mesh_file;
 };
 
 /// @} vehicle

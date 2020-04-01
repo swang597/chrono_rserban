@@ -38,6 +38,7 @@ ChTorsionChassis::ChTorsionChassis(const std::string& name, bool fixed)
       m_has_primitives(false),
       m_has_rear_primitives(false),
       m_has_mesh(false),
+      m_has_rear_mesh(false),
       m_has_collision(false) {}
 
 // -----------------------------------------------------------------------------
@@ -155,7 +156,16 @@ void ChTorsionChassis::AddVisualizationAssets(VisualizationType vis) {
         trimesh_shape->SetName(filesystem::path(m_vis_mesh_file).stem());
         trimesh_shape->SetStatic(true);
         m_body->AddAsset(trimesh_shape);
-        return;
+    }
+
+    if (vis == VisualizationType::MESH && m_has_rear_mesh) {
+        auto trimesh = chrono_types::make_shared<geometry::ChTriangleMeshConnected>();
+        trimesh->LoadWavefrontMesh(vehicle::GetDataFile(m_vis_rear_mesh_file), false, false);
+        auto trimesh_shape = chrono_types::make_shared<ChTriangleMeshShape>();
+        trimesh_shape->SetMesh(trimesh);
+        trimesh_shape->SetName(filesystem::path(m_vis_rear_mesh_file).stem());
+        trimesh_shape->SetStatic(true);
+        m_body->AddAsset(trimesh_shape);
     }
 
     if (vis == VisualizationType::PRIMITIVES && m_has_primitives) {

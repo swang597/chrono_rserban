@@ -111,8 +111,11 @@ LMTV_Chassis::LMTV_Chassis(const std::string& name, bool fixed, ChassisCollision
     m_has_rear_primitives = true;
     m_rear_vis_boxes.push_back(boxRear);
 
-    m_has_mesh = false;
-    m_vis_mesh_file = "mtv/meshes/LMTV_Chassis.obj";
+    m_has_mesh = true;
+    m_vis_mesh_file = "mtv/meshes/m1078_front.obj";
+
+    m_has_rear_mesh = true;
+    m_vis_rear_mesh_file = "mtv/meshes/m1078_rear.obj";
 }
 
 void LMTV_Chassis::Initialize(ChSystem* system,                ///< [in] containing system
