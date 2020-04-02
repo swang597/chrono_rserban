@@ -9,10 +9,13 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Radu Serban
+// Authors: Radu Serban, Rainer Gericke
 // =============================================================================
 //
-// Template for a rigid-body chassis vehicle subsystem.
+// Template for a rigid-body chassis vehicle subsystem allowing chassis torsion
+// around the x-axis. For this reason it has an additional rear body coupled
+// with the front body by a rotational joint and spring. It can be used to
+// simulate trucks with C-shaped frames.
 //
 // =============================================================================
 
@@ -165,7 +168,7 @@ void ChTorsionChassis::AddVisualizationAssets(VisualizationType vis) {
         trimesh_shape->SetMesh(trimesh);
         trimesh_shape->SetName(filesystem::path(m_vis_rear_mesh_file).stem());
         trimesh_shape->SetStatic(true);
-        m_body->AddAsset(trimesh_shape);
+        m_rear_body->AddAsset(trimesh_shape);
     }
 
     if (vis == VisualizationType::PRIMITIVES && m_has_primitives) {

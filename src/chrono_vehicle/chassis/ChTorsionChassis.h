@@ -12,7 +12,10 @@
 // Authors: Radu Serban, Rainer Gericke
 // =============================================================================
 //
-// Template for a rigid-body chassis vehicle subsystem.
+// Template for a rigid-body chassis vehicle subsystem allowing chassis torsion
+// around the x-axis. For this reason it has an additional rear body coupled
+// with the front body by a rotational joint and spring. It can be used to
+// simulate trucks with C-shaped frames.
 //
 // =============================================================================
 

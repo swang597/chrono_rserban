@@ -16,6 +16,7 @@
 //
 // =============================================================================
 
+
 #include "chrono/assets/ChTriangleMeshShape.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
 
@@ -43,7 +44,7 @@ const ChVector<> LMTV_Chassis::m_rear_inertiaXY(0, -0.0915e3, 0);
 const ChVector<> LMTV_Chassis::m_rear_COM_loc(-3.1765, 0, 0.8799);
 
 const ChVector<> LMTV_Chassis::m_torsion_joint_pos(-1.748, 0, 0.466);
-const double LMTV_Chassis::m_torsion_stiffness = 7085;
+const double LMTV_Chassis::m_torsion_stiffness = 7085;  // 7.085;
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------

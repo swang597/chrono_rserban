@@ -36,7 +36,7 @@ const double lbft2nm = 1.3558;
 LMTV_SimpleMapPowertrain::LMTV_SimpleMapPowertrain(const std::string& name) : ChSimpleMapPowertrain(name) {}
 
 double LMTV_SimpleMapPowertrain::GetMaxEngineSpeed() {
-    return 2400 * rpm2rads;
+    return 2500 * rpm2rads;
 }
 
 void LMTV_SimpleMapPowertrain::SetEngineTorqueMaps(ChFunction_Recorder& map0, ChFunction_Recorder& mapF) {
@@ -90,7 +90,7 @@ void LMTV_SimpleMapPowertrain::SetShiftPoints(std::vector<std::pair<double, doub
     shift_bands.push_back(std::pair<double, double>(1100 * rpm2rads, 2300 * rpm2rads));
     shift_bands.push_back(std::pair<double, double>(1100 * rpm2rads, 2300 * rpm2rads));
     shift_bands.push_back(std::pair<double, double>(1100 * rpm2rads, 2300 * rpm2rads));
-    shift_bands.push_back(std::pair<double, double>(1100 * rpm2rads, 2300 * rpm2rads));
+    shift_bands.push_back(std::pair<double, double>(1100 * rpm2rads, 2500 * rpm2rads));
 }
 
 }  // namespace mtv
