@@ -27,7 +27,10 @@
 
 #include "chrono_models/ChApiModels.h"
 #include "chrono_models/vehicle/mtv/LMTV_Vehicle.h"
+#include "chrono_models/vehicle/mtv/LMTV_SimpleCVTPowertrain.h"
 #include "chrono_models/vehicle/mtv/LMTV_SimpleMapPowertrain.h"
+#include "chrono_models/vehicle/mtv/LMTV_SimplePowertrain.h"
+#include "chrono_models/vehicle/mtv/LMTV_Powertrain.h"
 #include "chrono_models/vehicle/mtv/LMTV_RigidTire.h"
 #include "chrono_models/vehicle/mtv/LMTV_TMeasyTire.h"
 
@@ -54,6 +57,7 @@ class CH_MODELS_API LMTV {
     void SetChassisCollisionType(ChassisCollisionType val) { m_chassisCollisionType = val; }
 
     void SetTireType(TireModelType val) { m_tireType = val; }
+    void SetPowertrainType(PowertrainModelType val) { m_powertrainType = val; }
 
     // void setSteeringType(SteeringType val) { m_steeringType = val; }
 
@@ -95,6 +99,7 @@ class CH_MODELS_API LMTV {
     bool m_fixed;
 
     TireModelType m_tireType;
+    PowertrainModelType m_powertrainType;
 
     double m_tire_step_size;
 

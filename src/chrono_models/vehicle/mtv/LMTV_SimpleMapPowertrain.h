@@ -9,10 +9,10 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Radu Serban, Rainer Gericke
+// Authors: Radu Serban
 // =============================================================================
 //
-// Simple powertrain model for the MAN 5t vehicle.
+// Simple powertrain model for the LMTV vehicle.
 // - based on torque-speed engine maps
 // - both power and torque limited
 // - no torque converter
@@ -34,7 +34,7 @@ namespace mtv {
 /// @addtogroup vehicle_models_mtv
 /// @{
 
-/// Simple LMTV 2.5t powertrain subsystem (based on engine speed-torque maps).
+/// Simple LMTV powertrain subsystem (based on engine speed-torque maps).
 class CH_MODELS_API LMTV_SimpleMapPowertrain : public ChSimpleMapPowertrain {
   public:
     LMTV_SimpleMapPowertrain(const std::string& name);

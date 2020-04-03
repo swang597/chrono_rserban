@@ -34,6 +34,7 @@ LMTV::LMTV()
       m_contactMethod(ChMaterialSurface::NSC),
       m_chassisCollisionType(ChassisCollisionType::NONE),
       m_fixed(false),
+      m_powertrainType(PowertrainModelType::SHAFTS),
       m_tireType(TireModelType::RIGID),
       m_tire_step_size(-1),
       m_steeringType(SteeringType::PITMAN_ARM),
@@ -48,6 +49,7 @@ LMTV::LMTV(ChSystem* system)
       m_contactMethod(ChMaterialSurface::NSC),
       m_chassisCollisionType(ChassisCollisionType::NONE),
       m_fixed(false),
+      m_powertrainType(PowertrainModelType::SHAFTS),
       m_tireType(TireModelType::RIGID),
       m_tire_step_size(-1),
       m_steeringType(SteeringType::PITMAN_ARM),
@@ -84,8 +86,28 @@ void LMTV::Initialize() {
     }
 
     // Create and initialize the powertrain system
-    auto powertrain = chrono_types::make_shared<LMTV_SimpleMapPowertrain>("powertrain");
-    m_vehicle->InitializePowertrain(powertrain);
+    switch (m_powertrainType) {
+        case PowertrainModelType::SIMPLE_MAP: {
+            auto powertrain = chrono_types::make_shared<LMTV_SimpleMapPowertrain>("Powertrain");
+            m_vehicle->InitializePowertrain(powertrain);
+            break;
+        }
+        case PowertrainModelType::SIMPLE_CVT: {
+            auto powertrain = chrono_types::make_shared<LMTV_SimpleCVTPowertrain>("Powertrain");
+            m_vehicle->InitializePowertrain(powertrain);
+            break;
+        }
+        case PowertrainModelType::SIMPLE: {
+            auto powertrain = chrono_types::make_shared<LMTV_SimplePowertrain>("Powertrain");
+            m_vehicle->InitializePowertrain(powertrain);
+            break;
+        }
+        case PowertrainModelType::SHAFTS: {
+            auto powertrain = chrono_types::make_shared<LMTV_Powertrain>("Powertrain");
+            m_vehicle->InitializePowertrain(powertrain);
+            break;
+        }
+    }
 
     // Create the tires and set parameters depending on type.
     switch (m_tireType) {

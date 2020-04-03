@@ -122,8 +122,14 @@ set(CVM_MTV_FILES
     mtv/LMTV_RigidTire.h
     mtv/LMTV_SimpleDriveline.cpp
     mtv/LMTV_SimpleDriveline.h
+    mtv/LMTV_SimpleCVTPowertrain.cpp
+    mtv/LMTV_SimpleCVTPowertrain.h
     mtv/LMTV_SimpleMapPowertrain.cpp
     mtv/LMTV_SimpleMapPowertrain.h
+    mtv/LMTV_SimplePowertrain.cpp
+    mtv/LMTV_SimplePowertrain.h
+    mtv/LMTV_Powertrain.cpp
+    mtv/LMTV_Powertrain.h
     mtv/LMTV_TMeasyTire.cpp
     mtv/LMTV_TMeasyTire.h
     mtv/LMTV_ToebarLeafspringAxle.cpp

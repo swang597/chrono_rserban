@@ -53,8 +53,8 @@ VisualizationType steering_vis_type = VisualizationType::PRIMITIVES;
 VisualizationType wheel_vis_type = VisualizationType::NONE;
 VisualizationType tire_vis_type = VisualizationType::PRIMITIVES;
 
-// Type of powertrain model (SHAFTS, SIMPLE, SIMPLE_CVT)
-PowertrainModelType powertrain_model = PowertrainModelType::SHAFTS;
+// Type of powertrain model (SHAFTS, SIMPLE_MAP, SIMPLE_CVT, SIMPLE)
+PowertrainModelType powertrain_model = PowertrainModelType::SIMPLE_MAP;
 
 // Drive type (FWD, RWD, or AWD)
 DrivelineType drive_type = DrivelineType::AWD;
@@ -79,16 +79,16 @@ int main(int argc, char* argv[]) {
     // --------------
 
     // Create the HMMWV vehicle, set parameters, and initialize.
-    // Typical aerodynamic drag for HMMWV: Cd = 0.5 and area ~5 m2
+    // Typical aerodynamic drag for LMTV: Cd = 0.5 and area ~5 m2
     LMTV lmtv;
     lmtv.SetContactMethod(ChMaterialSurface::SMC);
     lmtv.SetChassisFixed(false);
     lmtv.SetInitPosition(ChCoordsys<>(ChVector<>(-terrainLength / 2 + 5, 0, 0.7), ChQuaternion<>(1, 0, 0, 0)));
-    // lmtv.SetPowertrainType(powertrain_model);
+    lmtv.SetPowertrainType(powertrain_model);
     // lmtv.SetDriveType(drive_type);
     lmtv.SetTireType(tire_model);
     lmtv.SetTireStepSize(tire_step_size);
-    lmtv.SetAerodynamicDrag(0.5, 5.0, 1.2);
+    lmtv.SetAerodynamicDrag(0.8, 5.76, 1.2);
     lmtv.Initialize();
 
     // Set subsystem visualization mode
@@ -122,7 +122,7 @@ int main(int argc, char* argv[]) {
     // Create the straight path and the driver system
     // ----------------------------------------------
 
-    auto path = StraightLinePath(ChVector<>(-terrainLength / 2, 0, 0.5), ChVector<>(terrainLength / 2, 0, 0.5), 1);
+    auto path = StraightLinePath(ChVector<>(-terrainLength / 2, 0, 0.5), ChVector<>(terrainLength * 10, 0, 0.5), 1);
     ChPathFollowerDriver driver(lmtv.GetVehicle(), path, "my_path", 1000.0);
     driver.GetSteeringController().SetLookAheadDistance(5.0);
     driver.GetSteeringController().SetGains(0.5, 0, 0);

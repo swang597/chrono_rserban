@@ -9,18 +9,14 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Radu Serban, Rainer Gericke
+// Authors: Radu Serban
 // =============================================================================
 //
-// Simple powertrain model for the LMTV 2.5t vehicle.
+// Simple powertrain model for the LMTV vehicle.
 // - based on torque-speed engine maps
 // - both power and torque limited
 // - no torque converter
 // - simple gear-shifting model (in automatic mode)
-//
-// Original Eingine: Caterpillar 3116 6.6 litre 4-stroke Diesel 6 cylinder inline 171 kW
-//          Gearbox: Allison 4700SP
-//
 //
 // =============================================================================
 
@@ -31,33 +27,28 @@ namespace vehicle {
 namespace mtv {
 
 const double rpm2rads = CH_C_PI / 30;
-const double lbft2nm = 1.3558;
 
 LMTV_SimpleMapPowertrain::LMTV_SimpleMapPowertrain(const std::string& name) : ChSimpleMapPowertrain(name) {}
 
 double LMTV_SimpleMapPowertrain::GetMaxEngineSpeed() {
-    return 2500 * rpm2rads;
+    return 2700 * rpm2rads;
 }
 
 void LMTV_SimpleMapPowertrain::SetEngineTorqueMaps(ChFunction_Recorder& map0, ChFunction_Recorder& mapF) {
-    map0.AddPoint(-100 * rpm2rads, 0.000 * lbft2nm);
-    map0.AddPoint(0 * rpm2rads, 0.0 * lbft2nm);
-    map0.AddPoint(100 * rpm2rads, 0.0 * lbft2nm);
-    map0.AddPoint(400 * rpm2rads, -20.0 * lbft2nm);
-    map0.AddPoint(600 * rpm2rads, -20.0 * lbft2nm);
-    map0.AddPoint(800 * rpm2rads, -20.0 * lbft2nm);
-    map0.AddPoint(1000 * rpm2rads, -20.0 * lbft2nm);
-    map0.AddPoint(1200 * rpm2rads, -20.0 * lbft2nm);
-    map0.AddPoint(1400 * rpm2rads, -20.0 * lbft2nm);
-    map0.AddPoint(1600 * rpm2rads, -20.0 * lbft2nm);
-    map0.AddPoint(1800 * rpm2rads, -30.0 * lbft2nm);
-    map0.AddPoint(2000 * rpm2rads, -30.0 * lbft2nm);
-    map0.AddPoint(2100 * rpm2rads, -40.0 * lbft2nm);
-    map0.AddPoint(2300 * rpm2rads, -100.0 * lbft2nm);
-    map0.AddPoint(2500 * rpm2rads, -150.0 * lbft2nm);
+    map0.AddPoint(-10.472, 0.000);
+    map0.AddPoint(83.776, -20.0);
+    map0.AddPoint(104.720, -20.0);
+    map0.AddPoint(125.664, -30.0);
+    map0.AddPoint(146.608, -30.0);
+    map0.AddPoint(167.552, -30.0);
+    map0.AddPoint(188.496, -40.0);
+    map0.AddPoint(209.440, -50.0);
+    map0.AddPoint(230.383, -70.0);
+    map0.AddPoint(251.327, -100.0);
+    map0.AddPoint(282.743, -800.0);
 
-    mapF.AddPoint(-100.0 * rpm2rads, 0.00);
-    mapF.AddPoint(0 * rpm2rads, 200.00);
+    // Caterpillar 3116 Diesel
+    mapF.AddPoint(-10.472, 406.7);
     mapF.AddPoint(500 * rpm2rads, 300);
     mapF.AddPoint(1000 * rpm2rads, 500);
     mapF.AddPoint(1200 * rpm2rads, 572);
@@ -67,30 +58,36 @@ void LMTV_SimpleMapPowertrain::SetEngineTorqueMaps(ChFunction_Recorder& map0, Ch
     mapF.AddPoint(2000 * rpm2rads, 725);
     mapF.AddPoint(2100 * rpm2rads, 717);
     mapF.AddPoint(2200 * rpm2rads, 707);
-    mapF.AddPoint(2400 * rpm2rads, 682);
-    mapF.AddPoint(2500 * rpm2rads, 0);
+    mapF.AddPoint(2300 * rpm2rads, 682);
+    mapF.AddPoint(2500 * rpm2rads, -271.2);
+    mapF.AddPoint(2400 * rpm2rads, -800.0);
 }
 
 void LMTV_SimpleMapPowertrain::SetGearRatios(std::vector<double>& fwd_gear_ratios, double& reverse_gear_ratio) {
-    reverse_gear_ratio = -1.0 / 11.8;
+    // gear ratios from the original Steyr 12m18 ZF gearbox (handshifted, same as in the MAN 7t?)
+    reverse_gear_ratio = -0.089525515;
 
-    fwd_gear_ratios.push_back(1.0 / 11.921875);
-    fwd_gear_ratios.push_back(1.0 / 5.484375);
-    fwd_gear_ratios.push_back(1.0 / 2.984375);
-    fwd_gear_ratios.push_back(1.0 / 2.234375);
-    fwd_gear_ratios.push_back(1.0 / 1.5625);
-    fwd_gear_ratios.push_back(1.0 / 1.15625);
+    fwd_gear_ratios.push_back(0.077160494);
+    fwd_gear_ratios.push_back(0.11778563);
+    fwd_gear_ratios.push_back(0.162337662);
+    fwd_gear_ratios.push_back(0.220750552);
+    fwd_gear_ratios.push_back(0.283286119);
+    fwd_gear_ratios.push_back(0.414937759);
+    fwd_gear_ratios.push_back(0.571428571);
+    fwd_gear_ratios.push_back(0.78125);
     fwd_gear_ratios.push_back(1.0);
 }
 
 void LMTV_SimpleMapPowertrain::SetShiftPoints(std::vector<std::pair<double, double>>& shift_bands) {
-    shift_bands.push_back(std::pair<double, double>(1100 * rpm2rads, 2300 * rpm2rads));
-    shift_bands.push_back(std::pair<double, double>(1100 * rpm2rads, 2300 * rpm2rads));
-    shift_bands.push_back(std::pair<double, double>(1100 * rpm2rads, 2300 * rpm2rads));
-    shift_bands.push_back(std::pair<double, double>(1100 * rpm2rads, 2300 * rpm2rads));
-    shift_bands.push_back(std::pair<double, double>(1100 * rpm2rads, 2300 * rpm2rads));
-    shift_bands.push_back(std::pair<double, double>(1100 * rpm2rads, 2300 * rpm2rads));
-    shift_bands.push_back(std::pair<double, double>(1100 * rpm2rads, 2500 * rpm2rads));
+    shift_bands.push_back(std::pair<double, double>(1000 * rpm2rads, 2226 * rpm2rads));
+    shift_bands.push_back(std::pair<double, double>(1000 * rpm2rads, 2226 * rpm2rads));
+    shift_bands.push_back(std::pair<double, double>(1000 * rpm2rads, 2226 * rpm2rads));
+    shift_bands.push_back(std::pair<double, double>(1000 * rpm2rads, 2226 * rpm2rads));
+    shift_bands.push_back(std::pair<double, double>(1000 * rpm2rads, 2225 * rpm2rads));
+    shift_bands.push_back(std::pair<double, double>(1000 * rpm2rads, 2210 * rpm2rads));
+    shift_bands.push_back(std::pair<double, double>(1000 * rpm2rads, 2226 * rpm2rads));
+    shift_bands.push_back(std::pair<double, double>(1000 * rpm2rads, 2225 * rpm2rads));
+    shift_bands.push_back(std::pair<double, double>(1000 * rpm2rads, 2700 * rpm2rads));
 }
 
 }  // namespace mtv
