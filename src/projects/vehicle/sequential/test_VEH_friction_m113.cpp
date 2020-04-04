@@ -78,10 +78,12 @@ int main(int argc, char* argv[]) {
     auto powertrain_1 = chrono_types::make_shared<M113_SimplePowertrain>("Powertrain1");
     vehicle_1.InitializePowertrain(powertrain_1);
 
-    auto patch_1 = terrain.AddPatch(ChCoordsys<>(ChVector<>(0, -5.5, -0.1), QUNIT), ChVector<>(200, 10, 0.2));
-    patch_1->SetContactFrictionCoefficient(friction_1);
-    patch_1->SetContactRestitutionCoefficient(0.01f);
-    patch_1->SetContactMaterialProperties(2e7f, 0.3f);
+    MaterialInfo minfo_1;
+    minfo_1.mu = friction_1;
+    minfo_1.cr = 0.01f;
+    minfo_1.Y = 2e7f;
+    auto mat_1 = minfo_1.CreateMaterial(sys.GetContactMethod());
+    auto patch_1 = terrain.AddPatch(mat_1, ChCoordsys<>(ChVector<>(0, -5.5, -0.1), QUNIT), ChVector<>(200, 10, 0.2));
     patch_1->SetColor(ChColor(0.8f, 0.8f, 1.0f));
     patch_1->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 10);
 
@@ -105,10 +107,12 @@ int main(int argc, char* argv[]) {
     auto powertrain_2 = chrono_types::make_shared<M113_SimplePowertrain>("Powertrain2");
     vehicle_2.InitializePowertrain(powertrain_2);
 
-    auto patch_2 = terrain.AddPatch(ChCoordsys<>(ChVector<>(0, +5.5, -0.1), QUNIT), ChVector<>(200, 10, 0.2));
-    patch_2->SetContactFrictionCoefficient(friction_2);
-    patch_2->SetContactRestitutionCoefficient(0.01f);
-    patch_2->SetContactMaterialProperties(2e7f, 0.3f);
+    MaterialInfo minfo_2;
+    minfo_2.mu = friction_2;
+    minfo_2.cr = 0.01f;
+    minfo_2.Y = 2e7f;
+    auto mat_2 = minfo_2.CreateMaterial(sys.GetContactMethod());
+    auto patch_2 = terrain.AddPatch(mat_2, ChCoordsys<>(ChVector<>(0, +5.5, -0.1), QUNIT), ChVector<>(200, 10, 0.2));
     patch_2->SetColor(ChColor(1.0f, 0.8f, 0.8f));
     patch_2->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 10);
 

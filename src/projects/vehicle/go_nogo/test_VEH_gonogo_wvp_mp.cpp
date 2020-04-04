@@ -156,9 +156,9 @@ std::string out_dir = "../GONOGO_WVP_MP";
 
 // Custom material composition law.
 // Use the maximum coefficient of friction.
-class CustomCompositionStrategy : public ChMaterialCompositionStrategy<real> {
+class CustomCompositionStrategy : public ChMaterialCompositionStrategy {
   public:
-    virtual real CombineFriction(real a1, real a2) const override { return std::max<real>(a1, a2); }
+    virtual float CombineFriction(float a1, float a2) const override { return std::max<float>(a1, a2); }
 };
 
 // =============================================================================
@@ -353,9 +353,11 @@ int main(int argc, char* argv[]) {
     // Create the terrain
     // ------------------
 
+    auto material = chrono_types::make_shared<ChMaterialSurfaceNSC>();
+    material->SetFriction((float)mu_g);
+    material->SetCohesion((float)coh_g);
     GranularTerrain terrain(system);
-    terrain.SetContactFrictionCoefficient((float)mu_g);
-    terrain.SetContactCohesion((float)coh_g);
+    terrain.SetContactMaterial(material);
     terrain.SetCollisionEnvelope(envelope / 5);
     if (rough) {
         int nx = (int)std::round((2 * hdimX) / (4 * r_g));
@@ -571,7 +573,7 @@ int main(int argc, char* argv[]) {
 WVP* CreateVehicle(ChSystem* system, double vertical_offset) {
     auto wvp = new WVP(system);
 
-    wvp->SetContactMethod(ChMaterialSurface::NSC);
+    wvp->SetContactMethod(ChContactMethod::NSC);
     wvp->SetChassisFixed(false);
     wvp->SetInitPosition(ChCoordsys<>(initLoc + ChVector<>(0, 0, vertical_offset), initRot));
     wvp->SetInitFwdVel(initSpeed);

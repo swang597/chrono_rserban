@@ -105,7 +105,7 @@ int main(int argc, char* argv[]) {
     system.Set_G_acc(ChVector<>(0.0, 0.0, -9.8));
 
     // Create the quarter-vehicle chassis
-    auto chassis = chrono_types::make_shared<ChBody>(ChMaterialSurface::SMC);
+    auto chassis = chrono_types::make_shared<ChBody>();
     system.AddBody(chassis);
     chassis->SetIdentifier(1);
     chassis->SetName("chassis");
@@ -133,7 +133,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Create the spindle body
-    auto spindle = chrono_types::make_shared<ChBody>(ChMaterialSurface::SMC);
+    auto spindle = chrono_types::make_shared<ChBody>();
     system.AddBody(spindle);
     spindle->SetIdentifier(2);
     spindle->SetName("wheel");
@@ -178,12 +178,12 @@ int main(int argc, char* argv[]) {
     wheel->GetTire() = tire;
 
     // Create the terrain
+    auto patch_mat = chrono_types::make_shared<ChMaterialSurfaceSMC>();
+    patch_mat->SetFriction(0.9f);
+    patch_mat->SetRestitution(0.01f);
     double terrain_height = -tire->GetRadius() - 0.01;
     auto terrain = chrono_types::make_shared<RigidTerrain>(&system);
-    auto patch = terrain->AddPatch(ChCoordsys<>(ChVector<>(0, 0, terrain_height - 0.2), QUNIT), ChVector<>(100, 2, 0.4));
-    patch->SetContactFrictionCoefficient(0.9f);
-    patch->SetContactRestitutionCoefficient(0.01f);
-    patch->SetContactMaterialProperties(2e7f, 0.3f);
+    auto patch = terrain->AddPatch(patch_mat, ChCoordsys<>(ChVector<>(0, 0, terrain_height - 0.2), QUNIT), ChVector<>(100, 2, 0.4));
     patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 4);
     terrain->Initialize();
 

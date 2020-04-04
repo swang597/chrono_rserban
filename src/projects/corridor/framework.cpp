@@ -245,11 +245,14 @@ void Framework::Run(double time_end, int fps, bool real_time) {
 void Framework::CreateTerrain() {
     m_terrain = new RigidTerrain(m_system);
 
-    auto patch = m_terrain->AddPatch(ChCoordsys<>(ChVector<>(0, 0, 0), QUNIT), GetChronoDataFile(m_scene.m_coll_file),
+    MaterialInfo minfo;
+    minfo.mu = 0.9f;
+    minfo.cr = 0.01f;
+    minfo.Y = 2e7f;
+    auto patch_mat = minfo.CreateMaterial(m_system->GetContactMethod());
+
+    auto patch = m_terrain->AddPatch(patch_mat, ChCoordsys<>(ChVector<>(0, 0, 0), QUNIT), GetChronoDataFile(m_scene.m_coll_file),
                                      "scene", 0.01, m_render_coll);
-    patch->SetContactFrictionCoefficient(0.9f);
-    patch->SetContactRestitutionCoefficient(0.01f);
-    patch->SetContactMaterialProperties(2e7f, 0.3f);
 
     ChVector<> bbmin, bbmax;
     patch->GetGroundBody()->GetCollisionModel()->GetAABB(bbmin, bbmax);

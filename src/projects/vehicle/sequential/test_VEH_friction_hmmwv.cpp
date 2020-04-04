@@ -83,10 +83,12 @@ int main(int argc, char* argv[]) {
     hmmwv_1.SetWheelVisualizationType(VisualizationType::NONE);
     hmmwv_1.SetTireVisualizationType(VisualizationType::PRIMITIVES);
 
-    auto patch_1 = terrain.AddPatch(ChCoordsys<>(ChVector<>(0, -5.5, -0.1), QUNIT), ChVector<>(200, 10, 0.2));
-    patch_1->SetContactFrictionCoefficient(friction_1);
-    patch_1->SetContactRestitutionCoefficient(0.01f);
-    patch_1->SetContactMaterialProperties(2e7f, 0.3f);
+    MaterialInfo minfo_1;
+    minfo_1.mu = friction_1;
+    minfo_1.cr = 0.01f;
+    minfo_1.Y = 2e7f;
+    auto mat_1 = minfo_1.CreateMaterial(sys.GetContactMethod());
+    auto patch_1 = terrain.AddPatch(mat_1, ChCoordsys<>(ChVector<>(0, -5.5, -0.1), QUNIT), ChVector<>(200, 10, 0.2));
     patch_1->SetColor(ChColor(0.8f, 0.8f, 1.0f));
     patch_1->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 10);
 
@@ -97,7 +99,7 @@ int main(int argc, char* argv[]) {
     driver_1.GetSpeedController().SetGains(0.4, 0, 0);
     driver_1.Initialize();
 
-    // Create and initialize the first vehicle
+    // Create and initialize the second vehicle
     HMMWV_Full hmmwv_2(&sys);
     hmmwv_2.SetInitPosition(ChCoordsys<>(ChVector<>(-90, +5.5, 1.0), QUNIT));
     hmmwv_2.SetPowertrainType(PowertrainModelType::SHAFTS);
@@ -111,10 +113,12 @@ int main(int argc, char* argv[]) {
     hmmwv_2.SetWheelVisualizationType(VisualizationType::NONE);
     hmmwv_2.SetTireVisualizationType(VisualizationType::PRIMITIVES);
 
-    auto patch_2 = terrain.AddPatch(ChCoordsys<>(ChVector<>(0, +5.5, -0.1), QUNIT), ChVector<>(200, 10, 0.2));
-    patch_2->SetContactFrictionCoefficient(friction_2);
-    patch_2->SetContactRestitutionCoefficient(0.01f);
-    patch_2->SetContactMaterialProperties(2e7f, 0.3f);
+    MaterialInfo minfo_2;
+    minfo_2.mu = friction_2;
+    minfo_2.cr = 0.01f;
+    minfo_2.Y = 2e7f;
+    auto mat_2 = minfo_2.CreateMaterial(sys.GetContactMethod());
+    auto patch_2 = terrain.AddPatch(mat_2, ChCoordsys<>(ChVector<>(0, +5.5, -0.1), QUNIT), ChVector<>(200, 10, 0.2));
     patch_2->SetColor(ChColor(1.0f, 0.8f, 0.8f));
     patch_2->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 10);
 

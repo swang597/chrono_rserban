@@ -40,7 +40,7 @@ using namespace chrono::vehicle::hmmwv;
 // Problem parameters
 
 // Contact method type
-ChMaterialSurface::ContactMethod contact_method = ChMaterialSurface::SMC;
+ChContactMethod contact_method = ChContactMethod::SMC;
 
 // Type of tire model (RIGID, LUGRE, FIALA, or PACEJKA)
 TireModelType tire_model = TireModelType::RIGID;
@@ -128,12 +128,14 @@ int main(int argc, char* argv[]) {
     my_hmmwv.SetTireVisualizationType(tire_vis_type);
 
     // Create the terrain
+    MaterialInfo minfo;
+    minfo.mu = 0.8f;
+    minfo.cr = 0.01f;
+    minfo.Y = 2e7f;
+    auto patch_mat = minfo.CreateMaterial(contact_method);
     RigidTerrain terrain(my_hmmwv.GetSystem());
-    auto patch = terrain.AddPatch(ChCoordsys<>(ChVector<>(0, 0, terrainHeight - 5), QUNIT),
+    auto patch = terrain.AddPatch(patch_mat, ChCoordsys<>(ChVector<>(0, 0, terrainHeight - 5), QUNIT),
                                   ChVector<>(terrainLength, terrainWidth, 10));
-    patch->SetContactFrictionCoefficient(0.9f);
-    patch->SetContactRestitutionCoefficient(0.01f);
-    patch->SetContactMaterialProperties(2e7f, 0.3f);
     patch->SetColor(ChColor(1, 1, 1));
     patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), (float)terrainLength, (float)terrainWidth);
     terrain.Initialize();
@@ -153,8 +155,9 @@ int main(int argc, char* argv[]) {
     bump->SetBodyFixed(true);
     bump->SetCollide(true);
 
+    auto bump_mat = ChMaterialSurface::DefaultMaterial(my_hmmwv.GetSystem()->GetContactMethod());
     bump->GetCollisionModel()->ClearModel();
-    utils::AddCylinderGeometry(bump.get(), bump_radius, 4.0);
+    utils::AddCylinderGeometry(bump.get(), bump_mat, bump_radius, 4.0);
     bump->GetCollisionModel()->BuildModel();
 
     auto color = chrono_types::make_shared<ChColorAsset>();

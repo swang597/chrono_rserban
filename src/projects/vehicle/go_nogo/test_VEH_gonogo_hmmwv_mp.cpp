@@ -91,7 +91,7 @@ ChQuaternion<> initRot(1, 0, 0, 0);
 double initSpeed = 0;
 
 // Contact material properties for tires
-float mu_t = 0.8f; // 1.0f;
+float mu_t = 0.8f;  // 1.0f;
 float cr_t = 0;
 
 // -----------------------------------------------------------------------------
@@ -151,15 +151,22 @@ std::string out_dir = "../GONOGO_HMMWV_MP";
 
 // Custom material composition law.
 // Use the maximum coefficient of friction.
-class CustomCompositionStrategy : public ChMaterialCompositionStrategy<real> {
+class CustomCompositionStrategy : public ChMaterialCompositionStrategy {
   public:
-    virtual real CombineFriction(real a1, real a2) const override { return std::max<real>(a1, a2); }
+    virtual float CombineFriction(float a1, float a2) const override { return std::max<float>(a1, a2); }
 };
 
 // =============================================================================
 
 void ShowUsage(const std::string& name);
-bool GetProblemSpecs(int argc, char** argv, std::string& file, int& line, int& threads, bool& render, bool& copy, bool& pov_output);
+bool GetProblemSpecs(int argc,
+                     char** argv,
+                     std::string& file,
+                     int& line,
+                     int& threads,
+                     bool& render,
+                     bool& copy,
+                     bool& pov_output);
 
 HMMWV_Full* CreateVehicle(ChSystem* system, double vertical_offset);
 GONOGO_Driver* CreateDriver(ChVehicle& vehicle);
@@ -193,8 +200,7 @@ int main(int argc, char* argv[]) {
     if (!inpath.exists()) {
         cout << "Input file " << input_file << " does not exist" << endl;
         return 1;
-    }
-    else if (!inpath.is_file()) {
+    } else if (!inpath.is_file()) {
         cout << "Input file " << input_file << " is not a regular file" << endl;
         return 1;
     }
@@ -358,9 +364,11 @@ int main(int argc, char* argv[]) {
     // Create the terrain
     // ------------------
 
+    auto material = chrono_types::make_shared<ChMaterialSurfaceNSC>();
+    material->SetFriction((float)mu_g);
+    material->SetCohesion((float)coh_g);
     GranularTerrain terrain(system);
-    terrain.SetContactFrictionCoefficient((float)mu_g);
-    terrain.SetContactCohesion((float)coh_g);
+    terrain.SetContactMaterial(material);
     terrain.SetCollisionEnvelope(envelope / 5);
     if (rough) {
         int nx = (int)std::round((2 * hdimX) / (4 * r_g));
@@ -599,7 +607,7 @@ int main(int argc, char* argv[]) {
 HMMWV_Full* CreateVehicle(ChSystem* system, double vertical_offset) {
     auto hmmwv = new HMMWV_Full(system);
 
-    hmmwv->SetContactMethod(ChMaterialSurface::NSC);
+    hmmwv->SetContactMethod(ChContactMethod::NSC);
     hmmwv->SetChassisFixed(false);
     hmmwv->SetInitPosition(ChCoordsys<>(initLoc + ChVector<>(0, 0, vertical_offset), initRot));
     hmmwv->SetInitFwdVel(initSpeed);

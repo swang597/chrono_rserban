@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
 
     // Create the vehicle system
     ChassisCollisionType chassis_collision_type = ChassisCollisionType::PRIMITIVES;
-    M113a_Vehicle vehicle(false, ChMaterialSurface::SMC, chassis_collision_type);
+    M113a_Vehicle vehicle(false, ChContactMethod::SMC, chassis_collision_type);
     vehicle.Initialize(ChCoordsys<>(ChVector<>(0.0, 0.0, 1.0), QUNIT));
 
     // Set visualization type for subsystems
@@ -149,11 +149,14 @@ int main(int argc, char* argv[]) {
     float restitution = 0.01f;
     float E = 2e7f;
     float nu = 0.3f;
+    auto material = chrono_types::make_shared<ChMaterialSurfaceSMC>();
+    material->SetFriction(mu);
+    material->SetRestitution(restitution);
+    material->SetYoungModulus(E);
+    material->SetPoissonRatio(nu);
+
     RigidTerrain terrain(vehicle.GetSystem());
-    auto patch = terrain.AddPatch(ChCoordsys<>(ChVector<>(0, 0, -5), QUNIT), ChVector<>(400, 10, 10));
-    patch->SetContactFrictionCoefficient(mu);
-    patch->SetContactRestitutionCoefficient(restitution);
-    patch->SetContactMaterialProperties(E, nu);
+    auto patch = terrain.AddPatch(material, ChCoordsys<>(ChVector<>(0, 0, -5), QUNIT), ChVector<>(400, 10, 10));
     patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 800, 20);
     terrain.Initialize();
 
@@ -375,8 +378,6 @@ void AddHalfround(ChSystem* system, double radius, double obstacle_distance) {
 
     float friction_coefficient = 0.8f;
     float restitution_coefficient = 0.01f;
-    float young_modulus = 2e7f;
-    float poisson_ratio = 0.3f;
 
     auto obstacle = std::shared_ptr<ChBody>(system->NewBody());
     obstacle->SetPos(ChVector<>(0, 0, 0));
@@ -400,22 +401,13 @@ void AddHalfround(ChSystem* system, double radius, double obstacle_distance) {
     obstacle->AddAsset(texture);
 
     // Contact
-    obstacle->GetCollisionModel()->ClearModel();
-    obstacle->GetCollisionModel()->AddCylinder(radius, radius, length * 0.5, ChVector<>(obstacle_distance, 0, 0));
-    obstacle->GetCollisionModel()->BuildModel();
+    auto obst_mat = ChMaterialSurface::DefaultMaterial(system->GetContactMethod());
+    obst_mat->SetFriction(friction_coefficient);
+    obst_mat->SetRestitution(restitution_coefficient);
 
-    switch (obstacle->GetContactMethod()) {
-        case ChMaterialSurface::NSC:
-            obstacle->GetMaterialSurfaceNSC()->SetFriction(friction_coefficient);
-            obstacle->GetMaterialSurfaceNSC()->SetRestitution(restitution_coefficient);
-            break;
-        case ChMaterialSurface::SMC:
-            obstacle->GetMaterialSurfaceSMC()->SetFriction(friction_coefficient);
-            obstacle->GetMaterialSurfaceSMC()->SetRestitution(restitution_coefficient);
-            obstacle->GetMaterialSurfaceSMC()->SetYoungModulus(young_modulus);
-            obstacle->GetMaterialSurfaceSMC()->SetPoissonRatio(poisson_ratio);
-            break;
-    }
+    obstacle->GetCollisionModel()->ClearModel();
+    obstacle->GetCollisionModel()->AddCylinder(obst_mat, radius, radius, length * 0.5, ChVector<>(obstacle_distance, 0, 0));
+    obstacle->GetCollisionModel()->BuildModel();
 
     system->AddBody(obstacle);
 }
