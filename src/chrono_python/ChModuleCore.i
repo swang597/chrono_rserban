@@ -56,7 +56,6 @@
 #include "chrono/physics/ChNodeBase.h"
 #include "chrono/physics/ChNodeXYZ.h"
 #include "chrono/physics/ChLoadsXYZnode.h"
-#include "chrono/physics/ChTensors.h"
 #include "chrono/physics/ChIndexedNodes.h"
 #include "chrono/assets/ChLineShape.h"
 #include "chrono/assets/ChPathShape.h"
@@ -65,8 +64,8 @@
 #include "chrono/assets/ChTriangleMeshShape.h"
 #include "chrono/assets/ChEllipsoidShape.h"
 #include "chrono/assets/ChGlyphs.h"
-#include "chrono/collision/ChCCollisionUtils.h"
-#include "chrono/collision/ChCCollisionSystem.h"
+#include "chrono/collision/ChCollisionUtils.h"
+#include "chrono/collision/ChCollisionSystem.h"
 #include "chrono/geometry/ChTriangleMesh.h"
 #include "chrono/geometry/ChTriangleMeshConnected.h"
 #include "chrono/geometry/ChTriangleMeshSoup.h"
@@ -280,6 +279,7 @@ using namespace chrono::fea;
 %include "ChVector.i"
 #define Vector ChVector<double>
 %include "ChQuaternion.i"
+%include "ChTensors.i"
 %include "../chrono/core/ChBezierCurve.h"
 #define Quaternion ChQuaternion<double>
 %include "ChMatrix33.i"
@@ -294,15 +294,18 @@ using namespace chrono::fea;
 %include "ChRealtimeStep.i"
 %include "ChTransform.i"
 
+
 // motion_functions/   classes
 %include "ChFunction_Base.i"
 
 // geometry/   classes
 %include "ChGeometry.i"
 
+%include "ChMaterialSurface.i"
 %include "ChCollisionModel.i"
-%include "../chrono/collision/ChCCollisionUtils.h"
-%include "../chrono/collision/ChCCollisionSystem.h"
+%include "../chrono/collision/ChCollisionUtils.h"
+%include "../chrono/collision/ChCollisionSystem.h"
+%include "ChCollisionInfo.i"
 
 // assets
 %include "ChAsset.i"
@@ -326,15 +329,10 @@ using namespace chrono::fea;
 
 
 // physics/  classes
-//%include "../chrono/physics/ChTensors.h"
-//%template(ChVoightTensorD) chrono::fea::ChVoightTensor<double>;
-//%template(ChStressTensorD) chrono::fea::ChStressTensor<double>;
-//%template(ChStrainTensorD) chrono::fea::ChStrainTensor<double>;
 %include "ChLoadable.i"
 %include "ChObject.i"
 %include "ChPhysicsItem.i"
 %include "../chrono/physics/ChIndexedNodes.h"
-%include "ChMaterialSurface.i"
 %include "../chrono/physics/ChNodeBase.h"
 %include "../chrono/physics/ChNodeXYZ.h"
 %include "ChBodyFrame.i"

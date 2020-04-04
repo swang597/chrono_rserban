@@ -85,6 +85,7 @@
 #include "chrono/fea/ChContactSurfaceNodeCloud.h"
 #include "chrono/fea/ChMeshSurface.h"
 #include "chrono/fea/ChVisualizationFEAmesh.h"
+#include "chrono/core/ChTensors.h"
 #include "chrono/physics/ChLoad.h"
 #include "chrono/physics/ChLoadsBody.h"
 #include "chrono/physics/ChLoadsXYZnode.h"
@@ -116,10 +117,6 @@ using namespace chrono::fea;
 %ignore chrono::fea::ChContactNodeXYZROT::ComputeJacobianForContactPart;
 %ignore chrono::fea::ChContactTriangleXYZROT::ComputeJacobianForContactPart;
 %ignore chrono::fea::ChElementShellBST::ComputeInternalJacobians;
-%ignore chrono::fea::ChElementBrick::MyMass;
-%ignore chrono::fea::ChElementBrick::MyGravity;
-%ignore chrono::fea::ChElementBrick::MyForceAnalytical;
-%ignore chrono::fea::ChElementBrick::MyForceNum;
 
 // Include other .i configuration files for SWIG. 
 // These are divided in many .i files, each per a
@@ -299,12 +296,14 @@ using namespace chrono::fea;
 %import(module = "pychrono.core")  "ChFrameMoving.i"
 %import(module = "pychrono.core")  "ChBodyFrame.i"
 %import(module = "pychrono.core")  "ChLinkBase.i"
+%import(module = "pychrono.core")  "ChTensors.i"
 // Put this 'director' feature _before_ class wrapping declaration.
 %feature("director") chrono::ChFunction;
 /* Parse the header file to generate wrappers */
 %import(module = "pychrono.core") "../chrono/motion_functions/ChFunction_Base.h"
 %import(module = "pychrono.core") "ChAsset.i"
 %import(module = "pychrono.core") "ChAssetLevel.i"
+%import(module = "pychrono.core") "ChColor.i"
 %import(module = "pychrono.core")  "ChMaterialSurface.i"
 %import(module = "pychrono.core") "../chrono/physics/ChPhysicsItem.h"
 %import(module = "pychrono.core") "../chrono/physics/ChIndexedNodes.h"

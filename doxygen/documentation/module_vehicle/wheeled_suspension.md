@@ -192,19 +192,19 @@ The hardpoints (defined for the left side only and mirrored to construct the rig
 
 ## SAE Leaf-spring solid axle {#wheeled_suspension_ChSAELeafspringAxle}
 
-The SAE Spring Design Handbook shows a way to model a leaf spring with realistic deformation behavior under load conditions. The kinematic of a leaf spring can be defined by 5 points. These points can be used to define a leaf spring consisting of 6 rigid bodies (front leaf, front clamp, rear clamp, rear leaf and shackle). The bodies are connected by joints. The rotational joints of the front and rear leaf as well as the front clamp and rear clamp have a rotational stiffness that can be set by the user to define the correct behavior. This suspension is used as a rear suspension on the [UAZ](@ref chrono::vehicle::uaz::UAZBUS) vehicle SAE type models. The movement of the axle body due to wheel travel and the tie-up effect due to longitudinal forces can be simulated correctly with this leaf spring model. 
+The SAE Spring Design Handbook shows a way to model a leaf spring with realistic deformation behavior under load conditions. The kinematics of a leaf spring can be defined by 5 points. These points can be used to define a leaf spring consisting of 6 rigid bodies (front leaf, front clamp, rear clamp, rear leaf and shackle). The bodies are connected by joints. The rotational springs of the front and rear leaf as well as the front clamp and rear clamp have a rotational stiffness that can be set by the user to define the correct behavior. This suspension is used as a rear suspension on the [UAZ](@ref chrono::vehicle::uaz::UAZBUS) vehicle SAE type models. The movement of the axle body due to wheel travel and the tie-up effect due to longitudinal forces can be simulated correctly with this leaf spring model. 
 
 See [ChSAELeafspringAxle](@ref chrono::vehicle::ChLeafspringAxle) and [SAELeafspringAxle](@ref chrono::vehicle::LeafspringAxle).
 
-<img src="http://www.projectchrono.org/assets/manual/vehicle/wheeled/LeafspringAxle_bodies.png" width="600" />
+<img src="http://www.projectchrono.org/assets/manual/vehicle/wheeled/SAELeafspringAxle_bodies.png" width="600" />
 
 The topology of this suspension template is:
 
-<img src="http://www.projectchrono.org/assets/manual/vehicle/wheeled/LeafspringAxle_topology.png" width="800" />
+<img src="http://www.projectchrono.org/assets/manual/vehicle/wheeled/SAELeafspringAxle_topology.png" width="800" />
 
 The hardpoints (defined for the left side only and mirrored to construct the right side) are:
 
-<img src="http://www.projectchrono.org/assets/manual/vehicle/wheeled/LeafspringAxle_points.png" width="600" />
+<img src="http://www.projectchrono.org/assets/manual/vehicle/wheeled/SAELeafspringAxle_points.png" width="600" />
 
 
 
@@ -214,15 +214,15 @@ Used as front suspension on the [UAZ](@ref chrono::vehicle::uaz::UAZBUS) SAE typ
 
 See [ChSAEToeBarLeafspringAxle](@ref chrono::vehicle::ChToeBarLeafspringAxle) and [SAEToeBarLeafspringAxle](@ref chrono::vehicle::SAEToeBarLeafspringAxle).
 
-<img src="http://www.projectchrono.org/assets/manual/vehicle/wheeled/ToeBarLeafspringAxle_bodies.png" width="600" />
+<img src="http://www.projectchrono.org/assets/manual/vehicle/wheeled/SAEToeBarLeafspringAxle_bodies.png" width="600" />
 
 The topology of this suspension template is:
 
-<img src="http://www.projectchrono.org/assets/manual/vehicle/wheeled/ToeBarLeafspringAxle_topology.png" width="800" />
+<img src="http://www.projectchrono.org/assets/manual/vehicle/wheeled/SAEToeBarLeafspringAxle_topology.png" width="800" />
 
 The hardpoints (defined for the left side only and mirrored to construct the right side) are:
 
-<img src="http://www.projectchrono.org/assets/manual/vehicle/wheeled/ToeBarLeafspringAxle_points.png" width="600" />
+<img src="http://www.projectchrono.org/assets/manual/vehicle/wheeled/SAEToeBarLeafspringAxle_points.png" width="600" />
 
 
 
