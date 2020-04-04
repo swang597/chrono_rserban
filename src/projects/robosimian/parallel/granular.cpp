@@ -65,7 +65,7 @@ void GroundGranular::Initialize(double x_min, double z_max, double step_size) {
     double coh_force = (CH_C_PI * m_radius * m_radius) * m_cohesion;
 
     switch (m_sys->GetContactMethod()) {
-        case ChMaterialSurface::SMC: {
+        case ChContactMethod::SMC: {
             auto mat_c = chrono_types::make_shared<ChMaterialSurfaceSMC>();
             mat_c->SetFriction(0.0f);
             mat_c->SetRestitution(0.0f);
@@ -92,7 +92,7 @@ void GroundGranular::Initialize(double x_min, double z_max, double step_size) {
 
             break;
         }
-        case ChMaterialSurface::NSC: {
+        case ChContactMethod::NSC: {
             auto mat_c = chrono_types::make_shared<ChMaterialSurfaceNSC>();
             mat_c->SetFriction(0.0f);
             mat_c->SetRestitution(0.0f);
@@ -118,7 +118,7 @@ void GroundGranular::Initialize(double x_min, double z_max, double step_size) {
     std::cout << "Broad-phase bins: " << binsX << " x " << binsY << " x " << binsZ << std::endl;
 
     // Adjust collision envelope (NSC only!)
-    if (m_sys->GetContactMethod() == ChMaterialSurface::NSC)
+    if (m_sys->GetContactMethod() == ChContactMethod::NSC)
         m_sys->GetSettings()->collision.collision_envelope = 0.02 * m_radius;
 }
 
@@ -127,15 +127,10 @@ void GroundGranularA::Initialize(double x_min, double z_max, double step_size) {
     GroundGranular::Initialize(x_min, z_max, step_size);
 
     // Set contact material
-    switch (m_sys->GetContactMethod()) {
-        case ChMaterialSurface::SMC:
-            m_terrain->SetContactMaterialSMC(std::static_pointer_cast<ChMaterialSurfaceSMC>(m_material_g));
-            break;
-        case ChMaterialSurface::NSC:
-            m_terrain->SetContactMaterialNSC(std::static_pointer_cast<ChMaterialSurfaceNSC>(m_material_g));
-            m_terrain->SetCollisionEnvelope(0.02 * m_radius);
-            break;
-    }
+    m_terrain->SetContactMaterial(m_material_g);
+    if (m_sys->GetContactMethod() == ChContactMethod::NSC)
+        m_terrain->SetCollisionEnvelope(0.02 * m_radius);
+
     m_terrain->SetStartIdentifier(m_start_id);
     m_terrain->EnableVisualization(true);
     m_terrain->EnableVerbose(true);
@@ -150,7 +145,6 @@ void GroundGranularB::Initialize(double x_min, double z_max, double step_size) {
 
     // Set position of ground body
     m_ground->SetPos(m_center);
-    m_ground->SetMaterialSurface(m_material_c);
 
     // Create container walls
     double hx = m_length / 2;
@@ -158,11 +152,11 @@ void GroundGranularB::Initialize(double x_min, double z_max, double step_size) {
     double hz = 0.5;
     double ht = 0.05;
     m_ground->GetCollisionModel()->ClearModel();
-    utils::AddBoxGeometry(m_ground.get(), ChVector<>(hx, hy, ht), ChVector<>(0, 0, -ht), QUNIT, true);
-    utils::AddBoxGeometry(m_ground.get(), ChVector<>(ht, hy, hz), ChVector<>(-hx - ht, 0, hz), QUNIT, false);
-    utils::AddBoxGeometry(m_ground.get(), ChVector<>(ht, hy, hz), ChVector<>(hx + ht, 0, hz), QUNIT, false);
-    utils::AddBoxGeometry(m_ground.get(), ChVector<>(hx, ht, hz), ChVector<>(0, -hy - ht, hz), QUNIT, false);
-    utils::AddBoxGeometry(m_ground.get(), ChVector<>(hx, ht, hz), ChVector<>(0, hy + ht, hz), QUNIT, true);
+    utils::AddBoxGeometry(m_ground.get(), m_material_c, ChVector<>(hx, hy, ht), ChVector<>(0, 0, -ht), QUNIT, true);
+    utils::AddBoxGeometry(m_ground.get(), m_material_c, ChVector<>(ht, hy, hz), ChVector<>(-hx - ht, 0, hz), QUNIT, false);
+    utils::AddBoxGeometry(m_ground.get(), m_material_c, ChVector<>(ht, hy, hz), ChVector<>(hx + ht, 0, hz), QUNIT, false);
+    utils::AddBoxGeometry(m_ground.get(), m_material_c, ChVector<>(hx, ht, hz), ChVector<>(0, -hy - ht, hz), QUNIT, false);
+    utils::AddBoxGeometry(m_ground.get(), m_material_c, ChVector<>(hx, ht, hz), ChVector<>(0, hy + ht, hz), QUNIT, true);
     m_ground->GetCollisionModel()->BuildModel();
 
     // Create particles (all spheres)

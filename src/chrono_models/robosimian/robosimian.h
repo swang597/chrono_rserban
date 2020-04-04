@@ -122,7 +122,7 @@ struct CH_MODELS_API MeshShape {
 
 class CH_MODELS_API Part {
   public:
-    Part(const std::string& name, chrono::ChSystem* system);
+    Part(const std::string& name, std::shared_ptr<ChMaterialSurface> mat, chrono::ChSystem* system);
     virtual ~Part() {}
 
     const std::string& GetName() const { return m_name; }
@@ -139,6 +139,7 @@ class CH_MODELS_API Part {
 
     std::string m_name;                            ///< subsystem name
     std::shared_ptr<chrono::ChBodyAuxRef> m_body;  ///< rigid body
+    std::shared_ptr<ChMaterialSurface> m_mat;      ///< contact material (shared among all shapes)
     std::vector<BoxShape> m_boxes;                 ///< set of collision boxes
     std::vector<SphereShape> m_spheres;            ///< set of collision spheres
     std::vector<CylinderShape> m_cylinders;        ///< set of collision cylinders
@@ -157,7 +158,7 @@ class CH_MODELS_API Part {
 
 class CH_MODELS_API Chassis : public Part {
   public:
-    Chassis(const std::string& name, chrono::ChSystem* system, bool fixed);
+    Chassis(const std::string& name, bool fixed, std::shared_ptr<ChMaterialSurface> mat, chrono::ChSystem* system);
     ~Chassis() {}
 
     /// Initialize the chassis at the specified (absolute) position.
@@ -181,7 +182,7 @@ class CH_MODELS_API Chassis : public Part {
 
 class CH_MODELS_API Sled : public Part {
   public:
-    Sled(const std::string& name, chrono::ChSystem* system);
+    Sled(const std::string& name, std::shared_ptr<ChMaterialSurface> mat, chrono::ChSystem* system);
     ~Sled() {}
 
     /// Initialize the sled at the specified position (relative to the chassis).
@@ -208,7 +209,10 @@ class CH_MODELS_API Sled : public Part {
 
 class CH_MODELS_API WheelDD : public Part {
   public:
-    WheelDD(const std::string& name, int id, chrono::ChSystem* system);
+    WheelDD(const std::string& name,
+            int id,
+            std::shared_ptr<ChMaterialSurface> mat,
+            chrono::ChSystem* system);
     ~WheelDD() {}
 
     /// Initialize the direct-drive wheel at the specified position (relative to the chassis).
@@ -278,7 +282,12 @@ struct CH_MODELS_API JointData {
 
 class CH_MODELS_API Limb {
   public:
-    Limb(const std::string& name, LimbID id, const LinkData data[], chrono::ChSystem* system);
+    Limb(const std::string& name,
+         LimbID id,
+         const LinkData data[],
+         std::shared_ptr<ChMaterialSurface> wheel_mat,
+         std::shared_ptr<ChMaterialSurface> link_mat,
+         chrono::ChSystem* system);
     ~Limb() {}
 
     /// Initialize the limb at the specified position (relative to the chassis).
@@ -374,7 +383,7 @@ class Driver;
 
 class CH_MODELS_API RoboSimian {
   public:
-    RoboSimian(chrono::ChMaterialSurface::ContactMethod contact_method, bool has_sled = false, bool fixed = false);
+    RoboSimian(chrono::ChContactMethod contact_method, bool has_sled = false, bool fixed = false);
     RoboSimian(chrono::ChSystem* system, bool has_sled = false, bool fixed = false);
     ~RoboSimian();
 
@@ -453,6 +462,21 @@ class CH_MODELS_API RoboSimian {
     /// Get actuator torques for all 8 limb motors.
     std::array<double, 8> GetMotorTorques(LimbID id) { return m_limbs[id]->GetMotorTorques(); }
 
+    /// Access the chassis contact material.
+    std::shared_ptr<ChMaterialSurface> GetChassisContactMaterial() { return m_chassis_material; }
+
+    /// Access the sled contact material.
+    std::shared_ptr<ChMaterialSurface> GetSledContactMaterial() { return m_sled_material; }
+
+    /// Access the wheel contact material. Note that this material is shared by all wheels.
+    std::shared_ptr<ChMaterialSurface> GetWheelContactMaterial() { return m_wheel_material; }
+
+    /// Access the wheelDD contact material. Note that this material is shared by all DD wheels.
+    std::shared_ptr<ChMaterialSurface> GetWheelDDContactMaterial() { return m_wheelDD_material; }
+
+    /// Access the link contact material. Note that this material is shared by all non-wheel links.
+    std::shared_ptr<ChMaterialSurface> GetLinkContactMaterial() { return m_link_material; }
+
     /// Initialize the robot at the specified chassis position and orientation.
     void Initialize(const chrono::ChCoordsys<>& pos);
 
@@ -485,12 +509,18 @@ class CH_MODELS_API RoboSimian {
 
     ActuationMode m_wheel_mode;  ///< type of actuation for wheel motor
 
-    float m_wheel_friction;  ///< coefficient of friction wheel-terrain
-    float m_sled_friction;   ///< coefficient of frictoin sled-terrain
+    std::shared_ptr<ChMaterialSurface> m_chassis_material;  ///< chassis contact material
+    std::shared_ptr<ChMaterialSurface> m_sled_material;     ///< sled contact material
+    std::shared_ptr<ChMaterialSurface> m_wheel_material;    ///< wheel contact material (shared across limbs)
+    std::shared_ptr<ChMaterialSurface> m_link_material;     ///< link contact material (shared across limbs)
+    std::shared_ptr<ChMaterialSurface> m_wheelDD_material;  ///< wheelDD contact material (shared across limbs)
+
+    float m_wheel_friction;  ///< coefficient of friction wheel-terrain (used in material_override)
+    float m_sled_friction;   ///< coefficient of frictoin sled-terrain (used in material_override)
 
     std::shared_ptr<Driver> m_driver;
-    ContactManager* m_contacts;
-    ContactMaterial* m_materials;
+    ContactManager* m_contact_reporter;
+    ContactMaterial* m_material_override;
 
     std::string m_outdir;
     std::string m_root;

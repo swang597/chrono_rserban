@@ -44,7 +44,7 @@ bool drop = true;
 robosimian::LocomotionMode mode = robosimian::LocomotionMode::WALK;
 
 // Contact method (system type)
-ChMaterialSurface::ContactMethod contact_method = ChMaterialSurface::SMC;
+ChContactMethod contact_method = ChContactMethod::SMC;
 
 // Phase durations
 double duration_pose = 1.0;          // Interval to assume initial pose
@@ -126,17 +126,40 @@ void RayCaster::Update() {
 
 // =============================================================================
 
-std::shared_ptr<ChBody> CreateTerrain(robosimian::RoboSimian* robot,
+std::shared_ptr<ChBody> CreateTerrain(ChSystem* sys,
                                       double length,
                                       double width,
                                       double height,
                                       double offset) {
-    auto ground = std::shared_ptr<ChBody>(robot->GetSystem()->NewBody());
+    float friction = 0.8f;
+    float Y = 1e7f;
+    float cr = 0.0f;
+
+    std::shared_ptr<ChMaterialSurface> ground_mat;
+    switch (sys->GetContactMethod()) {
+        case ChContactMethod::NSC: {
+            auto matNSC = chrono_types::make_shared<ChMaterialSurfaceNSC>();
+            matNSC->SetFriction(friction);
+            matNSC->SetRestitution(cr);
+            ground_mat = matNSC;
+            break;
+        }
+        case ChContactMethod::SMC: {
+            auto matSMC = chrono_types::make_shared<ChMaterialSurfaceSMC>();
+            matSMC->SetFriction(friction);
+            matSMC->SetRestitution(cr);
+            matSMC->SetYoungModulus(Y);
+            ground_mat = matSMC;
+            break;
+        }
+    }
+
+    auto ground = std::shared_ptr<ChBody>(sys->NewBody());
     ground->SetBodyFixed(true);
     ground->SetCollide(true);
 
     ground->GetCollisionModel()->ClearModel();
-    ground->GetCollisionModel()->AddBox(length / 2, width / 2, 0.1, ChVector<>(offset, 0, height - 0.1));
+    ground->GetCollisionModel()->AddBox(ground_mat, length / 2, width / 2, 0.1, ChVector<>(offset, 0, height - 0.1));
     ground->GetCollisionModel()->BuildModel();
 
     auto box = chrono_types::make_shared<ChBoxShape>();
@@ -151,7 +174,7 @@ std::shared_ptr<ChBody> CreateTerrain(robosimian::RoboSimian* robot,
 
     ground->AddAsset(chrono_types::make_shared<ChColorAsset>(0.8f, 0.8f, 0.8f));
 
-    robot->GetSystem()->AddBody(ground);
+    sys->AddBody(ground);
 
     return ground;
 }
@@ -161,52 +184,15 @@ void SetContactProperties(robosimian::RoboSimian* robot) {
     float Y = 1e7f;
     float cr = 0.0f;
 
-    switch (robot->GetSystem()->GetContactMethod()) {
-        case ChMaterialSurface::NSC:
-            robot->GetSledBody()->GetMaterialSurfaceNSC()->SetFriction(friction);
-            robot->GetWheelBody(robosimian::LimbID::FR)->GetMaterialSurfaceNSC()->SetFriction(friction);
-            robot->GetWheelBody(robosimian::LimbID::FL)->GetMaterialSurfaceNSC()->SetFriction(friction);
-            robot->GetWheelBody(robosimian::LimbID::RR)->GetMaterialSurfaceNSC()->SetFriction(friction);
-            robot->GetWheelBody(robosimian::LimbID::RL)->GetMaterialSurfaceNSC()->SetFriction(friction);
+    robot->GetSledContactMaterial()->SetFriction(friction);
+    robot->GetSledContactMaterial()->SetRestitution(cr);
 
-            break;
-        case ChMaterialSurface::SMC:
-            robot->GetSledBody()->GetMaterialSurfaceSMC()->SetFriction(friction);
-            robot->GetWheelBody(robosimian::LimbID::FR)->GetMaterialSurfaceSMC()->SetFriction(friction);
-            robot->GetWheelBody(robosimian::LimbID::FL)->GetMaterialSurfaceSMC()->SetFriction(friction);
-            robot->GetWheelBody(robosimian::LimbID::RR)->GetMaterialSurfaceSMC()->SetFriction(friction);
-            robot->GetWheelBody(robosimian::LimbID::RL)->GetMaterialSurfaceSMC()->SetFriction(friction);
+    robot->GetWheelContactMaterial()->SetFriction(friction);
+    robot->GetWheelContactMaterial()->SetRestitution(cr);
 
-            robot->GetSledBody()->GetMaterialSurfaceSMC()->SetYoungModulus(Y);
-            robot->GetWheelBody(robosimian::LimbID::FR)->GetMaterialSurfaceSMC()->SetYoungModulus(Y);
-            robot->GetWheelBody(robosimian::LimbID::FL)->GetMaterialSurfaceSMC()->SetYoungModulus(Y);
-            robot->GetWheelBody(robosimian::LimbID::RR)->GetMaterialSurfaceSMC()->SetYoungModulus(Y);
-            robot->GetWheelBody(robosimian::LimbID::RL)->GetMaterialSurfaceSMC()->SetYoungModulus(Y);
-
-            robot->GetSledBody()->GetMaterialSurfaceSMC()->SetRestitution(cr);
-            robot->GetWheelBody(robosimian::LimbID::FR)->GetMaterialSurfaceSMC()->SetRestitution(cr);
-            robot->GetWheelBody(robosimian::LimbID::FL)->GetMaterialSurfaceSMC()->SetRestitution(cr);
-            robot->GetWheelBody(robosimian::LimbID::RR)->GetMaterialSurfaceSMC()->SetRestitution(cr);
-            robot->GetWheelBody(robosimian::LimbID::RL)->GetMaterialSurfaceSMC()->SetRestitution(cr);
-
-            break;
-    }
-}
-
-void SetContactProperties(std::shared_ptr<ChBody> ground) {
-    float friction = 0.8f;
-    float Y = 1e7f;
-    float cr = 0.0f;
-
-    switch (ground->GetContactMethod()) {
-        case ChMaterialSurface::NSC:
-            ground->GetMaterialSurfaceNSC()->SetFriction(friction);
-            break;
-        case ChMaterialSurface::SMC:
-            ground->GetMaterialSurfaceSMC()->SetFriction(friction);
-            ground->GetMaterialSurfaceSMC()->SetYoungModulus(Y);
-            ground->GetMaterialSurfaceSMC()->SetRestitution(cr);
-            break;
+    if (robot->GetSystem()->GetContactMethod() == ChContactMethod::SMC) {
+        std::static_pointer_cast<ChMaterialSurfaceSMC>(robot->GetSledContactMaterial())->SetYoungModulus(Y);
+        std::static_pointer_cast<ChMaterialSurfaceSMC>(robot->GetWheelContactMaterial())->SetYoungModulus(Y);
     }
 }
 
@@ -227,10 +213,10 @@ int main(int argc, char* argv[]) {
 
     ChSystem* my_sys;
     switch (contact_method) {
-        case ChMaterialSurface::NSC:
+        case ChContactMethod::NSC:
             my_sys = new ChSystemNSC;
             break;
-        case ChMaterialSurface::SMC:
+        case ChContactMethod::SMC:
             my_sys = new ChSystemSMC;
             break;
     }
@@ -324,8 +310,7 @@ int main(int argc, char* argv[]) {
     // Cast rays into collision models
     // -------------------------------
 
-    ////RayCaster caster(my_sys, ChFrame<>(ChVector<>(2, 0, -1), Q_from_AngY(-CH_C_PI_2)), ChVector2<>(2.5, 2.5),
-    /// 0.02);
+    ////RayCaster caster(my_sys, ChFrame<>(ChVector<>(2, 0, -1), Q_from_AngY(-CH_C_PI_2)), ChVector2<>(2.5, 2.5), 0.02);
     RayCaster caster(my_sys, ChFrame<>(ChVector<>(0, -2, -1), Q_from_AngX(-CH_C_PI_2)), ChVector2<>(2.5, 2.5), 0.02);
 
     // -------------------------------
@@ -391,9 +376,8 @@ int main(int argc, char* argv[]) {
             // Create terrain
             ChVector<> hdim(length / 2, width / 2, 0.1);
             ChVector<> loc(length / 4, 0, z - 0.1);
-            auto ground = CreateTerrain(&robot, length, width, z, length / 4);
+            auto ground = CreateTerrain(my_sys, length, width, z, length / 4);
             SetContactProperties(&robot);
-            SetContactProperties(ground);
 
             application.AssetBind(ground);
             application.AssetUpdate(ground);

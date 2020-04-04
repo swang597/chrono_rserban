@@ -389,17 +389,17 @@ class ContactMaterial : public ChContactContainer::AddContactCallback {
 
 // =============================================================================
 
-RoboSimian::RoboSimian(ChMaterialSurface::ContactMethod contact_method, bool has_sled, bool fixed)
+RoboSimian::RoboSimian(ChContactMethod contact_method, bool has_sled, bool fixed)
     : m_owns_system(true),
       m_wheel_mode(ActuationMode::SPEED),
-      m_contacts(new ContactManager),
-      m_materials(nullptr),
+      m_contact_reporter(new ContactManager),
+      m_material_override(nullptr),
       m_sled_friction(0.8f),
       m_wheel_friction(0.8f),
       m_outdir(""),
       m_root("results") {
-    m_system = (contact_method == ChMaterialSurface::NSC) ? static_cast<ChSystem*>(new ChSystemNSC)
-                                                          : static_cast<ChSystem*>(new ChSystemSMC);
+    m_system = (contact_method == ChContactMethod::NSC) ? static_cast<ChSystem*>(new ChSystemNSC)
+                                                        : static_cast<ChSystem*>(new ChSystemSMC);
     m_system->Set_G_acc(ChVector<>(0, 0, -9.81));
 
     // Integration and Solver settings
@@ -410,8 +410,8 @@ RoboSimian::RoboSimian(ChMaterialSurface::ContactMethod contact_method, bool has
     Create(has_sled, fixed);
 
     //// TODO: currently, only NSC parallel systems support user override of composite materials
-    if (contact_method == ChMaterialSurface::NSC) {
-        m_materials = new ContactMaterial(this);
+    if (contact_method == ChContactMethod::NSC) {
+        m_material_override = new ContactMaterial(this);
     }
 }
 
@@ -419,8 +419,8 @@ RoboSimian::RoboSimian(ChSystem* system, bool has_sled, bool fixed)
     : m_owns_system(false),
       m_system(system),
       m_wheel_mode(ActuationMode::SPEED),
-      m_contacts(new ContactManager),
-      m_materials(nullptr),
+      m_contact_reporter(new ContactManager),
+      m_material_override(nullptr),
       m_sled_friction(0.8f),
       m_wheel_friction(0.8f),
       m_outdir(""),
@@ -428,39 +428,86 @@ RoboSimian::RoboSimian(ChSystem* system, bool has_sled, bool fixed)
     Create(has_sled, fixed);
 
     //// TODO: currently, only NSC parallel systems support user override of composite materials
-    if (system->GetContactMethod() == ChMaterialSurface::NSC) {
-        m_materials = new ContactMaterial(this);
+    if (system->GetContactMethod() == ChContactMethod::NSC) {
+        m_material_override = new ContactMaterial(this);
     }
 }
 
 RoboSimian::~RoboSimian() {
     if (m_owns_system)
         delete m_system;
-    delete m_contacts;
-    delete m_materials;
+    delete m_contact_reporter;
+    delete m_material_override;
+}
+
+std::shared_ptr<ChMaterialSurface> DefaultContactMaterial(ChContactMethod contact_method) {
+    float mu = 0.8f;   // coefficient of friction
+    float cr = 0.0f;   // coefficient of restitution
+    float Y = 2e7f;    // Young's modulus
+    float nu = 0.3f;   // Poisson ratio
+    float kn = 2e5f;   // normal stiffness
+    float gn = 40.0f;  // normal viscous damping
+    float kt = 2e5f;   // tangential stiffness
+    float gt = 20.0f;  // tangential viscous damping
+
+    switch (contact_method) {
+        case ChContactMethod::NSC: {
+            auto matNSC = chrono_types::make_shared<ChMaterialSurfaceNSC>();
+            matNSC->SetFriction(mu);
+            matNSC->SetRestitution(cr);
+            return matNSC;
+        }
+        case ChContactMethod::SMC: {
+            auto matSMC = chrono_types::make_shared<ChMaterialSurfaceSMC>();
+            matSMC->SetFriction(mu);
+            matSMC->SetRestitution(cr);
+            matSMC->SetYoungModulus(Y);
+            matSMC->SetPoissonRatio(nu);
+            matSMC->SetKn(kn);
+            matSMC->SetGn(gn);
+            matSMC->SetKt(kt);
+            matSMC->SetGt(gt);
+            return matSMC;
+        }
+        default:
+            return std::shared_ptr<ChMaterialSurface>();
+    }
 }
 
 void RoboSimian::Create(bool has_sled, bool fixed) {
+    auto contact_method = m_system->GetContactMethod();
+
     // Set default collision model envelope commensurate with model dimensions.
     // Note that an SMC system automatically sets envelope to 0.
-    if (m_system->GetContactMethod() == ChMaterialSurface::NSC) {
+    if (contact_method == ChContactMethod::NSC) {
         collision::ChCollisionModel::SetDefaultSuggestedEnvelope(0.01);
         collision::ChCollisionModel::SetDefaultSuggestedMargin(0.005);
     }
 
-    m_chassis = chrono_types::make_shared<Chassis>("chassis", m_system, fixed);
+    // Create the contact materials (all with default properties)
+    m_chassis_material = DefaultContactMaterial(contact_method);
+    m_sled_material = DefaultContactMaterial(contact_method);
+    m_wheel_material = DefaultContactMaterial(contact_method);
+    m_link_material = DefaultContactMaterial(contact_method);
+    m_wheelDD_material = DefaultContactMaterial(contact_method);
+
+    m_chassis = chrono_types::make_shared<Chassis>("chassis", fixed, m_chassis_material, m_system);
 
     if (has_sled)
-        m_sled = chrono_types::make_shared<Sled>("sled", m_system);
+        m_sled = chrono_types::make_shared<Sled>("sled", m_sled_material, m_system);
 
-    m_limbs.push_back(chrono_types::make_shared<Limb>("limb1", FR, front_links, m_system));
-    m_limbs.push_back(chrono_types::make_shared<Limb>("limb2", RR, rear_links, m_system));
-    m_limbs.push_back(chrono_types::make_shared<Limb>("limb3", RL, rear_links, m_system));
-    m_limbs.push_back(chrono_types::make_shared<Limb>("limb4", FL, front_links, m_system));
+    m_limbs.push_back(
+        chrono_types::make_shared<Limb>("limb1", FR, front_links, m_wheel_material, m_link_material, m_system));
+    m_limbs.push_back(
+        chrono_types::make_shared<Limb>("limb2", RR, rear_links, m_wheel_material, m_link_material, m_system));
+    m_limbs.push_back(
+        chrono_types::make_shared<Limb>("limb3", RL, rear_links, m_wheel_material, m_link_material, m_system));
+    m_limbs.push_back(
+        chrono_types::make_shared<Limb>("limb4", FL, front_links, m_wheel_material, m_link_material, m_system));
 
     // The differential-drive wheels will be removed from robosimian
-    ////m_wheel_left = chrono_types::make_shared<WheelDD>("dd_wheel_left", 2, m_system);
-    ////m_wheel_right = chrono_types::make_shared<WheelDD>("dd_wheel_right", 3, m_system);
+    ////m_wheel_left = chrono_types::make_shared<WheelDD>("dd_wheel_left", 2, m_wheelDD_material, m_system);
+    ////m_wheel_right = chrono_types::make_shared<WheelDD>("dd_wheel_right", 3, m_wheelDD_material, m_system);
 
     // Default visualization: COLLISION shapes
     SetVisualizationTypeChassis(VisualizationType::COLLISION);
@@ -591,7 +638,7 @@ void RoboSimian::Translate(const ChVector<>& shift) {
 }
 
 void RoboSimian::ReportContacts() {
-    m_contacts->Process(this);
+    m_contact_reporter->Process(this);
 }
 
 void RoboSimian::Output() {
@@ -745,24 +792,24 @@ void Driver::Update(double time) {
 
         case CYCLE:
             if (!driven) {
-            		while (t > m_time_2) {
-					m_time_1 = m_time_2;
-					m_actuations_1 = m_actuations_2;
-					if (m_ifs->eof()) {
-						if (m_repeat) {
-							m_ifs->clear();
-							m_ifs->seekg(0);
-							LoadDataLine(m_time_1, m_actuations_1);
-							LoadDataLine(m_time_2, m_actuations_2);
-							m_offset = time;
-							std::cout << "time = " << time << " New cycle" << std::endl;
-							if (m_callback)
-								m_callback->OnPhaseChange(CYCLE, CYCLE);
-						}
-						return;
-					}
-					LoadDataLine(m_time_2, m_actuations_2);
-					}
+                while (t > m_time_2) {
+                    m_time_1 = m_time_2;
+                    m_actuations_1 = m_actuations_2;
+                    if (m_ifs->eof()) {
+                        if (m_repeat) {
+                            m_ifs->clear();
+                            m_ifs->seekg(0);
+                            LoadDataLine(m_time_1, m_actuations_1);
+                            LoadDataLine(m_time_2, m_actuations_2);
+                            m_offset = time;
+                            std::cout << "time = " << time << " New cycle" << std::endl;
+                            if (m_callback)
+                                m_callback->OnPhaseChange(CYCLE, CYCLE);
+                        }
+                        return;
+                    }
+                    LoadDataLine(m_time_2, m_actuations_2);
+                }
             } else {
                 ext_actuation = true;
             }
@@ -776,19 +823,20 @@ void Driver::Update(double time) {
 
     // Interpolate  v = alpha_1 * v_1 + alpha_2 * v_2
     if (!ext_actuation) {
-            axpby op;
-            op.a1 = (t - m_time_2) / (m_time_1 - m_time_2);
-            op.a2 = (t - m_time_1) / (m_time_2 - m_time_1);
-            for (int i = 0; i < 4; i++) {
-                std::transform(m_actuations_1[i].begin(), m_actuations_1[i].end(), m_actuations_2[i].begin(),
-                               m_actuations[i].begin(), op);
-            }
+        axpby op;
+        op.a1 = (t - m_time_2) / (m_time_1 - m_time_2);
+        op.a2 = (t - m_time_1) / (m_time_2 - m_time_1);
+        for (int i = 0; i < 4; i++) {
+            std::transform(m_actuations_1[i].begin(), m_actuations_1[i].end(), m_actuations_2[i].begin(),
+                           m_actuations[i].begin(), op);
         }
+    }
 }
 
 // =============================================================================
 
-Part::Part(const std::string& name, ChSystem* system) : m_name(name) {
+Part::Part(const std::string& name, std::shared_ptr<ChMaterialSurface> mat, ChSystem* system)
+    : m_name(name), m_mat(mat) {
     m_body = std::shared_ptr<ChBodyAuxRef>(system->NewBodyAuxRef());
     m_body->SetNameString(name + "_body");
 }
@@ -868,14 +916,15 @@ void Part::AddCollisionShapes() {
     m_body->GetCollisionModel()->ClearModel();
 
     for (auto sphere : m_spheres) {
-        m_body->GetCollisionModel()->AddSphere(sphere.m_radius, sphere.m_pos);
+        m_body->GetCollisionModel()->AddSphere(m_mat, sphere.m_radius, sphere.m_pos);
     }
     for (auto box : m_boxes) {
         ChVector<> hdims = box.m_dims / 2;
-        m_body->GetCollisionModel()->AddBox(hdims.x(), hdims.y(), hdims.z(), box.m_pos, box.m_rot);
+        m_body->GetCollisionModel()->AddBox(m_mat, hdims.x(), hdims.y(), hdims.z(), box.m_pos, box.m_rot);
     }
     for (auto cyl : m_cylinders) {
-        m_body->GetCollisionModel()->AddCylinder(cyl.m_radius, cyl.m_radius, cyl.m_length / 2, cyl.m_pos, cyl.m_rot);
+        m_body->GetCollisionModel()->AddCylinder(m_mat, cyl.m_radius, cyl.m_radius, cyl.m_length / 2, cyl.m_pos,
+                                                 cyl.m_rot);
     }
     for (auto mesh : m_meshes) {
         std::string vis_mesh_file = "robosimian/obj/" + mesh.m_name + ".obj";
@@ -883,14 +932,15 @@ void Part::AddCollisionShapes() {
         trimesh->LoadWavefrontMesh(GetChronoDataFile(vis_mesh_file), false, false);
         switch (mesh.m_type) {
             case MeshShape::Type::CONVEX_HULL:
-                m_body->GetCollisionModel()->AddConvexHull(trimesh->getCoordsVertices(), mesh.m_pos, mesh.m_rot);
+                m_body->GetCollisionModel()->AddConvexHull(m_mat, trimesh->getCoordsVertices(), mesh.m_pos, mesh.m_rot);
                 break;
-            case MeshShape:: Type::TRIANGLE_SOUP:
-                m_body->GetCollisionModel()->AddTriangleMesh(trimesh, false, false, mesh.m_pos, mesh.m_rot, 0.002);
+            case MeshShape::Type::TRIANGLE_SOUP:
+                m_body->GetCollisionModel()->AddTriangleMesh(m_mat, trimesh, false, false, mesh.m_pos, mesh.m_rot,
+                                                             0.002);
                 break;
             case MeshShape::Type::NODE_CLOUD:
                 for (auto v : trimesh->getCoordsVertices()) {
-                    m_body->GetCollisionModel()->AddSphere(0.002, v);
+                    m_body->GetCollisionModel()->AddSphere(m_mat, 0.002, v);
                 }
                 break;
         }
@@ -901,7 +951,8 @@ void Part::AddCollisionShapes() {
 
 // =============================================================================
 
-Chassis::Chassis(const std::string& name, ChSystem* system, bool fixed) : Part(name, system), m_collide(false) {
+Chassis::Chassis(const std::string& name, bool fixed, std::shared_ptr<ChMaterialSurface> mat, ChSystem* system)
+    : Part(name, mat, system), m_collide(false) {
     double mass = 46.658335;
     ChVector<> com(0.040288, -0.001937, -0.073574);
     ChVector<> inertia_xx(1.272134, 2.568776, 3.086984);
@@ -944,8 +995,6 @@ Chassis::Chassis(const std::string& name, ChSystem* system, bool fixed) : Part(n
     m_mesh_name = "robosim_chassis";
     m_offset = ChVector<>(0, 0, 0);
     m_color = ChColor(0.4f, 0.4f, 0.7f);
-
-    //// TODO: set contact material properties
 }
 
 void Chassis::Initialize(const ChCoordsys<>& pos) {
@@ -975,7 +1024,8 @@ void Chassis::Translate(const ChVector<>& shift) {
 
 // =============================================================================
 
-Sled::Sled(const std::string& name, chrono::ChSystem* system) : Part(name, system), m_collide(true) {
+Sled::Sled(const std::string& name, std::shared_ptr<ChMaterialSurface> mat, chrono::ChSystem* system)
+    : Part(name, mat, system), m_collide(true) {
     double mass = 2.768775;
     ChVector<> com(0.000000, 0.000000, 0.146762);
     ChVector<> inertia_xx(0.034856, 0.082427, 0.105853);
@@ -993,8 +1043,6 @@ Sled::Sled(const std::string& name, chrono::ChSystem* system) : Part(name, syste
     m_mesh_name = "robosim_sled";
     m_offset = ChVector<>(0, 0, 0);
     m_color = ChColor(0.7f, 0.7f, 0.7f);
-
-    //// TODO: set contact material properties
 }
 
 void Sled::Initialize(std::shared_ptr<ChBodyAuxRef> chassis, const ChVector<>& xyz, const ChVector<>& rpy) {
@@ -1031,7 +1079,8 @@ void Sled::Translate(const ChVector<>& shift) {
 
 // =============================================================================
 
-WheelDD::WheelDD(const std::string& name, int id, chrono::ChSystem* system) : Part(name, system) {
+WheelDD::WheelDD(const std::string& name, int id, std::shared_ptr<ChMaterialSurface> mat, chrono::ChSystem* system)
+    : Part(name, mat, system) {
     double mass = 3.492500;
     ChVector<> com(0, 0, 0);
     ChVector<> inertia_xx(0.01, 0.01, 0.02);
@@ -1049,8 +1098,6 @@ WheelDD::WheelDD(const std::string& name, int id, chrono::ChSystem* system) : Pa
     m_mesh_name = "robosim_dd_wheel";
     m_offset = ChVector<>(0, 0, 0);
     m_color = ChColor(0.3f, 0.3f, 0.3f);
-
-    //// TODO: set contact material properties
 }
 
 void WheelDD::Initialize(std::shared_ptr<ChBodyAuxRef> chassis, const ChVector<>& xyz, const ChVector<>& rpy) {
@@ -1076,10 +1123,22 @@ void WheelDD::Initialize(std::shared_ptr<ChBodyAuxRef> chassis, const ChVector<>
 
 // =============================================================================
 
-Limb::Limb(const std::string& name, LimbID id, const LinkData data[], ChSystem* system)
+Limb::Limb(const std::string& name,
+           LimbID id,
+           const LinkData data[],
+           std::shared_ptr<ChMaterialSurface> wheel_mat,
+           std::shared_ptr<ChMaterialSurface> link_mat,
+           ChSystem* system)
     : m_name(name), m_id(id), m_collide_links(false), m_collide_wheel(true) {
     for (int i = 0; i < num_links; i++) {
-        auto link = chrono_types::make_shared<Part>(m_name + "_" + data[i].name, system);
+        bool is_wheel = (data[i].name.compare("link8") == 0);
+
+        std::shared_ptr<Part> link;
+        if (is_wheel) {
+            link = chrono_types::make_shared<Part>(m_name + "_" + data[i].name, wheel_mat, system);
+        } else {
+            link = chrono_types::make_shared<Part>(m_name + "_" + data[i].name, link_mat, system);
+        }
 
         double mass = data[i].link.m_mass;
         ChVector<> com = data[i].link.m_com;
@@ -1103,10 +1162,8 @@ Limb::Limb(const std::string& name, LimbID id, const LinkData data[], ChSystem* 
         if (data[i].include)
             system->Add(link->m_body);
 
-        //// TODO: set contact material properties
-
         m_links.insert(std::make_pair(data[i].name, link));
-        if (data[i].name.compare("link8") == 0)
+        if (is_wheel)
             m_wheel = link;
     }
 }

@@ -35,7 +35,7 @@ using std::endl;
 // =============================================================================
 
 // Simulation settings
-ChMaterialSurface::ContactMethod contact_method = ChMaterialSurface::NSC;
+ChContactMethod contact_method = ChContactMethod::NSC;
 ////double step_size = 1e-4;  // for SMC
 double step_size = 1e-2;  // for NSC
 double duration_settling = 0.2;
@@ -63,7 +63,7 @@ int main(int argc, char* argv[]) {
 
     ChSystemParallel* sys;
     switch (contact_method) {
-        case ChMaterialSurface::NSC: {
+        case ChContactMethod::NSC: {
             auto my_sys = new ChSystemParallelNSC;
             cout << "System type: NSC" << endl;
 
@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
             sys = my_sys;
             break;
         }
-        case ChMaterialSurface::SMC: {
+        case ChContactMethod::SMC: {
             auto my_sys = new ChSystemParallelSMC;
             cout << "System type: SMC" << endl;
 
@@ -144,8 +144,22 @@ int main(int argc, char* argv[]) {
     cyl_shape->GetCylinderGeometry().p2 = ChVector<>(0, -cyl_length / 2, 0);
     wheel->AddAsset(cyl_shape);
 
+    std::shared_ptr<ChMaterialSurface> wheel_mat;
+    switch (contact_method) {
+        case ChContactMethod::NSC: {
+            auto matNSC = chrono_types::make_shared<ChMaterialSurfaceNSC>();
+            wheel_mat = matNSC;
+            break;
+        }
+        case ChContactMethod::SMC: {
+            auto matSMC = chrono_types::make_shared<ChMaterialSurfaceSMC>();
+            wheel_mat = matSMC;
+            break;
+        }
+    }
+
     wheel->GetCollisionModel()->ClearModel();
-    wheel->GetCollisionModel()->AddCylinder(cyl_radius, cyl_radius, cyl_length / 2);
+    wheel->GetCollisionModel()->AddCylinder(wheel_mat, cyl_radius, cyl_radius, cyl_length / 2);
     wheel->GetCollisionModel()->BuildModel();
 
     sys->AddBody(wheel);

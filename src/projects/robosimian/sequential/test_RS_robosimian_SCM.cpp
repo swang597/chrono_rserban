@@ -227,23 +227,14 @@ void SetContactProperties(robosimian::RoboSimian* robot) {
     float Y = 1e7f;
     float cr = 0.0f;
 
-    robot->GetSledBody()->GetMaterialSurfaceSMC()->SetFriction(friction);
-    robot->GetWheelBody(robosimian::LimbID::FR)->GetMaterialSurfaceSMC()->SetFriction(friction);
-    robot->GetWheelBody(robosimian::LimbID::FL)->GetMaterialSurfaceSMC()->SetFriction(friction);
-    robot->GetWheelBody(robosimian::LimbID::RR)->GetMaterialSurfaceSMC()->SetFriction(friction);
-    robot->GetWheelBody(robosimian::LimbID::RL)->GetMaterialSurfaceSMC()->SetFriction(friction);
+    robot->GetSledContactMaterial()->SetFriction(friction);
+    robot->GetSledContactMaterial()->SetRestitution(cr);
 
-    robot->GetSledBody()->GetMaterialSurfaceSMC()->SetYoungModulus(Y);
-    robot->GetWheelBody(robosimian::LimbID::FR)->GetMaterialSurfaceSMC()->SetYoungModulus(Y);
-    robot->GetWheelBody(robosimian::LimbID::FL)->GetMaterialSurfaceSMC()->SetYoungModulus(Y);
-    robot->GetWheelBody(robosimian::LimbID::RR)->GetMaterialSurfaceSMC()->SetYoungModulus(Y);
-    robot->GetWheelBody(robosimian::LimbID::RL)->GetMaterialSurfaceSMC()->SetYoungModulus(Y);
+    robot->GetWheelContactMaterial()->SetFriction(friction);
+    robot->GetWheelContactMaterial()->SetRestitution(cr);
 
-    robot->GetSledBody()->GetMaterialSurfaceSMC()->SetRestitution(cr);
-    robot->GetWheelBody(robosimian::LimbID::FR)->GetMaterialSurfaceSMC()->SetRestitution(cr);
-    robot->GetWheelBody(robosimian::LimbID::FL)->GetMaterialSurfaceSMC()->SetRestitution(cr);
-    robot->GetWheelBody(robosimian::LimbID::RR)->GetMaterialSurfaceSMC()->SetRestitution(cr);
-    robot->GetWheelBody(robosimian::LimbID::RL)->GetMaterialSurfaceSMC()->SetRestitution(cr);
+    std::static_pointer_cast<ChMaterialSurfaceSMC>(robot->GetSledContactMaterial())->SetYoungModulus(Y);
+    std::static_pointer_cast<ChMaterialSurfaceSMC>(robot->GetWheelContactMaterial())->SetYoungModulus(Y);
 }
 
 // =============================================================================

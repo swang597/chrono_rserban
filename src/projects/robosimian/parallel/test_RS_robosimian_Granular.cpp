@@ -94,7 +94,7 @@ void ShowUsage();
 bool GetProblemSpecs(int argc,
                      char** argv,
                      robosimian::LocomotionMode& mode,
-                     ChMaterialSurface::ContactMethod& method,
+                     ChContactMethod& method,
                      double& sim_time,
                      double& step_size,
                      double& out_fps,
@@ -127,7 +127,7 @@ int main(int argc, char* argv[]) {
     // ----------------------------
 
     robosimian::LocomotionMode mode = robosimian::LocomotionMode::WALK;
-    ChMaterialSurface::ContactMethod contact_method = ChMaterialSurface::NSC;
+    ChContactMethod contact_method = ChContactMethod::NSC;
     double step_size = 1e-4;
     double duration_sim = 10;
     double out_fps = 100;
@@ -191,10 +191,10 @@ int main(int argc, char* argv[]) {
     outf.open(dir + "/settings" + suffix + ".txt", std::ios::out);
     outf << "System type (contact method): ";
     switch (contact_method) {
-        case ChMaterialSurface::NSC:
+        case ChContactMethod::NSC:
             outf << "NSC (non-smooth contact)" << endl;
             break;
-        case ChMaterialSurface::SMC:
+        case ChContactMethod::SMC:
             outf << "SMC (smooth contact)" << endl;
             break;
     }
@@ -241,7 +241,7 @@ int main(int argc, char* argv[]) {
 
     ChSystemParallel* sys;
     switch (contact_method) {
-        case ChMaterialSurface::NSC: {
+        case ChContactMethod::NSC: {
             auto my_sys = new ChSystemParallelNSC;
             cout << "System type: NSC" << endl;
 
@@ -259,7 +259,7 @@ int main(int argc, char* argv[]) {
             sys = my_sys;
             break;
         }
-        case ChMaterialSurface::SMC: {
+        case ChContactMethod::SMC: {
             auto my_sys = new ChSystemParallelSMC;
             cout << "System type: SMC" << endl;
 
@@ -533,7 +533,7 @@ void ShowUsage() {
 bool GetProblemSpecs(int argc,
                      char** argv,
                      robosimian::LocomotionMode& mode,
-                     ChMaterialSurface::ContactMethod& method,
+                     ChContactMethod& method,
                      double& sim_time,
                      double& step_size,
                      double& out_fps,
@@ -627,10 +627,10 @@ bool GetProblemSpecs(int argc,
 
     switch (imethod) {
         case 0:
-            method = ChMaterialSurface::NSC;
+            method = ChContactMethod::NSC;
             break;
         case 1:
-            method = ChMaterialSurface::SMC;
+            method = ChContactMethod::SMC;
             break;
         default:
             cout << "Invalid contact method" << endl;
