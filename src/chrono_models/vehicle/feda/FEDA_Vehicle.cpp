@@ -31,7 +31,7 @@ namespace feda {
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 FEDA_Vehicle::FEDA_Vehicle(const bool fixed,
-                           ChMaterialSurface::ContactMethod contact_method,
+                           ChContactMethod contact_method,
                            ChassisCollisionType chassis_collision_type,
                            int ride_height,
                            int damperMode)

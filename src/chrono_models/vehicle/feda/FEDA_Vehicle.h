@@ -49,7 +49,7 @@ namespace feda {
 class CH_MODELS_API FEDA_Vehicle : public ChWheeledVehicle {
   public:
     FEDA_Vehicle(const bool fixed = false,
-                 ChMaterialSurface::ContactMethod contact_method = ChMaterialSurface::NSC,
+                 ChContactMethod contact_method = ChContactMethod::NSC,
                  ChassisCollisionType chassis_collision_type = ChassisCollisionType::NONE,
                  int ride_height = 1,
                  int damperMode = 2);

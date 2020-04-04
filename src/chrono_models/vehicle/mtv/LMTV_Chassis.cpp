@@ -74,26 +74,8 @@ LMTV_Chassis::LMTV_Chassis(const std::string& name, bool fixed, ChassisCollision
 
     //// TODO:
     //// A more appropriate contact shape from primitives
-    /*
-    BoxShape box1(ChVector<>(0.0, 0.0, 0.1), ChQuaternion<>(1, 0, 0, 0), ChVector<>(1.0, 0.5, 0.2));
+    //// Add collision shapes for rear body
 
-    m_has_primitives = true;
-    m_vis_boxes.push_back(box1);
-
-    m_has_mesh = true;
-    m_vis_mesh_file = "mtv/meshes/LMTV_Chassis.obj";
-
-    m_has_collision = (chassis_collision_type != ChassisCollisionType::NONE);
-    switch (chassis_collision_type) {
-        case ChassisCollisionType::PRIMITIVES:
-            m_coll_boxes.push_back(box1);
-            break;
-        case ChassisCollisionType::MESH:
-            m_coll_mesh_names.push_back("mtv/meshes/LMTV_Chassis_col.obj");
-            break;
-    }
-     */
-    // BoxShape box1(ChVector<>(0.0, 0.0, 0.1), ChQuaternion<>(1, 0, 0, 0), ChVector<>(1.0, 0.5, 0.2));
     double widthFrame = 0.905;
     double heightFrame = 0.2;
     double lx_front = 1.0 - m_torsion_joint_pos.x();
@@ -103,8 +85,6 @@ LMTV_Chassis::LMTV_Chassis(const std::string& name, bool fixed, ChassisCollision
     double lx_rear = m_torsion_joint_pos.x() + 4.9;
     ChVector<> rearBoxPos((-4.9 + m_torsion_joint_pos.x()) / 2, 0, m_torsion_joint_pos.z());
     BoxShape boxRear(rearBoxPos, ChQuaternion<>(1, 0, 0, 0), ChVector<>(lx_rear, widthFrame, heightFrame));
-
-    m_has_collision = false;
 
     m_has_primitives = true;
     m_vis_boxes.push_back(boxFront);
@@ -117,15 +97,26 @@ LMTV_Chassis::LMTV_Chassis(const std::string& name, bool fixed, ChassisCollision
 
     m_has_rear_mesh = true;
     m_vis_rear_mesh_file = "mtv/meshes/m1078_rear.obj";
+
+    m_has_collision = (chassis_collision_type != ChassisCollisionType::NONE);
+    switch (chassis_collision_type) {
+        case ChassisCollisionType::MESH:
+            // For now, fall back to using primitive collision shapes
+        case ChassisCollisionType::PRIMITIVES:
+            boxFront.m_matID = 0;
+            boxRear.m_matID = 0;
+            m_coll_boxes.push_back(boxFront);
+            break;
+        default:
+            break;
+    }
 }
 
-void LMTV_Chassis::Initialize(ChSystem* system,                ///< [in] containing system
-                              const ChCoordsys<>& chassisPos,  ///< [in] absolute chassis position
-                              double chassisFwdVel,            ///< [in] initial chassis forward velocity
-                              int collision_family             ///< [in] chassis collision family
-) {
-    // Invoke the base class method to construct the frame body.
-    ChTorsionChassis::Initialize(system, chassisPos, chassisFwdVel);
+void LMTV_Chassis::CreateContactMaterials(ChContactMethod contact_method) {
+    // Create the contact materials.
+    // In this model, we use a single material with default properties.
+    MaterialInfo minfo;
+    m_materials.push_back(minfo.CreateMaterial(contact_method));
 }
 
 }  // namespace mtv

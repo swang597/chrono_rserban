@@ -47,7 +47,7 @@ class CH_MODELS_API WVP_Vehicle : public ChWheeledVehicle {
   public:
     WVP_Vehicle(const bool fixed = false,
                 SteeringType steering_model = SteeringType::PITMAN_ARM,
-                ChMaterialSurface::ContactMethod contact_method = ChMaterialSurface::NSC,
+                ChContactMethod contact_method = ChContactMethod::NSC,
                 ChassisCollisionType chassis_collision_type = ChassisCollisionType::NONE);
 
     WVP_Vehicle(ChSystem* system,

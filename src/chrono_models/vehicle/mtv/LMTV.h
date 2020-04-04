@@ -51,7 +51,7 @@ class CH_MODELS_API LMTV {
 
     ~LMTV();
 
-    void SetContactMethod(ChMaterialSurface::ContactMethod val) { m_contactMethod = val; }
+    void SetContactMethod(ChContactMethod val) { m_contactMethod = val; }
 
     void SetChassisFixed(bool val) { m_fixed = val; }
     void SetChassisCollisionType(ChassisCollisionType val) { m_chassisCollisionType = val; }
@@ -94,7 +94,7 @@ class CH_MODELS_API LMTV {
     void DebugLog(int what) { m_vehicle->DebugLog(what); }
 
   protected:
-    ChMaterialSurface::ContactMethod m_contactMethod;
+    ChContactMethod m_contactMethod;
     ChassisCollisionType m_chassisCollisionType;
     bool m_fixed;
 

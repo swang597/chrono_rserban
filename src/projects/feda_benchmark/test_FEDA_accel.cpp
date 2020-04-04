@@ -86,7 +86,7 @@ int main(int argc, char* argv[]) {
     // Create the FED alpha vehicle, set parameters, and initialize.
     // Typical aerodynamic drag for FED alpha: Cd = 0.6 and area 3.8 m2
     FEDA my_feda;
-    my_feda.SetContactMethod(ChMaterialSurface::SMC);
+    my_feda.SetContactMethod(ChContactMethod::SMC);
     my_feda.SetChassisFixed(false);
     my_feda.SetInitPosition(ChCoordsys<>(ChVector<>(-terrainLength / 2 + 5, 0, 0.5), ChQuaternion<>(1, 0, 0, 0)));
     // my_hmmwv.SetPowertrainType(powertrain_model);
@@ -106,11 +106,13 @@ int main(int argc, char* argv[]) {
     my_feda.SetTireVisualizationType(tire_vis_type);
 
     // Create the terrain
+    auto patch_mat = chrono_types::make_shared<ChMaterialSurfaceSMC>();
+    patch_mat->SetFriction(0.9f);
+    patch_mat->SetRestitution(0.01f);
+    patch_mat->SetYoungModulus(2e7f);
+    patch_mat->SetPoissonRatio(0.3f);
     RigidTerrain terrain(my_feda.GetSystem());
-    auto patch = terrain.AddPatch(ChCoordsys<>(ChVector<>(0, 0, -5), QUNIT), ChVector<>(terrainLength, 5, 10));
-    patch->SetContactFrictionCoefficient(0.9f);
-    patch->SetContactRestitutionCoefficient(0.01f);
-    patch->SetContactMaterialProperties(2e7f, 0.3f);
+    auto patch = terrain.AddPatch(patch_mat, ChCoordsys<>(ChVector<>(0, 0, -5), QUNIT), ChVector<>(terrainLength, 5, 10));
     patch->SetColor(ChColor(0.8f, 0.8f, 0.5f));
     patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 5);
     terrain.Initialize();

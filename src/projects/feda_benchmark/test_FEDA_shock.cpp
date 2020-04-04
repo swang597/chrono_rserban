@@ -166,7 +166,7 @@ int main(int argc, char* argv[]) {
 
     // Create the FEDA vehicle, set parameters, and initialize
     FEDA my_feda;
-    my_feda.SetContactMethod(ChMaterialSurface::SMC);
+    my_feda.SetContactMethod(ChContactMethod::SMC);
     my_feda.SetChassisFixed(false);
     my_feda.SetInitPosition(ChCoordsys<>(ChVector<>(start_pos + 1, 0, 0.5), QUNIT));
     my_feda.SetTireType(tire_model);

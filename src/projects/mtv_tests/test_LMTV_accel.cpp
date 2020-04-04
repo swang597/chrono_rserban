@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
     // Create the HMMWV vehicle, set parameters, and initialize.
     // Typical aerodynamic drag for LMTV: Cd = 0.5 and area ~5 m2
     LMTV lmtv;
-    lmtv.SetContactMethod(ChMaterialSurface::SMC);
+    lmtv.SetContactMethod(ChContactMethod::SMC);
     lmtv.SetChassisFixed(false);
     lmtv.SetInitPosition(ChCoordsys<>(ChVector<>(-terrainLength / 2 + 5, 0, 0.7), ChQuaternion<>(1, 0, 0, 0)));
     lmtv.SetPowertrainType(powertrain_model);
@@ -102,11 +102,12 @@ int main(int argc, char* argv[]) {
     lmtv.SetTireVisualizationType(tire_vis_type);
 
     // Create the terrain
+    auto patch_mat = chrono_types::make_shared<ChMaterialSurfaceSMC>();
+    patch_mat->SetFriction(0.9f);
+    patch_mat->SetRestitution(0.01f);
+    patch_mat->SetYoungModulus(2e7f);
     RigidTerrain terrain(lmtv.GetSystem());
-    auto patch = terrain.AddPatch(ChCoordsys<>(ChVector<>(0, 0, -5), QUNIT), ChVector<>(terrainLength, 5, 10));
-    patch->SetContactFrictionCoefficient(0.9f);
-    patch->SetContactRestitutionCoefficient(0.01f);
-    patch->SetContactMaterialProperties(2e7f, 0.3f);
+    auto patch = terrain.AddPatch(patch_mat, ChCoordsys<>(ChVector<>(0, 0, -5), QUNIT), ChVector<>(terrainLength, 5, 10));
     patch->SetColor(ChColor(0.8f, 0.8f, 0.5f));
     patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 5);
     terrain.Initialize();

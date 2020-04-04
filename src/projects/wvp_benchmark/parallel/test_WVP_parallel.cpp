@@ -119,8 +119,6 @@ void CreateContainer(ChSystem* system, float mu_g, float coh_g) {
     ground->SetBodyFixed(true);
     ground->SetCollide(true);
 
-    ground->SetMaterialSurface(material);
-
     ground->GetCollisionModel()->ClearModel();
 
     // Attention: collision family for ground should be >= 5 (first values used in Chrono::Vehicle)
@@ -128,20 +126,20 @@ void CreateContainer(ChSystem* system, float mu_g, float coh_g) {
     ground->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(WheeledCollisionFamily::TIRES);
 
     // Bottom box
-    utils::AddBoxGeometry(ground.get(), ChVector<>(hdimX, hdimY, hthick), ChVector<>(0, 0, -hthick),
+    utils::AddBoxGeometry(ground.get(), material, ChVector<>(hdimX, hdimY, hthick), ChVector<>(0, 0, -hthick),
                           ChQuaternion<>(1, 0, 0, 0), true);
     // Left box
-    utils::AddBoxGeometry(ground.get(), ChVector<>(hdimX, hthick, hdimZ + hthick),
+    utils::AddBoxGeometry(ground.get(), material, ChVector<>(hdimX, hthick, hdimZ + hthick),
                           ChVector<>(0, hdimY + hthick, hdimZ - hthick), ChQuaternion<>(1, 0, 0, 0), visible_walls);
     // Right box
-    utils::AddBoxGeometry(ground.get(), ChVector<>(hdimX, hthick, hdimZ + hthick),
+    utils::AddBoxGeometry(ground.get(), material, ChVector<>(hdimX, hthick, hdimZ + hthick),
                           ChVector<>(0, -hdimY - hthick, hdimZ - hthick), ChQuaternion<>(1, 0, 0, 0), visible_walls);
 
     // Front box
-    utils::AddBoxGeometry(ground.get(), ChVector<>(hthick, hdimY, hdimZ + hthick),
+    utils::AddBoxGeometry(ground.get(), material, ChVector<>(hthick, hdimY, hdimZ + hthick),
                           ChVector<>(hdimX + hthick, 0, hdimZ - hthick), ChQuaternion<>(1, 0, 0, 0), visible_walls);
     // Rear box
-    utils::AddBoxGeometry(ground.get(), ChVector<>(hthick, hdimY, hdimZ + hthick),
+    utils::AddBoxGeometry(ground.get(), material, ChVector<>(hthick, hdimY, hdimZ + hthick),
                           ChVector<>(-hdimX - hthick, 0, hdimZ - hthick), ChQuaternion<>(1, 0, 0, 0), visible_walls);
 
     ground->GetCollisionModel()->BuildModel();
@@ -265,7 +263,7 @@ int main(int argc, char* argv[]) {
 
     WVP wvp(system);
 
-    wvp.SetContactMethod(ChMaterialSurface::NSC);
+    wvp.SetContactMethod(ChContactMethod::NSC);
     wvp.SetChassisFixed(false);
     wvp.SetInitPosition(ChCoordsys<>(initLoc + ChVector<>(0, 0, 0.3), initRot));
     wvp.SetInitFwdVel(initSpeed);

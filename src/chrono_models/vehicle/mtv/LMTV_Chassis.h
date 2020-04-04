@@ -41,13 +41,6 @@ class CH_MODELS_API LMTV_Chassis : public ChTorsionChassis {
                  ChassisCollisionType chassis_collision_type = ChassisCollisionType::NONE);
     ~LMTV_Chassis() {}
 
-    /// Initialize the chassis at the specified global position and orientation.
-    virtual void Initialize(ChSystem* system,                ///< [in] containing system
-                            const ChCoordsys<>& chassisPos,  ///< [in] absolute chassis position
-                            double chassisFwdVel,            ///< [in] initial chassis forward velocity
-                            int collision_family = 0         ///< [in] chassis collision family
-                            ) override;
-
     /// Return the mass of the front chassis body.
     virtual double GetMass() const override { return m_mass; }
 
@@ -77,6 +70,8 @@ class CH_MODELS_API LMTV_Chassis : public ChTorsionChassis {
     virtual const double GetTorsionStiffness() const override { return m_torsion_stiffness; }
 
   protected:
+    virtual void CreateContactMaterials(ChContactMethod contact_method) override;
+
     ChMatrix33<> m_inertia;
     ChMatrix33<> m_rear_inertia;
 

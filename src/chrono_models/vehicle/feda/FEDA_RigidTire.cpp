@@ -40,11 +40,6 @@ const std::string FEDA_RigidTire::m_meshFile = "feda/meshes/feda_tire_fine.obj";
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 FEDA_RigidTire::FEDA_RigidTire(const std::string& name, bool use_mesh) : ChRigidTire(name) {
-    SetContactFrictionCoefficient(0.9f);
-    SetContactRestitutionCoefficient(0.1f);
-    SetContactMaterialProperties(2e7f, 0.3f);
-    SetContactMaterialCoefficients(2e5f, 40.0f, 2e5f, 20.0f);
-
     if (use_mesh) {
         SetMeshFilename(GetDataFile("feda/meshes/feda_tire_fine.obj"), 0.005);
     }
@@ -52,6 +47,14 @@ FEDA_RigidTire::FEDA_RigidTire(const std::string& name, bool use_mesh) : ChRigid
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
+void FEDA_RigidTire::CreateContactMaterial(ChContactMethod contact_method) {
+    MaterialInfo minfo;
+    minfo.mu = 0.9f;
+    minfo.cr = 0.1f;
+    minfo.Y = 2e7f;
+    m_material = minfo.CreateMaterial(contact_method);
+}
+
 void FEDA_RigidTire::AddVisualizationAssets(VisualizationType vis) {
     if (vis == VisualizationType::MESH) {
         m_trimesh_shape = AddVisualizationMesh(vehicle::GetDataFile(m_meshFile),   // left side

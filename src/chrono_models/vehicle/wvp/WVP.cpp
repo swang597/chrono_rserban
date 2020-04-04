@@ -31,7 +31,7 @@ namespace wvp {
 WVP::WVP()
     : m_system(NULL),
       m_vehicle(NULL),
-      m_contactMethod(ChMaterialSurface::NSC),
+      m_contactMethod(ChContactMethod::NSC),
       m_chassisCollisionType(ChassisCollisionType::NONE),
       m_fixed(false),
       m_tireType(TireModelType::RIGID),
@@ -47,7 +47,7 @@ WVP::WVP()
 WVP::WVP(ChSystem* system)
     : m_system(system),
       m_vehicle(NULL),
-      m_contactMethod(ChMaterialSurface::NSC),
+      m_contactMethod(ChContactMethod::NSC),
       m_chassisCollisionType(ChassisCollisionType::NONE),
       m_fixed(false),
       m_tireType(TireModelType::RIGID),

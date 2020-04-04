@@ -32,7 +32,7 @@ namespace mtv {
 // -----------------------------------------------------------------------------
 LMTV_Vehicle::LMTV_Vehicle(const bool fixed,
                            SteeringType steering_model,
-                           ChMaterialSurface::ContactMethod contact_method,
+                           ChContactMethod contact_method,
                            ChassisCollisionType chassis_collision_type)
     : ChWheeledVehicle("LMTV", contact_method), m_omega({0, 0, 0, 0}) {
     Create(fixed, steering_model, chassis_collision_type);

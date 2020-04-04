@@ -359,7 +359,7 @@ int main(int argc, char* argv[]) {
     // Create the HMMWV vehicle, set parameters, and initialize.
     // Typical aerodynamic drag for HMMWV: Cd = 0.5 and area ~5 m2
     FEDA feda;
-    feda.SetContactMethod(ChMaterialSurface::SMC);
+    feda.SetContactMethod(ChContactMethod::SMC);
     feda.SetChassisFixed(false);
     feda.SetInitPosition(ChCoordsys<>(ChVector<>(-terrainLength / 2 + 5, 0, 0.7), ChQuaternion<>(1, 0, 0, 0)));
     feda.SetTireType(tire_model);
@@ -385,12 +385,14 @@ int main(int argc, char* argv[]) {
     ////GetLog() << "Maneuver Length = " << helper.GetManeuverLength() << " m\n";
 
     // Create the terrain
+    auto patch_mat = chrono_types::make_shared<ChMaterialSurfaceSMC>();
+    patch_mat->SetFriction(0.9f);
+    patch_mat->SetRestitution(0.01f);
+    patch_mat->SetYoungModulus(2e7f);
+    patch_mat->SetPoissonRatio(0.3f);
     RigidTerrain terrain(feda.GetSystem());
-    auto patch =
-        terrain.AddPatch(ChCoordsys<>(ChVector<>(0, 0, -5), QUNIT), ChVector<>(terrainLength, terrainWidth, 10));
-    patch->SetContactFrictionCoefficient(0.9f);
-    patch->SetContactRestitutionCoefficient(0.01f);
-    patch->SetContactMaterialProperties(2e7f, 0.3f);
+    auto patch = terrain.AddPatch(patch_mat, ChCoordsys<>(ChVector<>(0, 0, -5), QUNIT),
+                                  ChVector<>(terrainLength, terrainWidth, 10));
     patch->SetColor(ChColor(0.8f, 0.8f, 0.5f));
     patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), (float)terrainLength, (float)terrainWidth);
     terrain.Initialize();

@@ -19,8 +19,6 @@
 #ifndef FEDA_RIGID_TIRE_H
 #define FEDA_RIGID_TIRE_H
 
-#include "chrono/assets/ChTriangleMeshShape.h"
-
 #include "chrono_vehicle/wheeled_vehicle/tire/ChRigidTire.h"
 
 #include "chrono_models/ChApiModels.h"
@@ -43,10 +41,11 @@ class CH_MODELS_API FEDA_RigidTire : public ChRigidTire {
     virtual double GetMass() const override { return m_mass; }
     virtual ChVector<> GetInertia() const override { return m_inertia; }
 
+  private:
+    virtual void CreateContactMaterial(ChContactMethod contact_method) override;
     virtual void AddVisualizationAssets(VisualizationType vis) override;
     virtual void RemoveVisualizationAssets() override final;
 
-  private:
     static const double m_radius;
     static const double m_width;
     static const double m_mass;

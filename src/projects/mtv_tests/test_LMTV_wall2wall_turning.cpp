@@ -75,13 +75,16 @@ int main(int argc, char* argv[]) {
     // --------------
     // Create systems
     // --------------
-    if (argc != 2) {
+    std::string mode;
+    if (argc == 2) {
+        mode = argv[1];
+    } else {
         GetLog() << "usage: test_LMTV_wall2wall left | right\n";
-        return 1;
+        GetLog() << "using \"left\"...\n";
+        mode = "left";
     }
     bool left_turn = true;
     std::string driver_file;
-    std::string mode = argv[1];
     if (mode.compare("right") == 0) {
         left_turn = false;
         GetLog() << "Right turn selected.\n";
@@ -101,6 +104,7 @@ int main(int argc, char* argv[]) {
     double air_density = 1.2041;
     // Create the vehicle, set parameters, and initialize
     LMTV lmtv;
+    lmtv.SetContactMethod(ChContactMethod::NSC);
     lmtv.SetChassisFixed(false);
     lmtv.SetInitPosition(ChCoordsys<>(initLoc, initRot));
     lmtv.SetTireType(tire_model);
@@ -126,11 +130,11 @@ int main(int argc, char* argv[]) {
     // Create the terrain
     // ------------------
 
+    auto patch_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
+    patch_mat->SetFriction(0.8f);
+    patch_mat->SetRestitution(0.01f);
     RigidTerrain terrain(lmtv.GetSystem());
-    auto patch = terrain.AddPatch(ChCoordsys<>(ChVector<>(0, 0, -5), QUNIT), ChVector<>(200, 200, 10));
-    patch->SetContactFrictionCoefficient(0.8f);
-    patch->SetContactRestitutionCoefficient(0.01f);
-    patch->SetContactMaterialProperties(2e7f, 0.3f);
+    auto patch = terrain.AddPatch(patch_mat, ChCoordsys<>(ChVector<>(0, 0, -5), QUNIT), ChVector<>(200, 200, 10));
     patch->SetColor(ChColor(0.8f, 0.8f, 0.5f));
     patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 200);
     terrain.Initialize();

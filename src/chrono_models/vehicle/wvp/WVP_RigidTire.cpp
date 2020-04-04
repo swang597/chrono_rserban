@@ -40,13 +40,6 @@ const std::string WVP_RigidTire::m_meshFile = "wvp/wvp_tire_fine.obj";
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 WVP_RigidTire::WVP_RigidTire(const std::string& name, bool use_mesh) : ChRigidTire(name) {
-    SetContactFrictionCoefficient(0.8f);
-    SetContactRestitutionCoefficient(0.5f);
-    SetContactMaterialProperties(2e7f, 0.3f);
-    /*SetContactMaterialProperties(2e7f, 0.3f);*/
-    /*SetContactMaterialCoefficients(2e5f, 40.0f, 2e5f, 20.0f);*/
-    SetContactMaterialCoefficients(2e5f, 40.0f, 2e5f, 20.0f);
-
     if (use_mesh) {
         SetMeshFilename(GetDataFile("wvp/wvp_tire_fine.obj"), 0.005);
     }
@@ -54,6 +47,14 @@ WVP_RigidTire::WVP_RigidTire(const std::string& name, bool use_mesh) : ChRigidTi
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
+void WVP_RigidTire::CreateContactMaterial(ChContactMethod contact_method) {
+    MaterialInfo minfo;
+    minfo.mu = 0.9f;
+    minfo.cr = 0.1f;
+    minfo.Y = 2e7f;
+    m_material = minfo.CreateMaterial(contact_method);
+}
+
 void WVP_RigidTire::AddVisualizationAssets(VisualizationType vis) {
     if (vis == VisualizationType::MESH) {
         m_trimesh_shape = AddVisualizationMesh(vehicle::GetDataFile(m_meshFile),   // left side

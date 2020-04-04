@@ -30,7 +30,6 @@
 #include "chrono_models/vehicle/feda/FEDA_Powertrain.h"
 #include "chrono_models/vehicle/feda/FEDA_SimpleMapPowertrain.h"
 #include "chrono_models/vehicle/feda/FEDA_RigidTire.h"
-//#include "chrono_models/vehicle/sedan/Sedan_TMeasyTire.h"
 #include "chrono_models/vehicle/feda/FEDA_Pac02Tire.h"
 
 namespace chrono {
@@ -48,7 +47,7 @@ class CH_MODELS_API FEDA {
 
     ~FEDA();
 
-    void SetContactMethod(ChMaterialSurface::ContactMethod val) { m_contactMethod = val; }
+    void SetContactMethod(ChContactMethod val) { m_contactMethod = val; }
 
     void SetChassisFixed(bool val) { m_fixed = val; }
     void SetChassisCollisionType(ChassisCollisionType val) { m_chassisCollisionType = val; }
@@ -95,7 +94,7 @@ class CH_MODELS_API FEDA {
     void DebugLog(int what) { m_vehicle->DebugLog(what); }
 
   protected:
-    ChMaterialSurface::ContactMethod m_contactMethod;
+    ChContactMethod m_contactMethod;
     ChassisCollisionType m_chassisCollisionType;
     bool m_fixed;
 
