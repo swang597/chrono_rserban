@@ -44,17 +44,18 @@ void WriteData(std::ofstream& dat, ChSystemParallelSMC* msystem, const std::stri
     const std::shared_ptr<ChBody> body = msystem->Get_bodylist().at(i);
 
     // Get the radius of the object
-    ChCollisionModelParallel* pmodel = static_cast<ChCollisionModelParallel*>(body->GetCollisionModel().get());
+    auto shape = std::static_pointer_cast<ChCollisionShapeParallel>(body->GetCollisionModel()->GetShape(0));
     double radius = 0;
-    switch (pmodel->mData[0].type) {  // I'm assuming that there is only one object per collision model. Fix this later.
-        case chrono::collision::SPHERE:
-            radius = pmodel->mData[0].B.x;
+    // I'm assuming that there is only one object per collision model. Fix this later.
+    switch (shape->GetType()) {
+        case ChCollisionShape::Type::SPHERE:
+            radius = shape->B.x;
             break;
-        case chrono::collision::BOX:
+        case ChCollisionShape::Type::BOX:
             radius = 1.0e8;
             break;
-        case chrono::collision::CYLINDER:
-            radius = pmodel->mData[0].B.x;
+        case ChCollisionShape::Type::CYLINDER:
+            radius = shape->B.x;
             break;
     }
 

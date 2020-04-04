@@ -127,8 +127,7 @@ inline std::shared_ptr<ChBody> CreateBall(const ChVector<>& pos,
                                           double m,
                                           ChVector<> inertia,
                                           double radius) {
-    auto ball = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelDistributed>(), ChMaterialSurface::SMC);
-    ball->SetMaterialSurface(ballMat);
+    auto ball = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelDistributed>());
 
     ball->SetIdentifier(*ballId++);
     ball->SetMass(m);
@@ -139,7 +138,7 @@ inline std::shared_ptr<ChBody> CreateBall(const ChVector<>& pos,
     ball->SetCollide(true);
 
     ball->GetCollisionModel()->ClearModel();
-    utils::AddSphereGeometry(ball.get(), radius);
+    utils::AddSphereGeometry(ball.get(), ballMat, radius);
     ball->GetCollisionModel()->BuildModel();
     return ball;
 }

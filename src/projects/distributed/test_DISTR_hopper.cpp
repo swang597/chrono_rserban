@@ -135,41 +135,41 @@ void my_abort() {
 #endif
 }
 
-int GetGeometry(int id, ChBody* body, double r) {
+int GetGeometry(int id, std::shared_ptr<ChBody> body, std::shared_ptr<ChMaterialSurface> mat, double r) {
     switch (mix) {
         case SPHERE_H:
-            utils::AddSphereGeometry(body, r);
+            utils::AddSphereGeometry(body.get(), mat, r);
             break;
 
         case BISPHERE_H:
-            AddBiSphere(body, r);
+            AddBiSphere(body.get(), mat, r);
             break;
 
         case SPHERE_BISPHERE_H:
             if (id % 2 == 0)
-                utils::AddSphereGeometry(body, r);
+                utils::AddSphereGeometry(body.get(), mat, r);
             else
-                AddBiSphere(body, r);
+                AddBiSphere(body.get(), mat, r);
             break;
 
         case ASYM_H:
-            AddAsymmetricBisphere(body, r);
+            AddAsymmetricBisphere(body.get(), mat, r);
             break;
 
         case SPHERE_ASYM_H:
             if (id % 2 == 0)
-                utils::AddSphereGeometry(body, r);
+                utils::AddSphereGeometry(body.get(), mat, r);
             else
-                AddAsymmetricBisphere(body, r);
+                AddAsymmetricBisphere(body.get(), mat, r);
             break;
 
         case SPHERE_BISPHERE_ASYM_H:
             if (id % 3 == 0)
-                utils::AddSphereGeometry(body, r);
+                utils::AddSphereGeometry(body.get(), mat, r);
             else if (id % 3 == 1)
-                AddBiSphere(body, r);
+                AddBiSphere(body.get(), mat, r);
             else
-                AddAsymmetricBisphere(body, r);
+                AddAsymmetricBisphere(body.get(), mat, r);
             break;
 
         default:
@@ -225,8 +225,7 @@ std::shared_ptr<ChBoundary> AddContainer(ChSystemDistributed* sys) {
     mat->SetFriction(mu);
     mat->SetRestitution(cr);
 
-    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
-    bin->SetMaterialSurface(mat);
+    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
     bin->SetIdentifier(binId);
     bin->SetMass(1);
     bin->SetPos(ChVector<>(0, 0, 0));
@@ -234,7 +233,7 @@ std::shared_ptr<ChBoundary> AddContainer(ChSystemDistributed* sys) {
     bin->SetBodyFixed(true);
     sys->AddBodyAllRanks(bin);
 
-    auto cb = chrono_types::make_shared<ChBoundary>(bin);
+    auto cb = chrono_types::make_shared<ChBoundary>(bin, mat);
     // Sloped Wall
     cb->AddPlane(ChFrame<>(ChVector<>(settling_gap + dx / 2, 0, height / 2), Q_from_AngY(-slope_angle)),
                  ChVector2<>(std::sqrt(dx * dx + height * height), 2.01 * hy));
@@ -259,8 +258,7 @@ std::shared_ptr<ChBody> CreateBall(const ChVector<>& pos,
                                    std::shared_ptr<ChMaterialSurfaceSMC> ballMat,
                                    int& ballId,
                                    double r) {
-    auto ball = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelDistributed>(), ChMaterialSurface::SMC);
-    ball->SetMaterialSurface(ballMat);
+    auto ball = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelDistributed>());
     ball->SetIdentifier(ballId++);
     double mass = GetMass(r);
     ball->SetMass(mass);
@@ -271,7 +269,7 @@ std::shared_ptr<ChBody> CreateBall(const ChVector<>& pos,
     ball->SetCollide(true);
 
     ball->GetCollisionModel()->ClearModel();
-    GetGeometry(ballId, ball.get(), r);
+    GetGeometry(ballId, ball, ballMat, r);
     ball->GetCollisionModel()->BuildModel();
 
     return ball;

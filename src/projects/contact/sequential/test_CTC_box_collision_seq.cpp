@@ -88,6 +88,10 @@ int main(int argc, char* argv[]) {
     system.SetSolverForceTolerance(tolerance);
     system.SetMaxPenetrationRecoverySpeed(contact_recovery_speed);
 
+    // Shared contact material
+    auto contact_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
+    contact_mat->SetFriction(0.4f);
+
     // ----------
     // Add bodies
     // ----------
@@ -98,12 +102,10 @@ int main(int argc, char* argv[]) {
     container->SetBodyFixed(true);
     container->SetIdentifier(-1);
 
-    container->GetMaterialSurfaceNSC()->SetFriction(0.4f);
-
     container->SetCollide(true);
     container->GetCollisionModel()->SetEnvelope(collision_envelope);
     container->GetCollisionModel()->ClearModel();
-    utils::AddBoxGeometry(container.get(), ChVector<>(4, .5, 4), ChVector<>(0, -.5, 0));
+    utils::AddBoxGeometry(container.get(), contact_mat, ChVector<>(4, .5, 4), ChVector<>(0, -.5, 0));
     container->GetCollisionModel()->BuildModel();
 
     container->AddAsset(chrono_types::make_shared<ChColorAsset>(ChColor(0.4f, 0.4f, 0.2f)));
@@ -113,12 +115,10 @@ int main(int argc, char* argv[]) {
     box->SetPos(ChVector<>(1, 2, 1));
     box->SetInertiaXX(ChVector<>(1, 1, 1));
 
-    box->GetMaterialSurfaceNSC()->SetFriction(0.4f);
-
     box->SetCollide(true);
     box->GetCollisionModel()->SetEnvelope(collision_envelope);
     box->GetCollisionModel()->ClearModel();
-    utils::AddBoxGeometry(box.get(), ChVector<>(0.4, 0.2, 0.1));
+    utils::AddBoxGeometry(box.get(), contact_mat, ChVector<>(0.4, 0.2, 0.1));
     box->GetCollisionModel()->BuildModel();
 
     box->AddAsset(chrono_types::make_shared<ChColorAsset>(ChColor(0.2f, 0.3f, 0.4f)));

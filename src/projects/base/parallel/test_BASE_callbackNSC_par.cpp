@@ -92,6 +92,10 @@ int main(int argc, char* argv[]) {
     system.GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
     system.GetSettings()->collision.bins_per_axis = vec3(10, 10, 10);
 
+    // Shared contact material
+    auto contact_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
+    contact_mat->SetFriction(friction);
+
     // ----------
     // Add bodies
     // ----------
@@ -102,12 +106,10 @@ int main(int argc, char* argv[]) {
     container->SetBodyFixed(true);
     container->SetIdentifier(-1);
 
-    container->GetMaterialSurfaceNSC()->SetFriction(friction);
-
     container->SetCollide(true);
     container->GetCollisionModel()->SetEnvelope(collision_envelope);
     container->GetCollisionModel()->ClearModel();
-    utils::AddBoxGeometry(container.get(), ChVector<>(4, 0.5, 4), ChVector<>(0, -0.5, 0));
+    utils::AddBoxGeometry(container.get(), contact_mat, ChVector<>(4, 0.5, 4), ChVector<>(0, -0.5, 0));
     container->GetCollisionModel()->BuildModel();
 
     container->AddAsset(chrono_types::make_shared<ChColorAsset>(ChColor(0.4f, 0.4f, 0.4f)));
@@ -118,12 +120,10 @@ int main(int argc, char* argv[]) {
     box1->SetPos(ChVector<>(-1, 0.21, -1));
     box1->SetPos_dt(ChVector<>(5, 0, 0));
 
-    box1->GetMaterialSurfaceNSC()->SetFriction(friction);
-
     box1->SetCollide(true);
     box1->GetCollisionModel()->SetEnvelope(collision_envelope);
     box1->GetCollisionModel()->ClearModel();
-    utils::AddBoxGeometry(box1.get(), ChVector<>(0.4, 0.2, 0.1));
+    utils::AddBoxGeometry(box1.get(), contact_mat, ChVector<>(0.4, 0.2, 0.1));
     box1->GetCollisionModel()->BuildModel();
 
     box1->AddAsset(chrono_types::make_shared<ChColorAsset>(ChColor(0.1f, 0.1f, 0.4f)));
@@ -136,12 +136,10 @@ int main(int argc, char* argv[]) {
     box2->SetPos(ChVector<>(-1, 0.21, +1));
     box2->SetPos_dt(ChVector<>(5, 0, 0));
 
-    box2->GetMaterialSurfaceNSC()->SetFriction(friction);
-
     box2->SetCollide(true);
     box2->GetCollisionModel()->SetEnvelope(collision_envelope);
     box2->GetCollisionModel()->ClearModel();
-    utils::AddBoxGeometry(box2.get(), ChVector<>(0.4, 0.2, 0.1));
+    utils::AddBoxGeometry(box2.get(), contact_mat, ChVector<>(0.4, 0.2, 0.1));
     box2->GetCollisionModel()->BuildModel();
 
     box2->AddAsset(chrono_types::make_shared<ChColorAsset>(ChColor(0.4f, 0.1f, 0.1f)));

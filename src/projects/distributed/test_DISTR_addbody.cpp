@@ -20,7 +20,6 @@ double hy = 1e2 * radius;
 double hz = 1e1 * radius;
 
 void SetBallParams(std::shared_ptr<ChBody> ball, const ChVector<>& pos, std::shared_ptr<ChMaterialSurface> mat) {
-    ball->SetMaterialSurface(mat);
     ball->SetMass(1);
     ball->SetInertiaXX(ChVector<>(1, 1, 1));
     ball->SetPos(pos);
@@ -29,7 +28,7 @@ void SetBallParams(std::shared_ptr<ChBody> ball, const ChVector<>& pos, std::sha
     ball->SetCollide(true);
 
     ball->GetCollisionModel()->ClearModel();
-    utils::AddSphereGeometry(ball.get(), 1);
+    utils::AddSphereGeometry(ball.get(), mat, 1);
     ball->GetCollisionModel()->BuildModel();
 }
 

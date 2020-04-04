@@ -114,9 +114,9 @@ std::shared_ptr<ChParticleContainer> particle_container;
 
 // =============================================================================
 // Custom material composition laws
-class CustomCompositionStrategy : public ChMaterialCompositionStrategy<real> {
+class CustomCompositionStrategy : public ChMaterialCompositionStrategy {
   public:
-    virtual real CombineFriction(real a1, real a2) const override { return std::max<real>(a1, a2); }
+    virtual float CombineFriction(float a1, float a2) const override { return std::max<float>(a1, a2); }
 };
 
 // =============================================================================
@@ -171,25 +171,23 @@ double CreateContainer(ChSystem* system,  // containing system
     ground->SetBodyFixed(true);
     ground->SetCollide(true);
 
-    ground->SetMaterialSurface(material);
-
     ground->GetCollisionModel()->ClearModel();
 
     // Bottom box
-    utils::AddBoxGeometry(ground.get(), ChVector<>(hdimX, hdimY, hthick), ChVector<>(0, 0, -hthick),
+    utils::AddBoxGeometry(ground.get(), material, ChVector<>(hdimX, hdimY, hthick), ChVector<>(0, 0, -hthick),
                           ChQuaternion<>(1, 0, 0, 0), true);
     // Left box
-    utils::AddBoxGeometry(ground.get(), ChVector<>(hdimX, hthick, hdimZ + hthick),
+    utils::AddBoxGeometry(ground.get(), material, ChVector<>(hdimX, hthick, hdimZ + hthick),
                           ChVector<>(0, hdimY + hthick, hdimZ - hthick), ChQuaternion<>(1, 0, 0, 0), visible_walls);
     // Right box
-    utils::AddBoxGeometry(ground.get(), ChVector<>(hdimX, hthick, hdimZ + hthick),
+    utils::AddBoxGeometry(ground.get(), material, ChVector<>(hdimX, hthick, hdimZ + hthick),
                           ChVector<>(0, -hdimY - hthick, hdimZ - hthick), ChQuaternion<>(1, 0, 0, 0), visible_walls);
 
     // Front box
-    utils::AddBoxGeometry(ground.get(), ChVector<>(hthick, hdimY, hdimZ + hthick),
+    utils::AddBoxGeometry(ground.get(), material, ChVector<>(hthick, hdimY, hdimZ + hthick),
                           ChVector<>(hdimX + hthick, 0, hdimZ - hthick), ChQuaternion<>(1, 0, 0, 0), visible_walls);
     // Rear box
-    utils::AddBoxGeometry(ground.get(), ChVector<>(hthick, hdimY, hdimZ + hthick),
+    utils::AddBoxGeometry(ground.get(), material, ChVector<>(hthick, hdimY, hdimZ + hthick),
                           ChVector<>(-hdimX - hthick, 0, hdimZ - hthick), ChQuaternion<>(1, 0, 0, 0), visible_walls);
 
     // If a positive radius was provided, create a "rough" surface
@@ -199,7 +197,7 @@ double CreateContainer(ChSystem* system,  // containing system
         int ny = (int)std::floor(hdimY / d);
         for (int ix = -nx; ix <= nx; ix++) {
             for (int iy = -ny; iy <= ny; iy++) {
-                utils::AddSphereGeometry(ground.get(), radius, ChVector<>(ix * d, iy * d, radius));
+                utils::AddSphereGeometry(ground.get(), material, radius, ChVector<>(ix * d, iy * d, radius));
             }
         }
     }

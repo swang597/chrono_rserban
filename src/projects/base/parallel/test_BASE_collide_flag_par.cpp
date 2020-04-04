@@ -44,11 +44,11 @@ int main(int argc, char* argv[]) {
     float Y = 2e6f;
     float mu = 0.4f;
     float cr = 0.4f;
-    auto ballMat = chrono_types::make_shared<ChMaterialSurfaceSMC>();
-    ballMat->SetYoungModulus(Y);
-    ballMat->SetFriction(mu);
-    ballMat->SetRestitution(cr);
-    ballMat->SetAdhesion(0);  // Magnitude of the adhesion in Constant adhesion model
+    auto contact_mat = chrono_types::make_shared<ChMaterialSurfaceSMC>();
+    contact_mat->SetYoungModulus(Y);
+    contact_mat->SetFriction(mu);
+    contact_mat->SetRestitution(cr);
+    contact_mat->SetAdhesion(0);  // Magnitude of the adhesion in Constant adhesion model
 
     // Create the falling balls
     double mass = 1;
@@ -56,9 +56,7 @@ int main(int argc, char* argv[]) {
     ChVector<> inertia = (2.0 / 5.0) * mass * radius * radius * ChVector<>(1, 1, 1);
 
     // Lower ball
-    auto ball_lower =
-        chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
-    ball_lower->SetMaterialSurface(ballMat);
+    auto ball_lower = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
 
     ball_lower->SetIdentifier(1);
     ball_lower->SetMass(mass);
@@ -69,15 +67,13 @@ int main(int argc, char* argv[]) {
     ball_lower->SetCollide(true);
 
     ball_lower->GetCollisionModel()->ClearModel();
-    utils::AddSphereGeometry(ball_lower.get(), radius);
+    utils::AddSphereGeometry(ball_lower.get(), contact_mat, radius);
     ball_lower->GetCollisionModel()->BuildModel();
 
     my_sys.AddBody(ball_lower);
 
     // Upper ball
-    auto ball_upper =
-        chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
-    ball_upper->SetMaterialSurface(ballMat);
+    auto ball_upper = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
 
     ball_upper->SetIdentifier(2);
     ball_upper->SetMass(mass);
@@ -88,14 +84,13 @@ int main(int argc, char* argv[]) {
     ball_upper->SetCollide(true);
 
     ball_upper->GetCollisionModel()->ClearModel();
-    utils::AddSphereGeometry(ball_upper.get(), radius);
+    utils::AddSphereGeometry(ball_upper.get(), contact_mat, radius);
     ball_upper->GetCollisionModel()->BuildModel();
 
     my_sys.AddBody(ball_upper);
 
     // Plate
-    auto plate = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
-    plate->SetMaterialSurface(ballMat);
+    auto plate = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
 
     plate->SetIdentifier(0);
     plate->SetPos(ChVector<>(0, 0, 8));
@@ -103,7 +98,7 @@ int main(int argc, char* argv[]) {
     plate->SetCollide(true);
 
     plate->GetCollisionModel()->ClearModel();
-    utils::AddBoxGeometry(plate.get(), ChVector<>(4 * radius, 4 * radius, radius));
+    utils::AddBoxGeometry(plate.get(), contact_mat, ChVector<>(4 * radius, 4 * radius, radius));
     plate->GetCollisionModel()->BuildModel();
 
     my_sys.AddBody(plate);

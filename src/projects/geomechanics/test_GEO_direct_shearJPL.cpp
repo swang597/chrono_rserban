@@ -240,7 +240,7 @@ void AdjustInertia(ChSystemParallel* m_sys) {
     for (int i = 2; i < blist.size(); i++) {
         auto body = blist[i];
         double mass = body->GetMass();
-        double r = std::static_pointer_cast<ChCollisionModelParallel>(body->GetCollisionModel())->mData[0].B[0];
+        double r = std::static_pointer_cast<ChCollisionShapeParallel>(body->GetCollisionModel()->GetShape(0))->B[0];
         body->SetInertiaXX(2 * mass * r * r / 3);
     }
 }
@@ -271,13 +271,7 @@ void CreateMechanismBodies(ChSystemParallel* system) {
     // Create the ground body -- always FIRST body in system
     // ----------------------
 
-#ifdef USE_SMC
-    auto ground = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
-    ground->SetMaterialSurface(mat_walls);
-#else
     auto ground = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
-    ground->SetMaterialSurface(mat_walls);
-#endif
 
     ground->SetIdentifier(Id_ground);
     ground->SetBodyFixed(true);
@@ -286,11 +280,11 @@ void CreateMechanismBodies(ChSystemParallel* system) {
     // Attach geometry of the containing bin.  Disable contact ground-shearBox
     // and ground-loadPlate.
     ground->GetCollisionModel()->ClearModel();
-    utils::AddBoxGeometry(ground.get(), ChVector<>(hdimX, hdimY, hthick), ChVector<>(0, 0, -hthick));
-    utils::AddBoxGeometry(ground.get(), ChVector<>(hthick, hdimY, hdimZ), ChVector<>(-hdimX - hthick, 0, hdimZ));
-    utils::AddBoxGeometry(ground.get(), ChVector<>(hthick, hdimY, hdimZ), ChVector<>(hdimX + hthick, 0, hdimZ));
-    utils::AddBoxGeometry(ground.get(), ChVector<>(hdimX, hthick, hdimZ), ChVector<>(0, -hdimY - hthick, hdimZ));
-    utils::AddBoxGeometry(ground.get(), ChVector<>(hdimX, hthick, hdimZ), ChVector<>(0, hdimY + hthick, hdimZ));
+    utils::AddBoxGeometry(ground.get(), mat_walls, ChVector<>(hdimX, hdimY, hthick), ChVector<>(0, 0, -hthick));
+    utils::AddBoxGeometry(ground.get(), mat_walls, ChVector<>(hthick, hdimY, hdimZ), ChVector<>(-hdimX - hthick, 0, hdimZ));
+    utils::AddBoxGeometry(ground.get(), mat_walls, ChVector<>(hthick, hdimY, hdimZ), ChVector<>(hdimX + hthick, 0, hdimZ));
+    utils::AddBoxGeometry(ground.get(), mat_walls, ChVector<>(hdimX, hthick, hdimZ), ChVector<>(0, -hdimY - hthick, hdimZ));
+    utils::AddBoxGeometry(ground.get(), mat_walls, ChVector<>(hdimX, hthick, hdimZ), ChVector<>(0, hdimY + hthick, hdimZ));
     ground->GetCollisionModel()->SetFamily(ground_coll_fam);
     ground->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(box_coll_fam);
     ground->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(plate_coll_fam);
@@ -305,13 +299,7 @@ void CreateMechanismBodies(ChSystemParallel* system) {
     // Initially, the shear box is fixed to ground.
     // During the shearing phase it may be released (if using an actuator)
 
-#ifdef USE_SMC
-    auto box = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
-    box->SetMaterialSurface(mat_walls);
-#else
     auto box = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
-    box->SetMaterialSurface(mat_walls);
-#endif
 
     box->SetIdentifier(Id_box);
     box->SetPos(ChVector<>(0, 0, 2 * hdimZ + r_g));
@@ -320,13 +308,13 @@ void CreateMechanismBodies(ChSystemParallel* system) {
 
     // Add geometry of the shear box.  Disable contact with the load plate.
     box->GetCollisionModel()->ClearModel();
-    utils::AddBoxGeometry(box.get(), ChVector<>(hthick, hdimY, h_scaling * hdimZ),
+    utils::AddBoxGeometry(box.get(), mat_walls, ChVector<>(hthick, hdimY, h_scaling * hdimZ),
                           ChVector<>(-hdimX - hthick, 0, h_scaling * hdimZ));
-    utils::AddBoxGeometry(box.get(), ChVector<>(hthick, hdimY, h_scaling * hdimZ),
+    utils::AddBoxGeometry(box.get(), mat_walls, ChVector<>(hthick, hdimY, h_scaling * hdimZ),
                           ChVector<>(hdimX + hthick, 0, h_scaling * hdimZ));
-    utils::AddBoxGeometry(box.get(), ChVector<>(hdimX, hthick, h_scaling * hdimZ),
+    utils::AddBoxGeometry(box.get(), mat_walls, ChVector<>(hdimX, hthick, h_scaling * hdimZ),
                           ChVector<>(0, -hdimY - hthick, h_scaling * hdimZ));
-    utils::AddBoxGeometry(box.get(), ChVector<>(hdimX, hthick, h_scaling * hdimZ),
+    utils::AddBoxGeometry(box.get(), mat_walls, ChVector<>(hdimX, hthick, h_scaling * hdimZ),
                           ChVector<>(0, hdimY + hthick, h_scaling * hdimZ));
     box->GetCollisionModel()->SetFamily(box_coll_fam);
     box->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(plate_coll_fam);
@@ -349,13 +337,7 @@ void CreateMechanismBodies(ChSystemParallel* system) {
     double area = 4 * hdimX * hdimY;
     double mass = normalPressure * area / gravity;
 
-#ifdef USE_SMC
-    auto plate = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
-    plate->SetMaterialSurface(mat_walls);
-#else
     auto plate = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
-    plate->SetMaterialSurface(mat_walls);
-#endif
 
     plate->SetIdentifier(Id_plate);
     plate->SetMass(mass);
@@ -365,7 +347,7 @@ void CreateMechanismBodies(ChSystemParallel* system) {
 
     // Add geometry of the load plate.
     plate->GetCollisionModel()->ClearModel();
-    utils::AddBoxGeometry(plate.get(), ChVector<>(hdimX_p, hdimY, hdimZ), ChVector<>(0, 0, hdimZ));
+    utils::AddBoxGeometry(plate.get(), mat_walls, ChVector<>(hdimX_p, hdimY, hdimZ), ChVector<>(0, 0, hdimZ));
     plate->GetCollisionModel()->SetFamily(plate_coll_fam);
     plate->GetCollisionModel()->BuildModel();
 

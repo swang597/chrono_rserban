@@ -87,20 +87,17 @@ int out_fps = 60;
 // Create ground body
 // =============================================================================
 void CreateGround(ChSystemParallel* system) {
+
+    auto ground = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
+
 #ifdef USE_SMC
     auto mat_g = chrono_types::make_shared<ChMaterialSurfaceSMC>();
     mat_g->SetYoungModulus(1e7f);
     mat_g->SetFriction(0.7f);
     mat_g->SetRestitution(0.01f);
-
-    auto ground = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
-    ground->SetMaterialSurface(mat_g);
 #else
     auto mat_g = chrono_types::make_shared<ChMaterialSurfaceNSC>();
     mat_g->SetFriction(0.7f);
-
-    auto ground = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
-    ground->SetMaterialSurface(mat_g);
 #endif
 
     ground->SetIdentifier(-1);
@@ -117,7 +114,7 @@ void CreateGround(ChSystemParallel* system) {
     for (int ix = -5; ix < 5; ix++) {
         for (int iy = -5; iy < 5; iy++) {
             ChVector<> pos(ix * spacing, iy * spacing, -bigR);
-            utils::AddSphereGeometry(ground.get(), bigR, pos);
+            utils::AddSphereGeometry(ground.get(), mat_g, bigR, pos);
         }
     }
     ground->GetCollisionModel()->BuildModel();
@@ -131,20 +128,16 @@ void CreateGround(ChSystemParallel* system) {
 std::shared_ptr<ChBody> CreateObject(ChSystemParallel* system) {
     double rho_o = 2000.0;
 
+    auto obj = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
+
 #ifdef USE_SMC
     auto mat_o = chrono_types::make_shared<ChMaterialSurfaceSMC>();
     mat_o->SetYoungModulus(1e7f);
     mat_o->SetFriction(0.7f);
     mat_o->SetRestitution(0.01f);
-
-    auto obj = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
-    obj->SetMaterialSurface(mat_o);
 #else
     auto mat_o = chrono_types::make_shared<ChMaterialSurfaceNSC>();
     mat_o->SetFriction(0.7f);
-
-    auto obj = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
-    obj->SetMaterialSurface(mat_o);
 #endif
 
     obj->SetIdentifier(1);
@@ -163,7 +156,7 @@ std::shared_ptr<ChBody> CreateObject(ChSystemParallel* system) {
     ChVector<> A(len, -len, 0);
     ChVector<> B(-len, -len, 0);
     ChVector<> C(0, len, 0);	
-    utils::AddTriangle(obj.get(), A, B, C, "triangle");
+    utils::AddTriangleGeometry(obj.get(), mat_o, A, B, C, "triangle");
     obj->GetCollisionModel()->BuildModel();
 
     // Set initial state.

@@ -30,6 +30,9 @@ int main(int argc, char* argv[]) {
     ChSystemNSC sys;
     sys.Set_G_acc(ChVector<>(0, -1, 0));
 
+    // Shared contact material (default properties)
+    auto contact_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
+
     // Create the falling balls
     double mass = 1;
     double radius = 0.15;
@@ -51,7 +54,7 @@ int main(int argc, char* argv[]) {
     if (!ball_collision) {
         ball_lower->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(3);
     }
-    utils::AddSphereGeometry(ball_lower.get(), radius);
+    utils::AddSphereGeometry(ball_lower.get(), contact_mat, radius);
     ball_lower->GetCollisionModel()->BuildModel();
 
     sys.AddBody(ball_lower);
@@ -73,7 +76,7 @@ int main(int argc, char* argv[]) {
     if (!ball_collision) {
         ball_upper->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(3);
     }
-    utils::AddSphereGeometry(ball_upper.get(), radius);
+    utils::AddSphereGeometry(ball_upper.get(), contact_mat, radius);
     ball_upper->GetCollisionModel()->BuildModel();
 
     sys.AddBody(ball_upper);
@@ -88,7 +91,7 @@ int main(int argc, char* argv[]) {
     plate->AddAsset(chrono_types::make_shared<ChColorAsset>(0.3f, 0.3f, 0.5f));
 
     plate->GetCollisionModel()->ClearModel();
-    utils::AddBoxGeometry(plate.get(), ChVector<>(10 * radius, radius, 10 * radius));
+    utils::AddBoxGeometry(plate.get(), contact_mat, ChVector<>(10 * radius, radius, 10 * radius));
     plate->GetCollisionModel()->BuildModel();
 
     sys.AddBody(plate);

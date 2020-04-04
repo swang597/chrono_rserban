@@ -46,7 +46,7 @@ int main(int argc, char* argv[]) {
     // ---------------------------
     // Contact material properties
     // ---------------------------
-    ChMaterialSurface::ContactMethod contact_method = ChMaterialSurface::SMC;
+    ChContactMethod contact_method = ChContactMethod::SMC;
     bool use_mat_properties = true;
 
     float object_friction = 0.9f;
@@ -92,10 +92,10 @@ int main(int argc, char* argv[]) {
     ChSystem* system;
 
     switch (contact_method) {
-        case ChMaterialSurface::NSC:
+        case ChContactMethod::NSC:
             system = new ChSystemNSC();
             break;
-        case ChMaterialSurface::SMC:
+        case ChContactMethod::SMC:
             system = new ChSystemSMC(use_mat_properties);
             break;
     }
@@ -131,28 +131,24 @@ int main(int argc, char* argv[]) {
     object->SetCollide(true);
     object->SetBodyFixed(false);
 
-    switch (object->GetContactMethod()) {
-        case ChMaterialSurface::NSC:
-            object->GetMaterialSurfaceNSC()->SetFriction(object_friction);
-            object->GetMaterialSurfaceNSC()->SetRestitution(object_restitution);
-            break;
-        case ChMaterialSurface::SMC:
-            object->GetMaterialSurfaceSMC()->SetFriction(object_friction);
-            object->GetMaterialSurfaceSMC()->SetRestitution(object_restitution);
-            object->GetMaterialSurfaceSMC()->SetYoungModulus(object_young_modulus);
-            object->GetMaterialSurfaceSMC()->SetPoissonRatio(object_poisson_ratio);
-            object->GetMaterialSurfaceSMC()->SetKn(object_kn);
-            object->GetMaterialSurfaceSMC()->SetGn(object_gn);
-            object->GetMaterialSurfaceSMC()->SetKt(object_kt);
-            object->GetMaterialSurfaceSMC()->SetGt(object_gt);
-            break;
+    auto object_mat = ChMaterialSurface::DefaultMaterial(contact_method);
+    object_mat->SetFriction(object_friction);
+    object_mat->SetRestitution(object_restitution);
+    if (contact_method == ChContactMethod::SMC) {
+        auto matSMC = std::static_pointer_cast<ChMaterialSurfaceSMC>(object_mat);
+        matSMC->SetYoungModulus(object_young_modulus);
+        matSMC->SetPoissonRatio(object_poisson_ratio);
+        matSMC->SetKn(object_kn);
+        matSMC->SetGn(object_gn);
+        matSMC->SetKt(object_kt);
+        matSMC->SetGt(object_gt);
     }
 
     auto trimesh = chrono_types::make_shared<geometry::ChTriangleMeshConnected>();
     trimesh->LoadWavefrontMesh(GetChronoDataFile("vehicle/hmmwv/hmmwv_tire.obj"), true, false);
 
     object->GetCollisionModel()->ClearModel();
-    object->GetCollisionModel()->AddTriangleMesh(trimesh, false, false, ChVector<>(0), ChMatrix33<>(1),
+    object->GetCollisionModel()->AddTriangleMesh(object_mat, trimesh, false, false, ChVector<>(0), ChMatrix33<>(1),
                                                  mesh_swept_sphere_radius);
     object->GetCollisionModel()->BuildModel();
 
@@ -174,27 +170,23 @@ int main(int argc, char* argv[]) {
     ground->SetCollide(true);
     ground->SetBodyFixed(true);
 
-    switch (object->GetContactMethod()) {
-        case ChMaterialSurface::NSC:
-            ground->GetMaterialSurfaceNSC()->SetFriction(ground_friction);
-            ground->GetMaterialSurfaceNSC()->SetRestitution(ground_restitution);
-            break;
-        case ChMaterialSurface::SMC:
-            ground->GetMaterialSurfaceSMC()->SetFriction(ground_friction);
-            ground->GetMaterialSurfaceSMC()->SetRestitution(ground_restitution);
-            ground->GetMaterialSurfaceSMC()->SetYoungModulus(ground_young_modulus);
-            ground->GetMaterialSurfaceSMC()->SetPoissonRatio(ground_poisson_ratio);
-            ground->GetMaterialSurfaceSMC()->SetKn(ground_kn);
-            ground->GetMaterialSurfaceSMC()->SetGn(ground_gn);
-            ground->GetMaterialSurfaceSMC()->SetKt(ground_kt);
-            ground->GetMaterialSurfaceSMC()->SetGt(ground_gt);
-            break;
+    auto ground_mat = ChMaterialSurface::DefaultMaterial(contact_method);
+    ground_mat->SetFriction(ground_friction);
+    ground_mat->SetRestitution(ground_restitution);
+    if (contact_method == ChContactMethod::SMC) {
+        auto matSMC = std::static_pointer_cast<ChMaterialSurfaceSMC>(ground_mat);
+        matSMC->SetYoungModulus(ground_young_modulus);
+        matSMC->SetPoissonRatio(ground_poisson_ratio);
+        matSMC->SetKn(ground_kn);
+        matSMC->SetGn(ground_gn);
+        matSMC->SetKt(ground_kt);
+        matSMC->SetGt(ground_gt);
     }
 
     switch (contact_type) {
         case ContactType::MESH_BOX: {
             ground->GetCollisionModel()->ClearModel();
-            ground->GetCollisionModel()->AddBox(width, length, thickness, ChVector<>(0, 0, -thickness));
+            ground->GetCollisionModel()->AddBox(ground_mat, width, length, thickness, ChVector<>(0, 0, -thickness));
             ground->GetCollisionModel()->BuildModel();
 
             auto box = chrono_types::make_shared<ChBoxShape>();
@@ -209,7 +201,7 @@ int main(int argc, char* argv[]) {
             trimesh_ground->LoadWavefrontMesh(GetChronoDataFile("vehicle/terrain/meshes/ramp_10x1.obj"), true, false);
 
             ground->GetCollisionModel()->ClearModel();
-            ground->GetCollisionModel()->AddTriangleMesh(trimesh_ground, false, false, ChVector<>(0), ChMatrix33<>(1),
+            ground->GetCollisionModel()->AddTriangleMesh(ground_mat, trimesh_ground, false, false, ChVector<>(0), ChMatrix33<>(1),
                                                          mesh_swept_sphere_radius);
             ground->GetCollisionModel()->BuildModel();
 

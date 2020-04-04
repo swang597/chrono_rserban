@@ -52,18 +52,16 @@ int main(int argc, char* argv[]) {
     contact_mat->SetAdhesion(0);
 
     // Adding fixed bodies and collision shapes
-    auto cyl1 = chrono_types::make_shared<ChBodyEasyCylinder>(0.1, 0.4, 1000, true, true, ChMaterialSurface::SMC);
+    auto cyl1 = chrono_types::make_shared<ChBodyEasyCylinder>(0.1, 0.4, 1000, true, true, contact_mat);
     cyl1->SetBodyFixed(true);
     cyl1->SetPos(ChVector<>(0, 0, -0.25));
     cyl1->SetRot(Q_from_AngZ(CH_C_PI_2));
-    cyl1->SetMaterialSurface(contact_mat);
     my_system.Add(cyl1);
 
-    auto cyl2 = chrono_types::make_shared<ChBodyEasyCylinder>(0.1, 0.4, 1000, true, true, ChMaterialSurface::SMC);
+    auto cyl2 = chrono_types::make_shared<ChBodyEasyCylinder>(0.1, 0.4, 1000, true, true, contact_mat);
     cyl2->SetBodyFixed(true);
     cyl2->SetPos(ChVector<>(0, 0, 0.25));
     cyl2->SetRot(Q_from_AngZ(CH_C_PI_2));
-    cyl2->SetMaterialSurface(contact_mat);
     my_system.Add(cyl2);
 
     // Create a mesh and import from file
@@ -95,10 +93,9 @@ int main(int argc, char* argv[]) {
     my_mesh->SetAutomaticGravity(true);
 
     // Mesh contact surface
-    auto contact_surface = chrono_types::make_shared<ChContactSurfaceMesh>();
+    auto contact_surface = chrono_types::make_shared<ChContactSurfaceMesh>(contact_mat);
     my_mesh->AddContactSurface(contact_surface);
     contact_surface->AddFacesFromBoundary(sphere_swept_thickness);
-    contact_surface->SetMaterialSurface(contact_mat);
 
     // Mesh visualization
     auto vis_mesh1 = chrono_types::make_shared<ChVisualizationFEAmesh>(*(my_mesh.get()));

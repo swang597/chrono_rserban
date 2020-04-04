@@ -122,16 +122,15 @@ void AddBox(ChSystemParallel& m_sys, std::shared_ptr<ChBody>& top) {
     top = std::shared_ptr<ChBody>(m_sys.NewBody());
     top->SetPos(pos);
     top->SetMass(box_mass / 2);
-    top->SetMaterialSurface(box_mat);
     top->SetBodyFixed(true);
     top->GetCollisionModel()->ClearModel();
-    utils::AddBoxGeometry(top.get(), ChVector<>(hthick, hy, hz / 2), ChVector<>(-(hx + hthick), 0, hz / 2), QUNIT,
-                          top_vis);  // Low X
-    utils::AddBoxGeometry(top.get(), ChVector<>(hthick, hy, hz / 2), ChVector<>(hx + hthick, 0, hz / 2), QUNIT,
+    utils::AddBoxGeometry(top.get(), box_mat, ChVector<>(hthick, hy, hz / 2), ChVector<>(-(hx + hthick), 0, hz / 2),
+                          QUNIT, top_vis);  // Low X
+    utils::AddBoxGeometry(top.get(), box_mat, ChVector<>(hthick, hy, hz / 2), ChVector<>(hx + hthick, 0, hz / 2), QUNIT,
                           top_vis);  // High X
-    utils::AddBoxGeometry(top.get(), ChVector<>(hx, hthick, hz / 2), ChVector<>(0, -(hy + hthick), hz / 2), QUNIT,
-                          top_vis);  // Low Y
-    utils::AddBoxGeometry(top.get(), ChVector<>(hx, hthick, hz / 2), ChVector<>(0, hy + hthick, hz / 2), QUNIT,
+    utils::AddBoxGeometry(top.get(), box_mat, ChVector<>(hx, hthick, hz / 2), ChVector<>(0, -(hy + hthick), hz / 2),
+                          QUNIT, top_vis);  // Low Y
+    utils::AddBoxGeometry(top.get(), box_mat, ChVector<>(hx, hthick, hz / 2), ChVector<>(0, hy + hthick, hz / 2), QUNIT,
                           top_vis);  // High Y
     top->GetCollisionModel()->BuildModel();
     top->SetCollide(true);
@@ -143,14 +142,17 @@ void AddBox(ChSystemParallel& m_sys, std::shared_ptr<ChBody>& top) {
     auto bot = std::shared_ptr<ChBody>(m_sys.NewBody());
     bot->SetPos(pos);
     bot->SetMass(box_mass / 2);
-    bot->SetMaterialSurface(box_mat);
     bot->SetBodyFixed(true);
     bot->GetCollisionModel()->ClearModel();
-    utils::AddBoxGeometry(bot.get(), ChVector<>(hx, hy, hthick), ChVector<>(0, 0, -(hz + hthick)));            // Bottom
-    utils::AddBoxGeometry(bot.get(), ChVector<>(hthick, hy, hz / 2), ChVector<>(-(hx + hthick), 0, -hz / 2));  // Low X
-    utils::AddBoxGeometry(bot.get(), ChVector<>(hthick, hy, hz / 2), ChVector<>(hx + hthick, 0, -hz / 2));     // High X
-    utils::AddBoxGeometry(bot.get(), ChVector<>(hx, hthick, hz / 2), ChVector<>(0, -(hy + hthick), -hz / 2));  // Low Y
-    utils::AddBoxGeometry(bot.get(), ChVector<>(hx, hthick, hz / 2), ChVector<>(0, hy + hthick, -hz / 2));     // High Y
+    utils::AddBoxGeometry(bot.get(), box_mat, ChVector<>(hx, hy, hthick), ChVector<>(0, 0, -(hz + hthick)));  // Bottom
+    utils::AddBoxGeometry(bot.get(), box_mat, ChVector<>(hthick, hy, hz / 2),
+                          ChVector<>(-(hx + hthick), 0, -hz / 2));  // Low X
+    utils::AddBoxGeometry(bot.get(), box_mat, ChVector<>(hthick, hy, hz / 2),
+                          ChVector<>(hx + hthick, 0, -hz / 2));  // High X
+    utils::AddBoxGeometry(bot.get(), box_mat, ChVector<>(hx, hthick, hz / 2),
+                          ChVector<>(0, -(hy + hthick), -hz / 2));  // Low Y
+    utils::AddBoxGeometry(bot.get(), box_mat, ChVector<>(hx, hthick, hz / 2),
+                          ChVector<>(0, hy + hthick, -hz / 2));  // High Y
     bot->GetCollisionModel()->BuildModel();
     bot->SetCollide(true);
     bot->GetCollisionModel()->SetFamily(1);
@@ -176,10 +178,9 @@ void AddPlate(ChSystemParallelNSC& m_sys,
     plate = std::shared_ptr<ChBody>(m_sys.NewBody());
     plate->SetPos(ChVector<>(0, 0, plate_bottom + hthick));
     plate->SetMass(plate_mass);
-    plate->SetMaterialSurface(box_mat);
     plate->SetBodyFixed(false);
     plate->GetCollisionModel()->ClearModel();
-    utils::AddBoxGeometry(plate.get(), ChVector<>(hx, hy, hthick));
+    utils::AddBoxGeometry(plate.get(), box_mat, ChVector<>(hx, hy, hthick));
     plate->GetCollisionModel()->BuildModel();
     plate->SetCollide(true);
     plate->GetCollisionModel()->SetFamily(1);
@@ -228,7 +229,6 @@ size_t AddParticles(ChSystemParallelNSC& m_sys, ChVector<> box_center, ChVector<
     for (unsigned int i = 0; i < points.size(); i++) {
         auto sphere = std::shared_ptr<ChBody>(m_sys.NewBody());
 
-        sphere->SetMaterialSurface(sphere_mat);
         sphere->SetMass(sphere_mass);
         sphere->SetInertiaXX(sphere_inertia);
         sphere->SetPos(points[i]);
@@ -237,7 +237,7 @@ size_t AddParticles(ChSystemParallelNSC& m_sys, ChVector<> box_center, ChVector<
         sphere->SetCollide(true);
 
         sphere->GetCollisionModel()->ClearModel();
-        utils::AddSphereGeometry(sphere.get(), sphere_radius);
+        utils::AddSphereGeometry(sphere.get(), sphere_mat, sphere_radius);
         sphere->GetCollisionModel()->BuildModel();
 
         m_sys.AddBody(sphere);

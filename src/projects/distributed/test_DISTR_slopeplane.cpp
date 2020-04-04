@@ -129,8 +129,7 @@ void AddSlopedWall(ChSystemDistributed* sys) {
     mat->SetFriction(mu);
     mat->SetRestitution(cr);
 
-    auto container = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelDistributed>(), ChMaterialSurface::SMC);
-    container->SetMaterialSurface(mat);
+    auto container = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelDistributed>());
     container->SetMass(1);
     container->SetPos(ChVector<>(0));
     container->SetCollide(false);
@@ -144,7 +143,7 @@ void AddSlopedWall(ChSystemDistributed* sys) {
 
     sys->AddBodyAllRanks(container);
 
-    auto boundary = new ChBoundary(container);
+    auto boundary = new ChBoundary(container, mat);
     boundary->AddPlane(ChFrame<>(ChVector<>(dx / 2.0, 0, height / 2.0), Q_from_AngY(0)),
                        ChVector2<>(100 * gran_radius, 100 * gran_radius));
     boundary->AddVisualization(3 * gran_radius);
@@ -156,8 +155,7 @@ inline std::shared_ptr<ChBody> CreateBall(const ChVector<>& pos,
                                           double m,
                                           ChVector<> inertia,
                                           double radius) {
-    auto ball = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelDistributed>(), ChMaterialSurface::SMC);
-    ball->SetMaterialSurface(ballMat);
+    auto ball = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelDistributed>());
 
     ball->SetIdentifier(*ballId++);
     ball->SetMass(m);
@@ -168,7 +166,7 @@ inline std::shared_ptr<ChBody> CreateBall(const ChVector<>& pos,
     ball->SetCollide(true);
 
     ball->GetCollisionModel()->ClearModel();
-    utils::AddSphereGeometry(ball.get(), radius);
+    utils::AddSphereGeometry(ball.get(), ballMat, radius);
     ball->GetCollisionModel()->BuildModel();
     return ball;
 }

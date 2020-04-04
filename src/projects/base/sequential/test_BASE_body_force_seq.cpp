@@ -50,7 +50,8 @@ int main(int argc, char* argv[]) {
     plate->SetCollide(true);
 
     plate->GetCollisionModel()->ClearModel();
-    utils::AddBoxGeometry(plate.get(), ChVector<>(4, 0.5, 0.1));
+    utils::AddBoxGeometry(plate.get(), ChMaterialSurface::DefaultMaterial(my_sys.GetContactMethod()),
+                          ChVector<>(4, 0.5, 0.1));
     plate->GetCollisionModel()->BuildModel();
 
     my_sys.AddBody(plate);
@@ -61,7 +62,6 @@ int main(int argc, char* argv[]) {
     ChVector<> inertia = (2.0 / 5.0) * mass * radius * radius * ChVector<>(1, 1, 1);
 
     auto ball = std::shared_ptr<ChBody>(my_sys.NewBody());
-
     ball->SetIdentifier(2);
     ball->SetMass(mass);
     ball->SetInertiaXX(inertia);
@@ -70,8 +70,12 @@ int main(int argc, char* argv[]) {
     ball->SetBodyFixed(false);
     ball->SetCollide(true);
 
+    auto ball_mat = ChMaterialSurface::DefaultMaterial(my_sys.GetContactMethod());
+    ball_mat->SetFriction(friction);
+    ball_mat->SetRestitution(0);
+
     ball->GetCollisionModel()->ClearModel();
-    utils::AddSphereGeometry(ball.get(), radius);
+    utils::AddSphereGeometry(ball.get(), ball_mat, radius);
     ball->GetCollisionModel()->BuildModel();
 
     auto texture = chrono_types::make_shared<ChTexture>();
@@ -79,17 +83,6 @@ int main(int argc, char* argv[]) {
     ball->AddAsset(texture);
 
     my_sys.AddBody(ball);
-
-    switch (ball->GetContactMethod()) {
-        case ChMaterialSurface::NSC:
-            ball->GetMaterialSurfaceNSC()->SetFriction(friction);
-            ball->GetMaterialSurfaceNSC()->SetRestitution(0);
-            break;
-        case ChMaterialSurface::SMC:
-            ball->GetMaterialSurfaceSMC()->SetFriction(friction);
-            ball->GetMaterialSurfaceSMC()->SetRestitution(0);
-            break;
-    }
 
     // Force (ramp to maximum and then back to 0)
     double fullForce = 1;

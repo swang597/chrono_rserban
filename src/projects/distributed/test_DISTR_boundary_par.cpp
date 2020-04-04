@@ -69,8 +69,7 @@ void AddContainer(ChSystemParallelSMC* sys) {
     mat->SetRestitution(cr);
 
     // Create the containing bin (4 x 4 x 1)
-    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
-    bin->SetMaterialSurface(mat);
+    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
     bin->SetIdentifier(binId);
     bin->SetMass(1);
     bin->SetPos(ChVector<>(0, 0, 0));
@@ -85,21 +84,21 @@ void AddContainer(ChSystemParallelSMC* sys) {
     switch (container_type) {
         case BOXES: {
             bin->GetCollisionModel()->ClearModel();
-            utils::AddBoxGeometry(bin.get(), ChVector<>(hdim.x(), hdim.y(), hthick), ChVector<>(0, 0, -hthick));
-            utils::AddBoxGeometry(bin.get(), ChVector<>(hthick, hdim.y(), hdim.z()),
+            utils::AddBoxGeometry(bin.get(), mat, ChVector<>(hdim.x(), hdim.y(), hthick), ChVector<>(0, 0, -hthick));
+            utils::AddBoxGeometry(bin.get(), mat, ChVector<>(hthick, hdim.y(), hdim.z()),
                                   ChVector<>(-hdim.x() - hthick, 0, hdim.z()));
-            utils::AddBoxGeometry(bin.get(), ChVector<>(hthick, hdim.y(), hdim.z()),
+            utils::AddBoxGeometry(bin.get(), mat, ChVector<>(hthick, hdim.y(), hdim.z()),
                                   ChVector<>(hdim.x() + hthick, 0, hdim.z()));
-            utils::AddBoxGeometry(bin.get(), ChVector<>(hdim.x(), hthick, hdim.z()),
+            utils::AddBoxGeometry(bin.get(), mat, ChVector<>(hdim.x(), hthick, hdim.z()),
                                   ChVector<>(0, -hdim.y() - hthick, hdim.z()));
-            utils::AddBoxGeometry(bin.get(), ChVector<>(hdim.x(), hthick, hdim.z()),
+            utils::AddBoxGeometry(bin.get(), mat, ChVector<>(hdim.x(), hthick, hdim.z()),
                                   ChVector<>(0, hdim.y() + hthick, hdim.z()));
             bin->GetCollisionModel()->BuildModel();
 
             break;
         }
         case BOUNDARY: {
-            auto cb = new ChBoundary(bin);
+            auto cb = new ChBoundary(bin, mat);
             cb->AddPlane(ChFrame<>(ChVector<>(0, 0, 0), QUNIT), ChVector2<>(4, 4));
             cb->AddPlane(ChFrame<>(ChVector<>(2, 0, 0), Q_from_AngY(-CH_C_PI_2)), ChVector2<>(1, 4));
             cb->AddVisualization(0.05);
@@ -135,8 +134,7 @@ std::shared_ptr<ChBody> AddFallingObjects(ChSystemParallel* sys) {
             for (int iy = -count_Y; iy <= count_Y; iy++) {
                 ChVector<> pos(0.4 * ix, 0.4 * iy, h);
 
-                auto obj = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
-                obj->SetMaterialSurface(objMat);
+                auto obj = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
 
                 obj->SetIdentifier(objId++);
                 obj->SetMass(mass);
@@ -149,10 +147,10 @@ std::shared_ptr<ChBody> AddFallingObjects(ChSystemParallel* sys) {
                 obj->GetCollisionModel()->ClearModel();
                 switch (object_type) {
                 case BALL:
-                    utils::AddSphereGeometry(obj.get(), size);
+                    utils::AddSphereGeometry(obj.get(), objMat, size);
                     break;
                 case BRICK:
-                    utils::AddBoxGeometry(obj.get(), ChVector<>(size, size / 2, size / 2));
+                    utils::AddBoxGeometry(obj.get(), objMat, ChVector<>(size, size / 2, size / 2));
                     break;
                 }
                 obj->GetCollisionModel()->BuildModel();

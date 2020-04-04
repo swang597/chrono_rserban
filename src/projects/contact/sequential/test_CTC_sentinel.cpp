@@ -56,8 +56,11 @@ int main(int argc, char* argv[]) {
     application.AddTypicalLights();
     application.AddTypicalCamera(core::vector3df(0, 3, -6));
 
+    // Shared contact material
+    auto material = chrono_types::make_shared<ChMaterialSurfaceSMC>();
+
     // Create the sentinel sphere
-    auto sentinel = chrono_types::make_shared<ChBody>(ChMaterialSurface::SMC);
+    auto sentinel = chrono_types::make_shared<ChBody>();
 
     sentinel->SetIdentifier(0);
     sentinel->SetMass(1);
@@ -66,7 +69,7 @@ int main(int argc, char* argv[]) {
     sentinel->SetBodyFixed(true);
 
     sentinel->GetCollisionModel()->ClearModel();
-    sentinel->GetCollisionModel()->AddSphere(0.2);
+    sentinel->GetCollisionModel()->AddSphere(material, 0.2);
     sentinel->GetCollisionModel()->BuildModel();
 
     auto sphereS = chrono_types::make_shared<ChSphereShape>();
@@ -79,7 +82,7 @@ int main(int argc, char* argv[]) {
     double mass = 100;
     double radius = 1;
 
-    auto ball = chrono_types::make_shared<ChBody>(ChMaterialSurface::SMC);
+    auto ball = chrono_types::make_shared<ChBody>();
 
     ball->SetIdentifier(1);
     ball->SetMass(mass);
@@ -89,7 +92,7 @@ int main(int argc, char* argv[]) {
     ball->SetBodyFixed(false);
 
     ball->GetCollisionModel()->ClearModel();
-    ball->GetCollisionModel()->AddSphere(radius);
+    ball->GetCollisionModel()->AddSphere(material, radius);
     ball->GetCollisionModel()->BuildModel();
 
     auto sphereB = chrono_types::make_shared<ChSphereShape>();
@@ -107,7 +110,7 @@ int main(int argc, char* argv[]) {
     double length = 2;
     double thickness = 0.1;
 
-    auto ground = chrono_types::make_shared<ChBody>(ChMaterialSurface::SMC);
+    auto ground = chrono_types::make_shared<ChBody>();
 
     ground->SetIdentifier(-1);
     ground->SetMass(1);
@@ -117,7 +120,7 @@ int main(int argc, char* argv[]) {
     ground->SetBodyFixed(true);
 
     ground->GetCollisionModel()->ClearModel();
-    ground->GetCollisionModel()->AddBox(width, thickness, length, ChVector<>(0, -thickness, 0));
+    ground->GetCollisionModel()->AddBox(material, width, thickness, length, ChVector<>(0, -thickness, 0));
     ground->GetCollisionModel()->BuildModel();
 
     auto box = chrono_types::make_shared<ChBoxShape>();

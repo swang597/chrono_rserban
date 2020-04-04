@@ -92,18 +92,20 @@ int main(int argc, char** argv) {
     // Add bodies
     // ----------
 
+    // Shared contact material
+    auto material = chrono_types::make_shared<ChMaterialSurfaceNSC>();
+    material->SetFriction(sliding_friction);
+    material->SetRollingFriction(rolling_friction);
+
 	auto container = std::shared_ptr<ChBody>(system.NewBody());
 	system.Add(container);
 	container->SetPos(ChVector<>(0, 0, 0));
 	container->SetBodyFixed(true);
 	container->SetIdentifier(-1);
 
-	container->GetMaterialSurfaceNSC()->SetFriction(sliding_friction);
-	container->GetMaterialSurfaceNSC()->SetRollingFriction(rolling_friction);
-
 	container->SetCollide(true);
 	container->GetCollisionModel()->ClearModel();
-	utils::AddBoxGeometry(container.get(), ChVector<>(20, .5, 20), ChVector<>(0, -.5, 0));
+	utils::AddBoxGeometry(container.get(), material, ChVector<>(20, .5, 20), ChVector<>(0, -.5, 0));
 	container->GetCollisionModel()->BuildModel();
 
     container->AddAsset(chrono_types::make_shared<ChColorAsset>(ChColor(0.4f, 0.4f, 0.2f)));
@@ -118,12 +120,9 @@ int main(int argc, char** argv) {
 	ball->SetWvel_par(wvel);
 	ball->SetInertiaXX(ChVector<>(inertia));
 
-    ball->GetMaterialSurfaceNSC()->SetFriction(sliding_friction);
-    ball->GetMaterialSurfaceNSC()->SetRollingFriction(rolling_friction);
-
     ball->SetCollide(true);
     ball->GetCollisionModel()->ClearModel();
-	utils::AddSphereGeometry(ball.get(), radius);
+	utils::AddSphereGeometry(ball.get(), material, radius);
 	ball->GetCollisionModel()->BuildModel();
 
     ball->AddAsset(chrono_types::make_shared<ChColorAsset>(ChColor(0.2f, 0.3f, 0.4f)));

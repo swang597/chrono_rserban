@@ -81,7 +81,7 @@ void TimingOutput(chrono::ChSystem* mSys) {
 
 int main(int argc, char** argv) {
     int num_threads = 4;
-    ChMaterialSurface::ContactMethod method = ChMaterialSurface::SMC;
+    ChContactMethod method = ChContactMethod::SMC;
     bool render = true;
     double time_end = 1;
     std::string out_dir = "../TRACK_TEST";
@@ -166,7 +166,7 @@ int main(int argc, char** argv) {
     double time_step;
 
     switch (method) {
-        case ChMaterialSurface::SMC: {
+        case ChContactMethod::SMC: {
             ChSystemParallelSMC* sys = new ChSystemParallelSMC;
             auto contact_force_model = ChSystemSMC::PlainCoulomb;
             bool use_mat_properties = true;
@@ -178,7 +178,7 @@ int main(int argc, char** argv) {
             out_dir += "_DEM_" + std::to_string(contact_force_model) + "_" + std::to_string(use_mat_properties);
             break;
         }
-        case ChMaterialSurface::NSC: {
+        case ChContactMethod::NSC: {
             ChSystemParallelNSC* sys = new ChSystemParallelNSC;
             sys->GetSettings()->solver.solver_mode = SolverMode::SLIDING;
             sys->GetSettings()->solver.max_iteration_normal = 0;
@@ -219,7 +219,7 @@ int main(int argc, char** argv) {
     std::shared_ptr<ChMaterialSurface> material_c;
 
     switch (method) {
-        case ChMaterialSurface::SMC: {
+        case ChContactMethod::SMC: {
             auto mat_c = chrono_types::make_shared<ChMaterialSurfaceSMC>();
             mat_c->SetFriction(mu_g);
             mat_c->SetRestitution(cr_g);
@@ -235,7 +235,7 @@ int main(int argc, char** argv) {
 
             break;
         }
-        case ChMaterialSurface::NSC: {
+        case ChContactMethod::NSC: {
             auto mat_c = chrono_types::make_shared<ChMaterialSurfaceNSC>();
             mat_c->SetFriction(mu_g);
             mat_c->SetRestitution(cr_g);
@@ -254,23 +254,22 @@ int main(int argc, char** argv) {
     container->SetMass(1);
     container->SetBodyFixed(true);
     container->SetCollide(true);
-    container->SetMaterialSurface(material_c);
 
     container->GetCollisionModel()->ClearModel();
     // Bottom box
-    utils::AddBoxGeometry(container.get(), ChVector<>(hdimX, hdimY, hthick), ChVector<>(0, 0, -hthick),
+    utils::AddBoxGeometry(container.get(), material_c, ChVector<>(hdimX, hdimY, hthick), ChVector<>(0, 0, -hthick),
                           ChQuaternion<>(1, 0, 0, 0), true);
     // Front box
-    utils::AddBoxGeometry(container.get(), ChVector<>(hthick, hdimY, hdimZ + hthick),
+    utils::AddBoxGeometry(container.get(), material_c, ChVector<>(hthick, hdimY, hdimZ + hthick),
                           ChVector<>(hdimX + hthick, 0, hdimZ - hthick), ChQuaternion<>(1, 0, 0, 0), false);
     // Rear box
-    utils::AddBoxGeometry(container.get(), ChVector<>(hthick, hdimY, hdimZ + hthick),
+    utils::AddBoxGeometry(container.get(), material_c, ChVector<>(hthick, hdimY, hdimZ + hthick),
                           ChVector<>(-hdimX - hthick, 0, hdimZ - hthick), ChQuaternion<>(1, 0, 0, 0), false);
     // Left box
-    utils::AddBoxGeometry(container.get(), ChVector<>(hdimX, hthick, hdimZ + hthick),
+    utils::AddBoxGeometry(container.get(), material_c, ChVector<>(hdimX, hthick, hdimZ + hthick),
                           ChVector<>(0, hdimY + hthick, hdimZ - hthick), ChQuaternion<>(1, 0, 0, 0), false);
     // Right box
-    utils::AddBoxGeometry(container.get(), ChVector<>(hdimX, hthick, hdimZ + hthick),
+    utils::AddBoxGeometry(container.get(), material_c, ChVector<>(hdimX, hthick, hdimZ + hthick),
                           ChVector<>(0, -hdimY - hthick, hdimZ - hthick), ChQuaternion<>(1, 0, 0, 0), false);
     container->GetCollisionModel()->BuildModel();
 
@@ -282,7 +281,7 @@ int main(int argc, char** argv) {
     std::shared_ptr<ChMaterialSurface> material_g;
 
     switch (method) {
-        case ChMaterialSurface::SMC: {
+        case ChContactMethod::SMC: {
             auto mat_g = chrono_types::make_shared<ChMaterialSurfaceSMC>();
             mat_g->SetFriction(mu_g);
             mat_g->SetRestitution(cr_g);
@@ -298,7 +297,7 @@ int main(int argc, char** argv) {
 
             break;
         }
-        case ChMaterialSurface::NSC: {
+        case ChContactMethod::NSC: {
             auto mat_g = chrono_types::make_shared<ChMaterialSurfaceNSC>();
             mat_g->SetFriction(mu_g);
             mat_g->SetRestitution(cr_g);
@@ -359,7 +358,7 @@ int main(int argc, char** argv) {
     std::shared_ptr<ChMaterialSurface> material_t;
 
     switch (method) {
-        case ChMaterialSurface::SMC: {
+        case ChContactMethod::SMC: {
             auto mat_t = chrono_types::make_shared<ChMaterialSurfaceSMC>();
             mat_t->SetFriction(mu_t);
             mat_t->SetRestitution(cr_t);
@@ -375,7 +374,7 @@ int main(int argc, char** argv) {
 
             break;
         }
-        case ChMaterialSurface::NSC: {
+        case ChContactMethod::NSC: {
             auto mat_t = chrono_types::make_shared<ChMaterialSurfaceNSC>();
             mat_t->SetFriction(mu_t);
             mat_t->SetRestitution(cr_t);
@@ -390,8 +389,6 @@ int main(int argc, char** argv) {
     auto track = std::shared_ptr<ChBody>(system->NewBody());
     system->AddBody(track);
 
-    track->SetMaterialSurface(material_t);
-
     track->SetIdentifier(0);
     track->SetBodyFixed(false);
     track->SetMass(mass_t);
@@ -402,7 +399,7 @@ int main(int argc, char** argv) {
 
     track->GetCollisionModel()->ClearModel();
     for (int i = -npads / 2; i < npads / 2; i++) {
-        utils::AddBoxGeometry(track.get(), ChVector<>(hX, hY, hZ), ChVector<>(i * pitch, 0, 0));
+        utils::AddBoxGeometry(track.get(), material_t, ChVector<>(hX, hY, hZ), ChVector<>(i * pitch, 0, 0));
     }
     track->GetCollisionModel()->BuildModel();
 

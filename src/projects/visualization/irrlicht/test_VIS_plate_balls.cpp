@@ -33,7 +33,6 @@ void AddContainer(ChSystemParallelNSC* sys) {
 
     // Create the containing bin (4 x 4 x 1), tilted about Y
     auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<collision::ChCollisionModelParallel>());
-    bin->SetMaterialSurface(mat);
     bin->SetMass(1);
     bin->SetPos(ChVector<>(0, 0, 0));
     bin->SetRot(Q_from_AngY(CH_C_PI / 20));
@@ -44,14 +43,14 @@ void AddContainer(ChSystemParallelNSC* sys) {
     double hthick = 0.1;
 
     bin->GetCollisionModel()->ClearModel();
-    utils::AddBoxGeometry(bin.get(), ChVector<>(hdim.x(), hdim.y(), hthick), ChVector<>(0, 0, -hthick));
-    utils::AddBoxGeometry(bin.get(), ChVector<>(hthick, hdim.y(), hdim.z()),
+    utils::AddBoxGeometry(bin.get(), mat, ChVector<>(hdim.x(), hdim.y(), hthick), ChVector<>(0, 0, -hthick));
+    utils::AddBoxGeometry(bin.get(), mat, ChVector<>(hthick, hdim.y(), hdim.z()),
                           ChVector<>(-hdim.x() - hthick, 0, hdim.z()));
-    utils::AddBoxGeometry(bin.get(), ChVector<>(hthick, hdim.y(), hdim.z()),
+    utils::AddBoxGeometry(bin.get(), mat, ChVector<>(hthick, hdim.y(), hdim.z()),
                           ChVector<>(hdim.x() + hthick, 0, hdim.z()));
-    utils::AddBoxGeometry(bin.get(), ChVector<>(hdim.x(), hthick, hdim.z()),
+    utils::AddBoxGeometry(bin.get(), mat, ChVector<>(hdim.x(), hthick, hdim.z()),
                           ChVector<>(0, -hdim.y() - hthick, hdim.z()), QUNIT, false);
-    utils::AddBoxGeometry(bin.get(), ChVector<>(hdim.x(), hthick, hdim.z()),
+    utils::AddBoxGeometry(bin.get(), mat, ChVector<>(hdim.x(), hthick, hdim.z()),
                           ChVector<>(0, +hdim.y() + hthick, hdim.z()), QUNIT, false);
     bin->GetCollisionModel()->BuildModel();
 
@@ -76,7 +75,6 @@ void AddFallingBalls(ChSystemParallel* sys) {
             ChVector<> pos(0.4 * ix, 0.4 * iy, 1);
 
             auto ball = chrono_types::make_shared<ChBody>(chrono_types::make_shared<collision::ChCollisionModelParallel>());
-            ball->SetMaterialSurface(ballMat);
 
             ball->SetMass(mass);
             ball->SetInertiaXX(inertia);
@@ -86,7 +84,7 @@ void AddFallingBalls(ChSystemParallel* sys) {
             ball->SetCollide(true);
 
             ball->GetCollisionModel()->ClearModel();
-            utils::AddSphereGeometry(ball.get(), radius);
+            utils::AddSphereGeometry(ball.get(), ballMat, radius);
             ball->GetCollisionModel()->BuildModel();
 
             sys->AddBody(ball);

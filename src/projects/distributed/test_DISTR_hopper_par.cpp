@@ -45,8 +45,7 @@ std::shared_ptr<ChBoundary> AddContainer(ChSystemParallel* sys) {
     mat->SetFriction(mu);
     mat->SetRestitution(cr);
 
-    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>(), ChMaterialSurface::SMC);
-    bin->SetMaterialSurface(mat);
+    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
     bin->SetIdentifier(binId);
     bin->SetMass(1);
     bin->SetPos(ChVector<>(0, 0, 0));
@@ -54,7 +53,7 @@ std::shared_ptr<ChBoundary> AddContainer(ChSystemParallel* sys) {
     bin->SetBodyFixed(true);
     sys->AddBody(bin);
 
-    auto cb = std::shared_ptr<ChBoundary>(new ChBoundary(bin));
+    auto cb = std::shared_ptr<ChBoundary>(new ChBoundary(bin, mat));
 
     // Sloped Wall
     cb->AddPlane(ChFrame<>(ChVector<>(settling_gap + dx / 2, 0, height / 2), Q_from_AngY(-slope_angle)),

@@ -251,10 +251,9 @@ int main(int argc, char* argv[]) {
     mem_mesh->SetAutomaticGravity(!element_gravity);
 
     // FEA mesh contact surface
-    auto mcontactsurf = chrono_types::make_shared<ChContactSurfaceMesh>();
+    auto mcontactsurf = chrono_types::make_shared<ChContactSurfaceMesh>(mysurfmaterial);
     mem_mesh->AddContactSurface(mcontactsurf);
     mcontactsurf->AddFacesFromBoundary(sphere_swept_thickness);  // do this after my_mesh->AddContactSurface
-    mcontactsurf->SetMaterialSurface(mysurfmaterial);            // use the SMC penalty contacts
 
     //--------------------------------------//
     //           ANCF Visualization         //
@@ -295,10 +294,9 @@ int main(int argc, char* argv[]) {
     //--------------------------------------//
 
     // Create a floor as a simple collision primitive:
-    auto mfloor = chrono_types::make_shared<ChBodyEasyBox>(5, 0.1, 5, 700, true);
+    auto mfloor = chrono_types::make_shared<ChBodyEasyBox>(5, 0.1, 5, 700, true, true, mysurfmaterial);
     mfloor->SetPos(ChVector<>(0, -0.1, 0));
     mfloor->SetBodyFixed(true);
-    mfloor->SetMaterialSurface(mysurfmaterial);
     my_system.Add(mfloor);
 
     auto masset_texture = chrono_types::make_shared<ChTexture>();
@@ -306,14 +304,12 @@ int main(int argc, char* argv[]) {
     mfloor->AddAsset(masset_texture);
 
     // two falling objects:
-    auto mcube = chrono_types::make_shared<ChBodyEasyBox>(0.1, 0.1, 0.1, 5000, true);
+    auto mcube = chrono_types::make_shared<ChBodyEasyBox>(0.1, 0.1, 0.1, 5000, true, true, mysurfmaterial);
     mcube->SetPos(ChVector<>(0.6, init_height, 0.6));
-    mcube->SetMaterialSurface(mysurfmaterial);
     my_system.Add(mcube);
 
-    auto msphere = chrono_types::make_shared<ChBodyEasySphere>(0.1, 5000, true);
+    auto msphere = chrono_types::make_shared<ChBodyEasySphere>(0.1, 5000, true, true, mysurfmaterial);
     msphere->SetPos(ChVector<>(0.8, init_height, 0.6));
-    msphere->SetMaterialSurface(mysurfmaterial);
     my_system.Add(msphere);
 
     //--------------------------------------//
