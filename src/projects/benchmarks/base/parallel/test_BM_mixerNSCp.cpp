@@ -80,7 +80,6 @@ MixerTestNSC<N>::MixerTestNSC() : m_system(new ChSystemParallelNSC()), m_step(1e
 
     // The rotating mixer body (1.6 x 0.2 x 0.4)
     auto mixer = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
-    mixer->SetMaterialSurface(mat);
     mixer->SetIdentifier(-200);
     mixer->SetMass(10.0);
     mixer->SetInertiaXX(ChVector<>(50, 50, 50));
@@ -88,7 +87,7 @@ MixerTestNSC<N>::MixerTestNSC() : m_system(new ChSystemParallelNSC()), m_step(1e
     mixer->SetBodyFixed(false);
     mixer->SetCollide(true);
     mixer->GetCollisionModel()->ClearModel();
-    utils::AddBoxGeometry(mixer.get(), ChVector<>(0.8, 0.1, 0.2));
+    utils::AddBoxGeometry(mixer.get(), mat, ChVector<>(0.8, 0.1, 0.2));
     mixer->GetCollisionModel()->BuildModel();
     m_system->AddBody(mixer);
 
@@ -107,7 +106,6 @@ MixerTestNSC<N>::MixerTestNSC() : m_system(new ChSystemParallelNSC()), m_step(1e
         for (int ix = -2; ix < 3; ix++) {
             for (int iy = -2; iy < 3; iy++) {
                 auto ball = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
-                ball->SetMaterialSurface(mat);
                 ball->SetIdentifier(num_balls);
                 ball->SetMass(mass);
                 ball->SetInertiaXX(inertia);
@@ -116,7 +114,7 @@ MixerTestNSC<N>::MixerTestNSC() : m_system(new ChSystemParallelNSC()), m_step(1e
                 ball->SetBodyFixed(false);
                 ball->SetCollide(true);
                 ball->GetCollisionModel()->ClearModel();
-                utils::AddSphereGeometry(ball.get(), radius);
+                utils::AddSphereGeometry(ball.get(), mat, radius);
                 ball->GetCollisionModel()->BuildModel();
                 m_system->AddBody(ball);
                 num_balls++;

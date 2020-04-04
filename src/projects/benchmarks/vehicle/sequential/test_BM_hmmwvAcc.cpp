@@ -59,7 +59,7 @@ HmmwvAccTest::HmmwvAccTest() : m_step_veh(1e-3), m_step_tire(1e-3) {
 
     // Create the HMMWV vehicle, set parameters, and initialize.
     m_hmmwv = new HMMWV_Full();
-    m_hmmwv->SetContactMethod(ChMaterialSurface::SMC);
+    m_hmmwv->SetContactMethod(ChContactMethod::SMC);
     m_hmmwv->SetChassisFixed(false);
     m_hmmwv->SetInitPosition(ChCoordsys<>(ChVector<>(-terrainLength / 2 + 5, 0, 0.7), ChQuaternion<>(1, 0, 0, 0)));
     m_hmmwv->SetPowertrainType(powertrain_model);
@@ -77,10 +77,11 @@ HmmwvAccTest::HmmwvAccTest() : m_step_veh(1e-3), m_step_tire(1e-3) {
 
     // Create the terrain
     m_terrain = new RigidTerrain(m_hmmwv->GetSystem());
-    auto patch = m_terrain->AddPatch(ChCoordsys<>(ChVector<>(0, 0, -5), QUNIT), ChVector<>(terrainLength, 5, 10));
-    patch->SetContactFrictionCoefficient(0.9f);
-    patch->SetContactRestitutionCoefficient(0.01f);
-    patch->SetContactMaterialProperties(2e7f, 0.3f);
+    auto patch_material = chrono_types::make_shared<ChMaterialSurfaceSMC>();
+    patch_material->SetFriction(0.9f);
+    patch_material->SetRestitution(0.01f);
+    patch_material->SetYoungModulus(2e7f);
+    auto patch = m_terrain->AddPatch(patch_material, ChCoordsys<>(ChVector<>(0, 0, -5), QUNIT), ChVector<>(terrainLength, 5, 10));
     patch->SetColor(ChColor(0.8f, 0.8f, 0.5f));
     m_terrain->Initialize();
 
