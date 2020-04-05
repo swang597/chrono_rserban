@@ -12,20 +12,17 @@
 // Authors: Radu Serban
 // =============================================================================
 //
-// Chrono test program for rolling friction
+// Chrono test program for:
+// - collision shapes with different material properties within same model
+// - rolling friction
 //
 // The global reference frame has Y up.
 //
 // =============================================================================
 
-#include "chrono/ChConfig.h"
 #include "chrono/utils/ChUtilsCreators.h"
-
 #include "chrono/physics/ChSystemNSC.h"
-
-#ifdef CHRONO_IRRLICHT
 #include "chrono_irrlicht/ChIrrApp.h"
-#endif
 
 using namespace chrono;
 
@@ -49,7 +46,7 @@ int main(int argc, char* argv[]) {
 
     double tolerance = 0;
     double contact_recovery_speed = 1e8;
-    double collision_envelope = .05 * radius;
+    double collision_envelope = 0.02 * radius;
 
     // -----------------
     // Create the system
@@ -69,11 +66,6 @@ int main(int argc, char* argv[]) {
     // Add bodies
     // ----------
 
-    // Shared contact material
-    auto material = chrono_types::make_shared<ChMaterialSurfaceNSC>();
-    material->SetFriction(sliding_friction);
-    material->SetRollingFriction(rolling_friction);
-
     auto container = std::shared_ptr<ChBody>(system.NewBody());
     system.Add(container);
     container->SetPos(ChVector<>(0, 0, 0));
@@ -83,32 +75,42 @@ int main(int argc, char* argv[]) {
     container->SetCollide(true);
     container->GetCollisionModel()->SetEnvelope(collision_envelope);
     container->GetCollisionModel()->ClearModel();
-    utils::AddBoxGeometry(container.get(), material, ChVector<>(20, .5, 20), ChVector<>(0, -.5, 0));
+    for (int i = 0; i < 5; i++) {
+        auto material = chrono_types::make_shared<ChMaterialSurfaceNSC>();
+        material->SetFriction(0.15f * (i + 1));
+        material->SetRollingFriction(0.05f * (i + 1) / 5.0f);
+        utils::AddBoxGeometry(container.get(), material, ChVector<>(20, 0.5, 1.8 * radius),
+                              ChVector<>(0, -0.5, i * 4.0 * radius));
+    }
     container->GetCollisionModel()->BuildModel();
 
     container->AddAsset(chrono_types::make_shared<ChColorAsset>(ChColor(0.4f, 0.4f, 0.2f)));
 
-    auto ball = std::shared_ptr<ChBody>(system.NewBody());
-    ChVector<> pos = ChVector<>(0, radius, 0);
-    ChVector<> vel = ChVector<>(initial_linspeed, 0, 0);
-    ChVector<> wvel = ChVector<>(0, 0, -initial_angspeed);
-    ball->SetMass(mass);
-    ball->SetPos(pos);
-    ball->SetPos_dt(vel);
-    ball->SetWvel_par(wvel);
-    ball->SetInertiaXX(ChVector<>(inertia));
+    auto ball_material = chrono_types::make_shared<ChMaterialSurfaceNSC>();
+    ball_material->SetFriction(1.0);
+    ball_material->SetRollingFriction(1.0);
 
-    ball->SetCollide(true);
-    ball->GetCollisionModel()->SetEnvelope(collision_envelope);
-    ball->GetCollisionModel()->ClearModel();
-    utils::AddSphereGeometry(ball.get(), material, radius);
-    ball->GetCollisionModel()->BuildModel();
+    std::vector<std::shared_ptr<ChBody>> balls;
+    for (int i = 0; i < 5; i++) {
+        auto ball = std::shared_ptr<ChBody>(system.NewBody());
+        ball->SetMass(mass);
+        ball->SetPos(ChVector<>(-9, radius, 4.0 * i * radius));
+        ball->SetPos_dt(ChVector<>(initial_linspeed, 0, 0));
+        ball->SetWvel_par(ChVector<>(0, 0, -initial_angspeed));
+        ball->SetInertiaXX(ChVector<>(inertia));
 
-    ball->AddAsset(chrono_types::make_shared<ChTexture>(GetChronoDataFile("bluwhite.png")));
+        ball->SetCollide(true);
+        ball->GetCollisionModel()->SetEnvelope(collision_envelope);
+        ball->GetCollisionModel()->ClearModel();
+        utils::AddSphereGeometry(ball.get(), ball_material, radius);
+        ball->GetCollisionModel()->BuildModel();
 
-    system.AddBody(ball);
+        ball->AddAsset(chrono_types::make_shared<ChTexture>(GetChronoDataFile("bluwhite.png")));
 
-#ifdef CHRONO_IRRLICHT
+        system.AddBody(ball);
+        balls.push_back(ball);
+    }
+
     // -------------------------------
     // Create the visualization window
     // -------------------------------
@@ -121,39 +123,22 @@ int main(int argc, char* argv[]) {
 
     application.AssetBindAll();
     application.AssetUpdateAll();
-#endif
 
     // ---------------
     // Simulate system
     // ---------------
 
-    double time_end = 20.0;
-    double time_out = 2.5;
-    bool output = false;
+    while (application.GetDevice()->run()) {
+        std::cout << "time: " << system.GetChTime();
+        for (auto ball : balls)
+            std::cout << "   " << ball->GetPos().y();
+        std::cout << std::endl;
 
-    while (system.GetChTime() < time_end) {
+        application.BeginScene();
+        application.DrawAll();
+        application.EndScene();
+
         system.DoStepDynamics(time_step);
-
-        auto pos = ball->GetPos();
-        printf("T: %f  Pos: %f %f %f\n", system.GetChTime(), pos.x(), pos.y(), pos.z());
-
-        // if (!output && system.GetChTime() >= time_out) {
-        //    for (int i = 1; i <= 10; i++) {
-        //        auto pos = system.Get_bodylist()->at(i)->GetPos();
-        //        std::cout << pos.x() << std::endl;
-        //    }
-        //    output = true;
-        //}
-
-#ifdef CHRONO_IRRLICHT
-        if (application.GetDevice()->run()) {
-            application.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-            application.DrawAll();
-            application.EndScene();
-        } else {
-            return 1;
-        }
-#endif
     }
 
     return 0;
