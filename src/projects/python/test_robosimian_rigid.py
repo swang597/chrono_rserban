@@ -26,7 +26,6 @@ try:
 except:
    print('Could not import ChronoIrrlicht')
 
-chrono.SetChronoDataPath('C:/codes/ChronoRobosimian/data/')
 time_step = 1e-3
 
 # Drop the robot on rigid terrain
@@ -36,7 +35,7 @@ drop = True
 mode = robosimian.LocomotionMode_WALK
 
 # Contact method (system type)
-contact_method = chrono.ChMaterialSurfaceSMC()
+contact_method = chrono.ChContactMethod_SMC
 
 # Phase durations
 duration_pose = 1.0          # Interval to assume initial pose
@@ -58,6 +57,7 @@ povray_output = False
 image_output = False
 
 LimbList = [robosimian.FL, robosimian.FR, robosimian.RL, robosimian.RR]
+
 # =============================================================================
 
 class RayCaster:
@@ -81,7 +81,6 @@ class RayCaster:
         self.m_glyphs.SetDrawMode(chrono.ChGlyphs.GLYPH_POINT)
         self.m_body.AddAsset(self.m_glyphs)
 
-
     def Update(self):
         m_points = []
         direc = self.m_origin.GetA().Get_A_Zaxis()
@@ -104,17 +103,24 @@ class RayCaster:
         for point_id in range(m_points.size()) :
             self.m_glyphs.SetGlyphPoint(point_id, m_points[point_id], chrono.ChColor(1, 1, 0))
         
-
-
 # =============================================================================
 
-def CreateTerrain(robot, length, width, height, offset) :
+def CreateTerrain(sys, length, width, height, offset) :
+
+    ground_mat = chrono.ChMaterialSurface.DefaultMaterial(sys.GetContactMethod())
+    ground_mat.SetFriction(0.8)
+    ground_mat.SetRestitution(0)
+
+    if sys.GetContactMethod() == chrono.ChContactMethod_SMC:
+        matSMC = chrono.CastToChMaterialSurfaceSMC(ground_mat)
+        matSMC.SetYoungModulus(1e7)
+
     ground = robot.GetSystem().NewBody()
     ground.SetBodyFixed(True)
     ground.SetCollide(True)
 
     ground.GetCollisionModel().ClearModel()
-    ground.GetCollisionModel().AddBox(length / 2, width / 2, 0.1, chrono.ChVectorD(offset, 0, height - 0.1))
+    ground.GetCollisionModel().AddBox(ground_mat, length / 2, width / 2, 0.1, chrono.ChVectorD(offset, 0, height - 0.1))
     ground.GetCollisionModel().BuildModel()
 
     box = chrono.ChBoxShape()
@@ -129,7 +135,7 @@ def CreateTerrain(robot, length, width, height, offset) :
 
     ground.AddAsset(chrono.ChColorAsset(0.8, 0.8, 0.8))
 
-    robot.GetSystem().AddBody(ground)
+    sys.AddBody(ground)
 
     return ground
 
@@ -138,82 +144,19 @@ def SetContactProperties(robot):
     friction = 0.8
     Y = 1e7
     cr = 0.0
-
-    CM = robot.GetSystem().GetContactMethod()
     
-    #if  isinstance(CM, chrono.ChMaterialCompositeNSC):
-    if  CM == 0:
-        robot.GetSledBody().GetMaterialSurfaceNSC().SetFriction(friction)
-        robot.GetWheelBody(robosimian.FR).GetMaterialSurfaceNSC().SetFriction(friction)
-        robot.GetWheelBody(robosimian.FL).GetMaterialSurfaceNSC().SetFriction(friction)
-        robot.GetWheelBody(robosimian.RR).GetMaterialSurfaceNSC().SetFriction(friction)
-        robot.GetWheelBody(robosimian.RL).GetMaterialSurfaceNSC().SetFriction(friction)
+    robot.GetSledContactMaterial().SetFriction(friction)
+    robot.GetSledContactMaterial().SetRestitution(cr)
 
-        
-    elif  CM == 1:
-    #elif  isinstance(CM, chrono.ChMaterialCompositeSMC):
-        robot.GetSledBody().GetMaterialSurfaceSMC().SetFriction(friction)
-        robot.GetWheelBody(robosimian.FR).GetMaterialSurfaceSMC().SetFriction(friction)
-        robot.GetWheelBody(robosimian.FL).GetMaterialSurfaceSMC().SetFriction(friction)
-        robot.GetWheelBody(robosimian.RR).GetMaterialSurfaceSMC().SetFriction(friction)
-        robot.GetWheelBody(robosimian.RL).GetMaterialSurfaceSMC().SetFriction(friction)
+    robot.GetWheelContactMaterial().SetFriction(friction)
+    robot.GetWheelContactMaterial().SetRestitution(cr)
 
-        robot.GetSledBody().GetMaterialSurfaceSMC().SetYoungModulus(Y)
-        robot.GetWheelBody(robosimian.FR).GetMaterialSurfaceSMC().SetYoungModulus(Y)
-        robot.GetWheelBody(robosimian.FL).GetMaterialSurfaceSMC().SetYoungModulus(Y)
-        robot.GetWheelBody(robosimian.RR).GetMaterialSurfaceSMC().SetYoungModulus(Y)
-        robot.GetWheelBody(robosimian.RL).GetMaterialSurfaceSMC().SetYoungModulus(Y)
-
-        robot.GetSledBody().GetMaterialSurfaceSMC().SetRestitution(cr)
-        robot.GetWheelBody(robosimian.FR).GetMaterialSurfaceSMC().SetRestitution(cr)
-        robot.GetWheelBody(robosimian.FL).GetMaterialSurfaceSMC().SetRestitution(cr)
-        robot.GetWheelBody(robosimian.RR).GetMaterialSurfaceSMC().SetRestitution(cr)
-        robot.GetWheelBody(robosimian.RL).GetMaterialSurfaceSMC().SetRestitution(cr)
-
-    else :    
-        raise Exception('Unvalid contact method')
+    if robot.GetSystem().GetContactMethod() == chrono.ChContactMethod_SMC:
+        sled_matSMC = chrono.CastToChMaterialSurfaceSMC(robot.GetSledContactMaterial())
+        sled_matSMC.SetYoungModulus(Y)
+        wheel_matSMC = chrono.CastToChMaterialSurfaceSMC(robot.GetWheelContactMaterial())
+        wheel_matSMC.SetYoungModulus(Y)    
     
-
-def SetGroundContactProperties(ground, sys) :
-    friction = 0.8
-    Y = 1e7
-    cr = 0.0
-    CM = sys.GetContactMethod()
- 
-    if  CM == 0:
-    #if  isinstance(CM, chrono.ChMaterialCompositeNSC):
-        ground.GetMaterialSurfaceNSC().SetFriction(friction)
-        
-    elif  CM == 1:
-    #elif  isinstance(CM, chrono.ChMaterialCompositeNSC):
-        ground.GetMaterialSurfaceSMC().SetFriction(friction)
-        ground.GetMaterialSurfaceSMC().SetYoungModulus(Y)
-        ground.GetMaterialSurfaceSMC().SetRestitution(cr)
-        
-    else:
-        
-        raise Exception('Unvalid contact method')
-    
-
-def get_state(bot):
-    angles = []
-    omegas = []
-    torques = []
-    for limb in LimbList:
-        limbangles = bot.GetMotorAngles(limb)
-        angles.append(limbangles)
-        limbomegas = bot.GetMotorOmegas(limb)
-        omegas.append(limbomegas)
-        limbtorques = bot.GetMotorTorques(limb)
-        torques.append(limbtorques)
-    states = [angles, omegas, torques]
-    return states
-
-def Actuate(arr):
-    assert arr.size == 32
-    arr_rs = arr.reshape([4,8])
-    actuation = tuple(map(tuple, arr_rs))
-    return actuation
 # =============================================================================
 
 # ------------
@@ -228,23 +171,20 @@ time_end = time_start + duration_sim                      # end simulation after
 # Create system
 # -------------
 
-if  isinstance(contact_method, chrono.ChMaterialSurfaceNSC):
+if  contact_method == chrono.ChContactMethod_NSC :
         my_sys = chrono.ChSystemNSC()
         chrono.ChCollisionModel.SetDefaultSuggestedEnvelope(0.001)
         chrono.ChCollisionModel.SetDefaultSuggestedMargin(0.001)
 
-if  isinstance(contact_method, chrono.ChMaterialSurfaceSMC):
+if  contact_method == chrono.ChContactMethod_SMC :
 		my_sys = chrono.ChSystemSMC()
 
 
 
-my_sys.SetMaxItersSolverSpeed(200)
-#my_sys.SetMaxiter(200)
-#my_sys.SetMaxItersSolverStab(1000)
+my_sys.SetSolverMaxIterations(200)
 my_sys.SetSolverType(chrono.ChSolver.Type_BARZILAIBORWEIN)
 
 my_sys.Set_G_acc(chrono.ChVectorD(0, 0, -9.8))
-##my_sys.Set_G_acc(ChVector<double>(0, 0, 0))
 
 # -----------------------
 # Create RoboSimian robot
@@ -290,9 +230,9 @@ robot.Initialize(chrono.ChCoordsysD(chrono.ChVectorD(0, 0, 0), chrono.Q_from_Ang
 
 if mode == robosimian.LocomotionMode_WALK:
 		driver = robosimian.Driver(
-			"",                                                           # start input file
+			"",                                                                  # start input file
 			chrono.GetChronoDataFile("robosimian/actuation/walking_cycle.txt"),  # cycle input file
-			"",                                                           # stop input file
+			"",                                                                  # stop input file
 			True)
 elif mode == robosimian.LocomotionMode_SCULL:
 		driver = robosimian.Driver(
@@ -322,28 +262,23 @@ driver.RegisterPhaseChangeCallback(cbk)
 
 driver.SetTimeOffsets(duration_pose, duration_settle_robot)
 robot.SetDriver(driver)
-driver.SetDrivingMode(True)
 
 # -------------------------------
 # Cast rays into collision models
 # -------------------------------
 
-##RayCaster caster(my_sys, ChFrame<>(chrono.ChVectorD(2, 0, -1), Q_from_AngY(-CH_C_PI_2)), ChVector2<>(2.5, 2.5),
-#/ 0.02)
 caster = RayCaster(my_sys, chrono.ChFrameD(chrono.ChVectorD(0, -2, -1), chrono.Q_from_AngX(-chrono.CH_C_PI_2)), [2.5, 2.5], 0.02)
 
 # -------------------------------
 # Create the visualization window
 # -------------------------------
 
-application = chronoirr.ChIrrApp(my_sys, "RoboSimian - Rigid terrain",
-									chronoirr.dimension2du(800, 600))
+application = chronoirr.ChIrrApp(my_sys, "RoboSimian - Rigid terrain", chronoirr.dimension2du(800, 600))
 application.AddTypicalLogo(chrono.GetChronoDataPath() + 'logo_pychrono_alpha.png')
 application.AddTypicalSky()
 application.AddTypicalCamera(chronoirr.vector3df(1, -2.75, 0.2), chronoirr.vector3df(1, 0, 0))
 application.AddTypicalLights(chronoirr.vector3df(100, 100, 100), chronoirr.vector3df(100, -100, 80))
-application.AddLightWithShadow(chronoirr.vector3df(10, -6, 3), chronoirr.vector3df(0, 0, 0), 3, -10, 10,
-							   40, 512)
+application.AddLightWithShadow(chronoirr.vector3df(10, -6, 3), chronoirr.vector3df(0, 0, 0), 3, -10, 10, 40, 512)
 
 application.AssetBindAll()
 application.AssetUpdateAll()
@@ -374,14 +309,9 @@ render_frame = 0
 
 terrain_created = False
 
-angle_save = np.zeros([8,1])
-omega_save = np.zeros([8,1])
-torque_save = np.zeros([8,1])
-saved = False
-pippo = []
-
 while (application.GetDevice().run()) :
 	##caster.Update()
+
     if (drop and not terrain_created and my_sys.GetChTime() > time_create_terrain) :
 		# Set terrain height
         z = robot.GetWheelPos(robosimian.FR).z - 0.15
@@ -393,75 +323,38 @@ while (application.GetDevice().run()) :
         # Create terrain
         hdim = chrono.ChVectorD(length / 2, width / 2, 0.1)
         loc = chrono.ChVectorD(length / 4, 0, z - 0.1)
-        ground = CreateTerrain(robot, length, width, z, length / 4)
+        ground = CreateTerrain(my_sys, length, width, z, length / 4)
         SetContactProperties(robot)
-        SetGroundContactProperties(ground, my_sys)
+
         application.AssetBind(ground)
         application.AssetUpdate(ground)
+
         robot.GetChassisBody().SetBodyFixed(False)
         terrain_created = True
-	
+
 
     application.BeginScene(True, True, chronoirr.SColor(255, 140, 161, 192))
     application.DrawAll()
 
-    if (data_output and sim_frame % output_steps == 0) :
+    if data_output and sim_frame % output_steps == 0 :
         robot.Output()
-        if  my_sys.GetChTime() > time_create_terrain + 10: 
-            #angle_save = np.concatenate([np.amax(angle_save,1).reshape((8, 1)), np.amin(angle_save,1).reshape((8, 1))],1)
-            angle_save.dump(out_dir+'/angles.dat')
-            #omega_save = np.concatenate([np.amax(omega_save,1).reshape((8, 1)), np.amin(omega_save,1).reshape((8, 1))],1)
-            omega_save.dump(out_dir+'/omegas.dat')
-            #torque_save = np.concatenate([np.amax(torque_save,1).reshape((8, 1)), np.amin(torque_save,1).reshape((8, 1))],1)
-            torque_save.dump(out_dir+'/torques.dat')
-            saved = True
 
-# Output POV-Ray date and/or snapshot images
-    if(sim_frame % render_steps == 0) :
+    # Output POV-Ray date and/or snapshot images
+    if sim_frame % render_steps == 0 :
         if (povray_output) :
             filename = pov_dir + '/data_' + str(render_frame + 1) +'04d.dat' 
             chrono.WriteShapesPovray(my_sys, filename)
-		
-        if (image_output) :
+
+        if image_output :
             filename = img_dir + '/img_' + str(render_frame + 1) +'04d.jpg' 
             image = application.GetVideoDriver().createScreenShot()
-            if (image) :
+            if image :
                 application.GetVideoDriver().writeImageToFile(image, filename)
                 image.drop()
-			
-		
 
         render_frame += 1
-	
 
-	##time = my_sys.GetChTime()
-	##A = CH_C_PI / 6
-	##freq = 2
-	##val = 0.5 * A * (1 - std::cos(CH_C_2PI * freq * time))
-	##robot.Activate(robosimian::FR, "joint2", time, val)
-	##robot.Activate(robosimian::RL, "joint5", time, val)
-
-    if my_sys.GetChTime() > time_create_terrain +1:
-        state = get_state(robot)
-        angles = np.reshape(state[0], (4, 8)).T
-        angle_save = np.concatenate([angle_save, angles],1)
-        omegas = np.reshape(state[1], (4, 8)).T
-        omega_save = np.concatenate([omega_save, omegas],1)
-        torques = np.reshape(state[2], (4, 8)).T
-        torque_save = np.concatenate([torque_save, torques],1)
-    #pippo.append([state[2][0][2]])
-    x0 = np.asarray(driver.GetActuation()).flatten()
-    delta_x = (np.random.rand(32)-0.5)*2*7e-3
-    actuation = Actuate(x0+delta_x)
-    driver.SetActuation(actuation)
     robot.DoStepDynamics(time_step)
-    if saved:
-        application.GetDevice().closeDevice()
-        del application
-        break
-	##if (my_sys.GetNcontacts() > 0) {
-	##    robot.ReportContacts()
-	##}
 
     sim_frame += 1
 
