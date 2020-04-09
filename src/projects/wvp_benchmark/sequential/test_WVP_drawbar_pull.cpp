@@ -285,7 +285,7 @@ int main(int argc, char* argv[]) {
     terrain->SetPlotType(vehicle::SCMDeformableTerrain::PLOT_SINKAGE, 0, 0.15);
     terrain->SetAutomaticRefinement(true);
     terrain->SetAutomaticRefinementResolution(0.1);
-    terrain->EnableMovingPatch(wvp.GetChassisBody(), ChVector<>(-2, 0, 0), 5, 3);
+    terrain->AddMovingPatch(wvp.GetChassisBody(), ChVector<>(-2, 0, 0), 5, 3);
     terrain->Initialize(0.0, terrainLength, 5.0, divX, divY);
 
 #ifdef USE_IRRLICHT

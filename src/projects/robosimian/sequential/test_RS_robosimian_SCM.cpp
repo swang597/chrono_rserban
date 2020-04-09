@@ -215,7 +215,7 @@ std::shared_ptr<vehicle::SCMDeformableTerrain> CreateTerrain(robosimian::RoboSim
     terrain->SetAutomaticRefinementResolution(1.0 / 64);
 
     // Enable moving patch feature
-    terrain->EnableMovingPatch(robot->GetChassisBody(), ChVector<>(0, 0, 0), 3.0, 2.0);
+    terrain->AddMovingPatch(robot->GetChassisBody(), ChVector<>(0, 0, 0), 3.0, 2.0);
 
     return terrain;
 }

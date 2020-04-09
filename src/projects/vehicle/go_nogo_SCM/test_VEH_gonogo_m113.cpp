@@ -349,7 +349,7 @@ int main(int argc, char* argv[]) {
     terrain.SetAutomaticRefinementResolution(0.02);
 
     // Enable moving patch feature
-    terrain.EnableMovingPatch(m113.GetChassisBody(), ChVector<>(-2, 0, 0), 6.5, 3.5);
+    terrain.AddMovingPatch(m113.GetChassisBody(), ChVector<>(-2, 0, 0), 6.5, 3.5);
 
 #ifdef CHRONO_IRRLICHT
 
