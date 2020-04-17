@@ -54,7 +54,7 @@ const std::string out_dir = "../HMMWV_FRICTION_VARIABLE";
 class MyFrictionFunctor : public ChTerrain::FrictionFunctor {
   public:
     MyFrictionFunctor() : m_friction_left(0.2f), m_friction_right(0.9f) {}
-    virtual float operator()(double x, double y) { return y > 0 ? m_friction_left : m_friction_right; }
+    virtual float operator()(const ChVector<>& loc) override { return loc.y() > 0 ? m_friction_left : m_friction_right; }
     float m_friction_left;
     float m_friction_right;
 };
@@ -93,7 +93,7 @@ int main(int argc, char* argv[]) {
     minfo.Y = 2e7f;
     auto mat = minfo.CreateMaterial(sys.GetContactMethod());
 
-    auto patch = terrain.AddPatch(mat, ChCoordsys<>(ChVector<>(0, 0, -0.1), QUNIT), ChVector<>(200, 10, 0.2));
+    auto patch = terrain.AddPatch(mat, ChVector<>(0, 0, 0), ChVector<>(0, 0, 1), 200, 10);
     patch->SetColor(ChColor(0.8f, 0.8f, 1.0f));
     patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 10);
 

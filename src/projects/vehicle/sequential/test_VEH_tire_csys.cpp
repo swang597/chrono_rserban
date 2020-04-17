@@ -89,9 +89,9 @@ class MechanismISO {
     class Terrain : public ChTerrain {
       public:
         Terrain() {}
-        virtual double GetHeight(double x, double y) const override { return 0; }
-        virtual ChVector<> GetNormal(double x, double y) const override { return ChVector<>(0, 0, 1); }
-        virtual float GetCoefficientFriction(double x, double y) const override { return 0.8f; }
+        virtual double GetHeight(const ChVector<>& loc) const override { return 0; }
+        virtual ChVector<> GetNormal(const ChVector<>& loc) const override { return ChVector<>(0, 0, 1); }
+        virtual float GetCoefficientFriction(const ChVector<>& loc) const override { return 0.8f; }
     };
 
     ChSystem* m_sys;
@@ -260,9 +260,9 @@ class MechanismYUP {
     class Terrain : public ChTerrain {
       public:
         Terrain() {}
-        virtual double GetHeight(double x, double y) const override { return 0; }
-        virtual ChVector<> GetNormal(double x, double y) const override { return ChVector<>(0, 0, 1); }
-        virtual float GetCoefficientFriction(double x, double y) const override { return 0.8f; }
+        virtual double GetHeight(const ChVector<>& loc) const override { return 0; }
+        virtual ChVector<> GetNormal(const ChVector<>& loc) const override { return ChVector<>(0, 0, 1); }
+        virtual float GetCoefficientFriction(const ChVector<>& loc) const override { return 0.8f; }
     };
 
     ChSystem* m_sys;

@@ -62,7 +62,7 @@ Framework::~Framework() {
 
 ChVector<> Framework::GetLocation(const GPScoord& gps) const {
     auto loc = m_scene.FromGPS(gps);
-    auto h = m_terrain->GetHeight(loc.x(), loc.y());
+    auto h = m_terrain->GetHeight(ChVector<>(loc.x(), loc.y(), 0));
     return ChVector<>(loc.x(), loc.y(), h);
 }
 

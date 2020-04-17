@@ -183,7 +183,7 @@ int main(int argc, char* argv[]) {
     patch_mat->SetRestitution(0.01f);
     double terrain_height = -tire->GetRadius() - 0.01;
     auto terrain = chrono_types::make_shared<RigidTerrain>(&system);
-    auto patch = terrain->AddPatch(patch_mat, ChCoordsys<>(ChVector<>(0, 0, terrain_height - 0.2), QUNIT), ChVector<>(100, 2, 0.4));
+    auto patch = terrain->AddPatch(patch_mat, ChVector<>(0, 0, 0), ChVector<>(0, 0, 1), 100, 2);
     patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 4);
     terrain->Initialize();
 

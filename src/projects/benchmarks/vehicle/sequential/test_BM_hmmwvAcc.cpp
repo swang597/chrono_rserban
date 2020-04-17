@@ -81,7 +81,7 @@ HmmwvAccTest::HmmwvAccTest() : m_step_veh(1e-3), m_step_tire(1e-3) {
     patch_material->SetFriction(0.9f);
     patch_material->SetRestitution(0.01f);
     patch_material->SetYoungModulus(2e7f);
-    auto patch = m_terrain->AddPatch(patch_material, ChCoordsys<>(ChVector<>(0, 0, -5), QUNIT), ChVector<>(terrainLength, 5, 10));
+    auto patch = m_terrain->AddPatch(patch_material, ChVector<>(0, 0, 0), ChVector<>(0, 0, 1), terrainLength, 5);
     patch->SetColor(ChColor(0.8f, 0.8f, 0.5f));
     m_terrain->Initialize();
 

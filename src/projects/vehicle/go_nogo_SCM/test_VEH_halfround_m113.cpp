@@ -156,7 +156,7 @@ int main(int argc, char* argv[]) {
     material->SetPoissonRatio(nu);
 
     RigidTerrain terrain(vehicle.GetSystem());
-    auto patch = terrain.AddPatch(material, ChCoordsys<>(ChVector<>(0, 0, -5), QUNIT), ChVector<>(400, 10, 10));
+    auto patch = terrain.AddPatch(material, ChVector<>(0, 0, 0), ChVector<>(0, 0, 1), 400, 10);
     patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 800, 20);
     terrain.Initialize();
 
