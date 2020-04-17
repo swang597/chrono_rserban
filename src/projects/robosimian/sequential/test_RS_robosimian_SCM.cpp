@@ -221,7 +221,7 @@ std::shared_ptr<vehicle::SCMDeformableTerrain> CreateTerrain(robosimian::RoboSim
 }
 
 void SetContactProperties(robosimian::RoboSimian* robot) {
-    assert(robot->GetSystem()->GetContactMethod() == ChMaterialSurface::SMC);
+    assert(robot->GetSystem()->GetContactMethod() == ChContactMethod::SMC);
 
     float friction = 0.4f;
     float Y = 1e7f;
