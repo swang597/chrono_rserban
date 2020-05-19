@@ -139,13 +139,13 @@ int main(int argc, char* argv[]) {
     body->AddAsset(chrono_types::make_shared<ChColorAsset>(0.6f, 0, 0));
 
     // Create the spring between body and ground. The spring end points are specified in the body relative frames.
-    MySpringForce force;
+    auto force = std::make_shared<MySpringForce>();
     MySpringRHS rhs;
 
     auto spring = chrono_types::make_shared<ChLinkTSDA>();
     spring->Initialize(body, ground, true, ChVector<>(0, 0, 0), ChVector<>(0, 0, 0), false, rest_length);
     spring->IsStiff(use_jacobians);
-    spring->RegisterForceFunctor(&force);
+    spring->RegisterForceFunctor(force);
     spring->RegisterODE(&rhs);
     system.AddLink(spring);
     spring->AddAsset(chrono_types::make_shared<ChColorAsset>(0.5f, 0.5f, 0.5f));

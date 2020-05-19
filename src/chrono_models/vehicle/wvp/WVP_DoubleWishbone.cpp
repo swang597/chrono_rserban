@@ -603,30 +603,17 @@ double WVP_ShockForce::interpolate2D(double x, double y, std::map<double, std::s
 // Constructors
 // -----------------------------------------------------------------------------
 WVP_DoubleWishboneFront::WVP_DoubleWishboneFront(const std::string& name) : ChDoubleWishbone(name, true) {
-    m_springForceCB = new WVP_SpringForce(0, m_springRestLength, m_springPreload);
+    m_springForceCB = chrono_types::make_shared<WVP_SpringForce>(0, m_springRestLength, m_springPreload);
     ////m_springForceCB = new LinearSpringForce(m_springCoefficient);
 
-    m_shockForceCB = new WVP_ShockForce(0, m_springRestLength);
+    m_shockForceCB = chrono_types::make_shared<WVP_ShockForce>(0, m_springRestLength);
 }
 
 WVP_DoubleWishboneRear::WVP_DoubleWishboneRear(const std::string& name) : ChDoubleWishbone(name, true) {
-    m_springForceCB = new WVP_SpringForce(1, m_springRestLength, m_springPreload);
+    m_springForceCB = chrono_types::make_shared<WVP_SpringForce>(1, m_springRestLength, m_springPreload);
     ////m_springForceCB = new LinearSpringForce(m_springCoefficient);
 
-    m_shockForceCB = new WVP_ShockForce(1, m_springRestLength);
-}
-
-// -----------------------------------------------------------------------------
-// Destructors
-// -----------------------------------------------------------------------------
-WVP_DoubleWishboneFront::~WVP_DoubleWishboneFront() {
-    delete m_springForceCB;
-    delete m_shockForceCB;
-}
-
-WVP_DoubleWishboneRear::~WVP_DoubleWishboneRear() {
-    delete m_springForceCB;
-    delete m_shockForceCB;
+    m_shockForceCB = chrono_types::make_shared<WVP_ShockForce>(1, m_springRestLength);
 }
 
 // -----------------------------------------------------------------------------
@@ -645,8 +632,8 @@ void WVP_DoubleWishboneFront::Initialize(std::shared_ptr<ChBodyAuxRef> chassis,
     // Note that this can only be done here, after these elements were created.
     GetShock(VehicleSide::LEFT)->SetRestLength(m_springRestLength);
     GetShock(VehicleSide::RIGHT)->SetRestLength(m_springRestLength);
-    static_cast<WVP_ShockForce*>(m_shockForceCB)->m_shock_left = GetShock(VehicleSide::LEFT);
-    static_cast<WVP_ShockForce*>(m_shockForceCB)->m_shock_right = GetShock(VehicleSide::RIGHT);
+    std::static_pointer_cast<WVP_ShockForce>(m_shockForceCB)->m_shock_left = GetShock(VehicleSide::LEFT);
+    std::static_pointer_cast<WVP_ShockForce>(m_shockForceCB)->m_shock_right = GetShock(VehicleSide::RIGHT);
 }
 
 void WVP_DoubleWishboneRear::Initialize(std::shared_ptr<ChBodyAuxRef> chassis,
@@ -662,8 +649,8 @@ void WVP_DoubleWishboneRear::Initialize(std::shared_ptr<ChBodyAuxRef> chassis,
     // Note that this can only be done here, after these elements were created.
     GetShock(VehicleSide::LEFT)->SetRestLength(m_springRestLength);
     GetShock(VehicleSide::RIGHT)->SetRestLength(m_springRestLength);
-    static_cast<WVP_ShockForce*>(m_shockForceCB)->m_shock_left = GetShock(VehicleSide::LEFT);
-    static_cast<WVP_ShockForce*>(m_shockForceCB)->m_shock_right = GetShock(VehicleSide::RIGHT);
+    std::static_pointer_cast<WVP_ShockForce>(m_shockForceCB)->m_shock_left = GetShock(VehicleSide::LEFT);
+    std::static_pointer_cast<WVP_ShockForce>(m_shockForceCB)->m_shock_right = GetShock(VehicleSide::RIGHT);
 }
 
 // -----------------------------------------------------------------------------

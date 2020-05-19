@@ -30,6 +30,7 @@ set(LINKER_FLAGS "${LINKER_FLAGS} ${CH_MKL_LINK_FLAGS}")
 list(APPEND LIBS "ChronoEngine_mkl")
 
 list(APPEND LIBS "ChronoEngine_vehicle")
+list(APPEND LIBS "ChronoEngine_vehicle_irrlicht")
 list(APPEND LIBS "ChronoModels_vehicle")
 
 # ------------------------------------------------------------------------------

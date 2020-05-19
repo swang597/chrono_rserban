@@ -135,7 +135,7 @@ int main(int argc, char* argv[]) {
     application.AssetUpdateAll();
 
     // Custom callback
-    system.GetCollisionSystem()->RegisterNarrowphaseCallback(new Monitor(sentinel));
+    system.GetCollisionSystem()->RegisterNarrowphaseCallback(chrono_types::make_shared<Monitor>(sentinel));
 
     // Simulation loop
     double time_step = 1e-3;

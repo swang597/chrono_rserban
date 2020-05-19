@@ -232,7 +232,7 @@ int main(int argc, char** argv) {
     // Simulate system
     // ---------------
 
-    ContactManager cmanager(box);
+    auto cmanager = chrono_types::make_shared<ContactManager>(box);
 
     while (system.GetChTime() < time_end) {
         // Advance dynamics
@@ -243,7 +243,7 @@ int main(int argc, char** argv) {
         // Process contacts
         if (report_contacts && system.GetNcontacts() > 0) {
             ReportContacts(system, box->GetId());
-            system.GetContactContainer()->ReportAllContacts(&cmanager);
+            system.GetContactContainer()->ReportAllContacts(cmanager);
         }
 
         // Display AABB information

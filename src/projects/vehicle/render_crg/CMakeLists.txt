@@ -35,6 +35,7 @@ FOREACH(DEMO ${DEMOS})
                           ChronoEngine
                           ChronoEngine_irrlicht
                           ChronoEngine_vehicle
+                          ChronoEngine_vehicle_irrlicht
                           ChronoModels_vehicle)
     INSTALL(TARGETS ${DEMO} DESTINATION ${CH_INSTALL_DEMO})
 

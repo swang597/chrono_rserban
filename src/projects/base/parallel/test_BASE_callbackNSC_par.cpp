@@ -159,8 +159,8 @@ int main(int argc, char* argv[]) {
     // Simulate system
     // ---------------
 
-    ContactMaterial cmaterial;
-    system.GetContactContainer()->RegisterAddContactCallback(&cmaterial);
+    auto cmaterial = chrono_types::make_shared<ContactMaterial>();
+    system.GetContactContainer()->RegisterAddContactCallback(cmaterial);
 
     while (gl_window.Active()) {
         gl_window.DoStepDynamics(1e-3);

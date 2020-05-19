@@ -243,7 +243,7 @@ int main(int argc, char* argv[]) {
     app.AssetUpdateAll();
 
     // Perform the simulation
-    MyContactReporter reporter(patch->GetGroundBody());
+    auto reporter = chrono_types::make_shared<MyContactReporter>(patch->GetGroundBody());
 
     app.SetTimestep(step_size);
 
@@ -256,6 +256,6 @@ int main(int argc, char* argv[]) {
 
         std::cout << "Time: " << system.GetChTime() << "  Wheel center height: " << wheel->GetPos().z() << std::endl;
         // Report tire-terrain contacts
-        system.GetContactContainer()->ReportAllContacts(&reporter);
+        system.GetContactContainer()->ReportAllContacts(reporter);
     }
 }

@@ -144,12 +144,12 @@ int main(int argc, char* argv[]) {
     // Simulate system
     // ---------------
 
-    ContactManager cmanager(box);
+    auto cmanager = chrono_types::make_shared<ContactManager>(box);
 
     while (system.GetChTime() < time_end) {
         // Process contacts
         std::cout << system.GetChTime() << "  " << system.GetNcontacts() << std::endl;
-        system.GetContactContainer()->ReportAllContacts(&cmanager);
+        system.GetContactContainer()->ReportAllContacts(cmanager);
 
         // Advance dynamics
         system.DoStepDynamics(time_step);

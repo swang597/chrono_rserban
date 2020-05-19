@@ -296,7 +296,8 @@ ContactManager::ContactManager() {}
 void ContactManager::Process(RoboSimian* robot) {
     std::cout << "Report contacts" << std::endl;
     m_num_contacts = 0;
-    robot->GetSystem()->GetContactContainer()->ReportAllContacts(this);
+    std::shared_ptr<ContactManager> shared_this(this, [](ContactManager*) {});
+    robot->GetSystem()->GetContactContainer()->ReportAllContacts(shared_this);
     std::cout << "  total actual contacts: " << m_num_contacts << std::endl << std::endl;
 }
 
@@ -344,7 +345,8 @@ bool ContactManager::OnReportContact(const ChVector<>& pA,
 class ContactMaterial : public ChContactContainer::AddContactCallback {
   public:
     ContactMaterial(RoboSimian* robot) : m_robot(robot) {
-        m_robot->GetSystem()->GetContactContainer()->RegisterAddContactCallback(this);
+        std::shared_ptr<ContactMaterial> shared_this(this, [](ContactMaterial*) {});
+        m_robot->GetSystem()->GetContactContainer()->RegisterAddContactCallback(shared_this);
     }
 
     virtual void OnAddContact(const collision::ChCollisionInfo& contactinfo,

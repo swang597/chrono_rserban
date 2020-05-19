@@ -306,13 +306,13 @@ int main(int argc, char* argv[]) {
     motor->SetSpeedFunction(speed_fun);
 
     // Create the shock between body and ground. The end points are specified in the body relative frames.
-    ShockForce force;
+    auto force = chrono_types::make_shared<ShockForce>();
     ShockODE rhs(use_tables);
 
     auto spring = chrono_types::make_shared<ChLinkTSDA>();
     spring->Initialize(body, ground, true, ChVector<>(0, 0, 0), ChVector<>(0, 0, 0));
     spring->IsStiff(use_jacobians);
-    spring->RegisterForceFunctor(&force);
+    spring->RegisterForceFunctor(force);
     spring->RegisterODE(&rhs);
     system.AddLink(spring);
     spring->AddAsset(chrono_types::make_shared<ChColorAsset>(0.5f, 0.5f, 0.5f));

@@ -66,8 +66,8 @@ class CH_MODELS_API FEDA_DoubleWishboneFront : public ChDoubleWishbone {
     virtual double getAxleInertia() const override { return m_axleInertia; }
 
     virtual double getSpringRestLength() const override { return m_springRestLength; }
-    virtual ChLinkTSDA::ForceFunctor* getSpringForceFunctor() const override { return m_springForceCB; }
-    virtual ChLinkTSDA::ForceFunctor* getShockForceFunctor() const override { return m_shockForceCB; }
+    virtual std::shared_ptr<ChLinkTSDA::ForceFunctor> getSpringForceFunctor() const override { return m_springForceCB; }
+    virtual std::shared_ptr<ChLinkTSDA::ForceFunctor> getShockForceFunctor() const override { return m_shockForceCB; }
 
     virtual void Initialize(std::shared_ptr<ChBodyAuxRef> chassis,  ///< [in] handle to the chassis body
                             const ChVector<>& location,             ///< [in] location relative to the chassis frame
@@ -80,8 +80,8 @@ class CH_MODELS_API FEDA_DoubleWishboneFront : public ChDoubleWishbone {
   private:
     virtual const ChVector<> getLocation(PointId which) override;
 
-    ChLinkTSDA::ForceFunctor* m_springForceCB;
-    ChLinkTSDA::ForceFunctor* m_shockForceCB;
+    std::shared_ptr<ChLinkTSDA::ForceFunctor> m_springForceCB;
+    std::shared_ptr<ChLinkTSDA::ForceFunctor> m_shockForceCB;
 
     ChLinkTSDA::ODE* m_shockODE;
 
@@ -150,8 +150,8 @@ class CH_MODELS_API FEDA_DoubleWishboneRear : public ChDoubleWishbone {
     virtual double getAxleInertia() const override { return m_axleInertia; }
 
     virtual double getSpringRestLength() const override { return m_springRestLength; }
-    virtual ChLinkTSDA::ForceFunctor* getSpringForceFunctor() const override { return m_springForceCB; }
-    virtual ChLinkTSDA::ForceFunctor* getShockForceFunctor() const override { return m_shockForceCB; }
+    virtual std::shared_ptr<ChLinkTSDA::ForceFunctor> getSpringForceFunctor() const override { return m_springForceCB; }
+    virtual std::shared_ptr<ChLinkTSDA::ForceFunctor> getShockForceFunctor() const override { return m_shockForceCB; }
 
     virtual void Initialize(std::shared_ptr<ChBodyAuxRef> chassis,  ///< [in] handle to the chassis body
                             const ChVector<>& location,             ///< [in] location relative to the chassis frame
@@ -164,8 +164,8 @@ class CH_MODELS_API FEDA_DoubleWishboneRear : public ChDoubleWishbone {
   private:
     virtual const ChVector<> getLocation(PointId which) override;
 
-    ChLinkTSDA::ForceFunctor* m_springForceCB;
-    ChLinkTSDA::ForceFunctor* m_shockForceCB;
+    std::shared_ptr<ChLinkTSDA::ForceFunctor> m_springForceCB;
+    std::shared_ptr<ChLinkTSDA::ForceFunctor> m_shockForceCB;
 
     ChLinkTSDA::ODE* m_shockODE;
 

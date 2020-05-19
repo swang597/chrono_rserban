@@ -58,8 +58,8 @@ void CheckSuspension(WVP_Vehicle& vehicle, int axle, utils::CSV_writer& csv) {
     auto restLength = susp->getSpringRestLength();
 
     // Force calculation functor classes
-    auto springForce = static_cast<WVP_SpringForce*>(susp->getSpringForceFunctor());
-    auto shockForce = static_cast<WVP_ShockForce*>(susp->getShockForceFunctor());
+    auto springForce = std::static_pointer_cast<WVP_SpringForce>(susp->getSpringForceFunctor());
+    auto shockForce = std::static_pointer_cast<WVP_ShockForce>(susp->getShockForceFunctor());
 
     // Use the evaluate() methods of WVP_SpringForce and WVP_ShockForce
     // to obtain the forces generated at different configurations:
