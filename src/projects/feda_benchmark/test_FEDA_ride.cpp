@@ -389,8 +389,8 @@ int main(int argc, char* argv[]) {
         xpos = my_feda.GetVehicle().GetVehiclePos().x();
         if (xpos >= 0.0) {
             double speed = my_feda.GetVehicle().GetVehicleSpeed();
-            ChVector<> seat_acc_driver = my_feda.GetVehicle().GetVehicleAcceleration(local_driver_pos);
-            ChVector<> seat_acc_passenger = my_feda.GetVehicle().GetVehicleAcceleration(local_passenger_pos);
+            ChVector<> seat_acc_driver = my_feda.GetVehicle().GetVehiclePointAcceleration(local_driver_pos);
+            ChVector<> seat_acc_passenger = my_feda.GetVehicle().GetVehiclePointAcceleration(local_passenger_pos);
             t.push_back(time);
             azd.push_back(seat_acc_driver.z() / 9.80665);
             azdf.push_back(wesFilter.Filter(seat_acc_driver.z() / 9.80665));

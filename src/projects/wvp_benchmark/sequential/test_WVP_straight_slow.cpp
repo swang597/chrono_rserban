@@ -415,18 +415,18 @@ int main(int argc, char* argv[]) {
                 std::cout<<"Strut 3 BUMP STOP ENGAGED!\n";
             }
 
-            csv << time;    //time
-            csv << driver_inputs.m_steering/-.001282; //steering wheel angle in degrees
-            csv << wvp.GetVehicle().GetVehicleSpeed();  //vehicle speed m/s
-            ChQuaternion<> q= wvp.GetVehicle().GetVehicleRot();
-            csv << q.Q_to_Euler123().x()*180.0/CH_C_PI;   //roll angle in deg
-            csv << wvp.GetChassisBody()->GetWvel_loc().x()*180.0/CH_C_PI; //roll rate deg
-            csv << q.Q_to_Euler123().y()*180.0/CH_C_PI;   //pitch angle deg
-            csv << wvp.GetChassisBody()->GetWvel_loc().y()*180.0/CH_C_PI; //pitch rate deg
-            csv << q.Q_to_Euler123().z()*180.0/CH_C_PI;   //yaw angle deg
-            csv << wvp.GetChassisBody()->GetWvel_loc().z()*180.0/CH_C_PI; //yaw rate deg
-            csv << wvp.GetVehicle().GetVehicleAcceleration({-2.070,.01,.495}).y()/9.81; //lateral acceleration in g's
- 
+            csv << time;                                 // time
+            csv << driver_inputs.m_steering / -.001282;  // steering wheel angle in degrees
+            csv << wvp.GetVehicle().GetVehicleSpeed();   // vehicle speed m/s
+            ChQuaternion<> q = wvp.GetVehicle().GetVehicleRot();
+            csv << q.Q_to_Euler123().x() * 180.0 / CH_C_PI;                                       // roll angle in deg
+            csv << wvp.GetChassisBody()->GetWvel_loc().x() * 180.0 / CH_C_PI;                     // roll rate deg
+            csv << q.Q_to_Euler123().y() * 180.0 / CH_C_PI;                                       // pitch angle deg
+            csv << wvp.GetChassisBody()->GetWvel_loc().y() * 180.0 / CH_C_PI;                     // pitch rate deg
+            csv << q.Q_to_Euler123().z() * 180.0 / CH_C_PI;                                       // yaw angle deg
+            csv << wvp.GetChassisBody()->GetWvel_loc().z() * 180.0 / CH_C_PI;                     // yaw rate deg
+            csv << wvp.GetVehicle().GetVehiclePointAcceleration({-2.070, .01, .495}).y() / 9.81;  // lateral acc. in g's
+
             std::vector<ChVector<>> tire_forces;
             for (auto& axle : wvp.GetVehicle().GetAxles()) {
                 for (auto& wheel : axle->GetWheels()) {
@@ -472,10 +472,10 @@ int main(int argc, char* argv[]) {
             }
 
             csv << wvp.GetVehicle().GetVehicleSpeed();
-            csv << wvp.GetVehicle().GetVehicleAcceleration(
+            csv << wvp.GetVehicle().GetVehiclePointAcceleration(
                        wvp.GetVehicle().GetChassis()->GetLocalDriverCoordsys().pos) /
                        9.81;
-            // csv << wvp.GetVehicle().GetVehicleAcceleration({-2.070,.01,.495}).y()/9.81; //lateral acceleration in g's
+            // csv << wvp.GetVehicle().GetVehiclePointAcceleration({-2.070,.01,.495}).y()/9.81; //lateral acc. in g's
 
             for (auto& axle : wvp.GetVehicle().GetAxles()) {
                 for (auto& wheel : axle->GetWheels()) {

@@ -357,9 +357,9 @@ int main(int argc, char* argv[]) {
                 csv << wvp.GetVehicle().GetSpindleAngVel(axle, RIGHT);
             }
             csv << wvp.GetVehicle().GetVehicleSpeed();
-            csv << wvp.GetVehicle().GetVehicleAcceleration(wvp.GetVehicle().GetChassis()->GetLocalDriverCoordsys().pos);
+            csv << wvp.GetVehicle().GetVehiclePointAcceleration(wvp.GetVehicle().GetChassis()->GetLocalDriverCoordsys().pos);
 
-            csv << wvp.GetVehicle().GetVehicleAcceleration(vehCOM);
+            csv << wvp.GetVehicle().GetVehiclePointAcceleration(vehCOM);
 
             for (auto& axle : wvp.GetVehicle().GetAxles()) {
                 for (auto& wheel : axle->GetWheels()) {

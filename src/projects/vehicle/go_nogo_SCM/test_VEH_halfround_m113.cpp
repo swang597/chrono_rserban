@@ -270,7 +270,7 @@ int main(int argc, char* argv[]) {
         // Extract chassis CG and driver accelerations
         ChVector<> acc_CG = vehicle.GetChassisBody()->GetPos_dtdt();                 // global frame
         acc_CG = vehicle.GetChassisBody()->TransformDirectionParentToLocal(acc_CG);  // local frame
-        ChVector<> acc_driver = vehicle.GetVehicleAcceleration(driver_pos);          // local frame
+        ChVector<> acc_driver = vehicle.GetVehiclePointAcceleration(driver_pos);     // local frame
 
         // Filter accelerations
         double acc_CG_x = fwd_acc_GC_filter.Add(acc_CG.x());

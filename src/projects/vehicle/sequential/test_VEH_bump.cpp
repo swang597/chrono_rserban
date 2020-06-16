@@ -248,7 +248,7 @@ int main(int argc, char* argv[]) {
         ChVector<> com_pos_abs = chassis_body->GetPos();
         ChVector<> flw_pos_abs = wheel_body->GetPos();
 
-        ChVector<> drv_acc_loc = my_hmmwv.GetVehicle().GetVehicleAcceleration(drv_pos_loc);
+        ChVector<> drv_acc_loc = my_hmmwv.GetVehicle().GetVehiclePointAcceleration(drv_pos_loc);
         ChVector<> drv_acc_abs = chassis_body->GetFrame_REF_to_abs().PointAccelerationLocalToParent(drv_pos_loc);
         ChVector<> com_acc_abs = chassis_body->GetPos_dtdt();
         ChVector<> flw_acc_abs = wheel_body->GetPos_dtdt();

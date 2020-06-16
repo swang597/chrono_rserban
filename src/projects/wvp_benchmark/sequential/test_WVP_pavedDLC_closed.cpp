@@ -308,8 +308,8 @@ int main(int argc, char* argv[]) {
             csv << wvp.GetChassisBody()->GetWvel_loc();
 
             // report lateral acceleration at vehicle COM relative to the vehicle reference point
-            csv << wvp.GetVehicle().GetVehicleAcceleration({-2.070, .01, .495}).y();
-            // csv << wvp.GetVehicle().GetVehicleAcceleration(wvp.GetVehicle().GetChassis()->GetCOMPos()).y();
+            csv << wvp.GetVehicle().GetVehiclePointAcceleration({-2.070, .01, .495}).y();
+            // csv << wvp.GetVehicle().GetVehiclePointAcceleration(wvp.GetVehicle().GetChassis()->GetCOMPos()).y();
 
             for (auto& axle : wvp.GetVehicle().GetAxles()) {
                 for (auto& wheel : axle->GetWheels()) {

@@ -304,7 +304,7 @@ int main(int argc, char* argv[]) {
             csv << q.Q_to_NasaAngles();
             csv << wvp.GetChassisBody()->GetWvel_loc();
 
-            csv << wvp.GetVehicle().GetVehicleAcceleration(wvp.GetVehicle().GetChassis()->GetCOMPos()).y();
+            csv << wvp.GetVehicle().GetVehiclePointAcceleration(wvp.GetVehicle().GetChassis()->GetCOMPos()).y();
 
             for (auto& axle : wvp.GetVehicle().GetAxles()) {
                 for (auto& wheel : axle->GetWheels()) {

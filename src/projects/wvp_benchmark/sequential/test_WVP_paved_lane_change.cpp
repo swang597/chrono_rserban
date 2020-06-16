@@ -423,7 +423,7 @@ int main(int argc, char* argv[]) {
             csv << wvp.GetChassisBody()->GetWvel_loc().y()*180.0/CH_C_PI; //pitch rate deg
             csv << q.Q_to_Euler123().z()*180.0/CH_C_PI;   //yaw angle deg
             csv << wvp.GetChassisBody()->GetWvel_loc().z()*180.0/CH_C_PI; //yaw rate deg
-            csv << wvp.GetVehicle().GetVehicleAcceleration({-2.070,.01,.495}).y()/9.81; //lateral acceleration in g's
+            csv << wvp.GetVehicle().GetVehiclePointAcceleration({-2.070, .01, .495}).y() / 9.81;  // lateral acc. in g's
 
             std::vector<ChVector<>> tire_forces;
             for (auto& axle : wvp.GetVehicle().GetAxles()) {
