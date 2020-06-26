@@ -205,7 +205,7 @@ class ChApi ChElasticityCosseratGeneric : public ChElasticityCosserat {
 
 /// Elasticity for a beam section in 3D, along with basic material
 /// properties. It also supports the advanced case of
-/// Iyy and Izz axes rotated respect reference, centroid with offset
+/// Iyy and Izz axes rotated respect reference, elastic center with offset
 /// from reference, and shear center with offset from reference.
 /// This material can be shared between multiple beams.
 /// The linear elasticity is uncoupled between shear terms S and axial terms A
@@ -221,7 +221,7 @@ class ChApi ChElasticityCosseratGeneric : public ChElasticityCosserat {
 class ChApi ChElasticityCosseratAdvanced : public ChElasticityCosseratSimple {
   public:
     double alpha;  ///< Rotation of Izz Iyy respect to reference section, centered on line x
-    double Cy;     ///< Centroid, respect to reference section (elastic center, tension center)
+    double Cy;     ///< Elastic center, respect to reference section (elastic center, tension center)
     double Cz;     ///<
     double beta;   ///< Rotation of shear reference section, centered on line x
     double Sy;     ///< Shear center, respect to reference section
@@ -232,12 +232,12 @@ class ChApi ChElasticityCosseratAdvanced : public ChElasticityCosseratSimple {
     virtual ~ChElasticityCosseratAdvanced() {}
 
     /// "Elastic reference": set alpha, the rotation of the section for which the Iyy Izz are
-    /// defined, respect to the reference section coordinate system.
+    /// defined, respect to the reference section coordinate system placed at centerline.
     void SetSectionRotation(double ma) { this->alpha = ma; }
     double GetSectionRotation() { return this->alpha; }
 
-    /// "Elastic reference": set the displacement of the centroid C (i.e. the elastic center,
-    /// or tension center) respect to the reference section coordinate system.
+    /// "Elastic reference": set the displacement of the elastic center 
+    /// (or tension center) respect to the reference section coordinate system placed at centerline.
     void SetCentroid(double my, double mz) {
         this->Cy = my;
         this->Cz = mz;
@@ -246,13 +246,13 @@ class ChApi ChElasticityCosseratAdvanced : public ChElasticityCosseratSimple {
     double GetCentroidZ() { return this->Cz; }
 
     /// "Shear reference": set beta, the rotation of the section for shear decoupling, respect to
-    /// the reference section coordinate system. Usually it is same as alpha.
+    /// the reference section coordinate system placed at centerline. 
     void SetShearRotation(double mb) { this->beta = mb; }
     double GetShearRotation() { return this->beta; }
 
     /// "Shear reference": set the displacement of the shear center S
-    /// respect to the reference beam line. For shapes like rectangles,
-    /// rotated rectangles, etc., it corresponds to the centroid C, but
+    /// respect to the reference beam line placed at centerline. For shapes like rectangles,
+    /// rotated rectangles, etc., it corresponds to the elastic center C, but
     /// for "L" shaped or "U" shaped beams this is not always true, and
     /// the shear center accounts for torsion effects when a shear force is applied.
     void SetShearCenter(double my, double mz) {
@@ -672,39 +672,30 @@ class ChApi ChDampingCosseratRayleigh : public ChDampingCosserat {
 ////////////////////////////////////////////////////////////////////////////////////
 
 
-/// Base class for inerital properties (mass, moment of inertia) of beam sections of Cosserat type.
+/// Base class for ineri tal properties (mass, moment of inertia) of beam sections of Cosserat type.
 /// This can be shared between multiple beams.
-/// It is assumed that the reference line of the beam is also passing through the center of mass of the sections.
 class ChApi ChInertiaCosserat {
   public:
 	ChInertiaCosserat() : section(nullptr) {};
 
     virtual ~ChInertiaCosserat() {}
 
-	/// Compute mass per unit length, ex. SI units [kg/m]
-	/// Defined as: \f$ \mu = \int_\Omega \rho dA \f$, with \f$ \rho \f$ density in [kg/m^3].
-	virtual double GetMassPerUnitLength() = 0;
+    /// Compute the 6x6 sectional inertia matrix, as in  {x_momentum,w_momentum}=[Mm]{xvel,wvel} 
+    /// The matrix is computed in the material reference (i.e. it is the sectional mass matrix)
+    virtual void ComputeInertiaMatrix(ChMatrixNM<double, 6, 6>& M  ///< 6x6 sectional mass matrix values here
+                                      ) = 0;
 
-	/// Compute the Ixx component of the inertia tensor per unit length,
-	/// i.e. the part associated with rotation about the beam direction.
-	/// Ex. SI units [kg/m].
-	/// Defined as: \f$ J_{xx} = \int_\Omega \rho y^2 + z^2 dA \f$, with \f$ \rho \f$ density in [kg/m^3].
-	/// For uniform density it is also \f$ J_{xx} = \rho I_p \f$, where \f$ I_p = I_z + I_y \f$ is the polar moment of area. 
-	virtual double GetInertiaJxxPerUnitLength() = 0;
+    /// Compute the values of inertial force & torque depending on quadratic velocity terms,
+    /// that is the gyroscopic torque and the centrifugal term (if any). All terms expressed 
+    /// in the material reference, ie. the reference in the centerline of the section.
+    virtual void ComputeQuadraticTerms(ChVector<>& mF,   ///< centrifugal term (if any) returned here
+                                       ChVector<>& mT,   ///< gyroscopic term  returned here
+                                       const ChVector<>& mW    ///< current angular velocity of section, in material frame
+                                      ) = 0;
 
-	/// Compute the Jyy component of the inertia tensor per unit length,
-	/// i.e. the part associated with rotation of the section on its Y axis.
-	/// Ex. SI units [kg/m].
-	/// Defined as: \f$ J_{yy} = \int_\Omega \rho z^2 dA \f$, with \f$ \rho \f$ density in [kg/m^3].
-	/// For uniform density it is also \f$ J_{yy} = \rho I_y \f$, where \f$ I_y =  \int_\Omega \rho z^2 dA \f$ is the second moment of area. 
-	virtual double GetInertiaJyyPerUnitLength() = 0;
-
-	/// Compute the Jzz component of the inertia tensor per unit length,
-	/// i.e. the part associated with rotation of the section on its Z axis.
-	/// Ex. SI units [kg/m].
-	/// Defined as: \f$ J_{zz} = \int_\Omega \rho y^2 dA \f$, with \f$ \rho \f$ density in [kg/m^3].
-	/// For uniform density it is also \f$ J_{zz} = \rho I_z \f$, where \f$ I_z =  \int_\Omega \rho y^2 dA \f$ is the second moment of area. 
-	virtual double GetInertiaJzzPerUnitLength() = 0;
+    /// Compute mass per unit length, ex.SI units [kg/m]. 
+    /// This is also the(0, 0) element in the sectional inertia matrix.
+    virtual double GetMassPerUnitLength() = 0;
 
 	ChBeamSectionCosserat* section;
 };
@@ -717,42 +708,59 @@ class ChApi ChInertiaCosserat {
 ///  - Iyy Izz second moments of area
 /// The polar moment of area is automatically inferred via perpendicular axis theorem, Ip=Iyy+Izz.
 /// The section is assumed aligned to principal axis of the moment of area tensor, ie. Iyz=0,
-/// the section is assumed to be centered in the center of mass.
-class ChApi ChInertiaCosseratUniformDensity : public ChInertiaCosserat {
+/// The section is assumed to be centered in the center of mass.
+class ChApi ChInertiaCosseratSimple : public ChInertiaCosserat {
   public:
 
-	ChInertiaCosseratUniformDensity() 
+	ChInertiaCosseratSimple() 
 						: rho(1000), A(1), Izz(1), Iyy(1) {};
 
-	ChInertiaCosseratUniformDensity(double density,			///< the density fo the material [kg/m^3], assumed constant
-									double Area,			///< area of the section, [m^2]
-									double Iyy_area_moment,	///< second moment of area [m^4] about Y 
-									double Izz_area_moment	///< second moment of area [m^4] about Z 
-									) 
+	ChInertiaCosseratSimple(double density,			///< the density fo the material [kg/m^3], assumed constant
+						    double Area,			///< area of the section, [m^2]
+							double Iyy_area_moment,	///< second moment of area [m^4] about Y 
+							double Izz_area_moment	///< second moment of area [m^4] about Z 
+							) 
 						: rho(density), A(Area), Izz(Izz_area_moment), Iyy(Iyy_area_moment) {};
 
-    virtual ~ChInertiaCosseratUniformDensity() {}
+    virtual ~ChInertiaCosseratSimple() {}
+
+    /// Compute the 6x6 sectional inertia matrix, as in  {x_momentum,w_momentum}=[Mm]{xvel,wvel} 
+    /// The matrix is computed in the material reference (i.e. it is the sectional mass matrix).
+    /// In this case it is simply a constant diagonal mass matrix with diagonal 
+    /// {rho*A,rho*A,rho*A, rho*Iyy+Izz, rho*Iyy, rho*Izz}
+    virtual void ComputeInertiaMatrix(ChMatrixNM<double, 6, 6>& M  ///< 6x6 sectional mass matrix values here
+                                      ) override;
+
+    /// Compute the values of inertial torque depending on quadratic velocity terms, per unit length,
+    /// that is the gyroscopic torque w x [J]w . Quadratic force is null as mass is centered. All terms expressed 
+    /// in the material reference, ie. the reference in the centerline of the section.
+    virtual void ComputeQuadraticTerms(ChVector<>& mF,   ///< centrifugal term (if any) returned here
+                                       ChVector<>& mT,   ///< gyroscopic term  returned here
+                                       const ChVector<>& mW    ///< current angular velocity of section, in material frame
+                                      ) override;
+
 
 	/// Compute mass per unit length, ex.SI units [kg/m]
 	/// In this case is simply  \f$ \mu = \rho A \f$, given area in [m^2] and with \f$ \rho \f$ density in [kg/m^3].
 	virtual double GetMassPerUnitLength() override { return this->rho * this->A; }
 
+
 	/// Compute the Ixx component of the inertia tensor per unit length,
 	/// i.e. the part associated with rotation about the beam direction.
 	/// In this case it is \f$ J_{xx} = \rho I_p \f$, where \f$ I_p = I_z + I_y \f$ is the polar moment of area. 
-	virtual double GetInertiaJxxPerUnitLength() override { return this->rho * (this->Iyy + this->Izz); }
+	virtual double GetInertiaJxxPerUnitLength()  { return this->rho * (this->Iyy + this->Izz); }
 
 	/// Compute the Jyy component of the inertia tensor per unit length,
 	/// i.e. the part associated with rotation of the section on its Y axis.
 	/// Defined as: \f$ J_{yy} = \int_\Omega \rho z^2 dA \f$, with \f$ \rho \f$ density in [kg/m^3].
 	/// For uniform density it is  \f$ J_{yy} = \rho I_y \f$, where \f$ I_y =  \int_\Omega \rho z^2 dA \f$ is the second moment of area. 
-	virtual double GetInertiaJyyPerUnitLength() override { return this->rho * this->Iyy; }
+	virtual double GetInertiaJyyPerUnitLength()  { return this->rho * this->Iyy; }
 
 	/// Compute the Jzz component of the inertia tensor per unit length,
 	/// i.e. the part associated with rotation of the section on its Z axis.
 	/// Defined as: \f$ J_{zz} = \int_\Omega \rho y^2 dA \f$, with \f$ \rho \f$ density in [kg/m^3].
 	/// For uniform density it is  \f$ J_{zz} = \rho I_z \f$, where \f$ I_z =  \int_\Omega \rho y^2 dA \f$ is the second moment of area. 
-	virtual double GetInertiaJzzPerUnitLength() override { return this->rho * this->Izz; }
+	virtual double GetInertiaJzzPerUnitLength()  { return this->rho * this->Izz; }
 
 	/// Set the volumetric density, assumed constant in the section. Ex. SI units: [kg/m^3].
 	void SetDensity(const double md) {	rho = md; }
@@ -763,7 +771,7 @@ class ChApi ChInertiaCosseratUniformDensity : public ChInertiaCosserat {
 	double GetArea() const { return A; }
 
 	/// Set the Iyy second moment of area of the beam (for bending about y in xz plane),
-	/// defined as \f$ I_y =  \int_\Omega \rho z^2 dA \f$. 
+	/// defined as \f$ I_y =  \int_\Omega z^2 dA \f$. 
     /// Note: some textbook calls this Iyy as Iy.
 	/// Note: it can correspond to the same Iyy that you used for the elasticity, ex. in ChElasticityCosseratSimple.
 	/// Ex. SI units: [m^4]
@@ -771,7 +779,7 @@ class ChApi ChInertiaCosseratUniformDensity : public ChInertiaCosserat {
     double GetIyy() const { return this->Iyy; }
 
 	/// Set the Izz second moment of area of the beam (for bending about z in xy plane),
-	/// defined as \f$ I_z =  \int_\Omega \rho y^2 dA \f$. 
+	/// defined as \f$ I_z =  \int_\Omega y^2 dA \f$. 
     /// Note: some textbook calls this Izz as Iz.
 	/// Note: it can correspond to the same Izz that you used for the elasticity, ex. in ChElasticityCosseratSimple.
 	/// Ex. SI units: [m^4]
@@ -793,6 +801,135 @@ private:
 	double Izz; // moment of area: m^4
 	double Iyy; // moment of area: m^4
 };
+
+
+// for backward compatibility - note it WILL BE DEPRECATED
+using ChInertiaCosseratUniformDensity = ChInertiaCosseratSimple;
+
+
+
+
+
+/// Inertia properties of a beam of Cosserat type, defined from an uniform density [kg/m^3], 
+/// and from the following geometric information, that allows the center of mass to be
+/// offset respect to the beam centerline:
+///  - a section area 
+///  - offset of the center of mass along Y Z section axes,
+///  - and one of these information:
+///    - rotation of axes Y_m Z_m (used for computed Jzz_m Jyy_m) respect to Y Z section axes.
+///    - Jyy_m Jzz_m moments of inertia computed in reference Y_m Z_m, rotated and with origin in center of mass
+///  - or:
+///    - Jyy Jzz Jzy moments of inertia computed in section reference Y Z, not rotated and origin in centerline
+/// The polar moment of area is automatically inferred via perpendicular axis theorem.
+
+class ChApi ChInertiaCosseratAdvanced : public ChInertiaCosserat {
+  public:
+
+	ChInertiaCosseratAdvanced() 
+						: mu(1), cm_y(0), cm_z(0), Jzz(1), Jyy(1), Jyz(0) {};
+
+	ChInertiaCosseratAdvanced(double mu_density,    ///< mass per unit length [kg/m] 
+		                    double c_y,             ///< displacement of center of mass along Y
+                            double c_z,             ///< displacement of center of mass along Z					
+                            double Jyy_moment,	    ///< moment of inertia per unit length, about Y. Also Jyy= Mm(4,4)
+							double Jzz_moment,	    ///< moment of inertia per unit length, about Z. Also Jzz= Mm(5,5)
+                            double Jyz_moment       ///< moment of inertia per unit length, about YZ (off diagonal term). Also Jyz= -Mm(4,5) = -Mm(5,4)
+							) 
+						: mu(mu_density), cm_y(0), cm_z(0), Jzz(Jzz_moment), Jyy(Jyy_moment), Jyz(Jyz_moment) {};
+
+    virtual ~ChInertiaCosseratAdvanced() {}
+
+    /// Compute the 6x6 sectional inertia matrix, as in  {x_momentum,w_momentum}=[Mm]{xvel,wvel} 
+    /// The matrix is computed in the material reference (i.e. it is the sectional mass matrix).
+    virtual void ComputeInertiaMatrix(ChMatrixNM<double, 6, 6>& M  ///< 6x6 sectional mass matrix values here
+                                      ) override;
+
+    /// Compute the values of inertial force & torque depending on quadratic velocity terms,
+    /// that is the gyroscopic torque w x [J]w and the centrifugal term (if center of mass is offset). All terms expressed 
+    /// in the material reference, ie. the reference in the centerline of the section.
+    virtual void ComputeQuadraticTerms(ChVector<>& mF,   ///< centrifugal term (if any) returned here
+                                       ChVector<>& mT,   ///< gyroscopic term  returned here
+                                       const ChVector<>& mW    ///< current angular velocity of section, in material frame
+                                      ) override;
+
+	/// Get mass per unit length, ex.SI units [kg/m]
+	virtual double GetMassPerUnitLength() override { return this->mu; }
+
+
+    /// Set mass per unit length, ex.SI units [kg/m].
+    /// Note that for uniform volumetric density \f$ \rho \f$, this is also \f$ \mu = \rho * A \f$.
+    virtual void SetMassPerUnitLength(double mmu) { mu = mmu; }
+
+    /// "mass reference": set the displacement of the center of mass respect to 
+    /// the section centerline reference.
+    void SetCenterOfMass(double my, double mz) {
+        this->cm_y = my;
+        this->cm_z = mz;
+    }
+    double GetCenterOfMassY() {
+        return this->cm_y;
+    }
+    double GetCenterOfMassZ() {
+        return this->cm_z;
+    }
+
+    /// Set inertia moments, assumed computed in the Y Z unrotated reference
+    /// frame of the section at centerline, and defined as: 
+    /// \f$ J_{yy} =  \int_\Omega \rho z^2 dA \f$, also Jyy = Mm(4,4) 
+    /// \f$ J_{zz} =  \int_\Omega \rho y^2 dA \f$, also Jzz = Mm(5,5) 
+    /// \f$ J_{yz} =  \int_\Omega \rho y z  dA \f$, also Jyz = -Mm(4,5) = -Mm(5,4)
+    /// Note that for an uniform density, these are also related to second moments of area
+    /// as \f$ J_{yy} = \rho I_{yy} \f$,  \f$ J_{zz} = \rho I_{zz} \f$.
+    /// Note also that \f$ J_{xy} = J_{xz} = J_{yx} = J_{zx} = 0 \f$ anyway. 
+    /// Note also that \f$ J_{xy} \f$ does not need to be input, as automatically computed 
+    /// via \f$ J_{xx} = J_{yy} +J_{zz} \f$ for the polar theorem.
+    void SetInertiasPerUnitLength(double Jyy_moment, double Jzz_moment, double Jyz_moment);
+
+    /// Get the Jxx component of the inertia per unit length (polar inertia), in the Y Z unrotated reference
+    /// frame of the section at centerline. Note: it automatically follows Jxx=Jyy+Jzz for the polar theorem.
+    virtual double GetInertiaJxxPerUnitLength()  { return  this->Jyy + this->Jzz; }
+
+    /// Get the Jyy component of the inertia per unit length, in the Y Z unrotated reference
+    /// frame of the section at centerline, also Jyy = Mm(4,4)
+    virtual double GetInertiaJyyPerUnitLength()  { return  this->Jyy; }
+
+    /// Get the Jzz component of the inertia per unit length, in the Y Z unrotated reference
+    /// frame of the section at centerline, also Jzz = Mm(5,5) 
+    virtual double GetInertiaJzzPerUnitLength()  { return  this->Jzz; }
+
+    /// Get the Jyz off-diagonal component of the inertia per unit length, in the Y Z unrotated reference
+    /// frame of the section at centerline. Also Jyz = -Mm(4,5) = -Mm(5,4)
+    virtual double GetInertiaJyzPerUnitLength()  { return  this->Jyz; }
+
+
+
+    /// Set inertia moments as assumed computed in the Ym Zm "mass reference"
+    /// frame, ie. centered at the center of mass and rotated by phi angle to match the main axes of inertia:
+    /// \f$ Jm_{yy} =  \int_\Omega \rho z_{m}^2 dA \f$, 
+    /// \f$ Jm_{zz} =  \int_\Omega \rho y_{m}^2 dA \f$.
+    /// Assuming the center of mass is already set.
+    void SetInertiasPerUnitLengthInMassReference(double Jmyy, double Jmzz, double phi);
+
+    /// Get inertia moments as assumed computed in the Ym Zm "mass reference" frame, and the rotation phi of that frame,
+    /// ie. inertias centered at the center of mass and rotated by phi angle to match the main axes of inertia:
+    /// \f$ Jm_{yy} =  \int_\Omega \rho z_{m}^2 dA \f$, 
+    /// \f$ Jm_{zz} =  \int_\Omega \rho y_{m}^2 dA \f$.
+    /// Assuming the center of mass is already set.
+    void GetInertiasPerUnitLengthInMassReference(double& Jmyy, double& Jmzz, double& phi);
+
+private:
+	double mu; // density
+    double cm_y; // center of mass offset along Y of section
+    double cm_z; // center of mass offset along Z of section
+    //double phi; // rotation of reference where Izz and Iyy are computed, also main inertia axes ie. Iyz=0
+	double Jzz; // moment of area: m^4
+	double Jyy; // moment of area: m^4
+    double Jyz; // moment of area: m^4
+};
+
+
+
+
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -907,7 +1044,7 @@ class ChApi ChBeamSectionCosserat : public ChBeamSectionProperties {
 /// Good if you just need the simplest model for a rectangular centered beam. This section automatically
 /// creates, initializes and embeds, at construction, these models:
 /// - elasticity: ChElasticityCosseratSimple  
-/// - inertia:    ChInertiaCosseratUniformDensity
+/// - inertia:    ChInertiaCosseratSimple
 /// - damping:    none   - you can add it later
 /// - plasticity: none 
 class ChApi ChBeamSectionCosseratEasyRectangular : public ChBeamSectionCosserat {
@@ -927,7 +1064,7 @@ public:
 /// Good if you just need the simplest model for a circular centered beam. This section automatically
 /// creates, initializes and embeds, at construction, these models:
 /// - elasticity: ChElasticityCosseratSimple  
-/// - inertia:    ChInertiaCosseratUniformDensity
+/// - inertia:    ChInertiaCosseratSimple
 /// - damping:    none   - you can add it later
 /// - plasticity: none 
 class ChApi ChBeamSectionCosseratEasyCircular : public ChBeamSectionCosserat {

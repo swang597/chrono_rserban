@@ -23,6 +23,8 @@ namespace fea {
 // for testing and debugging
 ChElementBeamIGA::QuadratureType ChElementBeamIGA::quadrature_type = ChElementBeamIGA::QuadratureType::FULL_EXACT;
 double ChElementBeamIGA::Delta = 1e-10;
+bool   ChElementBeamIGA::lumped_mass = true;
+bool   ChElementBeamIGA::add_gyroscopic_terms = true;
 
 ChElementBeamIGA::ChElementBeamIGA() {
         order = 3;
@@ -278,26 +280,108 @@ void ChElementBeamIGA::ComputeKRMmatricesGlobal(ChMatrixRef H, double Kfactor, d
     if (Mfactor) {
         ChMatrixDynamic<> Mloc(6 * nodes.size(), 6 * nodes.size());
         Mloc.setZero();
+        ChMatrix33<> Mxw;
 
-        double nmass = mass / (double)nodes.size();
-        //Iyy and Izz: (orthogonal to spline) add approx as 1/50 lumped mass at half dist for translational effect, plus inertia of thin section: 
-        // note: 1/50 can be even less (this is 0 in many texts) 
-        double lineryy = (1. / 50.) * nmass * pow(length, 2) +
-            this->section->GetInertia()->GetInertiaJyyPerUnitLength() * (length / (double)nodes.size());
-        double linerzz = (1. / 50.) * nmass * pow(length, 2) +
-            this->section->GetInertia()->GetInertiaJzzPerUnitLength() * (length / (double)nodes.size());
-        //Ixx: (tangent to spline)  
-        double linerxx = this->section->GetInertia()->GetInertiaJxxPerUnitLength() * (length / (double)nodes.size());
+        if (ChElementBeamIGA::lumped_mass == true) {
+            //
+            // "lumped" M mass matrix
+            //
+            ChMatrixNM<double, 6, 6> sectional_mass;
+            this->section->GetInertia()->ComputeInertiaMatrix(sectional_mass);
 
-        for (int i = 0; i < nodes.size(); ++i) {
-            int stride = i * 6;
+            double node_multiplier = length / (double)nodes.size();
+            for (int i = 0; i < nodes.size(); ++i) {
+                int stride = i * 6;
+                // if there is no mass center offset, the upper right and lower left blocks need not be rotated,
+                // hence it can be the simple (constant) expression
+                //   Mloc.block<6, 6>(stride, stride) += sectional_mass * (node_multiplier * Mfactor);
+                // but the more general case needs the rotations, hence:
+                Mloc.block<3, 3>(stride,   stride  ) += sectional_mass.block<3, 3>(0,0) * (node_multiplier * Mfactor);
+                Mloc.block<3, 3>(stride+3, stride+3) += sectional_mass.block<3, 3>(3,3) * (node_multiplier * Mfactor);
+                Mxw = nodes[i]->GetA() * sectional_mass.block<3, 3>(0,3) * (node_multiplier * Mfactor);
+                Mloc.block<3, 3>(stride,   stride+3) += Mxw;
+                Mloc.block<3, 3>(stride+3, stride)   += Mxw.transpose();
+                
+            }
+        }
+        else {
+            //
+            // "consistent" M mass matrix, via Gauss quadrature
+            //
+            ChMatrixNM<double, 6, 6> sectional_mass;
+            this->section->GetInertia()->ComputeInertiaMatrix(sectional_mass);
 
-            Mloc(stride + 0, stride + 0) += Mfactor * nmass;  // node A x,y,z
-            Mloc(stride + 1, stride + 1) += Mfactor * nmass;
-            Mloc(stride + 2, stride + 2) += Mfactor * nmass;
-            Mloc(stride + 3, stride + 3) += Mfactor * linerxx;  // node A Ixx,Iyy,Izz 
-            Mloc(stride + 4, stride + 4) += Mfactor * lineryy;
-            Mloc(stride + 5, stride + 5) += Mfactor * linerzz;
+            double u1 = knots(order);
+            double u2 = knots(knots.size() - order - 1);
+
+            double c1 = (u2 - u1) / 2;
+            double c2 = (u2 + u1) / 2;
+
+            // Do quadrature over the Gauss points - reuse the "b" bend Gauss points
+
+            for (int ig = 0; ig < int_order_b; ++ig) {
+
+                // absyssa in typical -1,+1 range:
+                double eta = ChQuadrature::GetStaticTables()->Lroots[int_order_b - 1][ig];
+                // absyssa in span range:
+                double u = (c1 * eta + c2);
+                // scaling = gauss weight
+                double w = ChQuadrature::GetStaticTables()->Weight[int_order_b - 1][ig];
+
+                // Jacobian Jsu = ds/du
+                double Jsu = this->Jacobian_b[ig];
+                // Jacobian Jue = du/deta
+                double Jue = c1;
+
+                // compute the basis functions N(u) at given u:
+                int nspan = order;
+
+                ChVectorDynamic<> N((int)nodes.size());
+                geometry::ChBasisToolsBspline::BasisEvaluate(this->order, nspan, u, knots, N);
+
+                /*
+                // interpolate rotation of section at given u, to compute R.
+                ChQuaternion<> q_delta;
+                ChVector<> da = VNULL;
+                ChVector<> delta_rot_dir;
+                double delta_rot_angle;
+                for (int i = 0; i < nodes.size(); ++i) {
+                    ChQuaternion<> q_i(state_x.segment(i * 7 + 3, 4));
+                    q_delta = nodes[0]->coord.rot.GetConjugate() * q_i;
+                    q_delta.Q_to_AngAxis(delta_rot_angle, delta_rot_dir); // a_i = dir_i*angle_i (in spline local reference, -PI..+PI)
+                    da += delta_rot_dir * delta_rot_angle * N(i);  // a = N_i*a_i
+                }
+                ChQuaternion<> qda; qda.Q_from_Rotv(da);
+                ChQuaternion<> qR = nodes[0]->coord.rot * qda;
+                
+                // compute the 3x3 rotation matrix R equivalent to quaternion above
+                ChMatrix33<> R(qR);
+                */
+                
+                // A simplification, for moderate bending, ignore the difference between beam section R 
+                // and R_i of nearby nodes, obtaining:
+
+                for (int i = 0; i < nodes.size(); ++i) {
+                    for (int j = 0; j < nodes.size(); ++j) {
+                        int istride = i * 6;
+                        int jstride = j * 6;
+                        
+                        double Ni_Nj = N(i) * N(j);
+                        double gmassfactor = Mfactor * w * Jsu * Jue * Ni_Nj;
+
+                        // if there is no mass center offset, the upper right and lower left blocks need not be rotated,
+                        // hence it can be the simple (constant) expression
+                        //   Mloc.block<6, 6>(istride + 0, jstride + 0) += gmassfactor * sectional_mass;
+                        // but the more general case needs the rotations, hence:
+                        Mloc.block<3, 3>(istride,   jstride  ) += sectional_mass.block<3, 3>(0,0) * gmassfactor;
+                        Mloc.block<3, 3>(istride+3, jstride+3) += sectional_mass.block<3, 3>(3,3) * gmassfactor;
+                        Mxw = nodes[i]->GetA() * sectional_mass.block<3, 3>(0,3) * gmassfactor;
+                        Mloc.block<3, 3>(istride,   jstride+3) += Mxw;
+                        Mloc.block<3, 3>(istride+3, jstride)   += Mxw.transpose();
+                    }
+                }
+
+            } // end loop on gauss points
         }
 
         H.block(0, 0, Mloc.rows(), Mloc.cols()) += Mloc;
@@ -502,7 +586,109 @@ void ChElementBeamIGA::ComputeInternalForces_impl(ChVectorDynamic<>& Fi, ChState
         //GetLog() << "     gp n." << ig <<   "  J=" << this->Jacobian[ig] << "   strain_e= " << strain_e << "\n";
         //GetLog() << "                    stress_n= " << stress_n << "\n";
     }
+
+    // Add also inertial quadratic terms: gyroscopic and centrifugal
+    
+    if (ChElementBeamIGA::add_gyroscopic_terms == true) {
+        if (ChElementBeamIGA::lumped_mass == true) {
+            // CASE OF LUMPED MASS - faster
+            double node_multiplier = length / (double)nodes.size();
+            ChVector<> mFcent_i;
+            ChVector<> mTgyro_i;
+            for (int i = 0; i < nodes.size(); ++i) {
+                int stride = i * 6;
+                this->section->GetInertia()->ComputeQuadraticTerms(mFcent_i, mTgyro_i, state_w.segment(3 + i * 6, 3));
+                ChQuaternion<> q_i(state_x.segment(i * 7 + 3, 4));
+                Fi.segment(i * 6, 3)     -= node_multiplier * q_i.Rotate(mFcent_i).eigen();
+                Fi.segment(3 + i * 6, 3) -= node_multiplier * mTgyro_i.eigen();
+            }
+        }
+        else {
+            // CASE OF CONSISTENT MASS 
+            ChVector<> mFcent_i;
+            ChVector<> mTgyro_i;
+            // evaluate inertial quadratic forces using same gauss points used for bending
+            for (int ig = 0; ig < int_order_b; ++ig) {
+
+                double eta = ChQuadrature::GetStaticTables()->Lroots[int_order_b - 1][ig];
+                double u = (c1 * eta + c2);
+                double w = ChQuadrature::GetStaticTables()->Weight[int_order_b - 1][ig];
+
+                double Jsu = this->Jacobian_b[ig];
+                double Jue = c1;
+                int nspan = order;
+
+                ChMatrixDynamic<> N(1, (int)nodes.size()); // row n.0 contains N, row n.1 contains dN/du
+                geometry::ChBasisToolsBspline::BasisEvaluateDeriv(
+                    this->order,
+                    nspan,
+                    u,
+                    knots,
+                    N);           ///< here return N and dN/du 
+
+                // interpolate rotation of section at given u, to compute R.
+                // Note: this is approximate.
+                // A more precise method: use quaternion splines, as in Kim,Kim and Shin, 1995 paper.
+                ChQuaternion<> q_delta;
+                ChVector<> da = VNULL;
+                ChVector<> delta_rot_dir;
+                double delta_rot_angle;
+                for (int i = 0; i < nodes.size(); ++i) {
+                    ChQuaternion<> q_i(state_x.segment(i * 7 + 3, 4));
+                    q_delta = nodes[0]->coord.rot.GetConjugate() * q_i;
+                    q_delta.Q_to_AngAxis(delta_rot_angle, delta_rot_dir); // a_i = dir_i*angle_i (in spline local reference, -PI..+PI)
+                    da += delta_rot_dir * delta_rot_angle * N(0, i);  // a = N_i*a_i
+                }
+                ChQuaternion<> qda; qda.Q_from_Rotv(da);
+                ChQuaternion<> qR = nodes[0]->coord.rot * qda;
+
+                ChVector<> w_sect;
+                for (int i = 0; i < nodes.size(); ++i) {
+                    ChQuaternion<> q_i(state_x.segment(i * 7 + 3, 4));
+                    ChVector<> wl_i(state_w.segment(i * 6 + 3, 3)); //  w in node csys
+                    ChVector<> w_i = q_i.Rotate(wl_i); // w in absolute csys
+                    w_sect += w_i * N(0, i);
+                }
+                w_sect = qR.RotateBack(w_sect); // w in sectional csys
+
+                this->section->GetInertia()->ComputeQuadraticTerms(mFcent_i, mTgyro_i, w_sect);
+
+                for (int i = 0; i < nodes.size(); ++i) {
+                    Fi.segment(i * 6, 3)     -= w * Jsu * Jue * N(0, i) * qR.Rotate(mFcent_i).eigen();
+                    Fi.segment(3 + i * 6, 3) -= w * Jsu * Jue * N(0, i) * mTgyro_i.eigen();
+                }
+
+            }
+        }
+    } // end quadratic inertial force terms
+    
 }
+
+
+
+void ChElementBeamIGA::ComputeGravityForces(ChVectorDynamic<>& Fg, const ChVector<>& G_acc) {
+    
+    // no so efficient... a temporary mass matrix here:
+    ChMatrixDynamic<> mM(this->GetNdofs(), this->GetNdofs());
+    this->ComputeMmatrixGlobal(mM);
+
+    // a vector of G accelerations (for translation degrees of freedom ie 3 xyz every 6 values)
+    ChVectorDynamic<> mG(this->GetNdofs());
+    mG.setZero();
+    for (int i = 0 ; i< nodes.size(); ++i) {
+        mG.segment(i * 6, 3) = G_acc.eigen();
+    }
+    
+    // Gravity forces as M*g, always works, regardless of the way M 
+    // is computed (lumped or consistent, with offset center of mass or centered, etc.)
+    // [Maybe one can replace this function with a faster ad-hoc implementation in case of lumped masses.]
+    Fg = mM * mG;
+}
+
+
+
+
+
 
 /// Evaluate N'*F , where N is some type of shape function
 /// evaluated at U coordinates of the line, ranging in -1..+1
