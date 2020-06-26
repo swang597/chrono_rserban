@@ -37,7 +37,7 @@ namespace chrono {
 namespace vehicle {
 namespace wvp {
 
-/// @addtogroup vehicle_driver
+/// @addtogroup vehicle_models_wvp
 /// @{
 
 /// Closed-loop path-follower driver model.
@@ -107,7 +107,8 @@ class CH_MODELS_API WVP_FollowerDataDriver : public ChDriver {
     void ParseCSV(std::string m_data_input_file, int timeCol, int steeringCol);
 };
 
-/// @} vehicle_driver
+/// @} vehicle_models_wvp
+
 }  // end namespace wvp
 }  // end namespace vehicle
 }  // end namespace chrono

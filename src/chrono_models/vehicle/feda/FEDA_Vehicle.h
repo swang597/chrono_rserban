@@ -42,7 +42,7 @@ namespace chrono {
 namespace vehicle {
 namespace feda {
 
-/// @addtogroup vehicle_models_sedan
+/// @addtogroup vehicle_models_feda
 /// @{
 
 /// Sedan vehicle system.

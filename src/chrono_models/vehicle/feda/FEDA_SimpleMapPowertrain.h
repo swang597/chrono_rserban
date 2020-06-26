@@ -31,7 +31,7 @@ namespace chrono {
 namespace vehicle {
 namespace feda {
 
-/// @addtogroup vehicle_models_sedan
+/// @addtogroup vehicle_models_feda
 /// @{
 
 /// Simple FEDA powertrain subsystem (based on engine speed-torque maps).
@@ -64,7 +64,7 @@ class CH_MODELS_API FEDA_SimpleMapPowertrain : public ChSimpleMapPowertrain {
         ) override;
 };
 
-/// @} vehicle_models_sedan
+/// @} vehicle_models_feda
 
 }  // namespace feda
 }  // end namespace vehicle

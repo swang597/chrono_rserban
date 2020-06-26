@@ -36,7 +36,7 @@ namespace chrono {
 namespace vehicle {
 namespace feda {
 
-/// @addtogroup vehicle_models_sedan
+/// @addtogroup vehicle_models_feda
 /// @{
 
 class CH_MODELS_API FEDA {
@@ -124,7 +124,7 @@ class CH_MODELS_API FEDA {
     ChTire::CollisionType m_tire_collision_type;
 };
 
-/// @} vehicle_models_sedan
+/// @} vehicle_models_feda
 
 }  // namespace feda
 }  // end namespace vehicle

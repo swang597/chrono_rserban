@@ -1,4 +1,4 @@
-message(STATUS "Projects: FED-alpha benchmark...")
+message(STATUS "Projects: MTV tests...")
 
 if(NOT ENABLE_MODULE_VEHICLE OR NOT ENABLE_MODULE_IRRLICHT)
   return()

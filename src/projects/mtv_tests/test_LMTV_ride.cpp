@@ -12,8 +12,8 @@
 // Authors: Radu Serban, Asher Elmquist, Rainer Gericke
 // =============================================================================
 //
-// Sample test program for sequential lmtv 2.5 ton simulation. It demonstrates
-// chassis torsion due to random wheel excitation.
+// Test program for sequential LMTV 2.5 ton simulation. It demonstrates chassis
+// torsion due to random wheel excitation.
 //
 // The vehicle reference frame has Z up, X towards the front of the vehicle, and
 // Y pointing to the left.
@@ -43,7 +43,7 @@
 
 using namespace chrono;
 using namespace chrono::vehicle;
-using namespace chrono::vehicle::mtv;
+using namespace chrono::vehicle::fmtv;
 
 // =============================================================================
 
@@ -53,6 +53,7 @@ ChQuaternion<> initRot(1, 0, 0, 0);
 
 // Visualization type for vehicle parts (PRIMITIVES, MESH, or NONE)
 VisualizationType chassis_vis_type = VisualizationType::MESH;
+VisualizationType chassis_rear_vis_type = VisualizationType::PRIMITIVES;
 VisualizationType suspension_vis_type = VisualizationType::PRIMITIVES;
 VisualizationType steering_vis_type = VisualizationType::PRIMITIVES;
 VisualizationType wheel_vis_type = VisualizationType::MESH;
@@ -154,6 +155,7 @@ int main(int argc, char* argv[]) {
     lmtv.Initialize();
 
     lmtv.SetChassisVisualizationType(chassis_vis_type);
+    lmtv.SetChassisRearVisualizationType(chassis_rear_vis_type);
     lmtv.SetSuspensionVisualizationType(suspension_vis_type);
     lmtv.SetSteeringVisualizationType(steering_vis_type);
     lmtv.SetWheelVisualizationType(wheel_vis_type);

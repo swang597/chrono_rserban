@@ -96,7 +96,8 @@ int main(int argc, char* argv[]) {
     auto tire_R = chrono_types::make_shared<WVP_TMeasyTire>("Right");
 
     // Create and intialize the suspension test rig.
-    ChSuspensionTestRigPlatform rig(vehicle, axle_index, post_limit, tire_L, tire_R);
+    int steering_index = (axle_index == 0) ? 0 : -1;
+    ChSuspensionTestRigPlatform rig(vehicle, axle_index, steering_index, post_limit, tire_L, tire_R);
 
     rig.SetInitialRideHeight(0.5);
 

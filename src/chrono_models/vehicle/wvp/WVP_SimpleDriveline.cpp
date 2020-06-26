@@ -37,7 +37,7 @@ WVP_SimpleDriveline::WVP_SimpleDriveline(const std::string& name) : ChDrivelineW
 // This function connects this driveline subsystem to the axles of the specified
 // suspension subsystems.
 // -----------------------------------------------------------------------------
-void WVP_SimpleDriveline::Initialize(std::shared_ptr<ChBody> chassis,
+void WVP_SimpleDriveline::Initialize(std::shared_ptr<ChChassis> chassis,
                                      const ChAxleList& axles,
                                      const std::vector<int>& driven_axles) {
     assert(axles.size() >= 2);

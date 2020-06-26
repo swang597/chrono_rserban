@@ -12,7 +12,7 @@
 // Authors: Radu Serban, Rainer Gericke
 // =============================================================================
 //
-// Sample test program for sequential LMTV simulation.
+// Test program for sequential LMTV simulation.
 //
 // The vehicle reference frame has Z up, X towards the front of the vehicle, and
 // Y pointing to the left.
@@ -20,7 +20,7 @@
 //
 // =============================================================================
 
-//  The vehicle runs on the smalles possible turn radius
+//  The vehicle runs on the smallest possible turn radius
 
 #include "chrono_vehicle/ChConfigVehicle.h"
 #include "chrono_vehicle/ChVehicleModelData.h"
@@ -29,13 +29,15 @@
 #include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
 
 #include "chrono_models/vehicle/mtv/LMTV.h"
+#include "chrono_models/vehicle/mtv/LMTV_LeafspringAxle.h"
+#include "chrono_models/vehicle/mtv/FMTV_ToebarLeafspringAxle.h"
 
 #include <chrono>
 #include <thread>
 
 using namespace chrono;
 using namespace chrono::vehicle;
-using namespace chrono::vehicle::mtv;
+using namespace chrono::vehicle::fmtv;
 
 // =============================================================================
 
@@ -45,6 +47,7 @@ ChQuaternion<> initRot(1, 0, 0, 0);
 
 // Visualization type for vehicle parts (PRIMITIVES, MESH, or NONE)
 VisualizationType chassis_vis_type = VisualizationType::PRIMITIVES;
+VisualizationType chassis_rear_vis_type = VisualizationType::PRIMITIVES;
 VisualizationType suspension_vis_type = VisualizationType::PRIMITIVES;
 VisualizationType steering_vis_type = VisualizationType::PRIMITIVES;
 VisualizationType wheel_vis_type = VisualizationType::MESH;
@@ -118,6 +121,7 @@ int main(int argc, char* argv[]) {
     lmtv.Initialize();
 
     lmtv.SetChassisVisualizationType(chassis_vis_type);
+    lmtv.SetChassisRearVisualizationType(chassis_rear_vis_type);
     lmtv.SetSuspensionVisualizationType(suspension_vis_type);
     lmtv.SetSteeringVisualizationType(steering_vis_type);
     lmtv.SetWheelVisualizationType(wheel_vis_type);

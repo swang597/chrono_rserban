@@ -452,15 +452,13 @@ FEDA_DoubleWishboneRear::~FEDA_DoubleWishboneRear() {
         delete m_shockODE;
 }
 
-void FEDA_DoubleWishboneFront::Initialize(
-    std::shared_ptr<ChBodyAuxRef> chassis,  // [in] handle to the chassis body
-    const ChVector<>& location,             // [in] location relative to the chassis frame
-    std::shared_ptr<ChBody> tierod_body,    // [in] body to which tireods are connected
-    int steering_index,                     // [in] index of the associated steering mechanism
-    double left_ang_vel,                    // [in] initial angular velocity of left wheel
-    double right_ang_vel                    // [in] initial angular velocity of right wheel
-) {
-    ChDoubleWishbone::Initialize(chassis, location, tierod_body, steering_index, left_ang_vel, right_ang_vel);
+void FEDA_DoubleWishboneFront::Initialize(std::shared_ptr<ChChassis> chassis,
+                                          std::shared_ptr<ChSubchassis> subchassis,
+                                          std::shared_ptr<ChSteering> steering,
+                                          const ChVector<>& location,
+                                          double left_ang_vel,
+                                          double right_ang_vel) {
+    ChDoubleWishbone::Initialize(chassis, subchassis, steering, location, left_ang_vel, right_ang_vel);
 
     if (m_damper_mode == 1) {
         m_shockODE = new FEDA_ShockODE;
@@ -469,15 +467,13 @@ void FEDA_DoubleWishboneFront::Initialize(
     }
 }
 
-void FEDA_DoubleWishboneRear::Initialize(
-    std::shared_ptr<ChBodyAuxRef> chassis,  // [in] handle to the chassis body
-    const ChVector<>& location,             // [in] location relative to the chassis frame
-    std::shared_ptr<ChBody> tierod_body,    // [in] body to which tireods are connected
-    int steering_index,                     // [in] index of the associated steering mechanism
-    double left_ang_vel,                    // [in] initial angular velocity of left wheel
-    double right_ang_vel                    // [in] initial angular velocity of right wheel
-) {
-    ChDoubleWishbone::Initialize(chassis, location, tierod_body, steering_index, left_ang_vel, right_ang_vel);
+void FEDA_DoubleWishboneRear::Initialize(std::shared_ptr<ChChassis> chassis,
+                                         std::shared_ptr<ChSubchassis> subchassis,
+                                         std::shared_ptr<ChSteering> steering,
+                                         const ChVector<>& location,
+                                         double left_ang_vel,
+                                         double right_ang_vel) {
+    ChDoubleWishbone::Initialize(chassis, subchassis, steering, location, left_ang_vel, right_ang_vel);
     if (m_damper_mode == 1) {
         m_shockODE = new FEDA_ShockODE;
         GetShock(LEFT)->RegisterODE(m_shockODE);

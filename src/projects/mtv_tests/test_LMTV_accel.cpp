@@ -42,12 +42,13 @@
 using namespace chrono;
 using namespace chrono::irrlicht;
 using namespace chrono::vehicle;
-using namespace chrono::vehicle::mtv;
+using namespace chrono::vehicle::fmtv;
 
 // =============================================================================
 
 // Visualization type for vehicle parts (PRIMITIVES, MESH, or NONE)
 VisualizationType chassis_vis_type = VisualizationType::PRIMITIVES;
+VisualizationType chassis_rear_vis_type = VisualizationType::PRIMITIVES;
 VisualizationType suspension_vis_type = VisualizationType::PRIMITIVES;
 VisualizationType steering_vis_type = VisualizationType::PRIMITIVES;
 VisualizationType wheel_vis_type = VisualizationType::NONE;
@@ -63,7 +64,7 @@ DrivelineType drive_type = DrivelineType::AWD;
 TireModelType tire_model = TireModelType::TMEASY;
 
 // Terrain length (X direction)
-double terrainLength = 600.0;
+double terrainLength = 300.0;
 
 // Simulation step sizes
 double step_size = 1e-3;
@@ -96,6 +97,7 @@ int main(int argc, char* argv[]) {
         tire_vis_type = VisualizationType::MESH;
 
     lmtv.SetChassisVisualizationType(chassis_vis_type);
+    lmtv.SetChassisRearVisualizationType(chassis_rear_vis_type);
     lmtv.SetSuspensionVisualizationType(suspension_vis_type);
     lmtv.SetSteeringVisualizationType(steering_vis_type);
     lmtv.SetWheelVisualizationType(wheel_vis_type);

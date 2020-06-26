@@ -619,14 +619,14 @@ WVP_DoubleWishboneRear::WVP_DoubleWishboneRear(const std::string& name) : ChDoub
 // -----------------------------------------------------------------------------
 // Initialization of the suspension subsystems.
 // -----------------------------------------------------------------------------
-void WVP_DoubleWishboneFront::Initialize(std::shared_ptr<ChBodyAuxRef> chassis,
+void WVP_DoubleWishboneFront::Initialize(std::shared_ptr<ChChassis> chassis,
+                                         std::shared_ptr<ChSubchassis> subchassis,
+                                         std::shared_ptr<ChSteering> steering,
                                          const ChVector<>& location,
-                                         std::shared_ptr<ChBody> tierod_body,
-                                         int steering_index,
                                          double left_ang_vel,
                                          double right_ang_vel) {
     // Invoke base class method.
-    ChDoubleWishbone::Initialize(chassis, location, tierod_body, steering_index, left_ang_vel, right_ang_vel);
+    ChDoubleWishbone::Initialize(chassis, subchassis, steering, location, left_ang_vel, right_ang_vel);
 
     // Set the left and right shock elements in the shock force functor class.
     // Note that this can only be done here, after these elements were created.
@@ -636,14 +636,14 @@ void WVP_DoubleWishboneFront::Initialize(std::shared_ptr<ChBodyAuxRef> chassis,
     std::static_pointer_cast<WVP_ShockForce>(m_shockForceCB)->m_shock_right = GetShock(VehicleSide::RIGHT);
 }
 
-void WVP_DoubleWishboneRear::Initialize(std::shared_ptr<ChBodyAuxRef> chassis,
+void WVP_DoubleWishboneRear::Initialize(std::shared_ptr<ChChassis> chassis,
+                                        std::shared_ptr<ChSubchassis> subchassis,
+                                        std::shared_ptr<ChSteering> steering,
                                         const ChVector<>& location,
-                                        std::shared_ptr<ChBody> tierod_body,
-                                        int steering_index,
                                         double left_ang_vel,
                                         double right_ang_vel) {
     // Invoke base class method.
-    ChDoubleWishbone::Initialize(chassis, location, tierod_body, steering_index, left_ang_vel, right_ang_vel);
+    ChDoubleWishbone::Initialize(chassis, subchassis, steering, location, left_ang_vel, right_ang_vel);
 
     // Set the left and right shock elements in the shock force functor class.
     // Note that this can only be done here, after these elements were created.
