@@ -27,6 +27,32 @@ using namespace chrono::irrlicht;
 
 // ====================================================================================
 
+class ContactManager : public ChContactContainer::ReportContactCallback {
+  public:
+    ContactManager() {}
+
+  private:
+    virtual bool OnReportContact(const ChVector<>& pA,
+                                 const ChVector<>& pB,
+                                 const ChMatrix33<>& plane_coord,
+                                 const double& distance,
+                                 const double& eff_radius,
+                                 const ChVector<>& cforce,
+                                 const ChVector<>& ctorque,
+                                 ChContactable* modA,
+                                 ChContactable* modB) override {
+        auto bodyA = static_cast<ChBody*>(modA);
+        auto bodyB = static_cast<ChBody*>(modB);
+
+        std::cout << "  " << bodyA->GetName() << "  " << bodyB->GetName() << std::endl;
+        std::cout << "  " << pA << "    " << pB << std::endl;
+        std::cout << "  " << plane_coord.Get_A_Xaxis() << std::endl;
+        std::cout << std::endl;
+
+        return true;
+    }
+};
+
 int main(int argc, char* argv[]) {
     // ---------------------
     // Simulation parameters
@@ -35,17 +61,19 @@ int main(int argc, char* argv[]) {
     double gravity = 9.81;    // gravitational acceleration
     double time_step = 1e-4;  // integration step size
 
-    enum class ContactType {
-        MESH_BOX,  // use box for ground collision model
-        MESH_MESH  // use mesh for ground collision model
+    enum class CollisionType {
+        PRIMITIVE,
+        MESH
     };
-    ContactType contact_type = ContactType::MESH_MESH;
+    CollisionType ground_model = CollisionType::PRIMITIVE;
+    CollisionType object_model = CollisionType::MESH; 
 
     double mesh_swept_sphere_radius = 0.005; 
 
     // ---------------------------
     // Contact material properties
     // ---------------------------
+
     ChContactMethod contact_method = ChContactMethod::SMC;
     bool use_mat_properties = true;
 
@@ -77,14 +105,6 @@ int main(int argc, char* argv[]) {
     ChVector<> init_vel(0, 0, 0);
     ChVector<> init_omg(0, 0, 0);
 
-    // ---------------------------------
-    // Parameters for the containing bin
-    // ---------------------------------
-
-    double width = 2;
-    double length = 1;
-    double thickness = 0.1;
-
     // -----------------
     // Create the system
     // -----------------
@@ -111,17 +131,20 @@ int main(int argc, char* argv[]) {
     application.AddTypicalLights();
     application.AddTypicalCamera(irr::core::vector3df(0.5, 1, -2), irr::core::vector3df(0, 0, 0));
 
-    // This means that contact forces will be shown in Irrlicht application
+    // Render contact forces or normals
     application.SetSymbolscale(5e-3);
     application.SetContactsDrawMode(ChIrrTools::eCh_ContactsDrawMode::CONTACT_FORCES);
+    ////application.SetSymbolscale(1);
+    ////application.SetContactsDrawMode(ChIrrTools::eCh_ContactsDrawMode::CONTACT_NORMALS);
 
-    // Rotation Z->Y (becauset meshes used here assume Z up)
+    // Rotation Z->Y (because meshes used here assume Z up)
     ChQuaternion<> z2y = Q_from_AngX(-CH_C_PI_2);
 
     // Create the falling object
     auto object = std::shared_ptr<ChBody>(system->NewBody());
     system->AddBody(object);
 
+    object->SetName("object");
     object->SetMass(200);
     object->SetInertiaXX(40.0 * ChVector<>(1, 1, 0.2));
     object->SetPos(pos);
@@ -144,17 +167,36 @@ int main(int argc, char* argv[]) {
         matSMC->SetGt(object_gt);
     }
 
-    auto trimesh = chrono_types::make_shared<geometry::ChTriangleMeshConnected>();
-    trimesh->LoadWavefrontMesh(GetChronoDataFile("vehicle/hmmwv/hmmwv_tire.obj"), true, false);
+    switch (object_model) {
+        case CollisionType::PRIMITIVE: {
+            object->GetCollisionModel()->ClearModel();
+            object->GetCollisionModel()->AddCylinder(object_mat, 0.5, 0.5, 0.2, ChVector<>(0), ChMatrix33<>(1));
+            object->GetCollisionModel()->BuildModel();
 
-    object->GetCollisionModel()->ClearModel();
-    object->GetCollisionModel()->AddTriangleMesh(object_mat, trimesh, false, false, ChVector<>(0), ChMatrix33<>(1),
-                                                 mesh_swept_sphere_radius);
-    object->GetCollisionModel()->BuildModel();
+            auto cyl = chrono_types::make_shared<ChCylinderShape>();
+            cyl->GetCylinderGeometry().p1 = ChVector<>(0, +0.2, 0);
+            cyl->GetCylinderGeometry().p2 = ChVector<>(0, -0.2, 0);
+            cyl->GetCylinderGeometry().rad = 0.5;
+            object->AddAsset(cyl);
 
-    auto trimesh_shape = chrono_types::make_shared<ChTriangleMeshShape>();
-    trimesh_shape->SetMesh(trimesh);
-    object->AddAsset(trimesh_shape);
+            break;
+        }
+        case CollisionType::MESH: {
+            auto trimesh = chrono_types::make_shared<geometry::ChTriangleMeshConnected>();
+            trimesh->LoadWavefrontMesh(GetChronoDataFile("vehicle/hmmwv/hmmwv_tire_fine.obj"), true, false);
+
+            object->GetCollisionModel()->ClearModel();
+            object->GetCollisionModel()->AddTriangleMesh(object_mat, trimesh, false, false, ChVector<>(0),
+                                                         ChMatrix33<>(1), mesh_swept_sphere_radius);
+            object->GetCollisionModel()->BuildModel();
+
+            auto trimesh_shape = chrono_types::make_shared<ChTriangleMeshShape>();
+            trimesh_shape->SetMesh(trimesh);
+            object->AddAsset(trimesh_shape);
+
+            break;
+        }
+    }
 
     std::shared_ptr<ChColorAsset> mcol(new ChColorAsset);
     mcol->SetColor(ChColor(0.3f, 0.3f, 0.3f));
@@ -164,6 +206,7 @@ int main(int argc, char* argv[]) {
     auto ground = std::shared_ptr<ChBody>(system->NewBody());
     system->AddBody(ground);
 
+    ground->SetName("ground");
     ground->SetMass(1);
     ground->SetPos(ChVector<>(0, 0, 0));
     ground->SetRot(z2y);
@@ -183,8 +226,12 @@ int main(int argc, char* argv[]) {
         matSMC->SetGt(ground_gt);
     }
 
-    switch (contact_type) {
-        case ContactType::MESH_BOX: {
+    switch (ground_model) {
+        case CollisionType::PRIMITIVE: {
+            double width = 10;
+            double length = 20;
+            double thickness = 0.1;
+
             ground->GetCollisionModel()->ClearModel();
             ground->GetCollisionModel()->AddBox(ground_mat, width, length, thickness, ChVector<>(0, 0, -thickness));
             ground->GetCollisionModel()->BuildModel();
@@ -196,7 +243,7 @@ int main(int argc, char* argv[]) {
 
             break;
         }
-        case ContactType::MESH_MESH: {
+        case CollisionType::MESH: {
             auto trimesh_ground = chrono_types::make_shared<geometry::ChTriangleMeshConnected>();
             trimesh_ground->LoadWavefrontMesh(GetChronoDataFile("vehicle/terrain/meshes/ramp_10x1.obj"), true, false);
 
@@ -217,16 +264,20 @@ int main(int argc, char* argv[]) {
     application.AssetBindAll();
     application.AssetUpdateAll();
 
+    auto cmanager = chrono_types::make_shared<ContactManager>();
+
     // ---------------
     // Simulation loop
     // ---------------
     while (application.GetDevice()->run()) {
         application.BeginScene();
         application.DrawAll();
+        application.EndScene();
 
         system->DoStepDynamics(time_step);
 
-        application.EndScene();
+        ////std::cout << system->GetChTime() << "  " << system->GetNcontacts() << std::endl;
+        ////system->GetContactContainer()->ReportAllContacts(cmanager);
     }
 
     return 0;
