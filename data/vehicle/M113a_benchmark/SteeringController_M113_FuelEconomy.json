@@ -1,0 +1,10 @@
+{
+  "Gains":
+  {
+    "Kp":   2.0,
+    "Ki":   0.1,
+    "Kd":   0.1
+  },
+  
+  "Lookahead Distance": 10.0
+}

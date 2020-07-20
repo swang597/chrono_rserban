@@ -120,6 +120,12 @@ if(BUILD_PROJECTS_MTV)
   add_subdirectory(mtv_tests)
 endif()
 
+option(BUILD_PROJECTS_M113a "Build M113a projects" ON)
+mark_as_advanced(FORCE BUILD_PROJECTS_M113a)
+if(BUILD_PROJECTS_M113a)
+  add_subdirectory(m113a_benchmark) 
+endif()
+
 option(BUILD_PROJECTS_CORRIDOR "Build AV corridor projects" ON)
 mark_as_advanced(FORCE BUILD_PROJECTS_CORRIDOR)
 if(BUILD_PROJECTS_CORRIDOR)
