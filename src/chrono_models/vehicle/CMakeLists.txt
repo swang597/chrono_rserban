@@ -21,6 +21,8 @@ set(CVM_HMMWV_FILES
     hmmwv/HMMWV.h
     hmmwv/HMMWV_BrakeSimple.cpp
     hmmwv/HMMWV_BrakeSimple.h
+    hmmwv/HMMWV_BrakeShafts.cpp
+    hmmwv/HMMWV_BrakeShafts.h
     hmmwv/HMMWV_Chassis.h
     hmmwv/HMMWV_Chassis.cpp
     hmmwv/HMMWV_DoubleWishbone.cpp
@@ -114,6 +116,8 @@ set(CVM_FMTV_FILES
     mtv/FMTV_Wheel.h
     mtv/FMTV_BrakeSimple.cpp
     mtv/FMTV_BrakeSimple.h
+    mtv/FMTV_BrakeShafts.cpp
+    mtv/FMTV_BrakeShafts.h
     mtv/FMTV_RotaryArm.cpp
     mtv/FMTV_RotaryArm.h
     mtv/FMTV_AntiRollBar.cpp
@@ -166,6 +170,8 @@ set(CVM_UAZ_FILES
     uaz/UAZBUS_SAE.h
     uaz/UAZBUS_BrakeSimple.cpp
     uaz/UAZBUS_BrakeSimple.h
+    uaz/UAZBUS_BrakeShafts.cpp
+    uaz/UAZBUS_BrakeShafts.h
     uaz/UAZBUS_Chassis.cpp
     uaz/UAZBUS_Chassis.h
     uaz/UAZBUS_Driveline2WD.cpp
@@ -204,6 +210,8 @@ set(CVM_MAN_FILES
     man/MAN_5t_BellcrankSolid3LinkAxle.h
     man/MAN_5t_BrakeSimple.cpp
     man/MAN_5t_BrakeSimple.h
+    man/MAN_5t_BrakeShafts.cpp
+    man/MAN_5t_BrakeShafts.h
     man/MAN_5t_Chassis.cpp
     man/MAN_5t_Chassis.h
     man/MAN_5t_Driveline4WD.cpp
@@ -347,6 +355,8 @@ set(CVM_SEDAN_FILES
     sedan/Sedan.h
     sedan/Sedan_BrakeSimple.cpp
     sedan/Sedan_BrakeSimple.h
+    sedan/Sedan_BrakeShafts.cpp
+    sedan/Sedan_BrakeShafts.h
     sedan/Sedan_Chassis.h
     sedan/Sedan_Chassis.cpp
     sedan/Sedan_DoubleWishbone.cpp
@@ -377,6 +387,8 @@ set(CVM_CITYBUS_FILES
     citybus/CityBus.h
     citybus/CityBus_BrakeSimple.cpp
     citybus/CityBus_BrakeSimple.h
+    citybus/CityBus_BrakeShafts.cpp
+    citybus/CityBus_BrakeShafts.h
     citybus/CityBus_Chassis.h
     citybus/CityBus_Chassis.cpp
     citybus/CityBus_SolidAxle.h
@@ -411,6 +423,8 @@ set(CVM_GATOR_FILES
     gator/Gator.h
     gator/Gator_BrakeSimple.cpp
     gator/Gator_BrakeSimple.h
+    gator/Gator_BrakeShafts.cpp
+    gator/Gator_BrakeShafts.h
     gator/Gator_Chassis.h
     gator/Gator_Chassis.cpp
     gator/Gator_SingleWishbone.cpp
@@ -440,6 +454,7 @@ source_group("gator" FILES ${CVM_GATOR_FILES})
 
 set(CVM_M113_FILES
     m113/M113_BrakeSimple.h
+    m113/M113_BrakeShafts.h
     m113/M113_Chassis.h
     m113/M113_Chassis.cpp
     m113/M113_DrivelineBDS.cpp
