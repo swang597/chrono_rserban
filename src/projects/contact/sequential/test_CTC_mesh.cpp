@@ -62,21 +62,26 @@ class CustomCollision : public ChSystem::CustomCollisionCallback {
 
 // ====================================================================================
 
+std::shared_ptr<geometry::ChTriangleMeshConnected> GroundMesh(double hx, double hy);
+
+// ====================================================================================
+
 int main(int argc, char* argv[]) {
-    // ---------------------
-    // Simulation parameters
-    // ---------------------
+    // ------------------
+    // Collision settings
+    // ------------------
 
-    double gravity = 9.81;    // gravitational acceleration
-
-    enum class CollisionType {
-        PRIMITIVE,
-        MESH
-    };
-    CollisionType object_model = CollisionType::PRIMITIVE;
+    enum class CollisionType { PRIMITIVE, MESH };
+    CollisionType object_model = CollisionType::MESH;
     CollisionType ground_model = CollisionType::PRIMITIVE;
 
-    double mesh_swept_sphere_radius = 0.005; 
+    std::string tire_mesh_file = GetChronoDataFile("vehicle/hmmwv/hmmwv_tire_fine.obj");
+    ////std::string tire_mesh_file = GetChronoDataFile("vehicle/hmmwv/hmmwv_tire_coarse.obj");
+    double mesh_swept_sphere_radius = 0.005;
+
+    bool use_custom_collision = false;
+    if (use_custom_collision)
+        object_model = CollisionType::PRIMITIVE;
 
     // ---------------------------
     // Contact material properties
@@ -110,6 +115,7 @@ int main(int argc, char* argv[]) {
     // ---------------------------------
 
     double init_height = 0.75;
+    double init_roll = 0 * CH_C_DEG_TO_RAD;
 
     ChVector<> init_vel(0, 0, 0);
     ChVector<> init_omg(0, 0, 0);
@@ -117,9 +123,6 @@ int main(int argc, char* argv[]) {
     double radius = 0.5;  // cylinder radius
     double hlen = 0.2;    // cylinder half-length
 
-    bool use_custom_collision = true;
-    if (use_custom_collision)
-        object_model = CollisionType::PRIMITIVE;
 
     // ---------
     // Step size
@@ -154,7 +157,7 @@ int main(int argc, char* argv[]) {
             break;
     }
 
-    system->Set_G_acc(ChVector<>(0, -gravity, 0));
+    system->Set_G_acc(ChVector<>(0, -9.81, 0));
 
     // Create the Irrlicht visualization
     ChIrrApp application(system, L"Collision test", irr::core::dimension2d<irr::u32>(800, 600), false, true);
@@ -182,7 +185,7 @@ int main(int argc, char* argv[]) {
     object->SetMass(200);
     object->SetInertiaXX(40.0 * ChVector<>(1, 1, 0.2));
     object->SetPos(ChVector<>(0, init_height, 0));
-    object->SetRot(z2y);
+    object->SetRot(z2y * Q_from_AngX(init_roll));
     object->SetPos_dt(init_vel);
     object->SetWvel_par(init_omg);
     object->SetCollide(true);
@@ -217,7 +220,7 @@ int main(int argc, char* argv[]) {
         }
         case CollisionType::MESH: {
             auto trimesh = chrono_types::make_shared<geometry::ChTriangleMeshConnected>();
-            if (!trimesh->LoadWavefrontMesh(GetChronoDataFile("vehicle/hmmwv/hmmwv_tire_fine.obj"), true, false))
+            if (!trimesh->LoadWavefrontMesh(tire_mesh_file, true, false))
                 return 1;
 
             object->GetCollisionModel()->ClearModel();
@@ -227,6 +230,7 @@ int main(int argc, char* argv[]) {
 
             auto trimesh_shape = chrono_types::make_shared<ChTriangleMeshShape>();
             trimesh_shape->SetMesh(trimesh);
+            trimesh_shape->SetWireframe(true);
             object->AddAsset(trimesh_shape);
 
             break;
@@ -261,27 +265,30 @@ int main(int argc, char* argv[]) {
         matSMC->SetGt(ground_gt);
     }
 
+    double hx = 4;
+    double hy = 4;
+    double hz = 0.1;
+
     switch (ground_model) {
         case CollisionType::PRIMITIVE: {
-            double width = 10;
-            double length = 20;
-            double thickness = 0.1;
-
             ground->GetCollisionModel()->ClearModel();
-            ground->GetCollisionModel()->AddBox(ground_mat, width, length, thickness, ChVector<>(0, 0, -thickness));
+            ground->GetCollisionModel()->AddBox(ground_mat, hx, hy, hz, ChVector<>(0, 0, -hz));
             ground->GetCollisionModel()->BuildModel();
 
             auto box = chrono_types::make_shared<ChBoxShape>();
-            box->GetBoxGeometry().Size = ChVector<>(width, length, thickness);
-            box->GetBoxGeometry().Pos = ChVector<>(0, 0, -thickness);
+            box->GetBoxGeometry().Size = ChVector<>(hx, hy, hz);
+            box->GetBoxGeometry().Pos = ChVector<>(0, 0, -hz);
             ground->AddAsset(box);
+
+            auto texture = chrono_types::make_shared<ChTexture>();
+            texture->SetTextureFilename(GetChronoDataFile("textures/checker1.png"));
+            texture->SetTextureScale(4, 3);
+            ground->AddAsset(texture);
 
             break;
         }
         case CollisionType::MESH: {
-            auto trimesh = chrono_types::make_shared<geometry::ChTriangleMeshConnected>();
-            if (!trimesh->LoadWavefrontMesh(GetChronoDataFile("vehicle/terrain/meshes/ramp_10x1.obj"), true, false))
-                return 1;
+            auto trimesh = GroundMesh(hx, hy);
 
             ground->GetCollisionModel()->ClearModel();
             ground->GetCollisionModel()->AddTriangleMesh(ground_mat, trimesh, false, false, ChVector<>(0), ChMatrix33<>(1),
@@ -291,6 +298,11 @@ int main(int argc, char* argv[]) {
             auto trimesh_shape = chrono_types::make_shared<ChTriangleMeshShape>();
             trimesh_shape->SetMesh(trimesh);
             ground->AddAsset(trimesh_shape);
+
+            auto texture = chrono_types::make_shared<ChTexture>();
+            texture->SetTextureFilename(GetChronoDataFile("textures/checker2.png"));
+            texture->SetTextureScale(1, 1);
+            ground->AddAsset(texture);
 
             break;
         }
@@ -323,6 +335,47 @@ int main(int argc, char* argv[]) {
     }
 
     return 0;
+}
+
+// ====================================================================================
+
+std::shared_ptr<geometry::ChTriangleMeshConnected> GroundMesh(double hx, double hy) {
+    auto trimesh = chrono_types::make_shared<geometry::ChTriangleMeshConnected>();
+    std::vector<ChVector<>>& v = trimesh->getCoordsVertices();
+    std::vector<ChVector<>>& n = trimesh->getCoordsNormals();
+    std::vector<ChVector<>>& uv = trimesh->getCoordsUV();
+    std::vector<ChVector<int>>& iv = trimesh->getIndicesVertexes();
+    std::vector<ChVector<int>>& in = trimesh->getIndicesNormals();
+
+    v.resize(4);
+    n.resize(4);
+    uv.resize(4);
+
+    iv.resize(2);
+    in.resize(2);
+
+    v[0] = ChVector<>(+hx, +hy, 0);
+    v[1] = ChVector<>(-hx, +hy, 0);
+    v[2] = ChVector<>(-hx, -hy, 0);
+    v[3] = ChVector<>(+hx, -hy, 0);
+
+    n[0] = ChVector<>(0, 0, 1);
+    n[1] = ChVector<>(0, 0, 1);
+    n[2] = ChVector<>(0, 0, 1);
+    n[3] = ChVector<>(0, 0, 1);
+
+    uv[0] = ChVector<>(1, 1, 0);
+    uv[1] = ChVector<>(0, 1, 0);
+    uv[2] = ChVector<>(0, 0, 0);
+    uv[3] = ChVector<>(1, 0, 0);
+
+    iv[0] = ChVector<int>(0, 1, 2);
+    iv[1] = ChVector<int>(0, 2, 3);
+
+    in[0] = ChVector<int>(0, 1, 2);
+    in[1] = ChVector<int>(0, 2, 3);
+
+    return trimesh;
 }
 
 // ====================================================================================
