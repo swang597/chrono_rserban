@@ -159,12 +159,10 @@ int main(int argc, char** argv) {
     system.Set_G_acc(ChVector<>(0, -10, 0));
 
     // Set number of threads
-    CHOMPfunctions::SetNumThreads(1);
+    system.SetNumThreads(1);
 
     // Set solver settings
     system.ChangeSolverType(SolverType::APGD);
-
-    system.GetSettings()->perform_thread_tuning = false;
 
     system.GetSettings()->solver.solver_mode = SolverMode::SPINNING;
     system.GetSettings()->solver.max_iteration_normal = max_iteration_normal;

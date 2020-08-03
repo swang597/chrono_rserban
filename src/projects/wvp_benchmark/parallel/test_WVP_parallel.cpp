@@ -213,10 +213,10 @@ int main(int argc, char* argv[]) {
     int max_threads = omp_get_num_procs();
     if (threads > max_threads)
         threads = max_threads;
-    omp_set_num_threads(threads);
-    std::cout << "Using " << threads << " threads" << std::endl;
-
-    system->GetSettings()->perform_thread_tuning = thread_tuning;
+    if (thread_tuning)
+        system->SetNumThreads(1, 1, threads);
+    else
+        system->SetNumThreads(threads);
 
     // --------------------
     // Edit system settings
@@ -234,7 +234,6 @@ int main(int argc, char* argv[]) {
     system->GetSettings()->solver.use_full_inertia_tensor = false;
     system->GetSettings()->solver.contact_recovery_speed = contact_recovery_speed;
     system->GetSettings()->solver.bilateral_clamp_speed = 1e8;
-    system->GetSettings()->min_threads = threads;
     system->ChangeSolverType(SolverType::BB);
 
     system->GetSettings()->collision.collision_envelope = 0.1 * r_g;

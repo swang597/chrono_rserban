@@ -137,10 +137,10 @@ int main(int argc, char* argv[]) {
   ChSystemParallelNSC msystem;
 
   // Set number of threads.
-  int max_threads = CHOMPfunctions::GetNumProcs();
+  int max_threads = omp_get_num_procs();
   if (threads > max_threads)
-    threads = max_threads;
-  CHOMPfunctions::SetNumThreads(threads);
+      threads = max_threads;
+  msystem.SetNumThreads(threads);
 
   // Set gravitational acceleration
   msystem.Set_G_acc(gravity);

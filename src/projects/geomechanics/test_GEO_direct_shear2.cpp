@@ -520,11 +520,10 @@ int main(int argc, char* argv[]) {
     int max_threads = omp_get_num_procs();
     if (threads > max_threads)
         threads = max_threads;
-    omp_set_num_threads(threads);
-    cout << "Using " << threads << " threads" << endl;
-
-    msystem->GetSettings()->max_threads = threads;
-    msystem->GetSettings()->perform_thread_tuning = thread_tuning;
+    if (thread_tuning)
+        msystem->SetNumThreads(1, 1, threads);
+    else
+        msystem->SetNumThreads(threads);
 
     // Edit system settings
     msystem->GetSettings()->solver.use_full_inertia_tensor = false;

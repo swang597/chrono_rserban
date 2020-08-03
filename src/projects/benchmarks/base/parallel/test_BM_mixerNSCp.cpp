@@ -50,8 +50,7 @@ MixerTestNSC<N>::MixerTestNSC() : m_system(new ChSystemParallelNSC()), m_step(1e
     m_system->Set_G_acc(ChVector<>(0, 0, -9.81));
 
     // Set number of threads.
-    int threads = CHOMPfunctions::GetNumProcs();
-    CHOMPfunctions::SetNumThreads(threads);
+    m_system->SetNumThreads(omp_get_num_procs());
 
     // Set solver parameters
     m_system->GetSettings()->solver.solver_mode = SolverMode::SLIDING;

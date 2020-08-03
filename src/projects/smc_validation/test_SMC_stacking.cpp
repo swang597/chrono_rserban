@@ -97,8 +97,7 @@ int main(int argc, char* argv[]) {
         // Print the sim set - up parameters to userlog once
         if (f == 0) {
             GetLog() << "\ntime_step, " << time_step << "\nout_step, " << out_step << "\ntotal_sim_time, " << time_sim
-                     << "\nnum_sim_threads, " << CHOMPfunctions::GetNumThreads() << "\nadhesion_model, "
-                     << static_cast<int>(msystem.GetSettings()->solver.adhesion_force_model)
+                     << "\nadhesion_model, " << static_cast<int>(msystem.GetSettings()->solver.adhesion_force_model)
                      << "\ntangential_displ_model, "
                      << static_cast<int>(msystem.GetSettings()->solver.tangential_displ_mode) << "\ntimestepper, "
                      << static_cast<int>(msystem.GetTimestepperType()) << "\ngravity_x, " << gravity.x()

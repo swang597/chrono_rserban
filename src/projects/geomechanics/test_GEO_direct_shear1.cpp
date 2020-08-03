@@ -227,14 +227,13 @@ int main(int argc, char* argv[]) {
     my_system->Set_G_acc(ChVector<>(0, -gravity, 0));
 
     // Set number of threads
-
     int max_threads = omp_get_num_procs();
     if (threads > max_threads)
         threads = max_threads;
-    omp_set_num_threads(threads);
-
-    my_system->GetSettings()->max_threads = threads;
-    my_system->GetSettings()->perform_thread_tuning = thread_tuning;
+    if (thread_tuning)
+        my_system->SetNumThreads(1, 1, threads);
+    else
+        my_system->SetNumThreads(threads);
 
     // Edit system settings
 

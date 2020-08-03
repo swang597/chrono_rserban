@@ -42,7 +42,6 @@ int main(int argc, char* argv[]) {
     my_sys.GetSettings()->solver.use_full_inertia_tensor = false;
     my_sys.GetSettings()->solver.contact_recovery_speed = 1000;
     my_sys.GetSettings()->solver.bilateral_clamp_speed = 1e8;
-    my_sys.GetSettings()->min_threads = 2;
 
     my_sys.GetSettings()->collision.collision_envelope = 0.01;
     my_sys.GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;

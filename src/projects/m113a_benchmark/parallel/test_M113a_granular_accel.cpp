@@ -320,13 +320,13 @@ int main(int argc, char* argv[]) {
 #else
 
     // Set number of threads
-    int max_threads = CHOMPfunctions::GetNumProcs();
+    int max_threads = omp_get_num_procs();
     if (threads > max_threads)
         threads = max_threads;
-    CHOMPfunctions::SetNumThreads(threads);
-    std::cout << "Using " << threads << " threads" << std::endl;
-
-    system->GetSettings()->perform_thread_tuning = thread_tuning;
+    if (thread_tuning)
+        system->SetNumThreads(1, 1, threads);
+    else
+        system->SetNumThreads(threads);
 
     // Set solver parameters
     system->GetSettings()->solver.max_iteration_bilateral = max_iteration_bilateral;

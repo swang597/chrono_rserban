@@ -105,10 +105,10 @@ int main(int argc, char* argv[]) {
 
     // Set number of threads
     int threads = 8;
-    int max_threads = CHOMPfunctions::GetNumProcs();
+    int max_threads = omp_get_num_procs();
     if (threads > max_threads)
         threads = max_threads;
-    CHOMPfunctions::SetNumThreads(threads);
+    msystem.SetNumThreads(threads);
 
     // Set gravitational acceleration
     msystem.Set_G_acc(ChVector<>(0, 0, -9.81));

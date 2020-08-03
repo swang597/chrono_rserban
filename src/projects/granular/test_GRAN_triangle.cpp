@@ -192,11 +192,13 @@ int main(int argc, char* argv[]) {
     // Set number of threads.
     // ----------------------
 
-    int max_threads = CHOMPfunctions::GetNumProcs();
+    int max_threads = omp_get_num_procs();
     if (threads > max_threads)
         threads = max_threads;
-    CHOMPfunctions::SetNumThreads(threads);
-    cout << "Using " << threads << " threads" << endl;
+    if (thread_tuning)
+        msystem->SetNumThreads(1, 1, threads);
+    else
+        msystem->SetNumThreads(threads);
 
     // ---------------------
     // Edit system settings.

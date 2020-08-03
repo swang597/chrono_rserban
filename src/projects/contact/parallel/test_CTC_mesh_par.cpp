@@ -132,12 +132,10 @@ int main(int argc, char* argv[]) {
     system->Set_G_acc(ChVector<>(0, -gravity, 0));
 
     int nthreads = 2;
-    int max_threads = CHOMPfunctions::GetNumProcs();
+    int max_threads = omp_get_num_procs();
     if (nthreads > max_threads)
         nthreads = max_threads;
-    CHOMPfunctions::SetNumThreads(nthreads);
-
-    system->GetSettings()->perform_thread_tuning = false;
+    system->SetNumThreads(nthreads);
 
     system->GetSettings()->solver.use_full_inertia_tensor = false;
     system->GetSettings()->solver.tolerance = tolerance;

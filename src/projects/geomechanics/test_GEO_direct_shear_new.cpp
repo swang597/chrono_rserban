@@ -297,11 +297,7 @@ int main(int argc, char* argv[]) {
     ChSystemParallelNSC m_sys;
 
     m_sys.Set_G_acc(ChVector<>(0, 0, -grav));
-
-    unsigned int num_threads = omp_get_num_procs();
-    omp_set_num_threads(num_threads);
-    m_sys.GetSettings()->max_threads = num_threads;
-    settings_stream << "OpenMP threads: " << num_threads << endl;
+    m_sys.SetNumThreads(omp_get_num_procs());
 
     m_sys.GetSettings()->solver.use_full_inertia_tensor = false;
     m_sys.GetSettings()->solver.tolerance = tolerance;

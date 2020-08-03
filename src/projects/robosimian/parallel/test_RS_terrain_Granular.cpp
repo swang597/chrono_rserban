@@ -95,17 +95,16 @@ int main(int argc, char* argv[]) {
 
     sys->Set_G_acc(ChVector<double>(0, 0, -9.8));
 
-    int max_threads = CHOMPfunctions::GetNumProcs();
+    int max_threads = omp_get_num_procs();
     if (nthreads > max_threads)
         nthreads = max_threads;
-    CHOMPfunctions::SetNumThreads(nthreads);
+    sys->SetNumThreads(nthreads);
 
     sys->GetSettings()->solver.tolerance = 1e-3;
     sys->GetSettings()->solver.max_iteration_bilateral = 100;
     sys->GetSettings()->solver.cache_step_length = true;
     sys->GetSettings()->solver.use_full_inertia_tensor = false;
     sys->GetSettings()->solver.bilateral_clamp_speed = 1e8;
-    sys->GetSettings()->min_threads = nthreads;
 
     sys->GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
 

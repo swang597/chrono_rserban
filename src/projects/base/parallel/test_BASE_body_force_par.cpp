@@ -41,7 +41,7 @@ int main(int argc, char* argv[]) {
         my_sys.Set_G_acc(ChVector<double>(0, 0, -9.8));
 
     int num_threads = 1;
-    CHOMPfunctions::SetNumThreads(num_threads);
+    my_sys.SetNumThreads(num_threads);
 
     // Set solver parameters
     my_sys.GetSettings()->solver.max_iteration_bilateral = max_iteration;
