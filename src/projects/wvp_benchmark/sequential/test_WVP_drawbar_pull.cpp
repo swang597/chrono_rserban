@@ -275,18 +275,12 @@ int main(int argc, char* argv[]) {
     double E_elastic = 2e8;
     double damping = 3e4;
 
-    double factor = 2;
-    int divX = static_cast<int>(terrainLength * factor);
-    int divY = static_cast<int>(5 * factor);
-
     auto terrain = new SCMDeformableTerrain(wvp.GetSystem());
     terrain->SetPlane(ChCoordsys<>(VNULL, Q_from_AngX(CH_C_PI_2)));
     terrain->SetSoilParameters(Kphi, Kc, n, c, phi, K, E_elastic, damping);
     terrain->SetPlotType(vehicle::SCMDeformableTerrain::PLOT_SINKAGE, 0, 0.15);
-    terrain->SetAutomaticRefinement(true);
-    terrain->SetAutomaticRefinementResolution(0.1);
-    terrain->AddMovingPatch(wvp.GetChassisBody(), ChVector<>(-2, 0, 0), 5, 3);
-    terrain->Initialize(0.0, terrainLength, 5.0, divX, divY);
+    terrain->AddMovingPatch(wvp.GetChassisBody(), ChVector<>(-2, 0, 0), ChVector<>(5, 3, 1));
+    terrain->Initialize(terrainLength, 5.0, 0.1);
 
 #ifdef USE_IRRLICHT
     // -------------------------------------

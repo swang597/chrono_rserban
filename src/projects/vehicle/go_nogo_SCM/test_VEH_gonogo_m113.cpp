@@ -69,9 +69,6 @@ double max_slope = 40;
 double hdimX = 100;//// 250;
 double hdimY = 2.5;
 
-// Initial number of divisions per unit (m)
-double factor = 6;
-
 // Vehicle horizontal offset
 double horizontal_offset = 12;
 double horizontal_pos = hdimX - horizontal_offset;
@@ -335,21 +332,15 @@ int main(int argc, char* argv[]) {
     double E_elastic = 2e8;  // Elastic stiffness (Pa/m), before plastic yeld
     double damping = 3e4;    // Damping coefficient (Pa*s/m)
 
-    // Mesh divisions
-    int ndivX = (int)std::ceil(2 * hdimX * factor);
-    int ndivY = (int)std::ceil(2 * hdimY * factor);
-
     SCMDeformableTerrain terrain(system);
     terrain.SetPlane(ChCoordsys<>(VNULL, Q_from_AngX(CH_C_PI_2)));
     terrain.SetSoilParameters(Bekker_Kphi, Bekker_Kc, Bekker_n, Mohr_coh, Mohr_phi, K, E_elastic, damping);
     ////terrain.SetPlotType(vehicle::SCMDeformableTerrain::PLOT_PRESSURE_YELD, 0, 30000.2);
     terrain.SetPlotType(vehicle::SCMDeformableTerrain::PLOT_SINKAGE, 0, 0.15);
-    terrain.Initialize(0, 2 * hdimX, 2 * hdimY, ndivX, ndivY);
-    terrain.SetAutomaticRefinement(true);
-    terrain.SetAutomaticRefinementResolution(0.02);
+    terrain.Initialize(2 * hdimX, 2 * hdimY, 0.02);
 
     // Enable moving patch feature
-    terrain.AddMovingPatch(m113.GetChassisBody(), ChVector<>(-2, 0, 0), 6.5, 3.5);
+    terrain.AddMovingPatch(m113.GetChassisBody(), ChVector<>(-2, 0, 0), ChVector<>(6.5, 3.5, 1.0));
 
 #ifdef CHRONO_IRRLICHT
 

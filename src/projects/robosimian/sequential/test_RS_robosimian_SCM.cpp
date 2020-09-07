@@ -199,23 +199,14 @@ std::shared_ptr<vehicle::SCMDeformableTerrain> CreateTerrain(robosimian::RoboSim
     double E_elastic = 2e8;  // Elastic stiffness (Pa/m), before plastic yeld
     double damping = 3e4;    // Damping coefficient (Pa*s/m)
 
-    // Initial number of divisions per unit (m)
-    double factor = 8;
-
-    // Mesh divisions
-    int ndivX = (int)std::ceil(length * factor);
-    int ndivY = (int)std::ceil(width * factor);
-
     auto terrain = chrono_types::make_shared<vehicle::SCMDeformableTerrain>(robot->GetSystem());
-    terrain->SetPlane(ChCoordsys<>(ChVector<>(length / 2 - offset, 0, 0), QUNIT));
+    terrain->SetPlane(ChCoordsys<>(ChVector<>(length / 2 - offset, 0, height), QUNIT));
     terrain->SetSoilParameters(Kphi, Kc, n, coh, phi, K, E_elastic, damping);
     terrain->SetPlotType(vehicle::SCMDeformableTerrain::PLOT_SINKAGE, 0, 0.15);
-    terrain->Initialize(height, length, width, ndivX, ndivY);
-    terrain->SetAutomaticRefinement(true);
-    terrain->SetAutomaticRefinementResolution(1.0 / 64);
+    terrain->Initialize(length, width, 1.0 / 64);
 
     // Enable moving patch feature
-    terrain->AddMovingPatch(robot->GetChassisBody(), ChVector<>(0, 0, 0), 3.0, 2.0);
+    terrain->AddMovingPatch(robot->GetChassisBody(), ChVector<>(0, 0, 0), ChVector<>(3.0, 2.0, 1.0));
 
     return terrain;
 }

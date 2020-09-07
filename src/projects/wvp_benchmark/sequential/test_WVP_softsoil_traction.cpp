@@ -75,7 +75,6 @@ ChVector<> trackPoint(0.0, 0.0, 1.75);
 
 double terrainLength = 400;
 double terrainWidth = 5;
-double terrainHeight = 0;
 
 // Simulation step sizes
 double step_size = 1e-3;
@@ -107,7 +106,6 @@ std::string speed_controller_file("wvp/SpeedControllerAgrPI.json");
 std::string output_file_name("softsoil");
 
 bool LtR = false;
-bool use_mesh_refinement = true;
 
 std::string progName = "test_WVP_softsoil_traction";
 
@@ -231,15 +229,7 @@ int main(int argc, char* argv[]) {
     terrain->SetPlane(ChCoordsys<>(VNULL, Q_from_AngX(CH_C_PI_2)));
     terrain->SetSoilParameters(Kphi, Kc, n, c, phi, K, E_elastic, damping);
     terrain->SetPlotType(vehicle::SCMDeformableTerrain::PLOT_SINKAGE, 0, 0.15);
-    double factor;
-    if (use_mesh_refinement) {
-        factor = 2;
-        terrain->SetAutomaticRefinement(true);
-        terrain->SetAutomaticRefinementResolution(0.1);
-    } else {
-        factor = 10;
-    }
-    terrain->Initialize(terrainHeight, terrainLength, terrainWidth, terrainLength * factor, terrainWidth * factor);
+    terrain->Initialize(terrainLength, terrainWidth, 0.1);
 
     // create the driver
     auto path = ChBezierCurve::read(vehicle::GetDataFile(path_file));

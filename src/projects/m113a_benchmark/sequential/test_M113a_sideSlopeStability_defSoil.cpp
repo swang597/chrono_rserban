@@ -81,7 +81,6 @@ std::string steering_controller_file("M113a_benchmark/SteeringController_M113_si
 std::string speed_controller_file("M113a_benchmark/SpeedController.json");
 
 // Rigid terrain dimensions
-double terrainHeight = 0;
 double terrainLength = 50.0;  // size in X direction (TODO: This should be 30, per the NRMM requirements)
 double terrainWidth = 15.0;   // size in Y direction
 double rigidLength = 50;      // size of rigid portion in X direction
@@ -197,13 +196,11 @@ int main(int argc, char* argv[]) {
         ////terrain_D->SetTexture(vehicle::GetDataFile("terrain/textures/grass.jpg"), 80, 16);
         terrain_D->SetPlotType(vehicle::SCMDeformableTerrain::PLOT_PRESSURE_YELD, 0, 30000.2);
         ////terrain_D->SetPlotType(vehicle::SCMDeformableTerrain::PLOT_SINKAGE, 0, 0.15);
-        terrain_D->Initialize(terrainHeight, terrainLength, terrainWidth, (int)(terrainLength * factor),
-                              (int)(terrainWidth * factor));
-        terrain_D->SetAutomaticRefinement(true);
+        terrain_D->Initialize(terrainLength, terrainWidth, 1.0 / factor);
         terrain = terrain_D;
     } else {
         auto terrain_R = new RigidTerrain(vehicle.GetSystem());
-        auto patch = terrain_R->AddPatch(ground_mat, ChVector<>(0, 0, terrainHeight), ChVector<>(0, 0, 1),
+        auto patch = terrain_R->AddPatch(ground_mat, ChVector<>(0, 0, 0), ChVector<>(0, 0, 1),
                                          terrainLength, terrainWidth);
         patch->SetColor(ChColor(0.8f, 0.8f, 0.5f));
         patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 200);

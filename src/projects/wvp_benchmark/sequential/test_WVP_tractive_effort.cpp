@@ -74,7 +74,6 @@ ChVector<> trackPoint(0.0, 0.0, 1.75);
 
 double terrainLength = 400;
 double terrainWidth = 5;
-double terrainHeight = 0;
 
 // Simulation step sizes
 double step_size =1e-3;
@@ -167,7 +166,6 @@ int main(int argc, char* argv[]) {
     float E = 2e7f;
     float nu = 0.3f;
     double depth = 10;
-    double factor = 10;
 
     auto terrain = new SCMDeformableTerrain(wvp.GetSystem());
     terrain->SetPlane(ChCoordsys<>(VNULL, Q_from_AngX(CH_C_PI_2)));
@@ -175,7 +173,7 @@ int main(int argc, char* argv[]) {
     // terrain->SetPlotType(vehicle::SCMDeformableTerrain::PLOT_PRESSURE_YIELD,0,30000.2);
     terrain->SetPlotType(vehicle::SCMDeformableTerrain::PLOT_SINKAGE, 0, 0.15);
 
-    terrain->Initialize(terrainHeight,terrainLength,terrainWidth,terrainLength * factor, terrainWidth*factor);
+    terrain->Initialize(terrainLength, terrainWidth, 0.1);
 
     //create the driver
     auto path = ChBezierCurve::read(vehicle::GetDataFile(path_file));
