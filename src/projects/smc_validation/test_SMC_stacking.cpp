@@ -70,6 +70,7 @@ int main(int argc, char* argv[]) {
 
         ChSystemParallelSMC msystem;
         SetSimParameters(&msystem, gravity, force_to_enum(fmodels[f]));
+        msystem.SetNumThreads(2);
 
         // Add the wall to the system
         double wmass = 10.0;
@@ -90,7 +91,7 @@ int main(int argc, char* argv[]) {
 
         // Create the Irrlicht visualization.
 #ifdef CHRONO_IRRLICHT
-        bool vis = false;
+        bool vis = true;
         auto application = SetSimVis(&msystem, time_step, vis);
 #endif
 
