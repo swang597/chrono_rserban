@@ -165,14 +165,14 @@ void RigidBoundingBox_par(const custom_vector<real3>& aabb_min,
 int main(int argc, char* argv[]) {
     // Set number of threads
     int threads = 10;
-    int max_threads = CHOMPfunctions::GetNumProcs();
+    int max_threads = ChOMP::GetNumProcs();
     if (threads > max_threads)
         threads = max_threads;
-    CHOMPfunctions::SetNumThreads(threads);
+    ChOMP::SetNumThreads(threads);
 
 #pragma omp parallel
 #pragma omp master
-    std::cout << "Using " << CHOMPfunctions::GetNumThreads() << " threads.\n" << std::endl;
+    std::cout << "Using " << ChOMP::GetNumThreads() << " threads.\n" << std::endl;
 
     // Set an arbitrary number of bodies
     uint nbodies = 100;
