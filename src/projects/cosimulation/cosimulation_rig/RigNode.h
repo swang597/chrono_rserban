@@ -105,6 +105,8 @@ class RigNode : public BaseNode {
     double m_upright_mass;
     double m_rim_mass;
 
+    std::shared_ptr<chrono::vehicle::ChWheel> m_wheel;  ///< wheel subsystem (to which a tire is attached)
+
     std::string m_tire_json;  ///< name of tire JSON specification file
     bool m_tire_pressure;     ///< tire pressure enabled?
 

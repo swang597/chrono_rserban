@@ -47,12 +47,12 @@ class TerrainNode : public BaseNode {
   public:
     enum Type { RIGID, GRANULAR };
 
-    TerrainNode(Type type,                                            ///< terrain type (RIGID or GRANULAR)
-                chrono::ChMaterialSurface::ContactMethod method,  ///< contact method (penalty or complementatiry)
-                bool use_checkpoint,                                  ///< initialize granular terrain from checkpoint
-                bool render,                                          ///< use OpenGL rendering
-                int num_threads                                       ///< number of OpenMP threads
-                );
+    TerrainNode(Type type,                       ///< terrain type (RIGID or GRANULAR)
+                chrono::ChContactMethod method,  ///< contact method (penalty or complementatiry)
+                bool use_checkpoint,             ///< initialize granular terrain from checkpoint
+                bool render,                     ///< use OpenGL rendering
+                int num_threads                  ///< number of OpenMP threads
+    );
     ~TerrainNode();
 
     /// Set container dimensions.
@@ -157,7 +157,7 @@ class TerrainNode : public BaseNode {
     chrono::ChSystemParallel* m_system;  ///< containing system
     bool m_constructed;                  ///< system construction completed?
 
-    chrono::ChMaterialSurface::ContactMethod m_method;              ///< contact method (penalty or complementarity)
+    chrono::ChContactMethod m_method;                               ///< contact method (penalty or complementarity)
     std::shared_ptr<chrono::ChMaterialSurface> m_material_terrain;  ///< material properties for terrain bodies
     std::shared_ptr<chrono::ChMaterialSurface> m_material_tire;     ///< material properties for proxy bodies
 

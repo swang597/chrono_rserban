@@ -34,6 +34,7 @@
 #include "chrono/ChConfig.h"
 #include "chrono/physics/ChLinkLock.h"
 #include "chrono/physics/ChSystemSMC.h"
+#include "chrono/solver/ChIterativeSolver.h"
 #include "chrono/timestepper/ChState.h"
 #include "chrono/utils/ChUtilsCreators.h"
 
@@ -44,6 +45,10 @@
 
 #ifdef CHRONO_MKL
 #include "chrono_mkl/ChSolverMKL.h"
+#endif
+
+#ifdef CHRONO_MUMPS
+#include "chrono_mumps/ChSolverMumps.h"
 #endif
 
 #include "RigNode.h"
@@ -80,6 +85,18 @@ class ChFunction_SlipAngle : public chrono::ChFunction {
 
 // =============================================================================
 
+// Dummy wheel subsystem (needed to attach a Chrono::Vehicle tire)
+class RigNodeWheel : public ChWheel {
+  public:
+    RigNodeWheel() : ChWheel("rig_wheel") {}
+    virtual double GetMass() const override { return 0; }
+    virtual ChVector<> GetInertia() const override { return ChVector<>(0); }
+    virtual double GetRadius() const override { return 1; }
+    virtual double GetWidth() const override { return 1; }
+};
+
+// =============================================================================
+
 // -----------------------------------------------------------------------------
 // Construction of the rig node:
 // - create the (sequential) Chrono system and set solver parameters
@@ -103,7 +120,13 @@ RigNode::RigNode(double init_vel, double slip, int num_threads)
     // Default integrator and solver types
     // -----------------------------------
     m_int_type = ChTimestepper::Type::HHT;
-    m_slv_type = ChSolver::Type::CUSTOM;
+#if defined(CHRONO_MKL)
+    m_slv_type = ChSolver::Type::PARDISO;
+#elif defined(CHRONO_MUMPS)
+    m_slv_type = ChSolver::Type::MUMPS;
+#else
+    m_slv_type == ChSolver::Type::BARZILAIBORWEIN;
+#endif
 
     // ----------------------------------
     // Create the (sequential) SMC system
@@ -113,8 +136,7 @@ RigNode::RigNode(double init_vel, double slip, int num_threads)
     m_system->Set_G_acc(ChVector<>(0, 0, m_gacc));
 
     // Set number threads
-    m_system->SetParallelThreadNumber(num_threads);
-    CHOMPfunctions::SetNumThreads(num_threads);
+    m_system->SetNumThreads(num_threads);
 }
 
 // -----------------------------------------------------------------------------
@@ -129,7 +151,12 @@ void RigNode::SetIntegratorType(ChTimestepper::Type int_type, ChSolver::Type slv
     m_int_type = int_type;
     m_slv_type = slv_type;
 #ifndef CHRONO_MKL
-    m_slv_type = ChSolver::Type::SOR;
+    if (m_slv_type == ChSolver::Type::PARDISO)
+        m_slv_type = ChSolver::Type::BARZILAIBORWEIN;
+#endif
+#ifndef CHRONO_MUMPS
+    if (m_slv_type == ChSolver::Type::MUMPS)
+        m_slv_type = ChSolver::Type::BARZILAIBORWEIN;
 #endif
 }
 
@@ -164,18 +191,55 @@ void RigNode::Construct() {
     // Change solver and integrator
     // -------------------------------
 
-    if (m_slv_type == ChSolver::Type::CUSTOM) {
+    switch (m_slv_type) {
+        case ChSolver::Type::PARDISO: {
 #ifdef CHRONO_MKL
-        auto mkl_solver = chrono_types::make_shared<ChSolverMKL<>>();
-        mkl_solver->SetSparsityPatternLock(true);
-        m_system->SetSolver(mkl_solver);
+            auto solver = chrono_types::make_shared<ChSolverMKL>();
+            solver->LockSparsityPattern(true);
+            m_system->SetSolver(solver);
 #endif
-    } else {
-        m_system->SetSolverType(m_slv_type);
-        m_system->SetMaxItersSolverSpeed(100);
-        m_system->SetMaxItersSolverStab(100);
-        m_system->SetTol(1e-10);
-        m_system->SetTolForce(1e-8);
+            break;
+        }
+        case ChSolver::Type::MUMPS: {
+#ifdef CHRONO_MUMPS
+            auto solver = chrono_types::make_shared<ChSolverMumps>();
+            solver->LockSparsityPattern(true);
+            m_system->SetSolver(solver);
+#endif
+            break;
+        }
+        case ChSolver::Type::SPARSE_LU: {
+            auto solver = chrono_types::make_shared<ChSolverSparseLU>();
+            solver->LockSparsityPattern(true);
+            m_system->SetSolver(solver);        
+            break;
+        }
+        case ChSolver::Type::SPARSE_QR: {
+            auto solver = chrono_types::make_shared<ChSolverSparseQR>();
+            solver->LockSparsityPattern(true);
+            m_system->SetSolver(solver);
+            break;
+        }
+        case ChSolver::Type::PSOR:
+        case ChSolver::Type::PSSOR:
+        case ChSolver::Type::PJACOBI:
+        case ChSolver::Type::PMINRES:
+        case ChSolver::Type::BARZILAIBORWEIN:
+        case ChSolver::Type::APGD:
+        case ChSolver::Type::GMRES:
+        case ChSolver::Type::MINRES:
+        case ChSolver::Type::BICGSTAB: {
+            m_system->SetSolverType(m_slv_type);
+            auto solver = std::dynamic_pointer_cast<ChIterativeSolver>(m_system->GetSolver());
+            assert(solver);
+            solver->SetMaxIterations(100);
+            solver->SetTolerance(1e-10);
+            break;
+        }    
+        default: {
+            std::cout << "Solver type not supported!" << std::endl;
+            return;
+        }             
     }
 
     switch (m_int_type) {
@@ -203,30 +267,30 @@ void RigNode::Construct() {
     ChVector<> rim_inertia(1, 1, 1);
 
     // Create ground body.
-    m_ground = chrono_types::make_shared<ChBody>(ChMaterialSurface::SMC);
+    m_ground = chrono_types::make_shared<ChBody>();
     m_ground->SetBodyFixed(true);
     m_system->AddBody(m_ground);
 
     // Create the chassis body.
-    m_chassis = chrono_types::make_shared<ChBody>(ChMaterialSurface::SMC);
+    m_chassis = chrono_types::make_shared<ChBody>();
     m_chassis->SetMass(m_chassis_mass);
     m_chassis->SetInertiaXX(chassis_inertia);
     m_system->AddBody(m_chassis);
 
     // Create the set toe body.
-    m_set_toe = chrono_types::make_shared<ChBody>(ChMaterialSurface::SMC);
+    m_set_toe = chrono_types::make_shared<ChBody>();
     m_set_toe->SetMass(m_set_toe_mass);
     m_set_toe->SetInertiaXX(set_toe_inertia);
     m_system->AddBody(m_set_toe);
 
     // Create the rim body.
-    m_rim = chrono_types::make_shared<ChBody>(ChMaterialSurface::SMC);
+    m_rim = chrono_types::make_shared<ChBody>();
     m_rim->SetMass(m_rim_mass);
     m_rim->SetInertiaXX(rim_inertia);
     m_system->AddBody(m_rim);
 
     // Create the upright body.
-    m_upright = chrono_types::make_shared<ChBody>(ChMaterialSurface::SMC);
+    m_upright = chrono_types::make_shared<ChBody>();
     m_upright->SetMass(m_upright_mass);
     m_upright->SetInertiaXX(upright_inertia);
     m_system->AddBody(m_upright);
@@ -260,6 +324,12 @@ void RigNode::Construct() {
     m_rev_motor = chrono_types::make_shared<ChLinkMotorRotationAngle>();
     m_rev_motor->SetName("Motor_ang_vel");
     m_system->AddLink(m_rev_motor);
+
+    // -------------------------------
+    // Create a dummy wheel subsystem
+    // -------------------------------
+
+    m_wheel = chrono_types::make_shared<RigNodeWheel>();
 
     // ---------------
     // Create the tire
@@ -387,19 +457,21 @@ void RigNode::Initialize() {
     m_rev_motor->Initialize(m_rim, m_upright, ChFrame<>(m_rim->GetPos(), Q_from_AngAxis(CH_C_PI / 2.0, VECT_X)));
 
     // -----------------------------------
-    // Initialize the tire
+    // Initialize the wheel and tire
     // -----------------------------------
 
+    // Initialize the wheel, arbitrarily assuming LEFT side
+    m_wheel->Initialize(m_rim, LEFT);
+    m_wheel->SetVisualizationType(VisualizationType::NONE);
+   
     // Let the derived class initialize the tire and send information to the terrain node
     InitializeTire();
-
-    // Mark completion of system construction
-    m_system->SetupInitial();
 }
 
 void RigNodeDeformableTire::InitializeTire() {
     // Initialize the ANCF tire
-    m_tire->Initialize(m_rim, LEFT);
+    m_wheel->SetTire(m_tire);                                       // technically not really needed here
+    std::static_pointer_cast<ChTire>(m_tire)->Initialize(m_wheel);  // hack to call protected virtual method
 
     // Create a mesh load for contact forces and add it to the tire's load container.
     auto contact_surface = std::static_pointer_cast<fea::ChContactSurfaceMesh>(m_tire->GetContactSurface());
@@ -434,15 +506,9 @@ void RigNodeDeformableTire::InitializeTire() {
 
     // Send tire contact material properties
     auto contact_mat = m_tire->GetContactMaterial();
-    float mat_props[8] = {m_tire->GetCoefficientFriction(),
-                          m_tire->GetCoefficientRestitution(),
-                          m_tire->GetYoungModulus(),
-                          m_tire->GetPoissonRatio(),
-                          m_tire->GetKn(),
-                          m_tire->GetGn(),
-                          m_tire->GetKt(),
-                          m_tire->GetGt()};
-
+    float mat_props[8] = {contact_mat->GetKfriction(),    contact_mat->GetRestitution(), contact_mat->GetYoungModulus(),
+                          contact_mat->GetPoissonRatio(), contact_mat->GetKn(),          contact_mat->GetGn(),
+                          contact_mat->GetKt(),           contact_mat->GetGt()};
     MPI_Send(mat_props, 8, MPI_FLOAT, TERRAIN_NODE_RANK, 0, MPI_COMM_WORLD);
 
     cout << "[Rig node    ] friction = " << mat_props[0] << endl;
@@ -450,7 +516,8 @@ void RigNodeDeformableTire::InitializeTire() {
 
 void RigNodeRigidTire::InitializeTire() {
     // Initialize the rigid tire
-    m_tire->Initialize(m_rim, LEFT);
+    m_wheel->SetTire(m_tire);                                       // technically not really needed here
+    std::static_pointer_cast<ChTire>(m_tire)->Initialize(m_wheel);  // hack to call protected virtual method
 
     // Preprocess the tire mesh and store neighbor element information for each vertex.
     // Calculate mesh triangle areas.
@@ -489,12 +556,12 @@ void RigNodeRigidTire::InitializeTire() {
 
     cout << "[Rig node    ] vertices = " << surf_props[0] << "  triangles = " << surf_props[1] << endl;
 
-    // Send tire contact material properties
-    auto contact_mat = m_rim->GetMaterialSurfaceSMC();
+    // Send tire contact material properties (note: rig node always uses SMC)
+
+    auto contact_mat = std::static_pointer_cast<ChMaterialSurfaceSMC>(m_tire->GetContactMaterial());
     float mat_props[8] = {contact_mat->GetSfriction(),    contact_mat->GetRestitution(), contact_mat->GetYoungModulus(),
                           contact_mat->GetPoissonRatio(), contact_mat->GetKn(),          contact_mat->GetGn(),
                           contact_mat->GetKt(),           contact_mat->GetGt()};
-
     MPI_Send(mat_props, 8, MPI_FLOAT, TERRAIN_NODE_RANK, 0, MPI_COMM_WORLD);
 
     cout << "[Rig node    ] friction = " << mat_props[0] << endl;
@@ -710,7 +777,7 @@ void RigNode::OutputData(int frame) {
         m_outf << rfrc_motor.x() << del << rfrc_motor.y() << del << rfrc_motor.z() << del;
         m_outf << rtrq_motor.x() << del << rtrq_motor.y() << del << rtrq_motor.z() << del;
         // Solver statistics (for last integration step)
-        m_outf << m_system->GetTimerStep() << del << m_system->GetTimerSetup() << del << m_system->GetTimerSolver()
+        m_outf << m_system->GetTimerStep() << del << m_system->GetTimerLSsetup() << del << m_system->GetTimerLSsolve()
                << del << m_system->GetTimerUpdate() << del;
         if (m_int_type == ChTimestepper::Type::HHT) {
             m_outf << m_integrator->GetNumIterations() << del << m_integrator->GetNumSetupCalls() << del
@@ -822,7 +889,8 @@ void RigNodeDeformableTire::WriteTireMeshInformation(utils::CSV_writer& csv) {
         double area = 0;
         for (unsigned int ie = 0; ie < m_adjElements[in].size(); ie++) {
             auto element = std::static_pointer_cast<fea::ChElementShellANCF>(mesh->GetElement(m_adjElements[in][ie]));
-            ChVector<> StrainVector = element->EvaluateSectionStrains();
+            auto StrainStress = element->EvaluateSectionStrainStress(ChVector<>(0, 0,0), 0);
+            ChVector<> StrainVector = StrainStress.strain; 
             double dx = element->GetLengthX();
             double dy = element->GetLengthY();
             area += dx * dy / 4;

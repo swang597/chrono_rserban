@@ -5,17 +5,13 @@ if(NOT ENABLE_MODULE_VEHICLE)
   return()
 endif()
 
-if(NOT ENABLE_MODULE_MKL)
-  return()
-endif()
-
 if(NOT ENABLE_MODULE_PARALLEL)
   return()
 endif()  
 
 # ------------------------------------------------------------------------------
 
-include_directories(${CH_MKL_INCLUDES})
+include_directories(${CH_INCLUDES})
 include_directories(${CH_PARALLEL_INCLUDES})
 include_directories(${MPI_CXX_INCLUDE_PATH})
 
@@ -26,9 +22,20 @@ set(LIBRARIES
     ChronoEngine
     ChronoEngine_vehicle
     ChronoModels_vehicle
-    ChronoEngine_mkl
     ChronoEngine_parallel
 )
+
+if(ENABLE_MODULE_MKL)
+  include_directories(${CH_MKL_INCLUDES})
+  set(COMPILER_FLAGS "${COMPILER_FLAGS} ${CH_MKL_CXX_FLAGS}")
+  set(LINKER_FLAGS "${LINKER_FLAGS} ${CH_MKL_LINK_FLAGS}")
+  set(LIBRARIES ${LIBRARIES} ChronoEngine_mkl)
+endif()
+
+if(ENABLE_MODULE_MUMPS)
+  include_directories(${CH_MUMPS_INCLUDES})
+  set(LIBRARIES ${LIBRARIES} ChronoEngine_mumps)
+endif()
 
 if(ENABLE_MODULE_OPENGL)
     include_directories(${CH_OPENGL_INCLUDES})

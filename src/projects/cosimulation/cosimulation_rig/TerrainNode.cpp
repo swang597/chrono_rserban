@@ -57,7 +57,7 @@ const std::string TerrainNode::m_checkpoint_filename = "checkpoint.dat";
 // - create the OpenGL visualization window
 // -----------------------------------------------------------------------------
 TerrainNode::TerrainNode(Type type,
-                         ChMaterialSurface::ContactMethod method,
+                         ChContactMethod method,
                          bool use_checkpoint,
                          bool render,
                          int num_threads)
@@ -71,7 +71,9 @@ TerrainNode::TerrainNode(Type type,
       m_num_particles(0),
       m_particles_start_index(0),
       m_init_height(0) {
-    cout << "[Terrain node] type = " << type << " method = " << method << " use_checkpoint = " << use_checkpoint
+    cout << "[Terrain node] type = " << type
+         << " method = " << static_cast<std::underlying_type<ChContactMethod>::type>(method)
+         << " use_checkpoint = " << use_checkpoint
          << " num_threads = " << num_threads << endl;
 
     // ------------------------
@@ -98,10 +100,10 @@ TerrainNode::TerrainNode(Type type,
 
     // Default terrain contact material
     switch (m_method) {
-        case ChMaterialSurface::SMC:
+        case ChContactMethod::SMC:
             m_material_terrain = chrono_types::make_shared<ChMaterialSurfaceSMC>();
             break;
-        case ChMaterialSurface::NSC:
+        case ChContactMethod::NSC:
             m_material_terrain = chrono_types::make_shared<ChMaterialSurfaceNSC>();
             break;
     }
@@ -112,7 +114,7 @@ TerrainNode::TerrainNode(Type type,
 
     // Create system and set default method-specific solver settings
     switch (m_method) {
-        case ChMaterialSurface::SMC: {
+        case ChContactMethod::SMC: {
             ChSystemParallelSMC* sys = new ChSystemParallelSMC;
             sys->GetSettings()->solver.contact_force_model = ChSystemSMC::Hertz;
             sys->GetSettings()->solver.tangential_displ_mode = ChSystemSMC::TangentialDisplacementModel::OneStep;
@@ -121,7 +123,7 @@ TerrainNode::TerrainNode(Type type,
 
             break;
         }
-        case ChMaterialSurface::NSC: {
+        case ChContactMethod::NSC: {
             ChSystemParallelNSC* sys = new ChSystemParallelNSC;
             sys->GetSettings()->solver.solver_mode = SolverMode::SLIDING;
             sys->GetSettings()->solver.max_iteration_normal = 0;
@@ -139,15 +141,13 @@ TerrainNode::TerrainNode(Type type,
 
     // Solver settings independent of method type
     m_system->Set_G_acc(ChVector<>(0, 0, m_gacc));
-    m_system->GetSettings()->perform_thread_tuning = false;
     m_system->GetSettings()->solver.use_full_inertia_tensor = false;
     m_system->GetSettings()->solver.tolerance = 0.1;
     m_system->GetSettings()->solver.max_iteration_bilateral = 100;
     m_system->GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
 
     // Set number of threads
-    m_system->SetParallelThreadNumber(num_threads);
-    CHOMPfunctions::SetNumThreads(num_threads);
+    m_system->SetNumThreads(num_threads);
 
 #pragma omp parallel
 #pragma omp master
@@ -250,23 +250,23 @@ void TerrainNode::Construct() {
     container->SetMass(1);
     container->SetBodyFixed(true);
     container->SetCollide(true);
-    container->SetMaterialSurface(m_material_terrain);
 
     container->GetCollisionModel()->ClearModel();
     // Bottom box
-    utils::AddBoxGeometry(container.get(), ChVector<>(m_hdimX, m_hdimY, m_hthick), ChVector<>(0, 0, -m_hthick),
+    utils::AddBoxGeometry(container.get(), m_material_terrain, ChVector<>(m_hdimX, m_hdimY, m_hthick),
+                          ChVector<>(0, 0, -m_hthick),
                           ChQuaternion<>(1, 0, 0, 0), true);
     // Front box
-    utils::AddBoxGeometry(container.get(), ChVector<>(m_hthick, m_hdimY, m_hdimZ + m_hthick),
+    utils::AddBoxGeometry(container.get(), m_material_terrain, ChVector<>(m_hthick, m_hdimY, m_hdimZ + m_hthick),
                           ChVector<>(m_hdimX + m_hthick, 0, m_hdimZ - m_hthick), ChQuaternion<>(1, 0, 0, 0), false);
     // Rear box
-    utils::AddBoxGeometry(container.get(), ChVector<>(m_hthick, m_hdimY, m_hdimZ + m_hthick),
+    utils::AddBoxGeometry(container.get(), m_material_terrain, ChVector<>(m_hthick, m_hdimY, m_hdimZ + m_hthick),
                           ChVector<>(-m_hdimX - m_hthick, 0, m_hdimZ - m_hthick), ChQuaternion<>(1, 0, 0, 0), false);
     // Left box
-    utils::AddBoxGeometry(container.get(), ChVector<>(m_hdimX, m_hthick, m_hdimZ + m_hthick),
+    utils::AddBoxGeometry(container.get(), m_material_terrain, ChVector<>(m_hdimX, m_hthick, m_hdimZ + m_hthick),
                           ChVector<>(0, m_hdimY + m_hthick, m_hdimZ - m_hthick), ChQuaternion<>(1, 0, 0, 0), false);
     // Right box
-    utils::AddBoxGeometry(container.get(), ChVector<>(m_hdimX, m_hthick, m_hdimZ + m_hthick),
+    utils::AddBoxGeometry(container.get(), m_material_terrain, ChVector<>(m_hdimX, m_hthick, m_hdimZ + m_hthick),
                           ChVector<>(0, -m_hdimY - m_hthick, m_hdimZ - m_hthick), ChQuaternion<>(1, 0, 0, 0), false);
     container->GetCollisionModel()->BuildModel();
 
@@ -343,7 +343,7 @@ void TerrainNode::Construct() {
     outf << "Terrain type = " << (m_type == RIGID ? "RIGID" : "GRANULAR") << endl;
     outf << "System settings" << endl;
     outf << "   Integration step size = " << m_step_size << endl;
-    outf << "   Contact method = " << (m_method == ChMaterialSurface::SMC ? "SMC" : "NSC") << endl;
+    outf << "   Contact method = " << (m_method == ChContactMethod::SMC ? "SMC" : "NSC") << endl;
     outf << "   Use material properties? " << (m_system->GetSettings()->solver.use_material_properties ? "YES" : "NO")
          << endl;
     outf << "   Collision envelope = " << m_system->GetSettings()->collision.collision_envelope << endl;
@@ -352,7 +352,7 @@ void TerrainNode::Construct() {
     outf << "   wall thickness = " << 2 * m_hthick << endl;
     outf << "Terrain material properties" << endl;
     switch (m_method) {
-        case ChMaterialSurface::SMC: {
+        case ChContactMethod::SMC: {
             auto mat = std::static_pointer_cast<ChMaterialSurfaceSMC>(m_material_terrain);
             outf << "   Coefficient of friction    = " << mat->GetKfriction() << endl;
             outf << "   Coefficient of restitution = " << mat->GetRestitution() << endl;
@@ -365,7 +365,7 @@ void TerrainNode::Construct() {
             outf << "   Gt = " << mat->GetGt() << endl;
             break;
         }
-        case ChMaterialSurface::NSC: {
+        case ChContactMethod::NSC: {
             auto mat = std::static_pointer_cast<ChMaterialSurfaceNSC>(m_material_terrain);
             outf << "   Coefficient of friction    = " << mat->GetKfriction() << endl;
             outf << "   Coefficient of restitution = " << mat->GetRestitution() << endl;
@@ -563,7 +563,7 @@ void TerrainNode::Initialize() {
     MPI_Recv(mat_props, 8, MPI_FLOAT, RIG_NODE_RANK, 0, MPI_COMM_WORLD, &status_m);
 
     switch (m_method) {
-        case ChMaterialSurface::SMC: {
+        case ChContactMethod::SMC: {
             // Properties for tire
             auto mat_tire = chrono_types::make_shared<ChMaterialSurfaceSMC>();
             mat_tire->SetFriction(mat_props[0]);
@@ -579,7 +579,7 @@ void TerrainNode::Initialize() {
 
             break;
         }
-        case ChMaterialSurface::NSC: {
+        case ChContactMethod::NSC: {
             auto mat_tire = chrono_types::make_shared<ChMaterialSurfaceNSC>();
             mat_tire->SetFriction(mat_props[0]);
             mat_tire->SetRestitution(mat_props[1]);
@@ -623,10 +623,10 @@ void TerrainNode::CreateNodeProxies() {
         body->SetInertiaXX(inertia_pN);
         body->SetBodyFixed(false);
         body->SetCollide(true);
-        body->SetMaterialSurface(m_material_tire);
 
         body->GetCollisionModel()->ClearModel();
-        utils::AddSphereGeometry(body.get(), m_radius_pN, ChVector<>(0, 0, 0), ChQuaternion<>(1, 0, 0, 0), true);
+        utils::AddSphereGeometry(body.get(), m_material_tire, m_radius_pN, ChVector<>(0, 0, 0),
+                                 ChQuaternion<>(1, 0, 0, 0), true);
         body->GetCollisionModel()->SetFamily(1);
         body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(1);
         body->GetCollisionModel()->BuildModel();
@@ -652,7 +652,6 @@ void TerrainNode::CreateFaceProxies() {
         body->SetInertiaXX(inertia_pF);
         body->SetBodyFixed(false);
         body->SetCollide(true);
-        body->SetMaterialSurface(m_material_tire);
 
         // Create contact shape.
         // Note that the vertex locations will be updated at every synchronization time.
@@ -660,7 +659,8 @@ void TerrainNode::CreateFaceProxies() {
         double len = 0.1;
 
         body->GetCollisionModel()->ClearModel();
-        utils::AddTriangle(body.get(), ChVector<>(len, 0, 0), ChVector<>(0, len, 0), ChVector<>(0, 0, len), name);
+        utils::AddTriangleGeometry(body.get(), m_material_tire, ChVector<>(len, 0, 0), ChVector<>(0, len, 0),
+                           ChVector<>(0, 0, len), name);
         body->GetCollisionModel()->SetFamily(1);
         body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(1);
         body->GetCollisionModel()->BuildModel();

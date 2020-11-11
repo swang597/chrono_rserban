@@ -30,7 +30,7 @@
 
 #include "chrono_vehicle/ChVehicleModelData.h"
 
-#include "chrono_thirdparty/SimpleOpt/SimpleOpt.h"
+#include "chrono_thirdparty/cxxopts/ChCLI.h"
 #include "chrono_thirdparty/filesystem/path.h"
 
 #include "RigNode.h"
@@ -59,51 +59,7 @@ std::string out_dir = "../TIRE_RIG_COSIM";
 
 // =============================================================================
 
-// ID values to identify command line arguments
-enum {
-    OPT_HELP,
-    OPT_THREADS_RIG,
-    OPT_THREADS_TERRAIN,
-    OPT_USE_CHECKPOINT,
-    OPT_SIM_TIME,
-    OPT_NO_OUTPUT,
-    OPT_NO_RENDERING,
-    OPT_INIT_VEL,
-    OPT_LONG_SLIP,
-    OPT_COHESION,
-    OPT_SYSTEM_MASS,
-    OPT_SUFFIX
-};
-
-// Table of CSimpleOpt::Soption structures. Each entry specifies:
-// - the ID for the option (returned from OptionId() during processing)
-// - the option as it should appear on the command line
-// - type of the option
-// The last entry must be SO_END_OF_OPTIONS
-CSimpleOptA::SOption g_options[] = {{OPT_THREADS_RIG, "--num-threads-rig", SO_REQ_CMB},
-                                    {OPT_THREADS_TERRAIN, "--num-threads-terrain", SO_REQ_CMB},
-                                    {OPT_USE_CHECKPOINT, "-c", SO_NONE},
-                                    {OPT_USE_CHECKPOINT, "--use-checkpoint", SO_REQ_CMB},
-                                    {OPT_SIM_TIME, "-t", SO_REQ_CMB},
-                                    {OPT_SIM_TIME, "--simulation-time", SO_REQ_CMB},
-                                    {OPT_NO_OUTPUT, "--no-output", SO_NONE},
-                                    {OPT_NO_RENDERING, "--no-rendering", SO_NONE},
-                                    {OPT_INIT_VEL, "-v", SO_REQ_CMB},
-                                    {OPT_INIT_VEL, "--initial-velocity", SO_REQ_CMB},
-                                    {OPT_LONG_SLIP, "-s", SO_REQ_CMB},
-                                    {OPT_LONG_SLIP, "--longitudinal-slip", SO_REQ_CMB},
-                                    {OPT_COHESION, "-ch", SO_REQ_CMB},
-                                    {OPT_COHESION, "--cohesion-terrain", SO_REQ_CMB},
-                                    {OPT_SYSTEM_MASS, "-m", SO_REQ_CMB},
-                                    {OPT_SYSTEM_MASS, "--system-mass", SO_REQ_CMB},
-                                    {OPT_SUFFIX, "--suffix", SO_REQ_CMB},
-                                    {OPT_HELP, "-?", SO_NONE},
-                                    {OPT_HELP, "-h", SO_NONE},
-                                    {OPT_HELP, "--help", SO_NONE},
-                                    SO_END_OF_OPTIONS};
-
 // Forward declarations
-void ShowUsage();
 bool GetProblemSpecs(int argc,
                      char** argv,
                      int rank,
@@ -112,7 +68,7 @@ bool GetProblemSpecs(int argc,
                      double& sim_time,
                      double& init_vel,
                      double& slip,
-                     double& cohesion,
+                     double& coh_pressure,
                      double& sys_mass,
                      bool& use_checkpoint,
                      bool& output,
@@ -193,7 +149,7 @@ int main(int argc, char** argv) {
         }
         case TERRAIN_NODE_RANK: {
             auto type = TerrainNode::GRANULAR;
-            auto method = ChMaterialSurface::SMC;
+            auto method = ChContactMethod::SMC;
 
             cout << "[Terrain node] rank = " << rank << " running on: " << procname << endl;
             my_terrain = new TerrainNode(type, method, use_checkpoint, render, nthreads_terrain);
@@ -211,7 +167,7 @@ int main(int argc, char** argv) {
             ////my_terrain->EnableSettlingOutput(true);
 
             switch (method) {
-                case ChMaterialSurface::SMC: {
+                case ChContactMethod::SMC: {
                     auto material = chrono_types::make_shared<ChMaterialSurfaceSMC>();
                     material->SetFriction(0.9f);
                     material->SetRestitution(0.0f);
@@ -227,7 +183,7 @@ int main(int argc, char** argv) {
                     my_terrain->SetContactForceModel(ChSystemSMC::PlainCoulomb);
                     break;
                 }
-                case ChMaterialSurface::NSC: {
+                case ChContactMethod::NSC: {
                     auto material = chrono_types::make_shared<ChMaterialSurfaceNSC>();
                     material->SetFriction(0.9f);
                     material->SetRestitution(0.0f);
@@ -326,43 +282,6 @@ int main(int argc, char** argv) {
 
 // =============================================================================
 
-void ShowUsage() {
-    cout << "Usage:  mpiexec -np 2 test_VEH_tireRig_Cosimulation [OPTIONS]" << endl;
-    cout << endl;
-    cout << " --num-threads-rig=NUM_THREADS_RIG" << endl;
-    cout << "        Specify number of OpenMP threads for the rig node [default: 2]" << endl;
-    cout << " --num-threads-terrain=NUM_THREADS_TERRAIN" << endl;
-    cout << "        Specify number of OpenMP threads for the terrain node [default: 2]" << endl;
-    cout << " -c" << endl;
-    cout << " --use-checkpoint" << endl;
-    cout << "        Initialize granular terrain from checkppoint file" << endl;
-    cout << "        If not specified, the granular material is settled through simulation" << endl;
-    cout << " -t=SIM_TIME" << endl;
-    cout << " --simulation-time=SIM_TIME" << endl;
-    cout << "        Specify simulation length in seconds [default: 10]" << endl;
-    cout << " -v=INIT_VEL" << endl;
-    cout << " --initial-velocity=INIT_VEL" << endl;
-    cout << "        Specify the initial tire linear velocity [default: 0]" << endl;
-    cout << " -s=LONG_SLIP" << endl;
-    cout << " --longitudinal-slip=LONG_SLIP" << endl;
-    cout << "        Specify the value of the longitudinal slip [default: 0]" << endl;
-    cout << " -ch=COHESION" << endl;
-    cout << " --cohesion-terrain=COHESION" << endl;
-    cout << "        Specify the value of the terrain cohesion in Pa [default: 80e3]" << endl;
-    cout << " -m=SYSTEM_MASS" << endl;
-    cout << " --system-mass=SYSTEM_MASS" << endl;
-    cout << "        Specify the value of the wheel carrier mass (kg) [default: 450]" << endl;
-    cout << " --no-output" << endl;
-    cout << "        Disable generation of output files" << endl;
-    cout << " --no-rendering" << endl;
-    cout << "        Disable OpenGL rendering" << endl;
-    cout << " --suffix=SUFFIX" << endl;
-    cout << "        Specify suffix for output directory names [default: \"\"]" << endl;
-    cout << " -? -h --help" << endl;
-    cout << "        Print this message and exit." << endl;
-    cout << endl;
-}
-
 bool GetProblemSpecs(int argc,
                      char** argv,
                      int rank,
@@ -371,68 +290,64 @@ bool GetProblemSpecs(int argc,
                      double& sim_time,
                      double& init_vel,
                      double& slip,
-                     double& cohesion,
+                     double& coh_pressure,
                      double& sys_mass,
                      bool& use_checkpoint,
                      bool& output,
                      bool& render,
                      std::string& suffix) {
-    // Create the option parser and pass it the program arguments and the array of valid options.
-    CSimpleOptA args(argc, argv, g_options);
+    // Default values
+    nthreads_rig = 2;
+    nthreads_terrain = 2;
+    sim_time = 10;
+    init_vel = 0;
+    slip = 0;
+    coh_pressure = 8e4;
+    use_checkpoint = false;
+    output = true;
+    render = true;
+    sys_mass = 450;
+    suffix = "";
 
-    // Then loop for as long as there are arguments to be processed.
-    while (args.Next()) {
-        // Exit immediately if we encounter an invalid argument.
-        if (args.LastError() != SO_SUCCESS) {
-            if (rank == 0) {
-                cout << "Invalid argument: " << args.OptionText() << endl;
-                ShowUsage();
-            }
-            return false;
-        }
+    ChCLI cli(argv[0]);
 
-        // Process the current argument.
-        switch (args.OptionId()) {
-            case OPT_HELP:
-                if (rank == 0) {
-                    ShowUsage();
-                }
-                return false;
-            case OPT_THREADS_RIG:
-                nthreads_rig = std::stoi(args.OptionArg());
-                break;
-            case OPT_THREADS_TERRAIN:
-                nthreads_terrain = std::stoi(args.OptionArg());
-                break;
-            case OPT_SIM_TIME:
-                sim_time = std::stod(args.OptionArg());
-                break;
-            case OPT_INIT_VEL:
-                init_vel = std::stod(args.OptionArg());
-                break;
-            case OPT_LONG_SLIP:
-                slip = std::stod(args.OptionArg());
-                break;
-            case OPT_COHESION:
-                cohesion = std::stod(args.OptionArg());
-                break;
-            case OPT_SYSTEM_MASS:
-                sys_mass = std::stod(args.OptionArg());
-                break;
-            case OPT_NO_OUTPUT:
-                output = false;
-                break;
-            case OPT_NO_RENDERING:
-                render = false;
-                break;
-            case OPT_USE_CHECKPOINT:
-                use_checkpoint = true;
-                break;
-            case OPT_SUFFIX:
-                suffix = args.OptionArg();
-                break;
-        }
+    cli.AddOption<double>("Demo", "sim_time", "Simulation length after robot release [s]", "10.0");
+
+    cli.AddOption<double>("Demo", "init_vel", "Initial tire linear velocity [m/s]", "0.0");
+    cli.AddOption<double>("Demo", "slip", "Longitudinal slip", "0.0");
+    cli.AddOption<double>("Demo", "coh_pressure", "Terrain cohesion [Pa]", "8e4");
+    cli.AddOption<double>("Demo", "sys_mass", "Mass of wheel carrier [kg]", "450.0");
+
+    cli.AddOption<bool>("Demo", "render", "OpenGL rendering?", "true");
+    cli.AddOption<bool>("Demo", "output", "Generate result output files", "true");
+    cli.AddOption<bool>("Demo", "use_checkpoint", "Initialize granular terrain from checkppoint file", "true");
+
+    cli.AddOption<int>("Demo", "threads_rig", "Number of OpenMP threads for the rig node", "2");
+    cli.AddOption<int>("Demo", "threads_terrain", "Number of OpenMP threads for the terrain node", "2");
+
+    cli.AddOption<std::string>("Demo", "suffix", "Suffix for output directory names", "");
+
+    if (!cli.Parse(argc, argv)) {
+        if (rank == 0)
+            cli.Help();
+        return false;
     }
+
+    sim_time = cli.GetAsType<double>("sim_time");
+
+    init_vel = cli.GetAsType<double>("init_vel");
+    slip = cli.GetAsType<double>("slip");
+    coh_pressure = cli.GetAsType<double>("coh_pressure");
+    sys_mass = cli.GetAsType<double>("sys_mass");
+
+    render = cli.GetAsType<bool>("render");
+    output = cli.GetAsType<bool>("output");
+    use_checkpoint = cli.GetAsType<bool>("use_checkpoint");
+
+    nthreads_rig = cli.GetAsType<int>("threads_rig");
+    nthreads_terrain = cli.GetAsType<int>("threads_terrain");
+
+    suffix = cli.GetAsType<std::string>("suffix");
 
     return true;
 }
