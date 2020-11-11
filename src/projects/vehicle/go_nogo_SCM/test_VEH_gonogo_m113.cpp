@@ -48,7 +48,7 @@
 #include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleIrrApp.h"
 #endif
 
-#include "chrono_thirdparty/SimpleOpt/SimpleOpt.h"
+#include "chrono_thirdparty/cxxopts/ChCLI.h"
 #include "chrono_thirdparty/filesystem/path.h"
 
 using namespace chrono;
@@ -119,11 +119,6 @@ std::string out_dir = "../GONOGO_M113_SCM";
 
 // =============================================================================
 
-void ShowUsage(const std::string& name);
-bool GetProblemSpecs(int argc, char** argv, std::string& file, int& line, bool& copy);
-
-// =============================================================================
-
 class GONOGO_Driver : public chrono::vehicle::ChDriver {
   public:
     GONOGO_Driver(chrono::vehicle::ChVehicle& vehicle,          // associated vehicle
@@ -162,10 +157,20 @@ int main(int argc, char* argv[]) {
     int line_number = 0;          // Line of inputs
     bool copy = true;             // Copy input file?
 
-    // Extract arguments
-    if (!GetProblemSpecs(argc, argv, input_file, line_number, copy)) {
+    chrono::ChCLI cli(argv[0]);
+
+    cli.AddOption<std::string>("Demo", "f,filename", "Name of input file");
+    cli.AddOption<int>("Demo", "l,line", "Line in input file");
+    cli.AddOption<bool>("Demo", "copy", "Copy input file to output directory", "true");
+
+    if (!cli.Parse(argc, argv)) {
+        cli.Help();
         return 1;
     }
+
+    input_file = cli.GetAsType<std::string>("filename");
+    line_number = cli.GetAsType<int>("line");
+    copy = cli.GetAsType<bool>("copy");
 
     // Check that input file exists
     filesystem::path inpath(input_file);
@@ -589,71 +594,4 @@ void GONOGO_Driver::Advance(double step) {
 void GONOGO_Driver::ExportPathPovray(const std::string& out_dir) {
     chrono::utils::WriteCurvePovray(*m_steeringPID.GetPath(), "straight_path", out_dir, 0.04,
                                     chrono::ChColor(0.8f, 0.5f, 0.0f));
-}
-
-// =============================================================================
-// ID values to identify command line arguments
-enum { OPT_HELP, OPT_FILE, OPT_LINE, OPT_NO_COPY };
-
-// Table of CSimpleOpt::Soption structures. Each entry specifies:
-// - the ID for the option (returned from OptionId() during processing)
-// - the option as it should appear on the command line
-// - type of the option
-// The last entry must be SO_END_OF_OPTIONS
-CSimpleOptA::SOption g_options[] = {{OPT_FILE, "-f", SO_REQ_CMB},
-                                    {OPT_LINE, "-l", SO_REQ_CMB},
-                                    {OPT_NO_COPY, "--no-copy", SO_NONE},
-                                    {OPT_HELP, "-?", SO_NONE},
-                                    {OPT_HELP, "-h", SO_NONE},
-                                    {OPT_HELP, "--help", SO_NONE},
-                                    SO_END_OF_OPTIONS};
-
-void ShowUsage(const std::string& name) {
-    std::cout << "Usage: " << name << " -f=FILE_NAME -l=LINE -t=THREADS [OPTIONS]" << std::endl;
-    std::cout << " -f=FILE_NAME" << std::endl;
-    std::cout << "        Name of input file" << std::endl;
-    std::cout << "        Each line contains a point in parameter space:" << std::endl;
-    std::cout << "        slope (deg), radius (mm), density (kg/m3), coef. friction, cohesion" << std::endl;
-    std::cout << " -l=LINE" << std::endl;
-    std::cout << "        Line in input file" << std::endl;
-    std::cout << " --no-copy" << std::endl;
-    std::cout << "        Disable copying of input file to output directory" << std::endl;
-    std::cout << " -? -h --help" << std::endl;
-    std::cout << "        Print this message and exit." << std::endl;
-    std::cout << std::endl;
-}
-
-bool GetProblemSpecs(int argc, char** argv, std::string& file, int& line, bool& copy) {
-    // Create the option parser and pass it the program arguments and the array of valid options.
-    CSimpleOptA args(argc, argv, g_options);
-
-    copy = true;
-
-    // Then loop for as long as there are arguments to be processed.
-    while (args.Next()) {
-        // Exit immediately if we encounter an invalid argument.
-        if (args.LastError() != SO_SUCCESS) {
-            std::cout << "Invalid argument: " << args.OptionText() << std::endl;
-            ShowUsage(argv[0]);
-            return false;
-        }
-
-        // Process the current argument.
-        switch (args.OptionId()) {
-            case OPT_HELP:
-                ShowUsage(argv[0]);
-                return false;
-            case OPT_FILE:
-                file = args.OptionArg();
-                break;
-            case OPT_LINE:
-                line = std::stoi(args.OptionArg());
-                break;
-            case OPT_NO_COPY:
-                copy = false;
-                break;
-        }
-    }
-
-    return true;
 }

@@ -158,7 +158,6 @@ class CustomCompositionStrategy : public ChMaterialCompositionStrategy {
 
 // =============================================================================
 
-void ShowUsage(const std::string& name);
 bool GetProblemSpecs(int argc,
                      char** argv,
                      std::string& file,

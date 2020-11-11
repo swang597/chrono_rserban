@@ -31,8 +31,6 @@
 #include <valarray>
 #include <vector>
 
-#include "chrono_thirdparty/SimpleOpt/SimpleOpt.h"
-
 #include "chrono/ChConfig.h"
 #include "chrono/core/ChStream.h"
 #include "chrono/utils/ChUtilsCreators.h"
@@ -42,6 +40,7 @@
 #include "chrono_parallel/physics/ChSystemParallel.h"
 #include "chrono_parallel/solver/ChSystemDescriptorParallel.h"
 
+#include "chrono_thirdparty/cxxopts/ChCLI.h"
 #include "chrono_thirdparty/filesystem/path.h"
 
 // Control use of OpenGL run-time rendering
@@ -214,25 +213,6 @@ float mu_g = 0.18f;  // dimensionless
 int Id_ball = -4;
 double mass_ball = 200;            // [g] mass of testing ball
 double radius_ball = 0.9 * hdimX;  // [cm] radius of testing ball
-
-// ID values to identify command line arguments
-enum { OPT_HELP, OPT_PRESS, OPT_STAGE, OPT_RAD, OPT_STEP };
-
-// Table of CSimpleOpt::Soption structures. Each entry specifies:
-// - the ID for the option (returned from OptionId() during processing)
-// - the option as it should appear on the command line
-// - type of the option
-// The last entry must be SO_END_OF_OPTIONS
-CSimpleOptA::SOption g_options[] = {{OPT_PRESS, "--pressure", SO_REQ_CMB},
-                                    {OPT_RAD, "--radius", SO_REQ_CMB},
-                                    {OPT_STEP, "--step", SO_REQ_CMB},
-                                    {OPT_STAGE, "--stage", SO_REQ_CMB},
-                                    {OPT_HELP, "-h", SO_NONE},
-                                    {OPT_HELP, "--help", SO_NONE},
-                                    SO_END_OF_OPTIONS};
-
-void ShowUsage();
-bool GetProblemSpecs(int argc, char** argv);
 
 void AdjustInertia(ChSystemParallel* m_sys) {
     // TODO skip the box bodies
@@ -494,8 +474,38 @@ void setBulkDensity(ChSystem* sys, double bulkDensity) {
 
 // =============================================================================
 int main(int argc, char* argv[]) {
-    if (!GetProblemSpecs(argc, argv)) {
+
+    ChCLI cli(argv[0]);
+    cli.AddOption<double>("Demo", "t,time_step", "Step size [s]");
+    cli.AddOption<int>("Demo", "p,pressure", "Pressure index (0-6)");
+    cli.AddOption<double>("Demo", "r,radius", "Particle radius [cm]");
+    cli.AddOption<int>("Demo", "s,stage", "Problem stage (0,1,2)");
+
+    if (!cli.Parse(argc, argv)) {
+        cli.Help();
         return 1;
+    }
+
+    pressure_index = cli.GetAsType<int>("pressure");
+    r_g = cli.GetAsType<double>("radius");
+    time_step = cli.GetAsType<double>("time_step");
+    if (pressure_index < 0 || pressure_index > 6 || time_step < 0 || r_g < 0) {
+        cli.Help();
+        return 1;
+    }
+    switch (cli.GetAsType<int>("stage")) {
+        case 0:
+            problem = SETTLING;
+            break;
+        case 1:
+            problem = PRESSING;
+            break;
+        case 2:
+            problem = SHEARING;
+            break;
+        default:
+            cli.Help();
+            return 1;
     }
 
     hthick = r_g * 2;
@@ -927,69 +937,4 @@ void ShowUsage() {
     cout << "\t0:25 1:100 2:250 3:500 4:1000 5:2000 6:2500 KG/M^2 [REQUIRED]" << endl;
     cout << "--radius=<particle radius>   Particle radius in cm [REQUIRED]" << endl;
     cout << "-h --help                    Print this message and exit." << endl;
-}
-
-bool GetProblemSpecs(int argc, char** argv) {
-    // Create the option parser and pass it the program arguments and the array of valid options.
-    CSimpleOptA args(argc, argv, g_options);
-
-    // Then loop for as long as there are arguments to be processed.
-    while (args.Next()) {
-        // Exit immediately if we encounter an invalid argument.
-        if (args.LastError() != SO_SUCCESS) {
-            cout << "Invalid argument: " << args.OptionText() << endl;
-            ShowUsage();
-            return false;
-        }
-
-        // Process the current argument.
-        switch (args.OptionId()) {
-            case OPT_STEP:
-                time_step = std::stod(args.OptionArg());
-                break;
-
-            case OPT_RAD:
-                r_g = std::stod(args.OptionArg());
-                break;
-
-            case OPT_STAGE:
-                switch (std::stoi(args.OptionArg())) {
-                    case 0:
-                        problem = SETTLING;
-                        break;
-
-                    case 1:
-                        problem = PRESSING;
-                        break;
-
-                    case 2:
-                        problem = SHEARING;
-                        break;
-
-                    default:
-                        ShowUsage();
-                        return false;
-                }
-                break;
-
-            case OPT_PRESS:
-                pressure_index = std::stoi(args.OptionArg());
-                if (pressure_index < 0 || pressure_index > 6) {
-                    ShowUsage();
-                    return false;
-                }
-                break;
-
-            case OPT_HELP:
-            default:
-                ShowUsage();
-                return false;
-        }
-    }
-
-    if (time_step < 0 || r_g < 0 || problem < 0 || pressure_index < 0) {
-        ShowUsage();
-        return false;
-    }
-    return true;
 }

@@ -29,7 +29,7 @@
 
 #include "chrono_thirdparty/filesystem/path.h"
 
-#include "chrono_thirdparty/SimpleOpt/SimpleOpt.h"
+#include "chrono_thirdparty/cxxopts/ChCLI.h"
 #include "chrono_thirdparty/filesystem/path.h"
 
 #include "irrlicht_app.h"
@@ -59,13 +59,12 @@ const std::string img_dir = out_dir + "/IMG";
 
 // =============================================================================
 
-void ShowUsage(const std::string& name);
 bool GetProblemSpecs(int argc,
                      char** argv,
                      double& time_step,
                      robosimian::LocomotionMode& mode,
                      int& num_cycles,
-                     double& dpb_incr,
+                     double& dbp_incr,
                      double& terrain_length,
                      bool& render,
                      bool& data_output,
@@ -520,71 +519,13 @@ int main(int argc, char* argv[]) {
 }
 
 // =============================================================================
-// ID values to identify command line arguments
-enum {
-    OPT_HELP,
-    OPT_STEP,
-    OPT_MODE,
-    OPT_CYCLES,
-    OPT_INCREMENT,
-    OPT_LENGTH,
-    OPT_NO_RENDER,
-    OPT_DATA_OUT,
-    OPT_IMG_OUT,
-    OPT_POVRAY_OUT
-};
-
-// Table of CSimpleOpt::Soption structures. Each entry specifies:
-// - the ID for the option (returned from OptionId() during processing)
-// - the option as it should appear on the command line
-// - type of the option
-// The last entry must be SO_END_OF_OPTIONS
-CSimpleOptA::SOption g_options[] = {{OPT_STEP, "-s", SO_REQ_CMB},
-                                    {OPT_MODE, "-m", SO_REQ_CMB},
-                                    {OPT_CYCLES, "-c", SO_REQ_CMB},
-                                    {OPT_INCREMENT, "-i", SO_REQ_CMB},
-                                    {OPT_LENGTH, "-l", SO_REQ_CMB},
-                                    {OPT_NO_RENDER, "--no-render", SO_NONE},
-                                    {OPT_DATA_OUT, "--data-output", SO_NONE},
-                                    {OPT_IMG_OUT, "--image-output", SO_NONE},
-                                    {OPT_POVRAY_OUT, "--povray-output", SO_NONE},
-                                    {OPT_HELP, "-?", SO_NONE},
-                                    {OPT_HELP, "-h", SO_NONE},
-                                    {OPT_HELP, "--help", SO_NONE},
-                                    SO_END_OF_OPTIONS};
-
-void ShowUsage(const std::string& name) {
-    cout << "Usage: " << name << " -m=MODE -c=NUM_CYCLES -i=INCREMENT [OPTIONS]" << endl;
-    cout << " -s=STEP" << endl;
-    cout << "        Integration step size (default: 1e-3)" << endl;
-    cout << " -m=MODE" << endl;
-    cout << "        Locomotion mode (default: DRIVE)" << endl;
-    cout << "        0: WALK, 1: SCULL, 2: INCHWORM, 3: DRIVE" << endl;
-    cout << " -c=NUM_CYCLES" << endl;
-    cout << "        Number of cycles for constant DBP force (default: 2)" << endl;
-    cout << " -i=INCREMENT" << endl;
-    cout << "        DBP factor increment (default: 0.04)" << endl;
-    cout << " -l=LENGTH" << endl;
-    cout << "        Length of terrain patch (default: 8.0)" << endl;
-    cout << " --no-render" << endl;
-    cout << "        Disable run-time rendering" << endl;
-    cout << " --data-output" << endl;
-    cout << "        Enable data output to file (one file per limb)" << endl;
-    cout << " --image-output" << endl;
-    cout << "        Enable capture for Irrlicht (ignored if no rendering)" << endl;
-    cout << " --povray-output" << endl;
-    cout << "        Enable generation of Pov-Ray postprocessing files" << endl;
-    cout << " -? -h --help" << endl;
-    cout << "        Print this message and exit." << endl;
-    cout << endl;
-}
 
 bool GetProblemSpecs(int argc,
                      char** argv,
                      double& time_step,
                      robosimian::LocomotionMode& mode,
                      int& num_cycles,
-                     double& dpb_incr,
+                     double& dbp_incr,
                      double& terrain_length,
                      bool& render,
                      bool& data_output,
@@ -595,77 +536,56 @@ bool GetProblemSpecs(int argc,
     render = true;
     mode = robosimian::LocomotionMode::WALK;
     num_cycles = 2;
-    dpb_incr = 0.04;
+    dbp_incr = 0.04;
     terrain_length = 8.0;
     data_output = false;
     povray_output = false;
     image_output = false;
 
-    // Create the option parser and pass it the program arguments and the array of valid options.
-    CSimpleOptA args(argc, argv, g_options);
+    ChCLI cli(argv[0]);
 
-    // Then loop for as long as there are arguments to be processed.
-    while (args.Next()) {
-        // Exit immediately if we encounter an invalid argument.
-        if (args.LastError() != SO_SUCCESS) {
-            cout << "Invalid argument: " << args.OptionText() << endl;
-            ShowUsage(argv[0]);
-            return false;
-        }
+    cli.AddOption<int>("Demo", "mode", "Locomotion mode (0:walk, 1:scull, 2:inchworm, 3:drive)", "0");
+    cli.AddOption<double>("Demo", "step_size", "Integration step size [s]", "1e-4");
+    cli.AddOption<int>("Demo", "cycles", "Number of cycles for constant DBP force", "2");
+    cli.AddOption<double>("Demo", "increment", "DBP factor increment", "0.04");
+    cli.AddOption<double>("Demo", "terrain_length", "Length of terrain patch", "8.0");
+    cli.AddOption<bool>("Demo", "render", "OpenGL rendering?", "true");
+    cli.AddOption<bool>("Demo", "output", "Generate result output files", "false");
+    cli.AddOption<bool>("Demo", "pov_output", "Generate POV-Ray output files", "false");
+    cli.AddOption<bool>("Demo", "img_output", "Generate Irrlicht capture output files", "false");
 
-        // Process the current argument.
-        switch (args.OptionId()) {
-            case OPT_HELP:
-                ShowUsage(argv[0]);
-                return false;
-            case OPT_MODE: {
-                auto mode_in = std::stoi(args.OptionArg());
-                switch (mode_in) {
-                    case 0:
-                        mode = robosimian::LocomotionMode::WALK;
-                        break;
-                    case 1:
-                        mode = robosimian::LocomotionMode::SCULL;
-                        break;
-                    case 2:
-                        mode = robosimian::LocomotionMode::INCHWORM;
-                        break;
-                    case 3:
-                        mode = robosimian::LocomotionMode::DRIVE;
-                        break;
-                    default:
-                        cout << "Invalid locomotion mode" << endl;
-                        ShowUsage(argv[0]);
-                        return false;
-                }
-                break;
-            }
-            case OPT_STEP:
-                time_step = std::stod(args.OptionArg());
-                break;
-            case OPT_CYCLES:
-                num_cycles = std::stoi(args.OptionArg());
-                break;
-            case OPT_INCREMENT:
-                dpb_incr = std::stod(args.OptionArg());
-                break;
-            case OPT_LENGTH:
-                terrain_length = std::stod(args.OptionArg());
-                break;
-            case OPT_NO_RENDER:
-                render = false;
-                break;
-            case OPT_DATA_OUT:
-                data_output = true;
-                break;
-            case OPT_IMG_OUT:
-                image_output = true;
-                break;
-            case OPT_POVRAY_OUT:
-                povray_output = true;
-                break;
-        }
+    if (!cli.Parse(argc, argv)) {
+        cli.Help();
+        return false;
     }
+
+    switch (cli.GetAsType<int>("mode")) {
+        case 0:
+            mode = robosimian::LocomotionMode::WALK;
+            break;
+        case 1:
+            mode = robosimian::LocomotionMode::SCULL;
+            break;
+        case 2:
+            mode = robosimian::LocomotionMode::INCHWORM;
+            break;
+        case 3:
+            mode = robosimian::LocomotionMode::DRIVE;
+            break;
+        default:
+            cout << "Invalid locomotion mode" << endl;
+            cli.Help();
+            return false;
+    }
+
+    time_step = cli.GetAsType<double>("step_size");
+    num_cycles = cli.GetAsType<int>("cycles");
+    dbp_incr = cli.GetAsType<double>("increment");
+    terrain_length = cli.GetAsType<double>("terrain_length");
+    render = cli.GetAsType<bool>("render");
+    data_output = cli.GetAsType<bool>("output");
+    povray_output = cli.GetAsType<bool>("pov_output");
+    image_output = cli.GetAsType<bool>("img_output");
 
     image_output = image_output && render;
 

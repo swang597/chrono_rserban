@@ -209,8 +209,14 @@ class CustomCompositionStrategy : public ChMaterialCompositionStrategy {
 
 // =============================================================================
 
-void ShowUsage(const std::string& name);
-bool GetProblemSpecs(int argc, char** argv, std::string& file, int& line, int& threads, bool& render, bool& copy, bool& pov_output);
+bool GetProblemSpecs(int argc,
+                     char** argv,
+                     std::string& file,
+                     int& line,
+                     int& threads,
+                     bool& render,
+                     bool& copy,
+                     bool& pov_output);
 
 double CreateContainer(ChSystem* system, double mu, double coh, double radius);
 int CreateParticles(ChSystemParallelNSC* system,

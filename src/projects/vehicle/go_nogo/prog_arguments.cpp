@@ -17,90 +17,29 @@
 #include <string>
 #include <iostream>
 
-#include "chrono_thirdparty/SimpleOpt/SimpleOpt.h"
-
-// ID values to identify command line arguments
-enum { OPT_HELP, OPT_FILE, OPT_LINE, OPT_THREADS, OPT_NO_RENDERING, OPT_NO_COPY, OPT_POV_OUTPUT };
-
-// Table of CSimpleOpt::Soption structures. Each entry specifies:
-// - the ID for the option (returned from OptionId() during processing)
-// - the option as it should appear on the command line
-// - type of the option
-// The last entry must be SO_END_OF_OPTIONS
-CSimpleOptA::SOption g_options[] = {{OPT_FILE, "-f", SO_REQ_CMB},
-                                    {OPT_LINE, "-l", SO_REQ_CMB},
-                                    {OPT_THREADS, "-t", SO_REQ_CMB},
-                                    {OPT_NO_RENDERING, "--no-rendering", SO_NONE},
-                                    {OPT_NO_COPY, "--no-copy", SO_NONE},
-                                    {OPT_POV_OUTPUT, "--pov-output", SO_NONE},
-                                    {OPT_HELP, "-?", SO_NONE},
-                                    {OPT_HELP, "-h", SO_NONE},
-                                    {OPT_HELP, "--help", SO_NONE},
-                                    SO_END_OF_OPTIONS};
-
-void ShowUsage(const std::string& name) {
-    std::cout << "Usage: " << name << " -f=FILE_NAME -l=LINE -t=THREADS [OPTIONS]" << std::endl;
-    std::cout << " -f=FILE_NAME" << std::endl;
-    std::cout << "        Name of input file" << std::endl;
-    std::cout << "        Each line contains a point in parameter space:" << std::endl;
-    std::cout << "        slope (deg), radius (mm), density (kg/m3), coef. friction, cohesion" << std::endl;
-    std::cout << " -l=LINE" << std::endl;
-    std::cout << "        Line in input file" << std::endl;
-    std::cout << " -t=THREADS" << std::endl;
-    std::cout << "        Number of OpenMP threads" << std::endl;
-    std::cout << " --no-rendering" << std::endl;
-    std::cout << "        Disable OpenGL rendering" << std::endl;
-    std::cout << " --no-copy" << std::endl;
-    std::cout << "        Disable copying of input file to output directory" << std::endl;
-    std::cout << " --pov-output" << std::endl;
-    std::cout << "        Enable output for POV-Ray post-processing" << std::endl;
-    std::cout << " -? -h --help" << std::endl;
-    std::cout << "        Print this message and exit." << std::endl;
-    std::cout << std::endl;
-}
+#include "chrono_thirdparty/cxxopts/ChCLI.h"
 
 bool GetProblemSpecs(int argc, char** argv, std::string& file, int& line, int& threads, bool& render, bool& copy, bool&pov_output) {
-    // Create the option parser and pass it the program arguments and the array of valid options.
-    CSimpleOptA args(argc, argv, g_options);
+    chrono::ChCLI cli(argv[0]);
 
-    render = true;
-    copy = true;
-    pov_output = false;
+    cli.AddOption<std::string>("Demo", "f,filename", "Name of input file");
+    cli.AddOption<int>("Demo", "l,line", "Line in input file", "1");
+    cli.AddOption<int>("Demo", "t,threads", "Number of OpenMP threads", "1");
+    cli.AddOption<bool>("Demo", "render", "OpenGL rendering", "true");
+    cli.AddOption<bool>("Demo", "copy", "Copy input file to output directory", "true");
+    cli.AddOption<bool>("Demo", "pov", "Output for POV-Ray post-processing", "false");
 
-    // Then loop for as long as there are arguments to be processed.
-    while (args.Next()) {
-        // Exit immediately if we encounter an invalid argument.
-        if (args.LastError() != SO_SUCCESS) {
-            std::cout << "Invalid argument: " << args.OptionText() << std::endl;
-            ShowUsage(argv[0]);
-            return false;
-        }
-
-        // Process the current argument.
-        switch (args.OptionId()) {
-            case OPT_HELP:
-                ShowUsage(argv[0]);
-                return false;
-            case OPT_FILE:
-                file = args.OptionArg();
-                break;
-            case OPT_LINE:
-                line = std::stoi(args.OptionArg());
-                break;
-            case OPT_THREADS:
-                threads = std::stoi(args.OptionArg());
-                break;
-            case OPT_NO_RENDERING:
-                render = false;
-                break;
-            case OPT_NO_COPY:
-                copy = false;
-                break;
-            case OPT_POV_OUTPUT:
-                pov_output = true;
-                break;
-        }
+    if (!cli.Parse(argc, argv)) {
+        cli.Help();
+        return false;
     }
+
+    file = cli.GetAsType<std::string>("filename");
+    line = cli.GetAsType<int>("line");
+    threads = cli.GetAsType<int>("threads");
+    render = cli.GetAsType<bool>("render");
+    copy = cli.GetAsType<bool>("copy");
+    pov_output = cli.GetAsType<bool>("pov");
 
     return true;
 }

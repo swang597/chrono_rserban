@@ -34,7 +34,7 @@
 
 #include "chrono_opengl/ChOpenGLWindow.h"
 
-#include "chrono_thirdparty/SimpleOpt/SimpleOpt.h"
+#include "chrono_thirdparty/cxxopts/ChCLI.h"
 #include "chrono_thirdparty/filesystem/path.h"
 
 #include "granular.h"
@@ -47,50 +47,6 @@ using std::endl;
 
 // =============================================================================
 
-// ID values to identify command line arguments
-enum {
-    OPT_HELP,
-    OPT_MODE,
-    OPT_CONTACT_METHOD,
-    OPT_SIM_TIME,
-    OPT_STEP_SIZE,
-    OPT_OUTPUT_FPS,
-    OPT_POVRAY_FPS,
-    OPT_NUM_THREADS,
-    OPT_NO_RELEASE,
-    OPT_NO_OUTPUT,
-    OPT_NO_POVRAY_OUTPUT,
-    OPT_NO_RENDERING,
-    OPT_SUFFIX
-};
-
-// Table of CSimpleOpt::Soption structures. Each entry specifies:
-// - the ID for the option (returned from OptionId() during processing)
-// - the option as it should appear on the command line
-// - type of the option
-// The last entry must be SO_END_OF_OPTIONS
-CSimpleOptA::SOption g_options[] = {{OPT_NUM_THREADS, "--num-threads", SO_REQ_CMB},
-                                    {OPT_MODE, "-m", SO_REQ_CMB},
-                                    {OPT_MODE, "--mode", SO_REQ_CMB},
-                                    {OPT_CONTACT_METHOD, "-c", SO_REQ_CMB},
-                                    {OPT_CONTACT_METHOD, "--contact-method", SO_REQ_CMB},
-                                    {OPT_SIM_TIME, "-t", SO_REQ_CMB},
-                                    {OPT_SIM_TIME, "--simulation-time", SO_REQ_CMB},
-                                    {OPT_STEP_SIZE, "-s", SO_REQ_CMB},
-                                    {OPT_STEP_SIZE, "--step-size", SO_REQ_CMB},
-                                    {OPT_OUTPUT_FPS, "--output-FPS", SO_REQ_CMB},
-                                    {OPT_POVRAY_FPS, "--povray-FPS", SO_REQ_CMB},
-                                    {OPT_NO_RELEASE, "--no-release", SO_NONE},
-                                    {OPT_NO_OUTPUT, "--no-output", SO_NONE},
-                                    {OPT_NO_POVRAY_OUTPUT, "--no-povray-output", SO_NONE},
-                                    {OPT_NO_RENDERING, "--no-rendering", SO_NONE},
-                                    {OPT_SUFFIX, "--suffix", SO_REQ_CMB},
-                                    {OPT_HELP, "-?", SO_NONE},
-                                    {OPT_HELP, "-h", SO_NONE},
-                                    {OPT_HELP, "--help", SO_NONE},
-                                    SO_END_OF_OPTIONS};
-
-void ShowUsage();
 bool GetProblemSpecs(int argc,
                      char** argv,
                      robosimian::LocomotionMode& mode,
@@ -487,48 +443,6 @@ int main(int argc, char* argv[]) {
 
 // =============================================================================
 
-void ShowUsage() {
-    cout << "Usage:  test_robosimian_par [OPTIONS]" << endl;
-    cout << endl;
-    cout << " --num-threads=NUM_THREADS" << endl;
-    cout << "        Specify number of OpenMP threads [default: 2]" << endl;
-    cout << " -m=MODE" << endl;
-    cout << " --mode=MODE" << endl;
-    cout << "        Specify locomotion mode [default: 0]" << endl;
-    cout << "          0: walk" << endl;
-    cout << "          1: scull" << endl;
-    cout << "          2: inchworm" << endl;
-    cout << "          3: drive" << endl;
-    cout << " -c=METHOD" << endl;
-    cout << " --contact-method=METHOD" << endl;
-    cout << "        Specify contact method [default: NSC]" << endl;
-    cout << "          0: NSC (non-smooth contact)" << endl;
-    cout << "          1: SMC (smooth contact)" << endl;
-    cout << " -t=SIM_TIME" << endl;
-    cout << " --simulation-time=SIM_TIME" << endl;
-    cout << "        Specify simulation length (after robot release) in seconds [default: 10]" << endl;
-    cout << " -s=STEP_SIZE" << endl;
-    cout << " --step-size=STEP_SIZE" << endl;
-    cout << "        Specify integration step size in seconds [default: 1e-4]" << endl;
-    cout << " --output-FPS=FPS" << endl;
-    cout << "        Specify frequency of results output [default: 100]" << endl;
-    cout << " --povray-FPS=FPS" << endl;
-    cout << "        Specify frequency of POV-Ray output [default: 60]" << endl;
-    cout << " --no-release" << endl;
-    cout << "        Do not release the robot (no terrain created)" << endl;
-    cout << " --no-output" << endl;
-    cout << "        Disable generation of result output files" << endl;
-    cout << " --no-povray-output" << endl;
-    cout << "        Disable generation of POV-Ray output files" << endl;
-    cout << " --no-rendering" << endl;
-    cout << "        Disable OpenGL rendering" << endl;
-    cout << " --suffix=SUFFIX" << endl;
-    cout << "        Specify suffix for output directory names [default: \"\"]" << endl;
-    cout << " -? -h --help" << endl;
-    cout << "        Print this message and exit." << endl;
-    cout << endl;
-}
-
 bool GetProblemSpecs(int argc,
                      char** argv,
                      robosimian::LocomotionMode& mode,
@@ -543,69 +457,41 @@ bool GetProblemSpecs(int argc,
                      bool& pov_output,
                      bool& render,
                      std::string& suffix) {
-    // Create the option parser and pass it the program arguments and the array of valid options.
-    CSimpleOptA args(argc, argv, g_options);
+    // Default values
+    mode = robosimian::LocomotionMode::WALK;
+    method = ChContactMethod::NSC;
+    step_size = 1e-4;
+    sim_time = 10;
+    out_fps = 100;
+    pov_fps = 60;
+    nthreads = 2;
+    drop = true;
+    render = true;
+    pov_output = true;
+    output = true;
+    suffix = "";
 
-    // Default locomotion mode: WALK
-    int imode = 0;
+    ChCLI cli(argv[0]);
 
-    // Default contact method: NSC
-    int imethod = 0;
+    cli.AddOption<int>("Demo", "mode", "Locomotion mode (0:walk, 1:scull, 2:inchworm, 3:drive)", "0");
+    cli.AddOption<int>("Demo", "method", "Contact method (0: NSC, 1:SMC)", "0");
+    cli.AddOption<double>("Demo", "sim_time", "Simulation length after robot release [s]", "10");
+    cli.AddOption<double>("Demo", "step_size", "Integration step size [s]", "1e-4");
+    cli.AddOption<double>("Demo", "out_fps", "Output frequency [FPS]", "100");
+    cli.AddOption<double>("Demo", "pov_fps", "POV-Ray output frequency [FPS]", "100");
+    cli.AddOption<bool>("Demo", "drop", "Release robot?", "true");
+    cli.AddOption<bool>("Demo", "render", "OpenGL rendering?", "true");
+    cli.AddOption<bool>("Demo", "output", "Generate result output files", "true");
+    cli.AddOption<bool>("Demo", "pov_output", "Generate POV-Ray output files", "true");
+    cli.AddOption<std::string>("Demo", "suffix", "Suffix for output directory names", "");
+    cli.AddOption<int>("Demo", "threads", "Number of OpenMP threads", "2");
 
-    // Then loop for as long as there are arguments to be processed.
-    while (args.Next()) {
-        // Exit immediately if we encounter an invalid argument.
-        if (args.LastError() != SO_SUCCESS) {
-            cout << "Invalid argument: " << args.OptionText() << endl;
-            ShowUsage();
-            return false;
-        }
-
-        // Process the current argument.
-        switch (args.OptionId()) {
-            case OPT_HELP:
-                ShowUsage();
-                return false;
-            case OPT_NUM_THREADS:
-                nthreads = std::stoi(args.OptionArg());
-                break;
-            case OPT_MODE:
-                imode = std::stoi(args.OptionArg());
-                break;
-            case OPT_CONTACT_METHOD:
-                imethod = std::stoi(args.OptionArg());
-                break;
-            case OPT_SIM_TIME:
-                sim_time = std::stod(args.OptionArg());
-                break;
-            case OPT_STEP_SIZE:
-                step_size = std::stod(args.OptionArg());
-                break;
-            case OPT_OUTPUT_FPS:
-                out_fps = std::stod(args.OptionArg());
-                break;
-            case OPT_POVRAY_FPS:
-                pov_fps = std::stod(args.OptionArg());
-                break;
-            case OPT_NO_RELEASE:
-                drop = false;
-                break;
-            case OPT_NO_OUTPUT:
-                output = false;
-                break;
-            case OPT_NO_POVRAY_OUTPUT:
-                pov_output = false;
-                break;
-            case OPT_NO_RENDERING:
-                render = false;
-                break;
-            case OPT_SUFFIX:
-                suffix = args.OptionArg();
-                break;
-        }
+    if (!cli.Parse(argc, argv)) {
+        cli.Help();
+        return false;
     }
 
-    switch (imode) {
+    switch (cli.GetAsType<int>("mode")) {
         case 0:
             mode = robosimian::LocomotionMode::WALK;
             break;
@@ -620,11 +506,11 @@ bool GetProblemSpecs(int argc,
             break;
         default:
             cout << "Invalid locomotion mode" << endl;
-            ShowUsage();
+            cli.Help();
             return false;
     }
 
-    switch (imethod) {
+    switch (cli.GetAsType<int>("method")) {
         case 0:
             method = ChContactMethod::NSC;
             break;
@@ -633,9 +519,20 @@ bool GetProblemSpecs(int argc,
             break;
         default:
             cout << "Invalid contact method" << endl;
-            ShowUsage();
+            cli.Help();
             return false;
     }
+
+    sim_time = cli.GetAsType<double>("sim_time");
+    step_size = cli.GetAsType<double>("step_size");
+    out_fps = cli.GetAsType<double>("out_fps");
+    pov_fps = cli.GetAsType<double>("pov_fps");
+    drop = cli.GetAsType<bool>("drop");    
+    render = cli.GetAsType<bool>("render");
+    output = cli.GetAsType<bool>("output");    
+    pov_output = cli.GetAsType<bool>("pov_output");
+    suffix = cli.GetAsType<std::string>("suffix");
+    nthreads = cli.GetAsType<int>("threads");
 
     return true;
 }
