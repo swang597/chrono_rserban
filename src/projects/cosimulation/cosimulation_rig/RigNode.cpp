@@ -136,7 +136,7 @@ RigNode::RigNode(double init_vel, double slip, int num_threads)
     m_system->Set_G_acc(ChVector<>(0, 0, m_gacc));
 
     // Set number threads
-    m_system->SetNumThreads(num_threads);
+    m_system->SetNumThreads(num_threads, 1, 1);
 }
 
 // -----------------------------------------------------------------------------

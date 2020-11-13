@@ -46,7 +46,7 @@ using namespace chrono::vehicle;
 // =============================================================================
 
 // Cosimulation step size
-double step_size = 4e-5;
+double step_size = 1e-3; //4e-5;
 
 // Output frequency (frames per second)
 double output_fps = 200;
@@ -136,20 +136,25 @@ int main(int argc, char** argv) {
     switch (rank) {
         case RIG_NODE_RANK: {
             cout << "[Rig node    ] rank = " << rank << " running on: " << procname << endl;
-            my_rig = new RigNodeDeformableTire(init_vel, slip, nthreads_rig);
+
+            ////my_rig = new RigNodeDeformableTire(init_vel, slip, nthreads_rig);
+            ////my_rig->SetTireJSONFile(vehicle::GetDataFile("hmmwv/tire/HMMWV_ANCFTire.json"));
+
+            my_rig = new RigNodeRigidTire(init_vel, slip, nthreads_rig);
+            my_rig->SetTireJSONFile(vehicle::GetDataFile("hmmwv/tire/HMMWV_RigidMeshTire_Coarse.json"));
+
             my_rig->SetStepSize(step_size);
             my_rig->SetOutDir(out_dir, suffix);
-            cout << "[Rig node    ] output directory: " << my_rig->GetOutDirName() << endl;
-
             my_rig->SetBodyMasses(1, 1, sys_mass, 15);
-            my_rig->SetTireJSONFile(vehicle::GetDataFile("hmmwv/tire/HMMWV_ANCFTire.json"));
             my_rig->EnableTirePressure(true);
+
+            cout << "[Rig node    ] output directory: " << my_rig->GetOutDirName() << endl;
 
             break;
         }
         case TERRAIN_NODE_RANK: {
             auto type = TerrainNode::GRANULAR;
-            auto method = ChContactMethod::SMC;
+            auto method = ChContactMethod::NSC;
 
             cout << "[Terrain node] rank = " << rank << " running on: " << procname << endl;
             my_terrain = new TerrainNode(type, method, use_checkpoint, render, nthreads_terrain);
@@ -157,9 +162,12 @@ int main(int argc, char** argv) {
             my_terrain->SetOutDir(out_dir, suffix);
             cout << "[Terrain node] output directory: " << my_terrain->GetOutDirName() << endl;
 
-            my_terrain->SetContainerDimensions(10, 0.6, 1, 0.2);
+            ////my_terrain->SetContainerDimensions(10, 0.6, 1, 0.2);
+            my_terrain->SetContainerDimensions(4, 0.6, 1, 0.2);
 
-            double radius = 0.006;
+            ////double radius = 0.006;
+            double radius = 0.01;
+
             double coh_force = CH_C_PI * radius * radius * coh_pressure;
 
             my_terrain->SetGranularMaterial(radius, 2500, 15);
@@ -318,11 +326,11 @@ bool GetProblemSpecs(int argc,
     cli.AddOption<double>("Demo", "coh_pressure", "Terrain cohesion [Pa]", "8e4");
     cli.AddOption<double>("Demo", "sys_mass", "Mass of wheel carrier [kg]", "450.0");
 
-    cli.AddOption<bool>("Demo", "render", "OpenGL rendering?", "true");
-    cli.AddOption<bool>("Demo", "output", "Generate result output files", "true");
-    cli.AddOption<bool>("Demo", "use_checkpoint", "Initialize granular terrain from checkppoint file", "true");
+    cli.AddOption<bool>("Demo", "no_render", "Disable OpenGL rendering");
+    cli.AddOption<bool>("Demo", "no_output", "Disable generation of result output files");
+    cli.AddOption<bool>("Demo", "use_checkpoint", "Initialize granular terrain from checkppoint file");
 
-    cli.AddOption<int>("Demo", "threads_rig", "Number of OpenMP threads for the rig node", "2");
+    cli.AddOption<int>("Demo", "threads_rig", "Number of OpenMP threads for the rig node", "1");
     cli.AddOption<int>("Demo", "threads_terrain", "Number of OpenMP threads for the terrain node", "2");
 
     cli.AddOption<std::string>("Demo", "suffix", "Suffix for output directory names", "");
@@ -340,8 +348,8 @@ bool GetProblemSpecs(int argc,
     coh_pressure = cli.GetAsType<double>("coh_pressure");
     sys_mass = cli.GetAsType<double>("sys_mass");
 
-    render = cli.GetAsType<bool>("render");
-    output = cli.GetAsType<bool>("output");
+    render = !cli.GetAsType<bool>("no_render");
+    output = !cli.GetAsType<bool>("no_output");
     use_checkpoint = cli.GetAsType<bool>("use_checkpoint");
 
     nthreads_rig = cli.GetAsType<int>("threads_rig");
