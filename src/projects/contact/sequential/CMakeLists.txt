@@ -19,9 +19,9 @@ set(LIBRARIES ChronoEngine ChronoEngine_irrlicht)
 
 include_directories(${CH_IRRLICHTINC})
 
-if(ENABLE_MODULE_MKL)
+if(ENABLE_MODULE_PARDISO_MKL)
   set(CXX_FLAGS "${CXX_FLAGS} ${CH_MKL_CXX_FLAGS}")
-  set(LIBRARIES ${LIBRARIES} ChronoEngine_mkl)
+  set(LIBRARIES ${LIBRARIES} ChronoEngine_pardisomkl)
   include_directories(${CH_MKL_INCLUDES})
 endif()
 

@@ -16,8 +16,8 @@
 
 #include "chrono_irrlicht/ChIrrApp.h"
 
-#ifdef CHRONO_MKL
-#include "chrono_mkl/ChSolverMKL.h"
+#ifdef CHRONO_PARDISO_MKL
+#include "chrono_pardisomkl/ChSolverPardisoMKL.h"
 #endif
 
 #include <irrlicht.h>
@@ -235,7 +235,7 @@ int main(int argc, char* argv[]) {
     // -------------------
 
     // Note that not all solvers support stiffness matrices (that includes the default SolverDEM).
-#ifndef CHRONO_MKL
+#ifndef CHRONO_PARDISO_MKL
     if (solver_type == MKL_SOLVER) {
         GetLog() << "MKL support not enabled.  Solver reset to default.\n";
         solver_type = DEFAULT_SOLVER;
@@ -259,9 +259,9 @@ int main(int argc, char* argv[]) {
             break;
         }
         case MKL_SOLVER: {
-#ifdef CHRONO_MKL
+#ifdef CHRONO_PARDISO_MKL
             GetLog() << "Using MKL solver.\n";
-            auto mkl_solver = chrono_types::make_shared<ChSolverMKL>();
+            auto mkl_solver = chrono_types::make_shared<ChSolverPardisoMKL>();
             mkl_solver->LockSparsityPattern(true);
             system.SetSolver(mkl_solver);
 #endif

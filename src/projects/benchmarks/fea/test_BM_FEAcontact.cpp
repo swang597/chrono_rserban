@@ -35,7 +35,7 @@
 #include "chrono_irrlicht/ChIrrApp.h"
 #endif
 
-#ifdef CHRONO_MKL
+#ifdef CHRONO_PARDISO_MKL
 #include "chrono_mkl/ChSolverMKL.h"
 #endif
 
@@ -76,7 +76,7 @@ FEAcontactTest::FEAcontactTest(ChSolver::Type solver_type) {
     m_system = new ChSystemSMC();
 
     // Set solver parameters
-#ifndef CHRONO_MKL
+#ifndef CHRONO_PARDISO_MKL
     if (solver_type == ChSolver::Type::CUSTOM)
         solver_type = ChSolver::Type::MINRES;
 #endif
@@ -92,7 +92,7 @@ FEAcontactTest::FEAcontactTest(ChSolver::Type solver_type) {
             m_system->SetTimestepperType(ChTimestepper::Type::EULER_IMPLICIT_LINEARIZED);
         }
         case ChSolver::Type::CUSTOM: {
-#ifdef CHRONO_MKL
+#ifdef CHRONO_PARDISO_MKL
             auto mkl_solver = chrono_types::make_shared<ChSolverMKL>();
             mkl_solver->LockSparsityPattern(true);
             mkl_solver->SetVerbose(false);
@@ -220,7 +220,7 @@ void FEAcontactTest::SimulateVis() {
 
 CH_BM_SIMULATION_ONCE(FEAcontact_MINRES, FEAcontactTest_MINRES, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
 
-#ifdef CHRONO_MKL
+#ifdef CHRONO_PARDISO_MKL
 CH_BM_SIMULATION_ONCE(FEAcontact_MKL, FEAcontactTest_MKL, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
 #endif
 

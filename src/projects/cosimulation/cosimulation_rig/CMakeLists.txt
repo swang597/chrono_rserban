@@ -25,11 +25,11 @@ set(LIBRARIES
     ChronoEngine_parallel
 )
 
-if(ENABLE_MODULE_MKL)
+if(ENABLE_MODULE_PARDISO_MKL)
   include_directories(${CH_MKL_INCLUDES})
   set(COMPILER_FLAGS "${COMPILER_FLAGS} ${CH_MKL_CXX_FLAGS}")
   set(LINKER_FLAGS "${LINKER_FLAGS} ${CH_MKL_LINK_FLAGS}")
-  set(LIBRARIES ${LIBRARIES} ChronoEngine_mkl)
+  set(LIBRARIES ${LIBRARIES} ChronoEngine_pardisomkl)
 endif()
 
 if(ENABLE_MODULE_MUMPS)

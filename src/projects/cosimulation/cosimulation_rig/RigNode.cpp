@@ -43,8 +43,8 @@
 
 #include "chrono_vehicle/ChVehicleModelData.h"
 
-#ifdef CHRONO_MKL
-#include "chrono_mkl/ChSolverMKL.h"
+#ifdef CHRONO_PARDISO_MKL
+#include "chrono_pardisomkl/ChSolverPardisoMKL.h"
 #endif
 
 #ifdef CHRONO_MUMPS
@@ -120,8 +120,8 @@ RigNode::RigNode(double init_vel, double slip, int num_threads)
     // Default integrator and solver types
     // -----------------------------------
     m_int_type = ChTimestepper::Type::HHT;
-#if defined(CHRONO_MKL)
-    m_slv_type = ChSolver::Type::PARDISO;
+#if defined(CHRONO_PARDISO_MKL)
+    m_slv_type = ChSolver::Type::PARDISO_MKL;
 #elif defined(CHRONO_MUMPS)
     m_slv_type = ChSolver::Type::MUMPS;
 #else
@@ -150,8 +150,8 @@ RigNode::~RigNode() {
 void RigNode::SetIntegratorType(ChTimestepper::Type int_type, ChSolver::Type slv_type) {
     m_int_type = int_type;
     m_slv_type = slv_type;
-#ifndef CHRONO_MKL
-    if (m_slv_type == ChSolver::Type::PARDISO)
+#ifndef CHRONO_PARDISO_MKL
+    if (m_slv_type == ChSolver::Type::PARDISO_MKL)
         m_slv_type = ChSolver::Type::BARZILAIBORWEIN;
 #endif
 #ifndef CHRONO_MUMPS
@@ -192,9 +192,9 @@ void RigNode::Construct() {
     // -------------------------------
 
     switch (m_slv_type) {
-        case ChSolver::Type::PARDISO: {
-#ifdef CHRONO_MKL
-            auto solver = chrono_types::make_shared<ChSolverMKL>();
+        case ChSolver::Type::PARDISO_MKL: {
+#ifdef CHRONO_PARDISO_MKL
+            auto solver = chrono_types::make_shared<ChSolverPardisoMKL>();
             solver->LockSparsityPattern(true);
             m_system->SetSolver(solver);
 #endif

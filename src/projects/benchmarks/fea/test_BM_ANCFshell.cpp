@@ -30,7 +30,7 @@
 #include "chrono_irrlicht/ChIrrApp.h"
 #endif
 
-#ifdef CHRONO_MKL
+#ifdef CHRONO_PARDISO_MKL
 #include "chrono_mkl/ChSolverMKL.h"
 #endif
 
@@ -71,7 +71,7 @@ ANCFshell<N>::ANCFshell(ChSolver::Type solver_type) {
     m_system->Set_G_acc(ChVector<>(0, -9.8, 0));
 
     // Set solver parameters
-#ifndef CHRONO_MKL
+#ifndef CHRONO_PARDISO_MKL
     if (solver_type == ChSolver::Type::CUSTOM)
         solver_type = ChSolver::Type::MINRES;
 #endif
@@ -86,7 +86,7 @@ ANCFshell<N>::ANCFshell(ChSolver::Type solver_type) {
             break;
         }
         case ChSolver::Type::CUSTOM: {
-#ifdef CHRONO_MKL
+#ifdef CHRONO_PARDISO_MKL
             auto mkl_solver = chrono_types::make_shared<ChSolverMKL>();
             mkl_solver->LockSparsityPattern(true);
             mkl_solver->SetVerbose(false);
@@ -200,7 +200,7 @@ CH_BM_SIMULATION_LOOP(ANCFshell16_MINRES, ANCFshell_MINRES<16>, NUM_SKIP_STEPS, 
 CH_BM_SIMULATION_LOOP(ANCFshell32_MINRES, ANCFshell_MINRES<32>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
 CH_BM_SIMULATION_LOOP(ANCFshell64_MINRES, ANCFshell_MINRES<64>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
 
-#ifdef CHRONO_MKL
+#ifdef CHRONO_PARDISO_MKL
 CH_BM_SIMULATION_LOOP(ANCFshell08_MKL, ANCFshell_MKL<8>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
 CH_BM_SIMULATION_LOOP(ANCFshell16_MKL, ANCFshell_MKL<16>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
 CH_BM_SIMULATION_LOOP(ANCFshell32_MKL, ANCFshell_MKL<32>, NUM_SKIP_STEPS, NUM_SIM_STEPS, 10);
