@@ -32,7 +32,7 @@ int main(int argc, char* argv[]) {
     std::string xml_filename = "in_terrain.xml";
     std::string obj_filename = "out_mesh_2.obj";
 
-    const double ft2m = 0.3048;
+    const double ft2m = 1200.0 / 3937.0;
 
     ////geometry::ChTriangleMeshConnected trimesh;
     ////std::vector<ChVector<> >& vertices = trimesh.getCoordsVertices();
@@ -49,6 +49,7 @@ int main(int argc, char* argv[]) {
     xml_node<>* faces = tin->first_node("Faces");
 
     xml_node<>* pnt_node = pnts->first_node();
+    int num_vert = 0;
     while (pnt_node != NULL) {
         double x, y, z;
         auto foo = pnt_node->value();
@@ -59,12 +60,14 @@ int main(int argc, char* argv[]) {
         }
 
         ////vertices.push_back(ChVector<>(x, y, z) * ft2m);
-        fprintf(fp, "v %lf %lf %lf\n", x * ft2m, y * ft2m, z * ft2m);
+        fprintf(fp, "v %.12lf %.12lf %.12lf\n", x * ft2m, y * ft2m, z * ft2m);
+        num_vert++;
 
         pnt_node = pnt_node->next_sibling();
     }
     
     xml_node<>* face_node = faces->first_node();
+    int num_tri = 0;
     while (face_node != NULL) {
         int x, y, z;
         auto foo = face_node->value();
@@ -76,12 +79,16 @@ int main(int argc, char* argv[]) {
 
         ////idx_vertices.push_back(ChVector<int>(x - 1, y - 1, z - 1));
         fprintf(fp, "f %d %d %d\n", x, y, z);
+        num_tri++;
 
         face_node = face_node->next_sibling();
     }
 
     fclose(fp);
-    
+
+    std::cout << "Num vert: " << num_vert << std::endl;
+    std::cout << "Num tri:  " << num_tri << std::endl;
+
     ////std::vector<geometry::ChTriangleMeshConnected> meshes = {trimesh};
     ////std::cout << "Exporting to " << obj_filename << std::endl;
     ////trimesh.WriteWavefront(obj_filename, meshes);

@@ -90,12 +90,6 @@ if(BUILD_PROJECTS_DISTRIBUTED)
   add_subdirectory(distributed)
 endif()
 
-option(BUILD_PROJECTS_COSIMULATION "Build co-simulation projects" ON)
-mark_as_advanced(FORCE BUILD_PROJECTS_COSIMULATION)
-if(BUILD_PROJECTS_COSIMULATION)
-  add_subdirectory(cosimulation)
-endif()
-
 option(BUILD_PROJECTS_ROBOSIMIAN "Build RoboSimian projects" ON)
 mark_as_advanced(FORCE BUILD_PROJECTS_ROBOSIMIAN)
 if(BUILD_PROJECTS_ROBOSIMIAN)
