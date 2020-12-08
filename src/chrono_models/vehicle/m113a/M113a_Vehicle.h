@@ -32,16 +32,16 @@ class CH_MODELS_API M113a_Vehicle : public ChTrackedVehicle {
   public:
     M113a_Vehicle(bool fixed,
                   ChContactMethod contact_method = ChContactMethod::NSC,
-                  ChassisCollisionType chassis_collision_type = ChassisCollisionType::NONE);
+                  CollisionType chassis_collision_type = CollisionType::NONE);
 
-    M113a_Vehicle(bool fixed, ChSystem* system, ChassisCollisionType chassis_collision_type = ChassisCollisionType::NONE);
+    M113a_Vehicle(bool fixed, ChSystem* system, CollisionType chassis_collision_type = CollisionType::NONE);
 
     ~M113a_Vehicle() {}
 
     virtual void Initialize(const ChCoordsys<>& chassisPos, double chassisFwdVel = 0) override;
 
   private:
-    void Create(bool fixed, ChassisCollisionType chassis_collision_type);
+    void Create(bool fixed, CollisionType chassis_collision_type);
 };
 
 }  // end namespace m113

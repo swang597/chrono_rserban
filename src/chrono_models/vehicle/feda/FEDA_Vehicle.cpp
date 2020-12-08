@@ -32,7 +32,7 @@ namespace feda {
 // -----------------------------------------------------------------------------
 FEDA_Vehicle::FEDA_Vehicle(const bool fixed,
                            ChContactMethod contact_method,
-                           ChassisCollisionType chassis_collision_type,
+                           CollisionType chassis_collision_type,
                            int ride_height,
                            int damperMode)
     : ChWheeledVehicle("FEDA", contact_method),
@@ -44,14 +44,14 @@ FEDA_Vehicle::FEDA_Vehicle(const bool fixed,
 
 FEDA_Vehicle::FEDA_Vehicle(ChSystem* system,
                            const bool fixed,
-                           ChassisCollisionType chassis_collision_type,
+                           CollisionType chassis_collision_type,
                            int ride_height,
                            int damperMode)
     : ChWheeledVehicle("FEDA", system), m_omega({0, 0, 0, 0}), m_ride_height(ride_height), m_damper_mode(damperMode) {
     Create(fixed, chassis_collision_type);
 }
 
-void FEDA_Vehicle::Create(bool fixed, ChassisCollisionType chassis_collision_type) {
+void FEDA_Vehicle::Create(bool fixed, CollisionType chassis_collision_type) {
     // Create the chassis subsystem
     m_chassis = chrono_types::make_shared<FEDA_Chassis>("Chassis", fixed, chassis_collision_type);
 

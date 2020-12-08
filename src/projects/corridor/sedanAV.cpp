@@ -28,7 +28,7 @@ SedanAV::SedanAV(Framework* framework, unsigned int id, const chrono::ChCoordsys
     m_sedan = chrono_types::make_shared<Sedan>(framework->m_system);
 
     m_sedan->SetChassisFixed(false);
-    m_sedan->SetChassisCollisionType(ChassisCollisionType::MESH);
+    m_sedan->SetChassisCollisionType(CollisionType::MESH);
     m_sedan->SetTireType(TireModelType::RIGID);
     m_sedan->SetTireStepSize(framework->m_step);
     m_sedan->SetInitPosition(init_pos);

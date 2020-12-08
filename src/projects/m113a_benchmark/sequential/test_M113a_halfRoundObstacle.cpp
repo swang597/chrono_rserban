@@ -133,7 +133,7 @@ int main(int argc, char* argv[]) {
     // ---------------
 
     // Create the vehicle system
-	ChassisCollisionType chassis_collision_type = ChassisCollisionType::PRIMITIVES;
+    CollisionType chassis_collision_type = CollisionType::PRIMITIVES;
 	M113a_Vehicle vehicle(false, ChContactMethod::SMC, chassis_collision_type);
 	vehicle.Initialize(ChCoordsys<>(initLoc, initRot));
 

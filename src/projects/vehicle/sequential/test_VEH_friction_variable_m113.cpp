@@ -66,7 +66,7 @@ int main(int argc, char* argv[]) {
     sys.SetSolverType(ChSolver::Type::BARZILAIBORWEIN);
 
     // Create and initialize the vehicle
-    M113_Vehicle vehicle(false, TrackShoeType::SINGLE_PIN, BrakeType::SIMPLE, &sys, ChassisCollisionType::NONE);
+    M113_Vehicle vehicle(false, TrackShoeType::SINGLE_PIN, BrakeType::SIMPLE, &sys, CollisionType::NONE);
     vehicle.Initialize(ChCoordsys<>(ChVector<>(-90.0, 0.0, 1.0), QUNIT));
     vehicle.SetChassisVisualizationType(VisualizationType::NONE);
     vehicle.SetSprocketVisualizationType(VisualizationType::PRIMITIVES);

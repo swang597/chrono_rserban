@@ -35,19 +35,17 @@ namespace m113 {
 // -----------------------------------------------------------------------------
 // Constructors
 // -----------------------------------------------------------------------------
-M113a_Vehicle::M113a_Vehicle(bool fixed,
-                             ChContactMethod contact_method,
-                             ChassisCollisionType chassis_collision_type)
+M113a_Vehicle::M113a_Vehicle(bool fixed, ChContactMethod contact_method, CollisionType chassis_collision_type)
     : ChTrackedVehicle("M113a", contact_method) {
     Create(fixed, chassis_collision_type);
 }
 
-M113a_Vehicle::M113a_Vehicle(bool fixed, ChSystem* system, ChassisCollisionType chassis_collision_type)
+M113a_Vehicle::M113a_Vehicle(bool fixed, ChSystem* system, CollisionType chassis_collision_type)
     : ChTrackedVehicle("M113a", system) {
     Create(fixed, chassis_collision_type);
 }
 
-void M113a_Vehicle::Create(bool fixed, ChassisCollisionType chassis_collision_type) {
+void M113a_Vehicle::Create(bool fixed, CollisionType chassis_collision_type) {
     // Create the chassis subsystem
     m_chassis = chrono_types::make_shared<M113a_Chassis>("Chassis", fixed, chassis_collision_type);
 

@@ -38,7 +38,7 @@ class CH_MODELS_API FEDA_Chassis : public ChRigidChassis {
   public:
     FEDA_Chassis(const std::string& name,
                  bool fixed = false,
-                 ChassisCollisionType chassis_collision_type = ChassisCollisionType::NONE);
+                 CollisionType chassis_collision_type = CollisionType::NONE);
     ~FEDA_Chassis() {}
 
     /// Return the mass of the chassis body.

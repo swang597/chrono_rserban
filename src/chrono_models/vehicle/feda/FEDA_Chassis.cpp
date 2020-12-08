@@ -46,7 +46,7 @@ const ChCoordsys<> FEDA_Chassis::m_driverCsys(ChVector<>(-1.35, 0.52, 1.01), ChQ
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-FEDA_Chassis::FEDA_Chassis(const std::string& name, bool fixed, ChassisCollisionType chassis_collision_type)
+FEDA_Chassis::FEDA_Chassis(const std::string& name, bool fixed, CollisionType chassis_collision_type)
     : ChRigidChassis(name, fixed) {
     m_inertia(0, 0) = m_inertiaXX.x();
     m_inertia(1, 1) = m_inertiaXX.y();
@@ -61,7 +61,7 @@ FEDA_Chassis::FEDA_Chassis(const std::string& name, bool fixed, ChassisCollision
 
     //// TODO:
     //// A more appropriate contact shape from primitives
-    ChRigidChassisGeometry::BoxShape box1(ChVector<>(0.0, 0.0, 0.1), ChQuaternion<>(1, 0, 0, 0),
+    ChVehicleGeometry::BoxShape box1(ChVector<>(0.0, 0.0, 0.1), ChQuaternion<>(1, 0, 0, 0),
                                           ChVector<>(1.0, 0.5, 0.2));
 
     m_geometry.m_has_primitives = true;
@@ -70,13 +70,13 @@ FEDA_Chassis::FEDA_Chassis(const std::string& name, bool fixed, ChassisCollision
     m_geometry.m_has_mesh = true;
     m_geometry.m_vis_mesh_file = "feda/meshes/feda_chassis.obj";
 
-    m_geometry.m_has_collision = (chassis_collision_type != ChassisCollisionType::NONE);
+    m_geometry.m_has_collision = (chassis_collision_type != CollisionType::NONE);
     switch (chassis_collision_type) {
-        case ChassisCollisionType::PRIMITIVES:
+        case CollisionType::PRIMITIVES:
             box1.m_matID = 0;
             m_geometry.m_coll_boxes.push_back(box1);
             break;
-        case ChassisCollisionType::MESH: {
+        case CollisionType::MESH: {
             ////ChRigidChassisGeometry::ConvexHullsShape hull("feda/meshes/feda_chassis_simple.obj", 0);
             ////m_geometry.m_coll_hulls.push_back(hull);
             break;

@@ -34,8 +34,8 @@ namespace wvp {
 class CH_MODELS_API WVP_Chassis : public ChRigidChassis {
   public:
     WVP_Chassis(const std::string& name,
-                  bool fixed = false,
-                  ChassisCollisionType chassis_collision_type = ChassisCollisionType::NONE);
+                bool fixed = false,
+                CollisionType chassis_collision_type = CollisionType::NONE);
     ~WVP_Chassis() {}
 
     /// Return the mass of the chassis body.
