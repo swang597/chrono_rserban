@@ -28,7 +28,7 @@
 #include "chrono/utils/ChUtilsGenerators.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
 
-#include "chrono_parallel/physics/ChSystemParallel.h"
+#include "chrono_multicore/physics/ChSystemMulticore.h"
 
 #include "BaseNode.h"
 
@@ -164,7 +164,7 @@ class TerrainNode : public BaseNode {
 
     Type m_type;  ///< terrain type (RIGID or GRANULAR)
 
-    chrono::ChSystemParallel* m_system;  ///< containing system
+    chrono::ChSystemMulticore* m_system;  ///< containing system
     bool m_constructed;                  ///< system construction completed?
 
     chrono::ChMaterialSurface::ContactMethod m_method;              ///< contact method (penalty or complementarity)

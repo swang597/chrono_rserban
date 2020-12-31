@@ -5,24 +5,24 @@ if(NOT ENABLE_MODULE_VEHICLE)
   return()
 endif()
 
-if(NOT ENABLE_MODULE_PARALLEL)
+if(NOT ENABLE_MODULE_MULTICORE)
   return()
 endif()  
 
 # ------------------------------------------------------------------------------
 
 include_directories(${CH_INCLUDES})
-include_directories(${CH_PARALLEL_INCLUDES})
+include_directories(${CH_MULTICORE_INCLUDES})
 include_directories(${MPI_CXX_INCLUDE_PATH})
 
-set(COMPILER_FLAGS "${CH_CXX_FLAGS} ${CH_PARALLEL_CXX_FLAGS}")
+set(COMPILER_FLAGS "${CH_CXX_FLAGS} ${CH_MULTICORE_CXX_FLAGS}")
 set(LINKER_FLAGS "${CH_LINKERFLAG_EXE}")
 
 set(LIBRARIES
     ChronoEngine
     ChronoEngine_vehicle
     ChronoModels_vehicle
-    ChronoEngine_parallel
+    ChronoEngine_multicore
 )
 
 if(ENABLE_MODULE_PARDISO_MKL)

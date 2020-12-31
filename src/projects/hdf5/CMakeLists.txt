@@ -5,4 +5,4 @@ if(NOT HDF5_FOUND)
 endif()
 
 add_subdirectory(sequential)
-add_subdirectory(parallel)
+add_subdirectory(multicore)

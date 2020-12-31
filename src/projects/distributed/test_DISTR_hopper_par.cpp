@@ -5,7 +5,7 @@
 #include "chrono/utils/ChUtilsGenerators.h"
 #include "chrono/utils/ChUtilsSamplers.h"
 
-#include "chrono_parallel/physics/ChSystemParallel.h"
+#include "chrono_multicore/physics/ChSystemMulticore.h"
 
 #include "chrono_distributed/collision/ChBoundary.h"
 
@@ -37,7 +37,7 @@ double time_step = 1e-5;
 unsigned int max_iteration = 100;
 double tolerance = 1e-4;
 
-std::shared_ptr<ChBoundary> AddContainer(ChSystemParallel* sys) {
+std::shared_ptr<ChBoundary> AddContainer(ChSystemMulticore* sys) {
     int binId = -200;
 
     auto mat = chrono_types::make_shared<ChMaterialSurfaceSMC>();
@@ -45,7 +45,7 @@ std::shared_ptr<ChBoundary> AddContainer(ChSystemParallel* sys) {
     mat->SetFriction(mu);
     mat->SetRestitution(cr);
 
-    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
+    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
     bin->SetIdentifier(binId);
     bin->SetMass(1);
     bin->SetPos(ChVector<>(0, 0, 0));
@@ -74,7 +74,7 @@ std::shared_ptr<ChBoundary> AddContainer(ChSystemParallel* sys) {
     return cb;
 }
 
-size_t AddFallingBalls(ChSystemParallel* sys) {
+size_t AddFallingBalls(ChSystemMulticore* sys) {
     ChVector<double> box_center((settling_gap + dx / 2) / 2, 0, 3 * height / 4);
     ChVector<double> h_dims = ChVector<>((settling_gap + dx / 2) / 2, hy, height / 4) - 3 * gran_radius;
 
@@ -92,7 +92,7 @@ size_t AddFallingBalls(ChSystemParallel* sys) {
 
     class MyFilter : public utils::Generator::CreateObjectsCallback {
       public:
-        MyFilter(ChSystemParallel* system, const ChVector<>& center) : m_system(system), m_center(center) {}
+        MyFilter(ChSystemMulticore* system, const ChVector<>& center) : m_system(system), m_center(center) {}
 
         unsigned int GetNumPoints() const { return m_num_points; }
 
@@ -107,7 +107,7 @@ size_t AddFallingBalls(ChSystemParallel* sys) {
         }
 
       private:
-        ChSystemParallel* m_system;
+        ChSystemMulticore* m_system;
         ChVector<> m_center;
         size_t m_num_points;
     };
@@ -127,7 +127,7 @@ int main(int argc, char* argv[]) {
     int threads = 2;
 
     // Create system
-    ChSystemParallelSMC my_sys;
+    ChSystemMulticoreSMC my_sys;
     my_sys.Set_G_acc(ChVector<>(0, 0, -9.8));
 
     // Set number of threads.

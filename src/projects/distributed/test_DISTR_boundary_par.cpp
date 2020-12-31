@@ -12,7 +12,7 @@
 // Authors: Radu Serban
 // =============================================================================
 //
-// ChronoParallel test program using SMC method for frictional contact.
+// Chrono::Distributed test program using SMC method for frictional contact.
 //
 // The model simulated here consists of a number of objects falling in a bin.
 //
@@ -25,7 +25,7 @@
 #include "chrono/utils/ChUtilsCreators.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
 
-#include "chrono_parallel/physics/ChSystemParallel.h"
+#include "chrono_multicore/physics/ChSystemMulticore.h"
 
 #include "chrono_distributed/collision/ChBoundary.h"
 
@@ -58,7 +58,7 @@ float cr = 0.4f;
 // -----------------------------------------------------------------------------
 // Create a bin attached to the ground.
 // -----------------------------------------------------------------------------
-void AddContainer(ChSystemParallelSMC* sys) {
+void AddContainer(ChSystemMulticoreSMC* sys) {
     // IDs for the two bodies
     int binId = -200;
 
@@ -69,7 +69,7 @@ void AddContainer(ChSystemParallelSMC* sys) {
     mat->SetRestitution(cr);
 
     // Create the containing bin (4 x 4 x 1)
-    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
+    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
     bin->SetIdentifier(binId);
     bin->SetMass(1);
     bin->SetPos(ChVector<>(0, 0, 0));
@@ -112,7 +112,7 @@ void AddContainer(ChSystemParallelSMC* sys) {
 // Create the falling objects in a uniform rectangular grid.
 // Return a handle to the first created object.
 // -----------------------------------------------------------------------------
-std::shared_ptr<ChBody> AddFallingObjects(ChSystemParallel* sys) {
+std::shared_ptr<ChBody> AddFallingObjects(ChSystemMulticore* sys) {
     std::shared_ptr<ChBody> first;
 
     // Common material
@@ -134,7 +134,7 @@ std::shared_ptr<ChBody> AddFallingObjects(ChSystemParallel* sys) {
             for (int iy = -count_Y; iy <= count_Y; iy++) {
                 ChVector<> pos(0.4 * ix, 0.4 * iy, h);
 
-                auto obj = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
+                auto obj = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
 
                 obj->SetIdentifier(objId++);
                 obj->SetMass(mass);
@@ -186,7 +186,7 @@ int main(int argc, char* argv[]) {
     // Create system
     // -------------
 
-    ChSystemParallelSMC msystem;
+    ChSystemMulticoreSMC msystem;
 
     // Set number of threads.
     int max_threads = CHOMPfunctions::GetNumProcs();

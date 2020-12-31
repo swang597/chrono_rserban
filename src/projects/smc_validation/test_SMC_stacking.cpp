@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
 
     // Print the sim set - up parameters to userlog
     GetLog() << "\nCopyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << ".VCMS\n";
-    GetLog() << "\nTesting SMC Parallel stacking behavior....\n";
+    GetLog() << "\nTesting SMC multicore stacking behavior....\n";
 
     // Execute test for each force model
     std::vector<std::string> fmodels = {"hooke", "hertz", "plaincoulomb", "flores"};
@@ -61,14 +61,14 @@ int main(int argc, char* argv[]) {
         mat->SetAdhesionMultDMT(adDMT);
         mat->SetAdhesionSPerko(adSPerko);
 
-        // Create a parallel SMC system and set the system parameters
+        // Create a multicore SMC system and set the system parameters
         double time_step = 1.0E-4;
         double out_step = 1.0E-2;
         double time_sim = 10.0;
 
         ChVector<> gravity(0, -9.81, 0);
 
-        ChSystemParallelSMC msystem;
+        ChSystemMulticoreSMC msystem;
         SetSimParameters(&msystem, gravity, force_to_enum(fmodels[f]));
         msystem.SetNumThreads(2);
 

@@ -47,7 +47,7 @@ const std::string TerrainNode::m_checkpoint_filename = "checkpoint.dat";
 
 // -----------------------------------------------------------------------------
 // Construction of the terrain node:
-// - create the (parallel) Chrono system and set solver parameters
+// - create the (multicore) Chrono system and set solver parameters
 // - create the OpenGL visualization window
 // -----------------------------------------------------------------------------
 TerrainNode::TerrainNode(Type type,
@@ -109,14 +109,14 @@ TerrainNode::TerrainNode(Type type,
             break;
     }
 
-    // --------------------------
-    // Create the parallel system
-    // --------------------------
+    // ---------------------------
+    // Create the multicore system
+    // ---------------------------
 
     // Create system and set default method-specific solver settings
     switch (m_method) {
         case ChMaterialSurface::SMC: {
-            ChSystemParallelSMC* sys = new ChSystemParallelSMC;
+            ChSystemMulticoreSMC* sys = new ChSystemMulticoreSMC;
             sys->GetSettings()->solver.contact_force_model = ChSystemSMC::Hertz;
             sys->GetSettings()->solver.tangential_displ_mode = ChSystemSMC::TangentialDisplacementModel::OneStep;
             sys->GetSettings()->solver.use_material_properties = true;
@@ -125,7 +125,7 @@ TerrainNode::TerrainNode(Type type,
             break;
         }
         case ChMaterialSurface::NSC: {
-            ChSystemParallelNSC* sys = new ChSystemParallelNSC;
+            ChSystemMulticoreNSC* sys = new ChSystemMulticoreNSC;
             sys->GetSettings()->solver.solver_mode = SolverMode::SLIDING;
             sys->GetSettings()->solver.max_iteration_normal = 0;
             sys->GetSettings()->solver.max_iteration_sliding = 200;
@@ -149,8 +149,7 @@ TerrainNode::TerrainNode(Type type,
     m_system->GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
 
     // Set number of threads
-    m_system->SetParallelThreadNumber(num_threads);
-    CHOMPfunctions::SetNumThreads(num_threads);
+    m_system->SetNumThreads(num_threads);
 
 #pragma omp parallel
 #pragma omp master
@@ -363,7 +362,7 @@ void TerrainNode::Construct() {
     // Granular material properties.
     m_Id_g = 100000;
 
-    // Cache the number of bodies that have been added so far to the parallel system.
+    // Cache the number of bodies that have been added so far to the multicore system.
     // ATTENTION: This will be used to set the state of granular material particles if
     // initializing them from a checkpoint file.
 
@@ -397,7 +396,7 @@ void TerrainNode::Construct() {
             cout << m_prefix << " Generated particles:  " << m_num_particles << endl;
     }
 
-    // Cache the number of contact shapes that have been added so far to the parallel system.
+    // Cache the number of contact shapes that have been added so far to the multicore system.
     // ATTENTION: This will be used to index into the various global arrays to access/modify
     // information on contact shapes for the proxy bodies.  The implicit assumption here is
     // that *NO OTHER CONTACT SHAPES* are created before the proxy bodies!
@@ -954,7 +953,7 @@ void TerrainNode::UpdateFaceProxies(int which) {
         m_tire_data[which].m_proxies[it].m_body->SetWvel_loc(ChVector<>(0, 0, 0));
 
         // Update triangle contact shape (expressed in local frame) by writting directly
-        // into the Chrono::Parallel data structures.
+        // into the Chrono::Multicore data structures.
         // ATTENTION: It is assumed that no other triangle contact shapes have been added
         // to the system BEFORE those corresponding to the tire mesh faces!
         unsigned int offset = 3 * m_tire_data[which].m_start_tri + 3 * it;

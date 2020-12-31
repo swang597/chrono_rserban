@@ -12,7 +12,7 @@
 // Author: Daniel Melanz, Radu Serban
 // =============================================================================
 //
-// ChronoParallel demo program for shearing studies.
+// Chrono::Multicore demo program for shearing studies.
 //
 // The system contains a shearing box composed of three bodies: (1) a containing
 // bin, (2) a shearing plate, and (3) a load body. Granular material sits inside
@@ -37,8 +37,8 @@
 #include "chrono/utils/ChUtilsGenerators.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
 
-#include "chrono_parallel/physics/ChSystemParallel.h"
-#include "chrono_parallel/solver/ChSystemDescriptorParallel.h"
+#include "chrono_multicore/physics/ChSystemMulticore.h"
+#include "chrono_multicore/solver/ChSystemDescriptorMulticore.h"
 
 #include "chrono_thirdparty/cxxopts/ChCLI.h"
 #include "chrono_thirdparty/filesystem/path.h"
@@ -214,13 +214,13 @@ int Id_ball = -4;
 double mass_ball = 200;            // [g] mass of testing ball
 double radius_ball = 0.9 * hdimX;  // [cm] radius of testing ball
 
-void AdjustInertia(ChSystemParallel* m_sys) {
+void AdjustInertia(ChSystemMulticore* m_sys) {
     // TODO skip the box bodies
     auto blist = m_sys->Get_bodylist();
     for (int i = 2; i < blist.size(); i++) {
         auto body = blist[i];
         double mass = body->GetMass();
-        double r = std::static_pointer_cast<ChCollisionShapeParallel>(body->GetCollisionModel()->GetShape(0))->B[0];
+        double r = std::static_pointer_cast<ChCollisionShapeMulticore>(body->GetCollisionModel()->GetShape(0))->B[0];
         body->SetInertiaXX(2 * mass * r * r / 3);
     }
 }
@@ -231,7 +231,7 @@ void AdjustInertia(ChSystemParallel* m_sys) {
 // Both the shear box and load plate are constructed fixed to the ground.
 // No joints between bodies are defined at this time.
 // =============================================================================
-void CreateMechanismBodies(ChSystemParallel* system) {
+void CreateMechanismBodies(ChSystemMulticore* system) {
     // -------------------------------
     // Create a material for the walls
     // -------------------------------
@@ -251,7 +251,7 @@ void CreateMechanismBodies(ChSystemParallel* system) {
     // Create the ground body -- always FIRST body in system
     // ----------------------
 
-    auto ground = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
+    auto ground = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
 
     ground->SetIdentifier(Id_ground);
     ground->SetBodyFixed(true);
@@ -279,7 +279,7 @@ void CreateMechanismBodies(ChSystemParallel* system) {
     // Initially, the shear box is fixed to ground.
     // During the shearing phase it may be released (if using an actuator)
 
-    auto box = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
+    auto box = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
 
     box->SetIdentifier(Id_box);
     box->SetPos(ChVector<>(0, 0, 2 * hdimZ + r_g));
@@ -317,7 +317,7 @@ void CreateMechanismBodies(ChSystemParallel* system) {
     double area = 4 * hdimX * hdimY;
     double mass = normalPressure * area / gravity;
 
-    auto plate = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
+    auto plate = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
 
     plate->SetIdentifier(Id_plate);
     plate->SetMass(mass);
@@ -338,7 +338,7 @@ void CreateMechanismBodies(ChSystemParallel* system) {
 // Connect the shear box to the containing bin (ground) through a translational
 // joint and create a linear actuator.
 // =============================================================================
-void ConnectShearBox(ChSystemParallel* system, std::shared_ptr<ChBody> ground, std::shared_ptr<ChBody> box) {
+void ConnectShearBox(ChSystemMulticore* system, std::shared_ptr<ChBody> ground, std::shared_ptr<ChBody> box) {
     auto prismatic = chrono_types::make_shared<ChLinkLockPrismatic>();
     prismatic->Initialize(ground, box, ChCoordsys<>(ChVector<>(0, 0, 2 * hdimZ), Q_from_AngY(CH_C_PI_2)));
     prismatic->SetName("prismatic_box_ground");
@@ -361,7 +361,7 @@ void ConnectShearBox(ChSystemParallel* system, std::shared_ptr<ChBody> ground, s
 // joint.
 // =============================================================================
 
-void ConnectLoadPlate(ChSystemParallel* system, std::shared_ptr<ChBody> ground, std::shared_ptr<ChBody> plate) {
+void ConnectLoadPlate(ChSystemMulticore* system, std::shared_ptr<ChBody> ground, std::shared_ptr<ChBody> plate) {
     auto prismatic = chrono_types::make_shared<ChLinkLockPrismatic>();
     prismatic->Initialize(ground, plate, ChCoordsys<>(ChVector<>(0, 0, 2 * hdimZ), QUNIT));
     prismatic->SetName("prismatic_plate_ground");
@@ -376,7 +376,7 @@ void ConnectLoadPlate(ChSystemParallel* system, std::shared_ptr<ChBody> ground, 
 // layers with locations within each layer obtained using Poisson Disk sampling,
 // thus ensuring that no two spheres are closer than twice the radius.
 // =============================================================================
-int CreateGranularMaterial(ChSystemParallel* system) {
+int CreateGranularMaterial(ChSystemMulticore* system) {
     // -------------------------------------------
     // Create a material for the granular material
     // -------------------------------------------
@@ -432,7 +432,7 @@ int CreateGranularMaterial(ChSystemParallel* system) {
 // look at bodies whith positive identifiers (to exclude all other bodies).
 // =============================================================================
 
-void FindHeightRange(ChSystemParallel* sys, double& lowest, double& highest) {
+void FindHeightRange(ChSystemMulticore* sys, double& lowest, double& highest) {
     highest = -1000;
     lowest = 1000;
     for (auto body : sys->Get_bodylist()) {
@@ -545,10 +545,10 @@ int main(int argc, char* argv[]) {
 
 #ifdef USE_SMC
     cout << "Create SMC system" << endl;
-    ChSystemParallelSMC* msystem = new ChSystemParallelSMC();
+    ChSystemMulticoreSMC* msystem = new ChSystemMulticoreSMC();
 #else
     cout << "Create NSC system" << endl;
-    ChSystemParallelNSC* msystem = new ChSystemParallelNSC();
+    ChSystemMulticoreNSC* msystem = new ChSystemMulticoreNSC();
 #endif
 
     msystem->Set_G_acc(ChVector<>(0, 0, -gravity));

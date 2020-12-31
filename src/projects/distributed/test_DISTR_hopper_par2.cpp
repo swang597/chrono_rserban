@@ -6,8 +6,8 @@
 #include "chrono/utils/ChUtilsSamplers.h"
 
 #include "chrono_distributed/collision/ChBoundary.h"
-#include "chrono_parallel/physics/ChSystemParallel.h"
-#include "chrono_parallel/solver/ChIterativeSolverParallel.h"
+#include "chrono_multicore/physics/ChSystemMulticore.h"
+#include "chrono_multicore/solver/ChIterativeSolverMulticore.h"
 
 #include "chrono_opengl/ChOpenGLWindow.h"
 
@@ -43,7 +43,7 @@ double out_fps = 120;
 unsigned int max_iteration = 100;
 double tolerance = 1e-4;
 
-void Monitor(chrono::ChSystemParallel* system, int rank) {
+void Monitor(chrono::ChSystemMulticore* system, int rank) {
     double TIME = system->GetChTime();
     double STEP = system->GetTimerStep();
     double BROD = system->GetTimerCollisionBroad();
@@ -53,14 +53,14 @@ void Monitor(chrono::ChSystemParallel* system, int rank) {
     double EXCH = system->data_manager->system_timer.GetTime("Exchange");
     int BODS = system->GetNbodies();
     int CNTC = system->GetNcontacts();
-    double RESID = std::static_pointer_cast<chrono::ChIterativeSolverParallel>(system->GetSolver())->GetResidual();
-    int ITER = std::static_pointer_cast<chrono::ChIterativeSolverParallel>(system->GetSolver())->GetIterations();
+    double RESID = std::static_pointer_cast<chrono::ChIterativeSolverMulticore>(system->GetSolver())->GetResidual();
+    int ITER = std::static_pointer_cast<chrono::ChIterativeSolverMulticore>(system->GetSolver())->GetIterations();
 
     printf("%d|   %8.5f | %7.4f | E%7.4f | B%7.4f | N%7.4f | %7.4f | %7.4f | %7d | %7d | %7d | %7.4f\n", rank, TIME,
            STEP, EXCH, BROD, NARR, SOLVER, UPDT, BODS, CNTC, ITER, RESID);
 }
 
-std::shared_ptr<ChBoundary> AddContainer(ChSystemParallelSMC* sys) {
+std::shared_ptr<ChBoundary> AddContainer(ChSystemMulticoreSMC* sys) {
     int binId = -200;
 
     auto mat = chrono_types::make_shared<ChMaterialSurfaceSMC>();
@@ -68,7 +68,7 @@ std::shared_ptr<ChBoundary> AddContainer(ChSystemParallelSMC* sys) {
     mat->SetFriction(mu);
     mat->SetRestitution(cr);
 
-    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
+    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
     bin->SetIdentifier(binId);
     bin->SetMass(1);
     bin->SetPos(ChVector<>(0, 0, 0));
@@ -102,7 +102,7 @@ inline std::shared_ptr<ChBody> CreateBall(const ChVector<>& pos,
                                           double m,
                                           ChVector<> inertia,
                                           double radius) {
-    auto ball = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
+    auto ball = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
 
     ball->SetIdentifier(*ballId++);
     ball->SetMass(m);
@@ -118,7 +118,7 @@ inline std::shared_ptr<ChBody> CreateBall(const ChVector<>& pos,
     return ball;
 }
 
-size_t AddFallingBalls(ChSystemParallelSMC* sys) {
+size_t AddFallingBalls(ChSystemMulticoreSMC* sys) {
     double first_layer_width = 10 * gran_radius;
 
     // utils::GridSampler<> sampler(spacing);
@@ -160,7 +160,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Create distributed system
-    ChSystemParallelSMC my_sys;  // TODO
+    ChSystemMulticoreSMC my_sys;  // TODO
 
     CHOMPfunctions::SetNumThreads(num_threads);
 

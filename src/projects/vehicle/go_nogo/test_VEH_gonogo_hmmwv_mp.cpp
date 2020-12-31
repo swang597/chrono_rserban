@@ -12,7 +12,7 @@
 // Author: Radu Serban
 // =============================================================================
 //
-// Chrono::Vehicle + Chrono::Parallel program for simulating a HMMWV vehicle
+// Chrono::Vehicle + Chrono::Multicore program for simulating a HMMWV vehicle
 // on granular terrain using the mobing patch feature.
 //
 // Contact uses non-smooth (DVI) formulation.
@@ -38,7 +38,7 @@
 
 #include "chrono_models/vehicle/hmmwv/HMMWV.h"
 
-#include "chrono_parallel/physics/ChSystemParallel.h"
+#include "chrono_multicore/physics/ChSystemMulticore.h"
 
 #ifdef CHRONO_OPENGL
 #include "chrono_opengl/ChOpenGLWindow.h"
@@ -313,7 +313,7 @@ int main(int argc, char* argv[]) {
     ChVector<> gravity(0, 0, -9.81);
     ChVector<> gravityR = ChMatrix33<>(slope, ChVector<>(0, 1, 0)) * gravity;
 
-    ChSystemParallelNSC* system = new ChSystemParallelNSC();
+    ChSystemMulticoreNSC* system = new ChSystemMulticoreNSC();
     system->Set_G_acc(gravity);
 
     // Use a custom material property composition strategy.

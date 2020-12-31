@@ -12,7 +12,7 @@
 // Author: Radu Serban
 // =============================================================================
 //
-// Test 3-DOF particle simulation with Chrono::Parallel
+// Test 3-DOF particle simulation with Chrono::Multicore
 //
 // Contact uses non-smooth (DVI) formulation.
 // The global reference frame has Z up.
@@ -30,9 +30,9 @@
 #include "chrono/utils/ChUtilsGenerators.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
 
-#include "chrono_parallel/physics/ChSystemParallel.h"
-#include "chrono_parallel/solver/ChIterativeSolverParallel.h"
-#include "chrono_parallel/physics/Ch3DOFContainer.h"
+#include "chrono_multicore/physics/ChSystemMulticore.h"
+#include "chrono_multicore/solver/ChIterativeSolverMulticore.h"
+#include "chrono_multicore/physics/Ch3DOFContainer.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 
@@ -133,11 +133,11 @@ static inline void TimingOutput(chrono::ChSystem* mSys, chrono::ChStreamOutAscii
     int REQ_ITS = 0;
     int BODS = mSys->GetNbodies();
     int CNTC = mSys->GetNcontacts();
-    if (chrono::ChSystemParallel* parallel_sys = dynamic_cast<chrono::ChSystemParallel*>(mSys)) {
-        RESID = std::static_pointer_cast<chrono::ChIterativeSolverParallel>(mSys->GetSolver())->GetResidual();
-        REQ_ITS = std::static_pointer_cast<chrono::ChIterativeSolverParallel>(mSys->GetSolver())->GetIterations();
-        BODS = parallel_sys->GetNbodies();
-        CNTC = parallel_sys->GetNcontacts();
+    if (chrono::ChSystemMulticore* mc_sys = dynamic_cast<chrono::ChSystemMulticore*>(mSys)) {
+        RESID = std::static_pointer_cast<chrono::ChIterativeSolverMulticore>(mSys->GetSolver())->GetResidual();
+        REQ_ITS = std::static_pointer_cast<chrono::ChIterativeSolverMulticore>(mSys->GetSolver())->GetIterations();
+        BODS = mc_sys->GetNbodies();
+        CNTC = mc_sys->GetNcontacts();
     }
 
     if (ofile) {
@@ -165,7 +165,7 @@ double CreateContainer(ChSystem* system,  // containing system
     material->SetCohesion((float)coh);
     material->SetCompliance((float)compliance);
 
-    auto ground = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
+    auto ground = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
     ground->SetIdentifier(-1);
     ground->SetMass(1000);
     ground->SetBodyFixed(true);
@@ -211,7 +211,7 @@ double CreateContainer(ChSystem* system,  // containing system
 
 // =============================================================================
 
-unsigned int CreateParticles(ChSystemParallelNSC* system,  // containing system
+unsigned int CreateParticles(ChSystemMulticoreNSC* system,  // containing system
                              double radius,                // particle radius
                              double rho,                   // particle density
                              double mu,                    // coefficient of friction
@@ -356,7 +356,7 @@ int main(int argc, char* argv[]) {
     ChVector<> gravity(0, 0, -9.81);
     ChVector<> gravityR = ChMatrix33<>(slope, ChVector<>(0, 1, 0)) * gravity;
 
-    ChSystemParallelNSC* system = new ChSystemParallelNSC();
+    ChSystemMulticoreNSC* system = new ChSystemMulticoreNSC();
     system->Set_G_acc(gravity);
 
     // Test using a custom material property composition strategy

@@ -336,7 +336,7 @@ bool ContactManager::OnReportContact(const ChVector<>& pA,
 
 // Callback class for modifying composite material properties.
 // Notes:
-//   - currently, only ChSystemParallelNSC support user-provided callbacks for overwriting composite material properties
+//   - currently, only ChSystemMulticoreNSC support user-provided callbacks for overwriting composite material properties
 //   - as such, this functor class is only created when using NSC frictional contact
 //   - composite material properties are modified only for contacts involving the sled or one of the wheels
 //   - in these cases, the friction coefficient is set to the user-specified value
@@ -351,7 +351,7 @@ class ContactMaterial : public ChContactContainer::AddContactCallback {
 
     virtual void OnAddContact(const collision::ChCollisionInfo& contactinfo,
                               ChMaterialComposite* const material) override {
-        //// TODO: currently, only NSC parallel systems support user override of composite materials.
+        //// TODO: currently, only NSC multicore systems support user override of composite materials.
         auto mat = static_cast<ChMaterialCompositeNSC* const>(material);
 
         // Contactables in current collision pair
@@ -411,7 +411,7 @@ RoboSimian::RoboSimian(ChContactMethod contact_method, bool has_sled, bool fixed
 
     Create(has_sled, fixed);
 
-    //// TODO: currently, only NSC parallel systems support user override of composite materials
+    //// TODO: currently, only NSC multicore systems support user override of composite materials
     if (contact_method == ChContactMethod::NSC) {
         m_material_override = new ContactMaterial(this);
     }
@@ -429,7 +429,7 @@ RoboSimian::RoboSimian(ChSystem* system, bool has_sled, bool fixed)
       m_root("results") {
     Create(has_sled, fixed);
 
-    //// TODO: currently, only NSC parallel systems support user override of composite materials
+    //// TODO: currently, only NSC multicore systems support user override of composite materials
     if (system->GetContactMethod() == ChContactMethod::NSC) {
         m_material_override = new ContactMaterial(this);
     }
@@ -1011,7 +1011,7 @@ void Chassis::Initialize(const ChCoordsys<>& pos) {
     m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(CollisionFamily::LIMB_FL);
     m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(CollisionFamily::SLED);
 
-    // Note: call this AFTER setting the collision family (required for Chrono::Parallel)
+    // Note: call this AFTER setting the collision family (required for Chrono::Multicore)
     m_body->SetCollide(m_collide);
 }
 
@@ -1061,7 +1061,7 @@ void Sled::Initialize(std::shared_ptr<ChBodyAuxRef> chassis, const ChVector<>& x
     m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(CollisionFamily::LIMB_RL);
     m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(CollisionFamily::LIMB_FL);
 
-    // Note: call this AFTER setting the collision family (required for Chrono::Parallel)
+    // Note: call this AFTER setting the collision family (required for Chrono::Multicore)
     m_body->SetCollide(m_collide);
 
     // Add joint (weld)
@@ -1114,7 +1114,7 @@ void WheelDD::Initialize(std::shared_ptr<ChBodyAuxRef> chassis, const ChVector<>
     m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(CollisionFamily::CHASSIS);
     m_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(CollisionFamily::SLED);
 
-    // Note: call this AFTER setting the collision family (required for Chrono::Parallel)
+    // Note: call this AFTER setting the collision family (required for Chrono::Multicore)
     m_body->SetCollide(true);
 
     // Add joint
@@ -1208,7 +1208,7 @@ void Limb::Initialize(std::shared_ptr<ChBodyAuxRef> chassis,
         child_body->GetCollisionModel()->SetFamily(collision_family);
         child_body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(collision_family);
 
-        // Note: call this AFTER setting the collision family (required for Chrono::Parallel)
+        // Note: call this AFTER setting the collision family (required for Chrono::Multicore)
         if (child == m_wheel)
             child_body->SetCollide(m_collide_wheel);
         else

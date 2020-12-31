@@ -65,8 +65,7 @@ VehicleNode::VehicleNode()
     m_system->Set_G_acc(m_gacc);
 
     // Set number threads
-    m_system->SetParallelThreadNumber(1);
-    CHOMPfunctions::SetNumThreads(1);
+    m_system->SetNumThreads(1);
 
     // Solver settings
     m_system->SetMaxItersSolverSpeed(100);

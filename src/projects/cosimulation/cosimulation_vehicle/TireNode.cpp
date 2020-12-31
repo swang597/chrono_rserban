@@ -119,8 +119,7 @@ TireNode::TireNode(const std::string& json_filename, WheelID wheel_id, int num_t
     m_system->Set_G_acc(m_gacc);
 
     // Set number threads
-    m_system->SetParallelThreadNumber(num_threads);
-    CHOMPfunctions::SetNumThreads(num_threads);
+    m_system->SetNumThreads(num_threads);
 
 #ifdef CHRONO_MKL
     // Solver settings

@@ -30,7 +30,7 @@ list(APPEND LIBS "ChronoEngine_mkl")
 set(TESTS
 	test_BM_pendulums
 	test_BM_joints
-	test_BM_mixerNSCs
+	test_BM_mixerNSC
 )
 
 foreach(PROGRAM ${TESTS})

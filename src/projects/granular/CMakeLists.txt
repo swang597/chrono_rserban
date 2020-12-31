@@ -1,6 +1,6 @@
 message(STATUS "Projects: granular dynamics...")
 
-if(NOT ENABLE_MODULE_PARALLEL)
+if(NOT ENABLE_MODULE_MULTICORE)
   return()
 endif()  
 
@@ -16,7 +16,7 @@ set(DEMOS
     test_GRAN_triangle
 )
 
-include_directories(${CH_PARALLEL_INCLUDES})
+include_directories(${CH_MULTICORE_INCLUDES})
 include_directories(${CH_OPENGL_INCLUDES})
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
@@ -31,10 +31,10 @@ foreach(PROGRAM ${DEMOS})
 
     set_target_properties(${PROGRAM} PROPERTIES
         FOLDER demos
-        COMPILE_FLAGS "${CH_CXX_FLAGS} ${CH_PARALLEL_CXX_FLAGS}"
+        COMPILE_FLAGS "${CH_CXX_FLAGS} ${CH_MULTICORE_CXX_FLAGS}"
         LINK_FLAGS "${CH_LINKERFLAG_EXE}"
     )
 
-    target_link_libraries(${PROGRAM} ChronoEngine ChronoEngine_parallel ChronoEngine_opengl)
+    target_link_libraries(${PROGRAM} ChronoEngine ChronoEngine_multicore ChronoEngine_opengl)
 
 endforeach(PROGRAM)

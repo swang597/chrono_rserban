@@ -12,7 +12,7 @@
 // Author: Radu Serban
 // =============================================================================
 //
-// Chrono::Vehicle + Chrono::Parallel program for simulating a HMMWV vehicle
+// Chrono::Vehicle + Chrono::Multicore program for simulating a HMMWV vehicle
 // on granular terrain.
 //
 // Contact uses non-smooth (DVI) formulation.
@@ -41,8 +41,8 @@
 
 #include "chrono_models/vehicle/hmmwv/HMMWV.h"
 
-#include "chrono_parallel/physics/ChSystemParallel.h"
-#include "chrono_parallel/physics/Ch3DOFContainer.h"
+#include "chrono_multicore/physics/ChSystemMulticore.h"
+#include "chrono_multicore/physics/Ch3DOFContainer.h"
 
 #ifdef CHRONO_OPENGL
 #include "chrono_opengl/ChOpenGLWindow.h"
@@ -164,7 +164,7 @@ class MyLuggedTire : public ChTireContactCallback {
     }
 
     virtual void onCallback(std::shared_ptr<ChBody> wheelBody) {
-        auto coll_model = chrono_types::make_shared<collision::ChCollisionModelParallel>();
+        auto coll_model = chrono_types::make_shared<collision::ChCollisionModelMulticore>();
         wheelBody->SetCollisionModel(coll_model);
 
         coll_model->ClearModel();
@@ -219,7 +219,7 @@ bool GetProblemSpecs(int argc,
                      bool& pov_output);
 
 double CreateContainer(ChSystem* system, double mu, double coh, double radius);
-int CreateParticles(ChSystemParallelNSC* system,
+int CreateParticles(ChSystemMulticoreNSC* system,
                     int num_layers,
                     double radius,
                     double rho,
@@ -362,7 +362,7 @@ int main(int argc, char* argv[]) {
     ChVector<> gravity(0, 0, -9.81);
     ChVector<> gravityR = ChMatrix33<>(slope, ChVector<>(0, 1, 0)) * gravity;
 
-    ChSystemParallelNSC* system = new ChSystemParallelNSC();
+    ChSystemMulticoreNSC* system = new ChSystemMulticoreNSC();
     system->Set_G_acc(gravity);
 
     // Use a custom material property composition strategy.
@@ -614,7 +614,7 @@ double CreateContainer(ChSystem* system,  // containing system
     material->SetCohesion((float)coh);
     material->SetCompliance(1e-9f);
 
-    auto ground = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
+    auto ground = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
     ground->SetIdentifier(-1);
     ground->SetMass(1000);
     ground->SetBodyFixed(true);
@@ -664,7 +664,7 @@ double CreateContainer(ChSystem* system,  // containing system
 
 // =============================================================================
 
-int CreateParticles(ChSystemParallelNSC* system,  // containing system
+int CreateParticles(ChSystemMulticoreNSC* system,  // containing system
                     int num_layers,               // number of layers
                     double radius,                // particle radius
                     double rho,                   // particle density

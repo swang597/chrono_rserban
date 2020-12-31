@@ -12,7 +12,7 @@
 // Authors: Radu Serban
 // =============================================================================
 //
-// ChronoParallel test program using SMC method for frictional contact.
+// Chrono::Distributed test program using SMC method for frictional contact.
 //
 // The model simulated here consists of a number of objects falling onto a
 // sloped surface.
@@ -32,7 +32,7 @@
 #include "chrono/utils/ChUtilsGenerators.h"
 #include "chrono/utils/ChUtilsSamplers.h"
 
-#include "chrono_parallel/physics/ChSystemParallel.h"
+#include "chrono_multicore/physics/ChSystemMulticore.h"
 
 #include "chrono_distributed/collision/ChBoundary.h"
 
@@ -59,7 +59,7 @@ double time_step = 2e-5;
 unsigned int max_iteration = 100;  // not relevant here (SMC, no joints)
 double tolerance = 1e-4;           // not relevant here (SMC, no joints)
 
-std::shared_ptr<ChBoundary> AddSlopedWall(ChSystemParallel* sys) {
+std::shared_ptr<ChBoundary> AddSlopedWall(ChSystemMulticore* sys) {
     int binId = -200;
 
     auto mat = chrono_types::make_shared<ChMaterialSurfaceSMC>();
@@ -67,7 +67,7 @@ std::shared_ptr<ChBoundary> AddSlopedWall(ChSystemParallel* sys) {
     mat->SetFriction(mu);
     mat->SetRestitution(cr);
 
-    auto container = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
+    auto container = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
     container->SetIdentifier(binId);
     container->SetMass(1);
     container->SetPos(ChVector<>(0));
@@ -85,7 +85,7 @@ std::shared_ptr<ChBoundary> AddSlopedWall(ChSystemParallel* sys) {
     return boundary;
 }
 
-size_t AddFallingBalls(ChSystemParallel* sys) {
+size_t AddFallingBalls(ChSystemMulticore* sys) {
     double hx = 20 * gran_radius;
     double hy = 4 * gran_radius;
     double hz = 2 * gran_radius;
@@ -102,7 +102,7 @@ size_t AddFallingBalls(ChSystemParallel* sys) {
 
     int ballId = 0;
     for (int i = 0; i < points.size(); i++) {
-        auto ball = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
+        auto ball = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
 
         ball->SetIdentifier(ballId++);
         ball->SetMass(mass);
@@ -128,14 +128,11 @@ int main(int argc, char* argv[]) {
     int threads = 2;
 
     // Create system
-    ChSystemParallelSMC sys;
+    ChSystemMulticoreSMC sys;
     sys.Set_G_acc(ChVector<>(0, 0, -9.8));
 
     // Set number of threads.
-    int max_threads = CHOMPfunctions::GetNumProcs();
-    if (threads > max_threads)
-        threads = max_threads;
-    CHOMPfunctions::SetNumThreads(threads);
+    sys.SetNumThreads(threads);
 
     // Set solver parameters
     sys.GetSettings()->solver.max_iteration_bilateral = max_iteration;

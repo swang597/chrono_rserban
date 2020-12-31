@@ -19,7 +19,7 @@
 #include <iostream>
 #include <fstream>
 
-#include "chrono_parallel/physics/ChSystemParallel.h"
+#include "chrono_multicore/physics/ChSystemMulticore.h"
 #include "chrono/assets/ChTexture.h"
 #include "chrono/assets/ChColorAsset.h"
 #include "chrono/utils/ChUtilsCreators.h"
@@ -64,7 +64,7 @@ ChSystemSMC::ContactForceModel force_to_enum(const std::string& str) {
 }
 
 std::shared_ptr<ChBody> AddSphere(int id,
-                                  ChSystemParallelSMC* msystem,
+                                  ChSystemMulticoreSMC* msystem,
                                   std::shared_ptr<ChMaterialSurfaceSMC> mat,
                                   double radius,
                                   double mass,
@@ -76,7 +76,7 @@ std::shared_ptr<ChBody> AddSphere(int id,
     ChVector<> init_w(0, 0, 0);
 
     // Create a spherical body. Set body parameters and sphere collision model
-    auto body = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
+    auto body = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
     body->SetIdentifier(id);
     body->SetMass(mass);
     body->SetPos(pos);
@@ -102,7 +102,7 @@ std::shared_ptr<ChBody> AddSphere(int id,
 }
 
 std::shared_ptr<ChBody> AddWall(int id,
-                                ChSystemParallelSMC* msystem,
+                                ChSystemMulticoreSMC* msystem,
                                 std::shared_ptr<ChMaterialSurfaceSMC> mat,
                                 ChVector<> size,
                                 double mass,
@@ -116,7 +116,7 @@ std::shared_ptr<ChBody> AddWall(int id,
     ChQuaternion<> rot(1, 0, 0, 0);
 
     // Create container. Set body parameters and container collision model
-    auto body = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
+    auto body = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
     body->SetIdentifier(id);
     body->SetMass(mass);
     body->SetPos(pos);
@@ -140,7 +140,7 @@ std::shared_ptr<ChBody> AddWall(int id,
     return body;
 }
 
-void SetSimParameters(ChSystemParallelSMC* msystem, ChVector<> gravity, ChSystemSMC::ContactForceModel fmodel) {
+void SetSimParameters(ChSystemMulticoreSMC* msystem, ChVector<> gravity, ChSystemSMC::ContactForceModel fmodel) {
     // Set solver settings and collision detection parameters
     msystem->Set_G_acc(gravity);
 
@@ -156,11 +156,11 @@ void SetSimParameters(ChSystemParallelSMC* msystem, ChVector<> gravity, ChSystem
         NarrowPhaseType::NARROWPHASE_HYBRID_MPR;  /// Types: NARROWPHASE_HYBRID_MPR, NARROWPHASE_R, NARROWPHASE_MPR
 
     msystem->ChangeCollisionSystem(
-        CollisionSystemType::COLLSYS_PARALLEL);                  /// Types:: COLLSYS_PARALLEL, COLLSYS_BULLET_PARALLEL
+        CollisionSystemType::COLLSYS_MULTICORE);                  /// Types:: COLLSYS_MULTICORE, COLLSYS_BULLET_MULTICORE
     msystem->SetTimestepperType(ChTimestepper::Type::LEAPFROG);  /// Types: LEAPFROG....
 }
 
-bool CalcKE(ChSystemParallelSMC* msystem, const double& threshold) {
+bool CalcKE(ChSystemMulticoreSMC* msystem, const double& threshold) {
     const std::shared_ptr<ChBody> body = msystem->Get_bodylist().at(1);
 
     ChVector<> eng_trn = 0.5 * body->GetMass() * body->GetPos_dt() * body->GetPos_dt();
@@ -175,7 +175,7 @@ bool CalcKE(ChSystemParallelSMC* msystem, const double& threshold) {
     return false;
 }
 
-bool CalcAverageKE(ChSystemParallelSMC* msystem, const double& threshold) {
+bool CalcAverageKE(ChSystemMulticoreSMC* msystem, const double& threshold) {
     // Calculate average KE
     double KE_trn = 0;
     double KE_rot = 0;
@@ -207,7 +207,7 @@ using namespace chrono::irrlicht;
 using namespace irr;
 using namespace irr::video;
 
-ChIrrApp* SetSimVis(ChSystemParallelSMC* msystem, double time_step, bool vis) {
+ChIrrApp* SetSimVis(ChSystemMulticoreSMC* msystem, double time_step, bool vis) {
     if (vis) {
         ChIrrApp* application = new ChIrrApp(msystem, L"Two sphere SMC test", core::dimension2d<u32>(800, 600));
 

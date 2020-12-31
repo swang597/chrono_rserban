@@ -65,7 +65,7 @@ int main(int argc, char* argv[]) {
     MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
 
     ////{
-    ////    ChSystemParallelSMC sysP;
+    ////    ChSystemMulticoreSMC sysP;
 
     ////    double t_start = MPI_Wtime();
     ////    auto num_balls = AddBalls(&sysP);

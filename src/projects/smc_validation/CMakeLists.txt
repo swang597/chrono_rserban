@@ -1,12 +1,12 @@
 #--------------------------------------------------------------
-# Validation tests SMC method with Chrono::Parallel
+# Validation tests SMC method with Chrono::Multicore
 #
-# Requires the Parallel and Irrlicht modules 
+# Requires the Multicore and Irrlicht modules 
 #--------------------------------------------------------------
 
 message(STATUS "Projects: SMC validation...")
 
-if(NOT ENABLE_MODULE_IRRLICHT OR NOT ENABLE_MODULE_PARALLEL)
+if(NOT ENABLE_MODULE_IRRLICHT OR NOT ENABLE_MODULE_MULTICORE)
   return()
 endif()  
 
@@ -25,7 +25,7 @@ set(TESTS
   )
 
 
-include_directories(${CH_PARALLEL_INCLUDES})
+include_directories(${CH_MULTICORE_INCLUDES})
 include_directories(${CH_IRRLICHTINC})
 
 foreach(PROGRAM ${TESTS})
@@ -36,13 +36,13 @@ foreach(PROGRAM ${TESTS})
 
     set_target_properties(${PROGRAM} PROPERTIES
         FOLDER tests
-        COMPILE_FLAGS "${CH_CXX_FLAGS} ${CH_PARALLEL_CXX_FLAGS} ${CH_IRRLICHT_CXX_FLAGS}"
+        COMPILE_FLAGS "${CH_CXX_FLAGS} ${CH_MULTICORE_CXX_FLAGS} ${CH_IRRLICHT_CXX_FLAGS}"
         LINK_FLAGS "${CH_LINKERFLAG_EXE}"
     )
 
     target_link_libraries(${PROGRAM}
                           ChronoEngine
-                          ChronoEngine_parallel
+                          ChronoEngine_multicore
                           ChronoEngine_irrlicht)
 
 endforeach(PROGRAM)

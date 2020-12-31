@@ -13,8 +13,8 @@
 #include "chrono/solver/ChIterativeSolver.h"
 #include "chrono/utils/ChFilters.h"
 
-#include <chrono_parallel/physics/ChSystemParallel.h>
-#include "chrono_parallel/solver/ChIterativeSolverParallel.h"
+#include <chrono_multicore/physics/ChSystemMulticore.h>
+#include "chrono_multicore/solver/ChIterativeSolverMulticore.h"
 
 #include <chrono/utils/ChUtilsCreators.h>
 #include <chrono/utils/ChUtilsSamplers.h>
@@ -105,7 +105,7 @@ double shear_time = shear_displacement / shear_velocity;
 
 double box_thick = 1.5 * shear_displacement;  // Thickness of walls so that no material spills during shearing
 
-void AddBox(ChSystemParallel& m_sys, std::shared_ptr<ChBody>& top) {
+void AddBox(ChSystemMulticore& m_sys, std::shared_ptr<ChBody>& top) {
     auto box_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
     box_mat->SetFriction(box_mu);
     box_mat->SetRestitution(box_cr);
@@ -160,7 +160,7 @@ void AddBox(ChSystemParallel& m_sys, std::shared_ptr<ChBody>& top) {
     m_sys.AddBody(bot);
 }
 
-void AddPlate(ChSystemParallelNSC& m_sys,
+void AddPlate(ChSystemMulticoreNSC& m_sys,
               std::shared_ptr<ChBody>& plate,
               std::shared_ptr<ChBody>& top,
               double plate_bottom) {
@@ -192,7 +192,7 @@ void AddPlate(ChSystemParallelNSC& m_sys,
     m_sys.AddLink(prismatic_plate_box);
 }
 
-void AddMotor(ChSystemParallelNSC& m_sys,
+void AddMotor(ChSystemMulticoreNSC& m_sys,
               std::shared_ptr<ChBody>& top,
               std::shared_ptr<ChLinkMotorLinearPosition>& motor) {
     double hz = box_dim_Z / 2;
@@ -210,7 +210,7 @@ void AddMotor(ChSystemParallelNSC& m_sys,
     m_sys.AddLink(motor);
 }
 
-void FixPlate(ChSystemParallelNSC& m_sys, std::shared_ptr<ChBody>& plate, std::shared_ptr<ChBody>& top) {
+void FixPlate(ChSystemMulticoreNSC& m_sys, std::shared_ptr<ChBody>& plate, std::shared_ptr<ChBody>& top) {
     ChQuaternion<> z2y;
     z2y.Q_from_AngAxis(-CH_C_PI / 2, ChVector<>(1, 0, 0));
 
@@ -219,7 +219,7 @@ void FixPlate(ChSystemParallelNSC& m_sys, std::shared_ptr<ChBody>& plate, std::s
     m_sys.AddLink(pin);
 }
 
-size_t AddParticles(ChSystemParallelNSC& m_sys, ChVector<> box_center, ChVector<> hdims) {
+size_t AddParticles(ChSystemMulticoreNSC& m_sys, ChVector<> box_center, ChVector<> hdims) {
     auto sphere_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
     sphere_mat->SetFriction(sphere_mu);
     sphere_mat->SetRestitution(sphere_cr);
@@ -246,7 +246,7 @@ size_t AddParticles(ChSystemParallelNSC& m_sys, ChVector<> box_center, ChVector<
     return points.size();
 }
 
-void WriteParticles(ChSystemParallelNSC& m_sys, string file_name) {
+void WriteParticles(ChSystemMulticoreNSC& m_sys, string file_name) {
     std::ofstream ostream;
     ostream.open(file_name);
     ostream << "x,y,z,U" << endl;
@@ -294,7 +294,7 @@ int main(int argc, char* argv[]) {
     settings_stream << "Shear displacement: " << shear_displacement << endl;
     settings_stream << "Shear time: " << shear_time << endl;
 
-    ChSystemParallelNSC m_sys;
+    ChSystemMulticoreNSC m_sys;
 
     m_sys.Set_G_acc(ChVector<>(0, 0, -grav));
     m_sys.SetNumThreads(omp_get_num_procs());
@@ -454,7 +454,7 @@ int main(int argc, char* argv[]) {
 
         double shear_force_motor = motor->GetMotorForce();
         double shear_force_contact = m_sys.GetBodyContactForce(top).x;
-        int iters = std::static_pointer_cast<ChIterativeSolverParallel>(m_sys.GetSolver())->GetIterations();
+        int iters = std::static_pointer_cast<ChIterativeSolverMulticore>(m_sys.GetSolver())->GetIterations();
 
         shear_force_motor_filtered = fm_lowpass5.Filter(shear_force_motor);
         shear_area = box_dim_Y * (box_dim_X - 2 * top->GetPos().x());

@@ -12,7 +12,7 @@
 // Author: Radu Serban
 // =============================================================================
 //
-// ChronoParallel test program for settling process of granular material.
+// Chrono::Multicore test program for settling process of granular material.
 //
 // The global reference frame has Z up.
 // All units SI (CGS, i.e., centimeter - gram - second)
@@ -35,8 +35,8 @@
 #include "chrono/utils/ChUtilsGenerators.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
 
-#include "chrono_parallel/physics/ChSystemParallel.h"
-#include "chrono_parallel/solver/ChIterativeSolverParallel.h"
+#include "chrono_multicore/physics/ChSystemMulticore.h"
+#include "chrono_multicore/solver/ChIterativeSolverMulticore.h"
 
 #include "chrono_opengl/ChOpenGLWindow.h"
 
@@ -69,8 +69,8 @@ void TimingOutput(chrono::ChSystem* mSys) {
     int REQ_ITS = 0;
     int BODS = mSys->GetNbodies();
     int CNTC = mSys->GetNcontacts();
-    if (chrono::ChSystemParallel* parallel_sys = dynamic_cast<chrono::ChSystemParallel*>(mSys)) {
-        REQ_ITS = std::static_pointer_cast<ChIterativeSolverParallel>(mSys->GetSolver())->GetIterations();
+    if (chrono::ChSystemMulticore* mc_sys = dynamic_cast<chrono::ChSystemMulticore*>(mSys)) {
+        REQ_ITS = std::static_pointer_cast<ChIterativeSolverMulticore>(mSys->GetSolver())->GetIterations();
     }
 
     printf("   %8.5f | %7.4f | %7.4f | %7.4f | %7.4f | %7.4f | %7d | %7d | %7d\n", TIME, STEP, BROD, NARR,
@@ -157,17 +157,17 @@ int main(int argc, char** argv) {
     int binsZ = 10;
     std::cout << "Broad-phase bins: " << binsX << " x " << binsY << " x " << binsZ << std::endl;
 
-    // --------------------------
-    // Create the parallel system
-    // --------------------------
+    // ---------------------------
+    // Create the multicore system
+    // ---------------------------
 
     // Create system and set method-specific solver settings
-    chrono::ChSystemParallel* system;
+    chrono::ChSystemMulticore* system;
     double time_step;
 
     switch (method) {
         case ChContactMethod::SMC: {
-            ChSystemParallelSMC* sys = new ChSystemParallelSMC;
+            ChSystemMulticoreSMC* sys = new ChSystemMulticoreSMC;
             auto contact_force_model = ChSystemSMC::PlainCoulomb;
             bool use_mat_properties = true;
             sys->GetSettings()->solver.contact_force_model = contact_force_model;
@@ -179,7 +179,7 @@ int main(int argc, char** argv) {
             break;
         }
         case ChContactMethod::NSC: {
-            ChSystemParallelNSC* sys = new ChSystemParallelNSC;
+            ChSystemMulticoreNSC* sys = new ChSystemMulticoreNSC;
             sys->GetSettings()->solver.solver_mode = SolverMode::SLIDING;
             sys->GetSettings()->solver.max_iteration_normal = 0;
             sys->GetSettings()->solver.max_iteration_sliding = 200;

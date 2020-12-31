@@ -31,7 +31,7 @@ int main(int argc, char* argv[]) {
 
     // Print the sim set - up parameters to userlog
     GetLog() << "\nCopyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << ".VCMS\n";
-    GetLog() << "\nTesting SMC Parallel coefficient of restitution....\n";
+    GetLog() << "\nTesting SMC multicore coefficient of restitution....\n";
 
     // Create a file for logging data
     const std::string fname = GetChronoOutputPath() + "/dat.csv";
@@ -67,14 +67,14 @@ int main(int argc, char* argv[]) {
             mat->SetAdhesionMultDMT(adDMT);
             mat->SetAdhesionSPerko(adSPerko);
 
-            // Create a parallel SMC system and set the system parameters
+            // Create a multicore SMC system and set the system parameters
             double time_step = 1.0E-5;
             double out_step = 1.0E-2;
             double time_sim = 0.5;
 
             ChVector<> gravity(0, 0, 0);
 
-            ChSystemParallelSMC msystem;
+            ChSystemMulticoreSMC msystem;
             SetSimParameters(&msystem, gravity, force_to_enum(fmodels[f]));
             msystem.SetNumThreads(2);
 

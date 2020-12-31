@@ -13,7 +13,7 @@
 // =============================================================================
 //
 // Mechanism for testing tires over granular terrain.  The mechanism + tire
-// system is co-simulated with a Chrono::Parallel system for the granular terrain.
+// system is co-simulated with a Chrono::Multicore system for the granular terrain.
 //
 // Definition of the TERRAIN NODE.
 //
@@ -37,7 +37,7 @@
 #include "chrono/utils/ChUtilsGenerators.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
 
-#include "chrono_parallel/physics/ChSystemParallel.h"
+#include "chrono_multicore/physics/ChSystemMulticore.h"
 
 #include "BaseNode.h"
 
@@ -154,7 +154,7 @@ class TerrainNode : public BaseNode {
 
     Type m_type;  ///< terrain type (RIGID or GRANULAR)
 
-    chrono::ChSystemParallel* m_system;  ///< containing system
+    chrono::ChSystemMulticore* m_system;  ///< containing system
     bool m_constructed;                  ///< system construction completed?
 
     chrono::ChContactMethod m_method;                               ///< contact method (penalty or complementarity)

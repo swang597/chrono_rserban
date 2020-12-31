@@ -10,7 +10,7 @@
 //
 // =============================================================================
 //
-// Test triangle collision shape in Chrono::Parallel
+// Test triangle collision shape in Chrono::Multicore
 //
 // The global reference frame has Z up.
 // All units SI.
@@ -26,9 +26,9 @@
 #include "chrono/utils/ChUtilsGeometry.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
 
-#include "chrono_parallel/physics/ChSystemParallel.h"
-#include "chrono_parallel/solver/ChSystemDescriptorParallel.h"
-#include "chrono_parallel/collision/ChNarrowphaseRUtils.h"
+#include "chrono_multicore/physics/ChSystemMulticore.h"
+#include "chrono_multicore/solver/ChSystemDescriptorMulticore.h"
+#include "chrono_multicore/collision/ChNarrowphaseRUtils.h"
 
 // Note: CHRONO_OPENGL is defined in ChConfig.h
 #ifdef CHRONO_OPENGL
@@ -86,9 +86,9 @@ int out_fps = 60;
 // =============================================================================
 // Create ground body
 // =============================================================================
-void CreateGround(ChSystemParallel* system) {
+void CreateGround(ChSystemMulticore* system) {
 
-    auto ground = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
+    auto ground = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
 
 #ifdef USE_SMC
     auto mat_g = chrono_types::make_shared<ChMaterialSurfaceSMC>();
@@ -125,10 +125,10 @@ void CreateGround(ChSystemParallel* system) {
 // =============================================================================
 // Create falling object
 // =============================================================================
-std::shared_ptr<ChBody> CreateObject(ChSystemParallel* system) {
+std::shared_ptr<ChBody> CreateObject(ChSystemMulticore* system) {
     double rho_o = 2000.0;
 
-    auto obj = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
+    auto obj = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
 
 #ifdef USE_SMC
     auto mat_o = chrono_types::make_shared<ChMaterialSurfaceSMC>();
@@ -179,11 +179,11 @@ int main(int argc, char* argv[]) {
 #ifdef USE_SMC
     sprintf(title, "Object Drop >> SMC");
     cout << "Create SMC system" << endl;
-    ChSystemParallelSMC* msystem = new ChSystemParallelSMC();
+    ChSystemMulticoreSMC* msystem = new ChSystemMulticoreSMC();
 #else
     sprintf(title, "Object Drop >> NSC");
     cout << "Create NSC system" << endl;
-    ChSystemParallelNSC* msystem = new ChSystemParallelNSC();
+    ChSystemMulticoreNSC* msystem = new ChSystemMulticoreNSC();
 #endif
 
     msystem->Set_G_acc(ChVector<>(0, 0, -9.81));

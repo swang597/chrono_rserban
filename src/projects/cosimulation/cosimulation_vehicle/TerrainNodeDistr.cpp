@@ -28,7 +28,7 @@
 #include "chrono/assets/ChLineShape.h"
 #include "chrono/geometry/ChLineBezier.h"
 
-#include "chrono_parallel/solver/ChIterativeSolverParallel.h"
+#include "chrono_multicore/solver/ChIterativeSolverMulticore.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 
@@ -95,9 +95,9 @@ MPI_Comm GetTerrainIntracommunicator() {
 }  // end namespace cosim
 
 // -----------------------------------------------------------------------------
-// Utility function for monitoring Chrono::Parallel performance
+// Utility function for monitoring Chrono::Multicore performance
 // -----------------------------------------------------------------------------
-void Monitor(chrono::ChSystemParallel* system, int rank) {
+void Monitor(chrono::ChSystemMulticore* system, int rank) {
     double TIME = system->GetChTime();
     double STEP = system->GetTimerStep();
     double BROD = system->GetTimerCollisionBroad();
@@ -107,8 +107,8 @@ void Monitor(chrono::ChSystemParallel* system, int rank) {
     double EXCH = system->data_manager->system_timer.GetTime("Exchange");
     int BODS = system->GetNbodies();
     int CNTC = system->GetNcontacts();
-    double RESID = std::static_pointer_cast<chrono::ChIterativeSolverParallel>(system->GetSolver())->GetResidual();
-    int ITER = std::static_pointer_cast<chrono::ChIterativeSolverParallel>(system->GetSolver())->GetTotalIterations();
+    double RESID = std::static_pointer_cast<chrono::ChIterativeSolverMulticore>(system->GetSolver())->GetResidual();
+    int ITER = std::static_pointer_cast<chrono::ChIterativeSolverMulticore>(system->GetSolver())->GetTotalIterations();
 
     printf("%d|   %8.5f | %7.4f | E%7.4f | B%7.4f | N%7.4f | %7.4f | %7.4f | %7d | %7d | %7d | %7.4f\n",  ////
            rank, TIME, STEP, EXCH, BROD, NARR, SOLVER, UPDT, BODS, CNTC, ITER, RESID);
@@ -188,8 +188,7 @@ TerrainNodeDistr::TerrainNodeDistr(MPI_Comm terrain_comm, int num_tires, bool re
     m_system->GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
 
     // Set number of threads
-    m_system->SetParallelThreadNumber(num_threads);
-    CHOMPfunctions::SetNumThreads(num_threads);
+    m_system->SetNumThreads(num_threads);
 
 #pragma omp parallel
 #pragma omp master
@@ -387,7 +386,7 @@ void TerrainNodeDistr::Construct() {
     // Granular material properties.
     m_Id_g = 100000;
 
-    // Cache the number of bodies that have been added so far to the parallel system.
+    // Cache the number of bodies that have been added so far to the multicore system.
     // ATTENTION: This will be used to set the state of granular material particles if
     // initializing them from a checkpoint file.
 
@@ -861,7 +860,7 @@ void TerrainNodeDistr::CreateFaceProxies(int which, std::shared_ptr<ChMaterialSu
         body->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(1);
         body->GetCollisionModel()->BuildModel();
 
-        // For Chrono::Parallel this must be done after setting family collisions
+        // For Chrono::Multicore this must be done after setting family collisions
         // (in case collision is being disabled)
         body->SetCollide(true);
 

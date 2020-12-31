@@ -6,4 +6,4 @@ endif()
 
 add_subdirectory(checks)
 add_subdirectory(sequential)
-add_subdirectory(parallel)
+add_subdirectory(multicore)

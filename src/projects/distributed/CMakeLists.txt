@@ -3,7 +3,7 @@
 
 message(STATUS "Projects: Chrono::Distributed module...")
 
-if(NOT ENABLE_MODULE_PARALLEL OR NOT ENABLE_MODULE_DISTRIBUTED)
+if(NOT ENABLE_MODULE_MULTICORE OR NOT ENABLE_MODULE_DISTRIBUTED)
   return()
 endif()
 
@@ -30,7 +30,7 @@ set(TESTS_OPENGL
 
 # ------------------------------------------------------------------------------
 
-include_directories(${CH_PARALLEL_INCLUDES})
+include_directories(${CH_MULTICORE_INCLUDES})
 include_directories(${CH_DISTRIBUTED_INCLUDES})
 
 set(COMPILER_FLAGS "${CH_CXX_FLAGS} ${CH_DISTRIBUTED_CXX_FLAGS}")
@@ -39,7 +39,7 @@ set(LINKER_FLAGS "${CH_LINKERFLAG_EXE} ${CH_DISTRIBUTED_LINK_FLAGS}")
 
 set(LIBRARIES
     ChronoEngine
-    ChronoEngine_parallel
+    ChronoEngine_multicore
     ChronoEngine_distributed
 )
 

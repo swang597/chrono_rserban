@@ -12,13 +12,13 @@
 // Authors: Radu Serban
 // =============================================================================
 //
-// Test program for Chrono::Parallel with Irrlicht visualization
+// Test program for Chrono::Multicore with Irrlicht visualization
 //
 // =============================================================================
 
 #include "chrono/utils/ChUtilsCreators.h"
 #include "chrono_irrlicht/ChIrrApp.h"
-#include "chrono_parallel/physics/ChSystemParallel.h"
+#include "chrono_multicore/physics/ChSystemMulticore.h"
 
 using namespace chrono;
 using namespace chrono::irrlicht;
@@ -26,13 +26,13 @@ using namespace chrono::irrlicht;
 // -----------------------------------------------------------------------------
 // Create the container (fixed to ground).
 // -----------------------------------------------------------------------------
-void AddContainer(ChSystemParallelNSC* sys) {
+void AddContainer(ChSystemMulticoreNSC* sys) {
     // Create a common material
     auto mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
     mat->SetFriction(0.4f);
 
     // Create the containing bin (4 x 4 x 1), tilted about Y
-    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<collision::ChCollisionModelParallel>());
+    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<collision::ChCollisionModelMulticore>());
     bin->SetMass(1);
     bin->SetPos(ChVector<>(0, 0, 0));
     bin->SetRot(Q_from_AngY(CH_C_PI / 20));
@@ -60,7 +60,7 @@ void AddContainer(ChSystemParallelNSC* sys) {
 // -----------------------------------------------------------------------------
 // Create the falling spherical objects in a rectangular grid.
 // -----------------------------------------------------------------------------
-void AddFallingBalls(ChSystemParallel* sys) {
+void AddFallingBalls(ChSystemMulticore* sys) {
     // Common material
     auto ballMat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
     ballMat->SetFriction(0.4f);
@@ -74,7 +74,7 @@ void AddFallingBalls(ChSystemParallel* sys) {
         for (int iy = -2; iy <= 2; iy++) {
             ChVector<> pos(0.4 * ix, 0.4 * iy, 1);
 
-            auto ball = chrono_types::make_shared<ChBody>(chrono_types::make_shared<collision::ChCollisionModelParallel>());
+            auto ball = chrono_types::make_shared<ChBody>(chrono_types::make_shared<collision::ChCollisionModelMulticore>());
 
             ball->SetMass(mass);
             ball->SetInertiaXX(inertia);
@@ -101,7 +101,7 @@ int main(int argc, char* argv[]) {
     // Create system
     // -------------
 
-    ChSystemParallelNSC msystem;
+    ChSystemMulticoreNSC msystem;
 
     // Set number of threads
     int threads = 8;
@@ -137,7 +137,7 @@ int main(int argc, char* argv[]) {
     // Create Irrlicht application
     // ---------------------------
 
-    ChIrrApp application(&msystem, L"Parallel + Irrlicht", irr::core::dimension2d<irr::u32>(800, 600), false, true);
+    ChIrrApp application(&msystem, L"Multicore + Irrlicht", irr::core::dimension2d<irr::u32>(800, 600), false, true);
     application.AddTypicalLogo();
     application.AddTypicalSky();
     application.AddTypicalLights(irr::core::vector3df(30.f, -100.f, 30.f), irr::core::vector3df(30.f, -80.f, -30.f));

@@ -15,7 +15,7 @@
 //  This project simulates a box with a non-zero initial horizontal velocity
 //  sliding across a horizontal plate. See Xiang et al. (2009) Test 0.
 //  The purpose of this test is to validate the implementation of sliding
-//  friction in ChIterativeSolverParallelSMC.
+//  friction in ChIterativeSolverMulticoreSMC.
 //
 // =============================================================================
 
@@ -39,12 +39,12 @@ std::ofstream CreateDataFile() {
     return dat;
 }
 
-void WriteData(std::ofstream& dat, ChSystemParallelSMC* msystem, const std::string& str) {
+void WriteData(std::ofstream& dat, ChSystemMulticoreSMC* msystem, const std::string& str) {
     int i = 1;
     const std::shared_ptr<ChBody> body = msystem->Get_bodylist().at(i);
 
     // Get the radius of the object
-    auto shape = std::static_pointer_cast<ChCollisionShapeParallel>(body->GetCollisionModel()->GetShape(0));
+    auto shape = std::static_pointer_cast<ChCollisionShapeMulticore>(body->GetCollisionModel()->GetShape(0));
     double radius = 0;
     // I'm assuming that there is only one object per collision model. Fix this later.
     switch (shape->GetType()) {
@@ -87,7 +87,7 @@ int main(int argc, char* argv[]) {
 
     // Print the sim set - up parameters to userlog
     GetLog() << "\nCopyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << ".VCMS\n";
-    GetLog() << "\nTesting SMC Parallel sliding with gravity behavior....\n";
+    GetLog() << "\nTesting SMC multicore sliding with gravity behavior....\n";
 
     // Execute test for each force model
     std::vector<std::string> fmodels = {"hooke", "hertz", "plaincoulomb", "flores"};
@@ -116,14 +116,14 @@ int main(int argc, char* argv[]) {
         mat->SetAdhesionMultDMT(adDMT);
         mat->SetAdhesionSPerko(adSPerko);
 
-        // Create a parallel SMC system and set the system parameters
+        // Create a multicore SMC system and set the system parameters
         double time_step = 1.0E-5;
         double out_step = 1.0E-2;
         double time_sim = 2.0;
 
         ChVector<> gravity(0, -9.81, 0);
 
-        ChSystemParallelSMC msystem;
+        ChSystemMulticoreSMC msystem;
         SetSimParameters(&msystem, gravity, force_to_enum(fmodels[f]));
         msystem.SetNumThreads(2);
 

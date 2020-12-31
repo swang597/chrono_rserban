@@ -14,7 +14,7 @@
 #include "chrono/utils/ChUtilsGenerators.h"
 #include "chrono/utils/ChUtilsSamplers.h"
 
-#include "chrono_parallel/solver/ChIterativeSolverParallel.h"
+#include "chrono_multicore/solver/ChIterativeSolverMulticore.h"
 
 using namespace chrono;
 using namespace chrono::collision;
@@ -51,7 +51,7 @@ void AddContainer(ChSystemDistributed* sys) {
     mat->SetFriction(mu);
     mat->SetRestitution(cr);
 
-    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelParallel>());
+    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
     bin->SetIdentifier(binId);
     bin->SetMass(1);
     bin->SetPos(ChVector<>(0, 0, 0));

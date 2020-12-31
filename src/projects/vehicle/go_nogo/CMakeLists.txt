@@ -1,4 +1,4 @@
-if(NOT ENABLE_MODULE_PARALLEL)
+if(NOT ENABLE_MODULE_MULTICORE)
   return()
 endif()
 
@@ -6,11 +6,11 @@ endif()
 # Additional include paths and libraries
 # ------------------------------------------------------------------------------
 
-INCLUDE_DIRECTORIES(${CH_PARALLEL_INCLUDES})
+INCLUDE_DIRECTORIES(${CH_MULTICORE_INCLUDES})
 
 SET(LIBRARIES
     ChronoEngine
-    ChronoEngine_parallel
+    ChronoEngine_multicore
     ChronoEngine_vehicle
     ChronoModels_vehicle
 )
@@ -49,7 +49,7 @@ FOREACH(PROG ${PROGRAMS})
     SOURCE_GROUP("" FILES ${PROG}.cpp ${COMMON_FILES})
     SET_TARGET_PROPERTIES(${PROG} PROPERTIES
                           FOLDER tests
-                          COMPILE_FLAGS "${CH_CXX_FLAGS} ${CH_PARALLEL_CXX_FLAGS}"
+                          COMPILE_FLAGS "${CH_CXX_FLAGS} ${CH_MULTICORE_CXX_FLAGS}"
                           LINK_FLAGS "${CH_LINKERFLAG_EXE}")
     TARGET_LINK_LIBRARIES(${PROG} ${LIBRARIES})
 
