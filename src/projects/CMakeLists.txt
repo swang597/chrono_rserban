@@ -90,12 +90,6 @@ if(BUILD_PROJECTS_DISTRIBUTED)
   add_subdirectory(distributed)
 endif()
 
-option(BUILD_PROJECTS_ROBOSIMIAN "Build RoboSimian projects" ON)
-mark_as_advanced(FORCE BUILD_PROJECTS_ROBOSIMIAN)
-if(BUILD_PROJECTS_ROBOSIMIAN)
-  add_subdirectory(robosimian)
-endif()
-
 option(BUILD_PROJECTS_WVP "Build WVP (wheeled vehicle platform) projects" ON)
 mark_as_advanced(FORCE BUILD_PROJECTS_WVP)
 if(BUILD_PROJECTS_WVP)
