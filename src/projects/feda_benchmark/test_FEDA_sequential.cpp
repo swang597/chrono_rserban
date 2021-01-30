@@ -27,6 +27,7 @@
 #include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
 
 #include "chrono_models/vehicle/feda/FEDA.h"
+#include "chrono_models/vehicle/feda/FEDA_DoubleWishbone.h"
 
 #include <chrono>
 #include <thread>

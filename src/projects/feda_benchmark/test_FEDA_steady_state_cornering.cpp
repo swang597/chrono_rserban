@@ -31,6 +31,7 @@
 #include "chrono_vehicle/utils/ChVehiclePath.h"
 
 #include "chrono_models/vehicle/feda/FEDA.h"
+#include "chrono_models/vehicle/feda/FEDA_DoubleWishbone.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 

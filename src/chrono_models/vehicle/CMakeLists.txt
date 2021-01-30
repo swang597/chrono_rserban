@@ -312,6 +312,45 @@ set(CVM_GENERIC_FILES
 )
 source_group("generic" FILES ${CVM_GENERIC_FILES})
 
+set(CVM_WVP_FILES
+    wvp/WVP.cpp
+    wvp/WVP.h
+    wvp/WVP_BrakeSimple.cpp
+    wvp/WVP_BrakeSimple.h
+    wvp/WVP_Chassis.cpp
+    wvp/WVP_Chassis.h
+    wvp/WVP_DoubleWishbone.cpp
+    wvp/WVP_DoubleWishbone.h
+    wvp/WVP_Driveline4WD.cpp
+    wvp/WVP_Driveline4WD.h
+    wvp/WVP_FialaTire.cpp
+    wvp/WVP_FialaTire.h
+    wvp/WVP_PitmanArm.cpp
+    wvp/WVP_PitmanArm.h
+    wvp/WVP_PitmanArmShafts.cpp
+    wvp/WVP_PitmanArmShafts.h
+    wvp/WVP_Powertrain.cpp
+    wvp/WVP_Powertrain.h
+    wvp/WVP_RigidTire.cpp
+    wvp/WVP_RigidTire.h
+    wvp/WVP_Vehicle.cpp
+    wvp/WVP_Vehicle.h
+    wvp/WVP_Wheel.cpp
+    wvp/WVP_Wheel.h
+    wvp/WVP_SimpleMapPowertrain.cpp
+    wvp/WVP_SimpleMapPowertrain.h
+    wvp/WVP_SimpleDriveline.cpp
+    wvp/WVP_SimpleDriveline.h
+    wvp/WVP_FollowerDataDriver.cpp
+    wvp/WVP_FollowerDataDriver.h
+    wvp/WVP_Pac89Tire.cpp
+    wvp/WVP_Pac89Tire.h
+    wvp/WVP_PacejkaTire.cpp
+    wvp/WVP_PacejkaTire.h
+    wvp/WVP_TMeasyTire.cpp
+    wvp/WVP_TMeasyTire.h
+)
+source_group("wvp" FILES ${CVM_WVP_FILES})
 
 set(CVM_SEDAN_FILES
     sedan/Sedan.cpp
@@ -463,6 +502,35 @@ set(CVM_M113_FILES
 )
 source_group("m113" FILES ${CVM_M113_FILES})
 
+set(CVM_M113_A_FILES
+    m113a/M113a_BrakeSimple.h
+    m113a/M113a_Chassis.cpp
+    m113a/M113a_Chassis.h
+    m113a/M113a_DrivelineBDS.cpp
+    m113a/M113a_DrivelineBDS.h
+    m113a/M113a_Idler.cpp
+    m113a/M113a_Idler.h
+    m113a/M113a_RoadWheel.cpp
+    m113a/M113a_RoadWheel.h
+    m113a/M113a_ShaftsPowertrain.cpp
+    m113a/M113a_ShaftsPowertrain.h
+    m113a/M113a_SimpleDriveline.cpp
+    m113a/M113a_SimpleDriveline.h
+    m113a/M113a_SimplePowertrain.cpp
+    m113a/M113a_SimplePowertrain.h
+    m113a/M113a_SprocketSinglePin.cpp
+    m113a/M113a_SprocketSinglePin.h
+    m113a/M113a_Suspension.cpp
+    m113a/M113a_Suspension.h
+    m113a/M113a_TrackAssemblySinglePin.cpp
+    m113a/M113a_TrackAssemblySinglePin.h
+    m113a/M113a_TrackShoeSinglePin.cpp
+    m113a/M113a_TrackShoeSinglePin.h
+    m113a/M113a_Vehicle.cpp
+    m113a/M113a_Vehicle.h
+ )
+source_group("m113a" FILES ${CVM_M113_A_FILES})
+
 set(CVM_RCCAR_FILES
   rccar/RCCar_BrakeSimple.cpp
   rccar/RCCar_BrakeSimple.h
@@ -539,10 +607,12 @@ add_library(ChronoModels_vehicle SHARED
     ${CVM_FMTV_FILES}
     ${CVM_UAZ_FILES}
     ${CVM_GENERIC_FILES}
+    ${CVM_WVP_FILES}
     ${CVM_SEDAN_FILES}
     ${CVM_CITYBUS_FILES}
     ${CVM_GATOR_FILES}
     ${CVM_M113_FILES}
+    ${CVM_M113_A_FILES}
     ${CVM_MAN_FILES}
     ${CVM_RCCAR_FILES}
     ${CVM_KRAZ_FILES}
