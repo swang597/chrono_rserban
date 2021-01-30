@@ -93,7 +93,7 @@ std::shared_ptr<ChBody> AddSphere(int id,
 
     // Attach a texture to the sphere
     auto mtexture = chrono_types::make_shared<ChTexture>();
-    mtexture->SetTextureFilename(GetChronoDataFile("redwhite.png"));
+    mtexture->SetTextureFilename(GetChronoDataFile("textures/redwhite.png"));
     body->AddAsset(mtexture);
 
     // Return a pointer to the sphere object

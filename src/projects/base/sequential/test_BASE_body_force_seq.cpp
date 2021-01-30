@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
     ball->GetCollisionModel()->BuildModel();
 
     auto texture = chrono_types::make_shared<ChTexture>();
-    texture->SetTextureFilename(GetChronoDataFile("greenwhite.png"));
+    texture->SetTextureFilename(GetChronoDataFile("textures/greenwhite.png"));
     ball->AddAsset(texture);
 
     my_sys.AddBody(ball);

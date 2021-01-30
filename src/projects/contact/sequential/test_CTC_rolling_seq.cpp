@@ -105,7 +105,7 @@ int main(int argc, char* argv[]) {
         utils::AddSphereGeometry(ball.get(), ball_material, radius);
         ball->GetCollisionModel()->BuildModel();
 
-        ball->AddAsset(chrono_types::make_shared<ChTexture>(GetChronoDataFile("bluwhite.png")));
+        ball->AddAsset(chrono_types::make_shared<ChTexture>(GetChronoDataFile("textures/bluewhite.png")));
 
         system.AddBody(ball);
         balls.push_back(ball);

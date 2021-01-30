@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
     ground->AddAsset(vis_level);
 
     auto vis_mesh = chrono_types::make_shared<ChObjShapeFile>();
-    vis_mesh->SetFilename(GetChronoDataFile("tractor_wheel.obj"));
+    vis_mesh->SetFilename(GetChronoDataFile("models/tractor_wheel/tractor_wheel.obj"));
     vis_level->AddAsset(vis_mesh);
 
     vis_level->AddAsset(chrono_types::make_shared<ChColorAsset>(0.5f, 0.0f, 0.0f));

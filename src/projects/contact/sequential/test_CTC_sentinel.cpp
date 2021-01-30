@@ -100,7 +100,7 @@ int main(int argc, char* argv[]) {
     ball->AddAsset(sphereB);
 
     auto mtexture = chrono_types::make_shared<ChTexture>();
-    mtexture->SetTextureFilename(GetChronoDataFile("bluwhite.png"));
+    mtexture->SetTextureFilename(GetChronoDataFile("textures/bluewhite.png"));
     ball->AddAsset(mtexture);
 
     system.AddBody(ball);

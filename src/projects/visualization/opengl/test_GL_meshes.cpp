@@ -15,10 +15,10 @@ int main(int argc, char* argv[]) {
     ////auto body0 = chrono_types::make_shared<ChBodyEasyBox>(1.0, 2.0, 3.0, 100);
     ////system.AddBody(body0);
 
-    auto body1 = chrono_types::make_shared< ChBodyEasyMesh>(GetChronoDataFile("ob_chess_table.obj"), 1000, true, true);
+    auto body1 = chrono_types::make_shared< ChBodyEasyMesh>(GetChronoDataFile("models/ob_chess_table.obj"), 1000, true, true);
     body1->SetFrame_REF_to_abs(ChFrame<>(ChVector<>(-3.0, 0.0, 0.0), QUNIT));
 
-    auto body2 = chrono_types::make_shared<ChBodyEasyMesh>(GetChronoDataFile("pallet.obj"), 1000, true, true);
+    auto body2 = chrono_types::make_shared<ChBodyEasyMesh>(GetChronoDataFile("models/pallet.obj"), 1000, true, true);
     body2->SetFrame_REF_to_abs(ChFrame<>(ChVector<>(+3.0, 0.0, 0.0), QUNIT));
 
     system.AddBody(body1);
@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
     ////body1->SetPos(ChVector<>(-3.0, 0.0, 0.0));
     ////system.AddBody(body1);
     ////auto trimesh1 = chrono_types::make_shared< geometry::ChTriangleMeshConnected>();
-    ////trimesh1->LoadWavefrontMesh(GetChronoDataFile("ob_chess_table.obj"), true, false);
+    ////trimesh1->LoadWavefrontMesh(GetChronoDataFile("models/ob_chess_table.obj"), true, false);
     ////auto vshape1 = chrono_types::make_shared<ChTriangleMeshShape>();
     ////vshape1->SetMesh(trimesh1);
     ////vshape1->SetStatic(true);
@@ -39,7 +39,7 @@ int main(int argc, char* argv[]) {
     ////body2->SetPos(ChVector<>(3.0, 0.0, 0.0));
     ////system.AddBody(body2);
     ////auto trimesh2 = chrono_types::make_shared< geometry::ChTriangleMeshConnected>();
-    ////trimesh2->LoadWavefrontMesh(GetChronoDataFile("pallet.obj"), true, false);
+    ////trimesh2->LoadWavefrontMesh(GetChronoDataFile("models/pallet.obj"), true, false);
     ////auto vshape2 = chrono_types::make_shared<ChTriangleMeshShape>();
     ////vshape2->SetMesh(trimesh2);
     ////vshape2->SetStatic(true);
