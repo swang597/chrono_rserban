@@ -39,6 +39,11 @@ namespace feda {
 /// @addtogroup vehicle_models_feda
 /// @{
 
+/// Definition of the FED-alpha assembly.
+/// This class encapsulates a concrete wheeled vehicle model with parameters corresponding to
+/// a FED-alpha, the powertrain model, and the 4 tires. It provides wrappers to access the different
+/// systems and subsystems, functions for specifying the driveline, powertrain, and tire types,
+/// as well as functions for controlling the visualization mode of each component.
 class CH_MODELS_API FEDA {
   public:
     enum class DamperMode { FSD, PASSIVE_LOW, PASSIVE_HIGH };
@@ -51,6 +56,9 @@ class CH_MODELS_API FEDA {
 
     void SetChassisFixed(bool val) { m_fixed = val; }
     void SetChassisCollisionType(CollisionType val) { m_chassisCollisionType = val; }
+
+    void SetBrakeType(BrakeType brake_type) { m_brake_type = brake_type; }
+    void SetPowertrainType(PowertrainModelType val) { m_powertrain_type = val; }
 
     void SetTireType(TireModelType val) { m_tireType = val; }
     void SetTireCollisionType(ChTire::CollisionType collType) { m_tire_collision_type = collType; }
@@ -99,6 +107,8 @@ class CH_MODELS_API FEDA {
     bool m_fixed;
 
     TireModelType m_tireType;
+    BrakeType m_brake_type;
+    PowertrainModelType m_powertrain_type;
 
     double m_tire_step_size;
 
