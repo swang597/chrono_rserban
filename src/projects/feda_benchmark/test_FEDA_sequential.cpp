@@ -53,7 +53,7 @@ VisualizationType tire_vis_type = VisualizationType::PRIMITIVES;
 TireModelType tire_model = TireModelType::PAC02;
 
 // Type of steering model (PITMAN_ARM or PITMAN_ARM_SHAFTS)
-SteeringType steering_model = SteeringType::PITMAN_ARM;
+SteeringTypeWV steering_model = SteeringTypeWV::PITMAN_ARM;
 
 // Point on chassis tracked by the camera
 ChVector<> trackPoint(0.0, 0.0, 1.75);

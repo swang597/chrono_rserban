@@ -37,7 +37,6 @@ class CH_MODELS_API M113a_DrivelineBDS : public ChTrackDrivelineBDS {
     virtual double GetDifferentialBoxInertia() const override { return m_differentialbox_inertia; }
 
     virtual double GetConicalGearRatio() const override { return m_conicalgear_ratio; }
-    virtual double GetDifferentialRatio() const override { return m_differential_ratio; }
 
   private:
     // Shaft inertias.
@@ -46,7 +45,6 @@ class CH_MODELS_API M113a_DrivelineBDS : public ChTrackDrivelineBDS {
 
     // Gear ratios.
     static const double m_conicalgear_ratio;
-    static const double m_differential_ratio;
 };
 
 }  // end namespace m113

@@ -62,8 +62,8 @@ int main(int argc, char* argv[]) {
     my_hmmwv.SetChassisFixed(false);
     my_hmmwv.SetInitPosition(ChCoordsys<>(ChVector<>(-75, 0, 0.5), QUNIT));
     my_hmmwv.SetPowertrainType(PowertrainModelType::SHAFTS);
-    my_hmmwv.SetDriveType(DrivelineType::RWD);
-    my_hmmwv.SetSteeringType(SteeringType::PITMAN_ARM);
+    my_hmmwv.SetDriveType(DrivelineTypeWV::RWD);
+    my_hmmwv.SetSteeringType(SteeringTypeWV::PITMAN_ARM);
     my_hmmwv.SetTireType(tire_model);
     my_hmmwv.SetTireStepSize(tire_step_size);
     my_hmmwv.Initialize();

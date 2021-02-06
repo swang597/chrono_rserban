@@ -28,7 +28,7 @@
 #include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleIrrApp.h"
 #include "chrono_vehicle/utils/ChVehiclePath.h"
 
-#include "chrono_models/vehicle/m113/M113_SimplePowertrain.h"
+#include "chrono_models/vehicle/m113/M113_SimpleCVTPowertrain.h"
 #include "chrono_models/vehicle/m113/M113_Vehicle.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
@@ -66,7 +66,8 @@ int main(int argc, char* argv[]) {
     RigidTerrain terrain(&sys);
 
     // Create and initialize the first vehicle
-    M113_Vehicle vehicle_1(false, TrackShoeType::SINGLE_PIN, BrakeType::SIMPLE, &sys, CollisionType::NONE);
+    M113_Vehicle vehicle_1(false, TrackShoeType::SINGLE_PIN, DrivelineTypeTV::SIMPLE, BrakeType::SIMPLE, &sys,
+                           CollisionType::NONE);
     vehicle_1.Initialize(ChCoordsys<>(ChVector<>(-90.0, -5.5, 1.0), QUNIT));
     vehicle_1.SetChassisVisualizationType(VisualizationType::NONE);
     vehicle_1.SetSprocketVisualizationType(VisualizationType::PRIMITIVES);
@@ -75,7 +76,7 @@ int main(int argc, char* argv[]) {
     vehicle_1.SetRoadWheelVisualizationType(VisualizationType::PRIMITIVES);
     vehicle_1.SetTrackShoeVisualizationType(VisualizationType::PRIMITIVES);
 
-    auto powertrain_1 = chrono_types::make_shared<M113_SimplePowertrain>("Powertrain1");
+    auto powertrain_1 = chrono_types::make_shared<M113_SimpleCVTPowertrain>("Powertrain1");
     vehicle_1.InitializePowertrain(powertrain_1);
 
     MaterialInfo minfo_1;
@@ -95,7 +96,8 @@ int main(int argc, char* argv[]) {
     driver_1.Initialize();
 
     // Create and initialize the first vehicle
-    M113_Vehicle vehicle_2(false, TrackShoeType::SINGLE_PIN, BrakeType::SIMPLE, &sys, CollisionType::NONE);
+    M113_Vehicle vehicle_2(false, TrackShoeType::SINGLE_PIN, DrivelineTypeTV::SIMPLE, BrakeType::SIMPLE, &sys,
+                           CollisionType::NONE);
     vehicle_2.Initialize(ChCoordsys<>(ChVector<>(-90.0, +5.5, 1.0), QUNIT));
     vehicle_2.SetChassisVisualizationType(VisualizationType::NONE);
     vehicle_2.SetSprocketVisualizationType(VisualizationType::PRIMITIVES);
@@ -104,7 +106,7 @@ int main(int argc, char* argv[]) {
     vehicle_2.SetRoadWheelVisualizationType(VisualizationType::PRIMITIVES);
     vehicle_2.SetTrackShoeVisualizationType(VisualizationType::PRIMITIVES);
 
-    auto powertrain_2 = chrono_types::make_shared<M113_SimplePowertrain>("Powertrain2");
+    auto powertrain_2 = chrono_types::make_shared<M113_SimpleCVTPowertrain>("Powertrain2");
     vehicle_2.InitializePowertrain(powertrain_2);
 
     MaterialInfo minfo_2;

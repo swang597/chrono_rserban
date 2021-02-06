@@ -31,7 +31,7 @@ namespace wvp {
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 WVP_Vehicle::WVP_Vehicle(const bool fixed,
-                         SteeringType steering_model,
+                         SteeringTypeWV steering_model,
                          ChContactMethod contact_method,
                          CollisionType chassis_collision_type)
     : ChWheeledVehicle("WVP", contact_method), m_omega({0, 0, 0, 0}) {
@@ -40,23 +40,23 @@ WVP_Vehicle::WVP_Vehicle(const bool fixed,
 
 WVP_Vehicle::WVP_Vehicle(ChSystem* system,
                          const bool fixed,
-                         SteeringType steering_model,
+                         SteeringTypeWV steering_model,
                          CollisionType chassis_collision_type)
     : ChWheeledVehicle("WVP", system), m_omega({0, 0, 0, 0}) {
     Create(fixed, steering_model, chassis_collision_type);
 }
 
-void WVP_Vehicle::Create(bool fixed, SteeringType steering_model, CollisionType chassis_collision_type) {
+void WVP_Vehicle::Create(bool fixed, SteeringTypeWV steering_model, CollisionType chassis_collision_type) {
     // Create the chassis subsystem
     m_chassis = chrono_types::make_shared<WVP_Chassis>("Chassis", fixed, chassis_collision_type);
 
     // Create the steering subsystem
     m_steerings.resize(1);
     switch (steering_model) {
-        case SteeringType::PITMAN_ARM:
+        case SteeringTypeWV::PITMAN_ARM:
             m_steerings[0] = chrono_types::make_shared<WVP_PitmanArm>("Steering");
             break;
-        case SteeringType::PITMAN_ARM_SHAFTS:
+        case SteeringTypeWV::PITMAN_ARM_SHAFTS:
             m_steerings[0] = chrono_types::make_shared<WVP_PitmanArmShafts>("Steering", false);
             ////m_steerings[0] = chrono_types::make_shared<WVP_PitmanArmShafts>("Steering", true);
             break;

@@ -46,13 +46,13 @@ namespace wvp {
 class CH_MODELS_API WVP_Vehicle : public ChWheeledVehicle {
   public:
     WVP_Vehicle(const bool fixed = false,
-                SteeringType steering_model = SteeringType::PITMAN_ARM,
+                SteeringTypeWV steering_model = SteeringTypeWV::PITMAN_ARM,
                 ChContactMethod contact_method = ChContactMethod::NSC,
                 CollisionType chassis_collision_type = CollisionType::NONE);
 
     WVP_Vehicle(ChSystem* system,
                 const bool fixed = false,
-                SteeringType steering_model = SteeringType::PITMAN_ARM,
+                SteeringTypeWV steering_model = SteeringTypeWV::PITMAN_ARM,
                 CollisionType chassis_collision_type = CollisionType::NONE);
 
     ~WVP_Vehicle();
@@ -83,7 +83,7 @@ class CH_MODELS_API WVP_Vehicle : public ChWheeledVehicle {
     void DebugLog(int what);       /// shock forces and lengths, constraints, etc.
 
   private:
-    void Create(bool fixed, SteeringType steering_model, CollisionType chassis_collision_type);
+    void Create(bool fixed, SteeringTypeWV steering_model, CollisionType chassis_collision_type);
 
     std::vector<double> m_omega;
 };

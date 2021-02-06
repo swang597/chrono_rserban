@@ -58,6 +58,9 @@ class CH_MODELS_API M113a_SimplePowertrain : public ChPowertrain {
     /// This simplified model does not have a torque converter.
     virtual double GetTorqueConverterOutputTorque() const override { return 0; }
 
+    /// Return the torque converter output shaft speed.
+    virtual double GetTorqueConverterOutputSpeed() const override { return 0; }
+
     /// Return the current transmission gear
     /// This simplified model does not have a transmission box.
     virtual int GetCurrentTransmissionGear() const override { return 1; }

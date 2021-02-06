@@ -26,7 +26,7 @@
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 #include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleIrrApp.h"
 
-#include "chrono_models/vehicle/m113/M113_SimplePowertrain.h"
+#include "chrono_models/vehicle/m113/M113_SimpleCVTPowertrain.h"
 #include "chrono_models/vehicle/m113/M113_Vehicle.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
@@ -66,7 +66,8 @@ int main(int argc, char* argv[]) {
     sys.SetSolverType(ChSolver::Type::BARZILAIBORWEIN);
 
     // Create and initialize the vehicle
-    M113_Vehicle vehicle(false, TrackShoeType::SINGLE_PIN, BrakeType::SIMPLE, &sys, CollisionType::NONE);
+    M113_Vehicle vehicle(false, TrackShoeType::SINGLE_PIN, DrivelineTypeTV::SIMPLE, BrakeType::SIMPLE, &sys,
+                         CollisionType::NONE);
     vehicle.Initialize(ChCoordsys<>(ChVector<>(-90.0, 0.0, 1.0), QUNIT));
     vehicle.SetChassisVisualizationType(VisualizationType::NONE);
     vehicle.SetSprocketVisualizationType(VisualizationType::PRIMITIVES);
@@ -79,7 +80,7 @@ int main(int argc, char* argv[]) {
     vehicle.GetDriveline()->SetGyrationMode(true);
 
     // Create and initialize the powertrain system
-    auto powertrain = chrono_types::make_shared<M113_SimplePowertrain>("Powertrain");
+    auto powertrain = chrono_types::make_shared<M113_SimpleCVTPowertrain>("Powertrain");
     vehicle.InitializePowertrain(powertrain);
 
     // Create the terrain

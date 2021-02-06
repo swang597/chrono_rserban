@@ -29,7 +29,6 @@ const double M113a_DrivelineBDS::m_driveshaft_inertia = 0.5;
 const double M113a_DrivelineBDS::m_differentialbox_inertia = 0.6;
 
 const double M113a_DrivelineBDS::m_conicalgear_ratio = -0.2;
-const double M113a_DrivelineBDS::m_differential_ratio = -1;
 
 // -----------------------------------------------------------------------------
 // Constructor of the M113a_DrivelineBDS.

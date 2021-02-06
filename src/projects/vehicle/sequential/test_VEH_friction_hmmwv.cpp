@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
     HMMWV_Full hmmwv_1(&sys);
     hmmwv_1.SetInitPosition(ChCoordsys<>(ChVector<>(-90, -5.5, 1.0), QUNIT));
     hmmwv_1.SetPowertrainType(PowertrainModelType::SHAFTS);
-    hmmwv_1.SetDriveType(DrivelineType::RWD);
+    hmmwv_1.SetDriveType(DrivelineTypeWV::RWD);
     hmmwv_1.SetTireType(tire_model);
     hmmwv_1.SetTireStepSize(tire_step_size);
     hmmwv_1.Initialize();
@@ -103,7 +103,7 @@ int main(int argc, char* argv[]) {
     HMMWV_Full hmmwv_2(&sys);
     hmmwv_2.SetInitPosition(ChCoordsys<>(ChVector<>(-90, +5.5, 1.0), QUNIT));
     hmmwv_2.SetPowertrainType(PowertrainModelType::SHAFTS);
-    hmmwv_2.SetDriveType(DrivelineType::RWD);
+    hmmwv_2.SetDriveType(DrivelineTypeWV::RWD);
     hmmwv_2.SetTireType(tire_model);
     hmmwv_2.SetTireStepSize(tire_step_size);
     hmmwv_2.Initialize();
