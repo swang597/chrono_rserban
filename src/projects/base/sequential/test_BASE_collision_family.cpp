@@ -97,11 +97,11 @@ int main(int argc, char* argv[]) {
     sys.AddBody(plate);
 
     // Create the visualization window
-    irrlicht::ChIrrApp application(&sys, L"Collision family", irr::core::dimension2d<irr::u32>(800, 600), false, true);
-    irrlicht::ChIrrWizard::add_typical_Logo(application.GetDevice());
-    irrlicht::ChIrrWizard::add_typical_Lights(application.GetDevice());
-    irrlicht::ChIrrWizard::add_typical_Camera(application.GetDevice(), irr::core::vector3df(0, 2, -4));
-
+    irrlicht::ChIrrApp application(&sys, L"Collision family", irr::core::dimension2d<irr::u32>(800, 600));
+    application.AddTypicalLogo();
+    application.AddTypicalSky();
+    application.AddTypicalLights();
+    application.AddTypicalCamera(irr::core::vector3df(0, 2, -4));
     application.AssetBindAll();
     application.AssetUpdateAll();
 

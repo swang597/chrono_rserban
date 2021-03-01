@@ -107,14 +107,11 @@ int main(int argc, char* argv[]) {
     }
 
     // Create the visualization window
-    irrlicht::ChIrrApp application(&my_sys, L"Body force test", irr::core::dimension2d<irr::u32>(800, 600), false,
-                                   true);
-    irrlicht::ChIrrWizard::add_typical_Logo(application.GetDevice());
-    irrlicht::ChIrrWizard::add_typical_Sky(application.GetDevice());
-    irrlicht::ChIrrWizard::add_typical_Lights(application.GetDevice(), irr::core::vector3df(30.f, -100.f, 30.f),
-                                              irr::core::vector3df(30.f, -80.f, -30.f));
-    irrlicht::ChIrrWizard::add_typical_Camera(application.GetDevice(), irr::core::vector3df(0, -4, 2));
-
+    irrlicht::ChIrrApp application(&my_sys, L"Body force test", irr::core::dimension2d<irr::u32>(800, 600));
+    application.AddTypicalLogo();
+    application.AddTypicalSky();
+    application.AddTypicalLights(irr::core::vector3df(30.f, -100.f, 30.f), irr::core::vector3df(30.f, -80.f, -30.f));
+    application.AddTypicalCamera(irr::core::vector3df(0, -4, 2));
     application.AssetBindAll();
     application.AssetUpdateAll();
 
@@ -136,7 +133,7 @@ int main(int argc, char* argv[]) {
         if (application.GetDevice()->run()) {
             application.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
             application.DrawAll();
-            irrlicht::ChIrrTools::drawAllCOGs(my_sys, application.GetVideoDriver(), 1);
+            irrlicht::tools::drawAllCOGs(my_sys, application.GetVideoDriver(), 1);
             application.EndScene();
         } else {
             return 1;

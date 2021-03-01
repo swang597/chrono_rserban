@@ -114,13 +114,13 @@ int main(int argc, char* argv[]) {
     my_system.Add(my_mesh);
 
     // Bind visualization assets
-    ChIrrApp application(&my_system, L"ANCF Collision Test", irr::core::dimension2d<irr::u32>(800, 600), false, true);
+    ChIrrApp application(&my_system, L"ANCF Collision Test", irr::core::dimension2d<irr::u32>(800, 600));
     application.AddTypicalLogo();
     application.AddTypicalSky();
     application.AddTypicalLights();
     application.AddTypicalCamera(irr::core::vector3df(1.0f, 0.0f, 0.0f),  // camera location
                                  irr::core::vector3df(0.0f, 0.0f, 0.f));  // "look at" location
-    application.SetContactsDrawMode(ChIrrTools::CONTACT_DISTANCES);
+    application.SetContactsDrawMode(IrrContactsDrawMode::CONTACT_DISTANCES);
 
     application.AssetBindAll();
     application.AssetUpdateAll();

@@ -50,7 +50,7 @@ int main(int argc, char* argv[]) {
     system.Set_G_acc(ChVector<>(0, -10, 0));
 
     // Create the Irrlicht visualization
-    ChIrrApp application(&system, L"DEM demo", core::dimension2d<u32>(800, 600), false, true);
+    ChIrrApp application(&system, L"DEM demo", core::dimension2d<u32>(800, 600));
     application.AddTypicalLogo();
     application.AddTypicalSky();
     application.AddTypicalLights();

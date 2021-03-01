@@ -114,7 +114,7 @@ int main(int argc, char* argv[]) {
     system.AddLink(rsda);
 
     // Create the Irrlicht application
-    ChIrrApp application(&system, L"U-joint with rotational damper", irr::core::dimension2d<irr::u32>(800, 600), false, true);
+    ChIrrApp application(&system, L"U-joint with rotational damper", irr::core::dimension2d<irr::u32>(800, 600));
     application.AddTypicalLogo();
     application.AddTypicalSky();
     application.AddTypicalLights();

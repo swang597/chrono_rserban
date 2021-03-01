@@ -477,12 +477,12 @@ int main(int argc, char* argv[]) {
     while (appISO.GetDevice()->run()) {
         appISO.BeginScene();
         appISO.DrawAll();
-        irrlicht::ChIrrTools::drawAllCOGs(sysISO, appISO.GetVideoDriver(), 1);
+        irrlicht::tools::drawAllCOGs(sysISO, appISO.GetVideoDriver(), 1);
         appISO.EndScene();
 
         appYUP.BeginScene();
         appYUP.DrawAll();
-        irrlicht::ChIrrTools::drawAllCOGs(sysYUP, appYUP.GetVideoDriver(), 1);
+        irrlicht::tools::drawAllCOGs(sysYUP, appYUP.GetVideoDriver(), 1);
         appYUP.EndScene();
 
         mISO.Advance(step_size);

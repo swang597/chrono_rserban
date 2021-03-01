@@ -33,6 +33,7 @@ SET(DEMOS
     test_VEH_friction_m113
     test_VEH_friction_variable_m113
     test_VEH_tire_csys
+    test_VEH_SCM_hm
 )
 
 # ------------------------------------------------------------------------------

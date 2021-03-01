@@ -80,12 +80,11 @@ int main(int argc, char* argv[]) {
     auto m_Link = model1(m_System);
 
     // Create the visualization window
-    irrlicht::ChIrrApp application(m_System.get(), L"Lock-lock", irr::core::dimension2d<irr::u32>(800, 600), false,
-                                   true);
-    irrlicht::ChIrrWizard::add_typical_Logo(application.GetDevice());
-    irrlicht::ChIrrWizard::add_typical_Sky(application.GetDevice());
-    irrlicht::ChIrrWizard::add_typical_Lights(application.GetDevice());
-    irrlicht::ChIrrWizard::add_typical_Camera(application.GetDevice(), irr::core::vector3df(0, 1, 2));
+    irrlicht::ChIrrApp application(m_System.get(), L"Lock-lock", irr::core::dimension2d<irr::u32>(800, 600));
+    application.AddTypicalLogo();
+    application.AddTypicalSky();
+    application.AddTypicalLights();
+    application.AddTypicalCamera(irr::core::vector3df(0, 1, 2));
     application.AssetBindAll();
     application.AssetUpdateAll();
 
@@ -93,7 +92,7 @@ int main(int argc, char* argv[]) {
     while (application.GetDevice()->run()) {
         application.BeginScene();
         application.DrawAll();
-        irrlicht::ChIrrTools::drawAllCOGs(*m_System, application.GetVideoDriver(), 0.5);
+        irrlicht::tools::drawAllCOGs(*m_System, application.GetVideoDriver(), 0.5);
         application.EndScene();
 
         GetLog() << "Time: " << m_System->GetChTime();

@@ -148,9 +148,7 @@ int main(int argc, char* argv[]) {
     system.Set_G_acc(ChVector<>(0, gravity, 0));
 
     // Create the Irrlicht visualization
-    ChIrrApp application(&system, L"DEM demo", core::dimension2d<u32>(800, 600), false, true);
-
-    // Easy shortcuts to add camera, lights, logo and sky in Irrlicht scene
+    ChIrrApp application(&system, L"DEM demo", core::dimension2d<u32>(800, 600));
     application.AddTypicalLogo();
     application.AddTypicalSky();
     application.AddTypicalLights();
@@ -158,7 +156,7 @@ int main(int argc, char* argv[]) {
 
     // This means that contact forces will be shown in Irrlicht application
     application.SetSymbolscale(1e-4);
-    application.SetContactsDrawMode(ChIrrTools::eCh_ContactsDrawMode::CONTACT_FORCES);
+    application.SetContactsDrawMode(IrrContactsDrawMode::CONTACT_FORCES);
 
     // Create a material (will be used by both objects)
     auto material = chrono_types::make_shared<ChMaterialSurfaceSMC>();

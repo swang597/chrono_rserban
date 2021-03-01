@@ -160,9 +160,7 @@ int main(int argc, char* argv[]) {
     system->Set_G_acc(ChVector<>(0, -9.81, 0));
 
     // Create the Irrlicht visualization
-    ChIrrApp application(system, L"Collision test", irr::core::dimension2d<irr::u32>(800, 600), false, true);
-
-    // Easy shortcuts to add camera, lights, logo and sky in Irrlicht scene
+    ChIrrApp application(system, L"Collision test", irr::core::dimension2d<irr::u32>(800, 600));
     application.AddTypicalLogo();
     application.AddTypicalSky();
     application.AddTypicalLights();
@@ -170,9 +168,9 @@ int main(int argc, char* argv[]) {
 
     // Render contact forces or normals
     application.SetSymbolscale(5e-3);
-    application.SetContactsDrawMode(ChIrrTools::eCh_ContactsDrawMode::CONTACT_FORCES);
+    application.SetContactsDrawMode(IrrContactsDrawMode::CONTACT_FORCES);
     ////application.SetSymbolscale(1);
-    ////application.SetContactsDrawMode(ChIrrTools::eCh_ContactsDrawMode::CONTACT_NORMALS);
+    ////application.SetContactsDrawMode(IrrContactsDrawMode::CONTACT_NORMALS);
 
     // Rotation Z->Y (because meshes used here assume Z up)
     ChQuaternion<> z2y = Q_from_AngX(-CH_C_PI_2);
