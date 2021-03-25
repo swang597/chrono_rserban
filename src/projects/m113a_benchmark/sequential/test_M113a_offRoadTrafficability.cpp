@@ -539,7 +539,7 @@ int main(int argc, char* argv[]) {
 
         // Forward Mode
         if (vehicle.GetChassis()->GetPos().x() > traversalLength && !performBrakingManeuver) {
-            if (!controlSlip) powertrain->SetDriveMode(powertrain->REVERSE);
+            if (!controlSlip) powertrain->SetDriveMode(ChPowertrain::DriveMode::REVERSE);
             if (goingForward) {
                 performBrakingManeuver = true;
                 goingForward = false;
@@ -551,7 +551,8 @@ int main(int argc, char* argv[]) {
 
         // Reverse mode
         if (vehicle.GetChassis()->GetPos().x() < -traversalLength && !performBrakingManeuver) {
-            if (!controlSlip)powertrain->SetDriveMode(powertrain->FORWARD);
+            if (!controlSlip)
+                powertrain->SetDriveMode(ChPowertrain::DriveMode::FORWARD);
             if (!goingForward) {
                 performBrakingManeuver = true;
                 goingForward = true;

@@ -61,10 +61,6 @@ class CH_MODELS_API M113a_SimplePowertrain : public ChPowertrain {
     /// Return the torque converter output shaft speed.
     virtual double GetTorqueConverterOutputSpeed() const override { return 0; }
 
-    /// Return the current transmission gear
-    /// This simplified model does not have a transmission box.
-    virtual int GetCurrentTransmissionGear() const override { return 1; }
-
     /// Return the output torque from the powertrain.
     /// This is the torque that is passed to a vehicle system, thus providing the
     /// interface between the powertrain and vehicle co-simulation modules.
@@ -72,15 +68,14 @@ class CH_MODELS_API M113a_SimplePowertrain : public ChPowertrain {
     /// this function returns 0.
     virtual double GetOutputTorque() const override { return m_shaftTorque; }
 
-    /// Use this function to set the mode of automatic transmission.
-    /// This simplified model does not have a transmission box.
-    virtual void SetDriveMode(ChPowertrain::DriveMode mmode) override;
-
   private:
     /// Initialize the powertrain system.
     virtual void Initialize(std::shared_ptr<ChChassis> chassis,     ///< [in] chassis of the associated vehicle
                             std::shared_ptr<ChDriveline> driveline  ///< [in] driveline of the associated vehicle
                             ) override;
+
+    /// Set the transmission gear ratios (one or more forward gear ratios and a single reverse gear ratio).
+    virtual void SetGearRatios(std::vector<double>& fwd, double& rev) override;
 
     /// Update the state of this powertrain system at the current time.
     /// The powertrain system is provided the current driver throttle input, a value in the range [0,1].
@@ -92,7 +87,6 @@ class CH_MODELS_API M113a_SimplePowertrain : public ChPowertrain {
     /// This function does nothing for this simplified powertrain model.
     virtual void Advance(double step) override {}
 
-    double m_current_gear_ratio;
     double m_motorSpeed;
     double m_motorTorque;
     double m_shaftTorque;

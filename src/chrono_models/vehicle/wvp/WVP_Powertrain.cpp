@@ -39,14 +39,15 @@ WVP_Powertrain::WVP_Powertrain() : ChShaftsPowertrain("Powertrain", ChVector<>(1
 // -----------------------------------------------------------------------------
 // Initialize vector of gear ratios
 // -----------------------------------------------------------------------------
-void WVP_Powertrain::SetGearRatios(std::vector<double>& gear_ratios) {
-    gear_ratios.push_back(-0.2);  // 0: reverse gear;
-    gear_ratios.push_back(0.1708);   // 1: 1st gear;
-    gear_ratios.push_back(0.2791);   // 2: 2nd gear;
-    gear_ratios.push_back(0.4218);   // 3: 3rd gear;
-    gear_ratios.push_back(0.6223);   // 4: 4th gear;
-    gear_ratios.push_back(1.0173);   // 5: 5th gear;
-    gear_ratios.push_back(1.5361);   // 6: 6th gear;
+void WVP_Powertrain::SetGearRatios(std::vector<double>& fwd, double& rev) {
+    rev = -0.2;  // reverse gear;
+
+    fwd.push_back(0.1708);  // 1: 1st gear;
+    fwd.push_back(0.2791);  // 2: 2nd gear;
+    fwd.push_back(0.4218);  // 3: 3rd gear;
+    fwd.push_back(0.6223);  // 4: 4th gear;
+    fwd.push_back(1.0173);  // 5: 5th gear;
+    fwd.push_back(1.5361);  // 6: 6th gear;
 }
 
 // -----------------------------------------------------------------------------

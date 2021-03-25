@@ -44,11 +44,12 @@ M113a_ShaftsPowertrain::M113a_ShaftsPowertrain(const std::string& name) : ChShaf
 // -----------------------------------------------------------------------------
 // Initialize vector of gear ratios
 // -----------------------------------------------------------------------------
-void M113a_ShaftsPowertrain::SetGearRatios(std::vector<double>& gear_ratios) {
-    gear_ratios.push_back(-0.1);  // 0: reverse gear;
-    gear_ratios.push_back(0.2);   // 1: 1st gear;
-    gear_ratios.push_back(0.4);   // 2: 2nd gear;
-    gear_ratios.push_back(0.8);   // 3: 3rd gear;
+void M113a_ShaftsPowertrain::SetGearRatios(std::vector<double>& fwd, double& rev) {
+    rev = -0.1;  // reverse gear;
+
+    fwd.push_back(0.2);  // 1: 1st gear;
+    fwd.push_back(0.4);  // 2: 2nd gear;
+    fwd.push_back(0.8);  // 3: 3rd gear;
 }
 
 // -----------------------------------------------------------------------------

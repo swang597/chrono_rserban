@@ -34,24 +34,11 @@ M113a_SimplePowertrain::M113a_SimplePowertrain(const std::string& name) : ChPowe
 // -----------------------------------------------------------------------------
 void M113a_SimplePowertrain::Initialize(std::shared_ptr<ChChassis> chassis, std::shared_ptr<ChDriveline> driveline) {
     ChPowertrain::Initialize(chassis, driveline);
-    m_current_gear_ratio = 1;
 }
 
-// -----------------------------------------------------------------------------
-// -----------------------------------------------------------------------------
-void M113a_SimplePowertrain::SetDriveMode(ChPowertrain::DriveMode mode) {
-    m_drive_mode = mode;
-    switch (mode) {
-    case FORWARD:
-        m_current_gear_ratio = 1;
-        break;
-    case REVERSE:
-        m_current_gear_ratio = -1;
-        break;
-    case NEUTRAL:
-        m_current_gear_ratio = 1e20;
-        break;
-    }
+void M113a_SimplePowertrain::SetGearRatios(std::vector<double>& fwd, double& rev) {
+    rev = -1;
+    fwd.push_back(+1);
 }
 
 // -----------------------------------------------------------------------------
