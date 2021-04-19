@@ -1,42 +1,60 @@
-if(NOT ENABLE_MODULE_MULTICORE)
-  return()
-endif()  
-
-if(NOT ENABLE_MODULE_OPENGL)
-  return()
-endif()  
-
+# ------------------------------------------------------------------------------
+# Additional include paths and libraries
 # ------------------------------------------------------------------------------
 
-set(PROGRAMS
-    test_CTC_box_collision_mcore
-    test_CTC_rolling_mcore
-    test_CTC_mesh_mcore
-)
+INCLUDE_DIRECTORIES(${CH_MULTICORE_INCLUDES})
 
-include_directories(${CH_MULTICORE_INCLUDES})
-include_directories(${CH_OPENGL_INCLUDES})
+# Add programs that require OpenGL
+IF(ENABLE_MODULE_OPENGL)
+    INCLUDE_DIRECTORIES(${CH_OPENGL_INCLUDES})
 
-set(CXX_FLAGS "${CH_CXX_FLAGS} ${CH_MULTICORE_CXX_FLAGS}")
-set(LIBRARIES ChronoEngine ChronoEngine_multicore ChronoEngine_opengl)
+    IF(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+       SET (CH_LINKERFLAG_EXE  "${CH_LINKERFLAG_EXE} -framework IOKit -framework Cocoa -framework OpenGL")
+    ENDIF()
 
-if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
-  set(CH_LINKERFLAG_EXE  "${CH_LINKERFLAG_EXE} -framework IOKit -framework Cocoa -framework OpenGL")
+    set(PROGRAMS_GL
+        test_CTC_box_collision_mcore
+        test_CTC_rolling_mcore
+        test_CTC_mesh_mcore
+    )
+ENDIF()
+
+# Add programs that require Irrlicht
+if(ENABLE_MODULE_IRRLICHT)
+	include_directories(${CH_IRRLICHTINC})
+
+	set(PROGRAMS_IRR
+		test_CTC_sliding_gravity_mcore
+    )
 endif()
 
-foreach(PROGRAM ${PROGRAMS})
-    message(STATUS "...add ${PROGRAM}")
 
-    add_executable(${PROGRAM}  "${PROGRAM}.cpp")
-    source_group(""  FILES "${PROGRAM}.cpp")
+FOREACH(PROGRAM ${PROGRAMS_GL})
+    MESSAGE(STATUS "...add ${PROGRAM}")
 
-    set_target_properties(${PROGRAM} PROPERTIES
-        FOLDER tests
-        COMPILE_FLAGS "${CXX_FLAGS}"
-        LINK_FLAGS "${CH_LINKERFLAG_EXE}"
-    )
+    ADD_EXECUTABLE(${PROGRAM}  "${PROGRAM}.cpp")
+    SOURCE_GROUP(""  FILES "${PROGRAM}.cpp")
 
-    target_link_libraries(${PROGRAM} ${LIBRARIES})
+    SET_TARGET_PROPERTIES(${PROGRAM} PROPERTIES
+        FOLDER demos
+        COMPILE_FLAGS "${CH_CXX_FLAGS} ${CH_MULTICORE_CXX_FLAGS}"
+        LINK_FLAGS "${CH_LINKERFLAG_EXE}")
+    SET_PROPERTY(TARGET ${PROGRAM} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROGRAM}>")
+    TARGET_LINK_LIBRARIES(${PROGRAM} ChronoEngine ChronoEngine_multicore ChronoEngine_opengl)
 
-endforeach(PROGRAM)
+ENDFOREACH(PROGRAM)
+
+FOREACH(PROGRAM ${PROGRAMS_IRR})
+    MESSAGE(STATUS "...add ${PROGRAM}")
+
+    ADD_EXECUTABLE(${PROGRAM}  "${PROGRAM}.cpp")
+    SOURCE_GROUP(""  FILES  "${PROGRAM}.cpp")
+
+    SET_TARGET_PROPERTIES(${PROGRAM}  PROPERTIES
+        FOLDER demos
+        COMPILE_FLAGS "${CH_CXX_FLAGS}  ${CH_MULTICORE_CXX_FLAGS} ${CH_IRRLICHT_CXX_FLAGS}"
+        LINK_FLAGS "${CH_LINKERFLAG_EXE}")
+    SET_PROPERTY(TARGET ${PROGRAM} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROGRAM}>")
+    TARGET_LINK_LIBRARIES(${PROGRAM} ChronoEngine ChronoEngine_multicore ChronoEngine_irrlicht)
+ENDFOREACH()
 
