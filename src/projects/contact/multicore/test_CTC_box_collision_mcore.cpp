@@ -32,7 +32,8 @@
 
 using namespace chrono;
 
-bool report_contacts = true;
+ChContactMethod method = ChContactMethod::SMC;
+bool report_contacts = false;
 bool report_aabb = true;
 
 // -----------------------------------------------------------------------------
@@ -139,7 +140,7 @@ int main(int argc, char** argv) {
     // Parameters
     // ----------------
 
-    double time_end = 4;
+    double time_end = 400;
     double time_step = 1e-3;
 
     double tolerance = 0;
@@ -155,65 +156,120 @@ int main(int argc, char** argv) {
     // Create the multicore system
     // ---------------------------
 
-    ChSystemMulticoreNSC system;
-    system.Set_G_acc(ChVector<>(0, -10, 0));
+    ChSystemMulticore* sys = nullptr;
+    std::shared_ptr<ChMaterialSurface> contact_mat;
 
-    // Set number of threads
-    system.SetNumThreads(1);
+    switch (method) {
+        case chrono::ChContactMethod::NSC: {
+            auto sysNSC = new ChSystemMulticoreNSC;
+            sysNSC->ChangeSolverType(SolverType::APGD);
+            sysNSC->GetSettings()->solver.solver_mode = SolverMode::SPINNING;
+            sysNSC->GetSettings()->solver.max_iteration_normal = max_iteration_normal;
+            sysNSC->GetSettings()->solver.max_iteration_sliding = max_iteration_sliding;
+            sysNSC->GetSettings()->solver.max_iteration_spinning = max_iteration_spinning;
+            sysNSC->GetSettings()->solver.max_iteration_bilateral = max_iteration_bilateral;
+            sysNSC->GetSettings()->solver.alpha = 0;
+            sysNSC->GetSettings()->solver.contact_recovery_speed = contact_recovery_speed;
+            sys = sysNSC;
+            auto materialNSC = chrono_types::make_shared<ChMaterialSurfaceNSC>();
+            materialNSC->SetFriction(0.4f);
+            contact_mat = materialNSC;
+            time_step = 1e-3;
+            collision_envelope = 0.001;
+            break;
+        }
+        case chrono::ChContactMethod::SMC: {
+            auto sysSMC = new ChSystemMulticoreSMC;
+            sysSMC->GetSettings()->solver.contact_force_model = ChSystemSMC::ContactForceModel::Hertz;
+            sysSMC->GetSettings()->solver.tangential_displ_mode = ChSystemSMC::TangentialDisplacementModel::OneStep;
+            sys = sysSMC;
+            auto materialSMC = chrono_types::make_shared<ChMaterialSurfaceSMC>();
+            materialSMC->SetFriction(0.4f);
+            materialSMC->SetYoungModulus(1e7f);
+            materialSMC->SetRestitution(0.1f);
+            contact_mat = materialSMC;
+            time_step = 1e-4;
+            collision_envelope = 0.0;
+            break;
+        }
+    }
 
-    // Set solver settings
-    system.ChangeSolverType(SolverType::APGD);
+    sys->Set_G_acc(ChVector<>(0, 0, -10));
+    sys->SetNumThreads(1);
+    sys->GetSettings()->collision.collision_envelope = collision_envelope;
+    sys->GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
+    sys->GetSettings()->collision.bins_per_axis = vec3(1, 1, 1);
+    sys->GetSettings()->solver.use_full_inertia_tensor = false;
+    sys->GetSettings()->solver.tolerance = tolerance;
 
-    system.GetSettings()->solver.solver_mode = SolverMode::SPINNING;
-    system.GetSettings()->solver.max_iteration_normal = max_iteration_normal;
-    system.GetSettings()->solver.max_iteration_sliding = max_iteration_sliding;
-    system.GetSettings()->solver.max_iteration_spinning = max_iteration_spinning;
-    system.GetSettings()->solver.max_iteration_bilateral = max_iteration_bilateral;
-    system.GetSettings()->solver.alpha = 0;
-    system.GetSettings()->solver.contact_recovery_speed = contact_recovery_speed;
-    system.GetSettings()->solver.use_full_inertia_tensor = false;
-    system.GetSettings()->solver.tolerance = tolerance;
+    // Add plate
+    auto plate = std::shared_ptr<ChBody>(sys->NewBody());
+    sys->Add(plate);
+    plate->SetPos(ChVector<>(0, 0, 0));
+    plate->SetBodyFixed(true);
+    plate->SetIdentifier(-1);
 
-    system.GetSettings()->collision.collision_envelope = collision_envelope;
-    system.GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
-    system.GetSettings()->collision.bins_per_axis = vec3(10, 10, 10);
+    plate->SetCollide(true);
+    plate->GetCollisionModel()->SetEnvelope(collision_envelope);
+    plate->GetCollisionModel()->ClearModel();
+    utils::AddBoxGeometry(plate.get(), contact_mat, ChVector<>(10, 10, 1), ChVector<>(0, 0, -5));
+    plate->GetCollisionModel()->BuildModel();
 
-    // Shared contact material
-    auto contact_mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
-    contact_mat->SetFriction(0.4f);
+    plate->AddAsset(chrono_types::make_shared<ChColorAsset>(ChColor(0.4f, 0.4f, 0.2f)));
 
-    // ----------
-    // Add bodies
-    // ----------
+    // -----------------------------------
+    // Add boxes (1: bottom fixed, 2: top)
+    // -----------------------------------
 
-    auto container = std::shared_ptr<ChBody>(system.NewBody());
-    system.Add(container);
-    container->SetPos(ChVector<>(0, 0, 0));
-    container->SetBodyFixed(true);
-    container->SetIdentifier(-1);
+    // Corner on face
 
-    container->SetCollide(true);
-    container->GetCollisionModel()->SetEnvelope(collision_envelope);
-    container->GetCollisionModel()->ClearModel();
-    utils::AddBoxGeometry(container.get(), contact_mat, ChVector<>(4, .5, 4), ChVector<>(0, -.5, 0));
-    container->GetCollisionModel()->BuildModel();
+    ChVector<> hdims1(1.0, 1.0, 1.0);
+    ChVector<> pos1(0.0, 0.0, 0.0);
+    ChQuaternion<> rot1(1, 0, 0, 0);
 
-    container->AddAsset(chrono_types::make_shared<ChColorAsset>(ChColor(0.4f, 0.4f, 0.2f)));
+    ChVector<> hdims2(1.0, 1.0, 1.0);
+    ChVector<> pos2(0, 0, 1.0 + sqrt(3.0));
+    ChQuaternion<> rot2 = Q_from_AngAxis(atan(sqrt(2.0)), ChVector<>(1, 1, 0).GetNormalized());
 
-    auto box = std::shared_ptr<ChBody>(system.NewBody());
-    box->SetMass(10);
-    box->SetPos(ChVector<>(1, 2, 1));
-    box->SetInertiaXX(ChVector<>(1, 1, 1));
+    // Corner on corner
 
-    box->SetCollide(true);
-    box->GetCollisionModel()->SetEnvelope(collision_envelope);
-    box->GetCollisionModel()->ClearModel();
-    utils::AddBoxGeometry(box.get(), contact_mat, ChVector<>(0.4, 0.2, 0.1));
-    box->GetCollisionModel()->BuildModel();
+    ////ChVector<> hdims1(1.0, 1.0, 1.0);
+    ////ChVector<> pos1(0.0, 0.0, 0.0);
+    ////ChQuaternion<> rot1 = Q_from_AngAxis(atan(sqrt(2.0)), ChVector<>(1, 1, 0).GetNormalized());
 
-    box->AddAsset(chrono_types::make_shared<ChColorAsset>(ChColor(0.2f, 0.3f, 0.4f)));
+    ////ChVector<> hdims2(1.0, 1.0, 1.0);
+    ////ChVector<> pos2(0, 0, sqrt(3.0) + sqrt(3.0));
+    ////ChQuaternion<> rot2 = Q_from_AngAxis(atan(sqrt(2.0)), ChVector<>(1, 1, 0).GetNormalized());
 
-    system.AddBody(box);
+
+
+    auto box1 = std::shared_ptr<ChBody>(sys->NewBody());
+    box1->SetMass(10);
+    box1->SetPos(pos1);
+    box1->SetRot(rot1);
+    box1->SetInertiaXX(ChVector<>(1, 1, 1));
+    box1->SetBodyFixed(true);
+    box1->SetCollide(true);
+    box1->GetCollisionModel()->SetEnvelope(collision_envelope);
+    box1->GetCollisionModel()->ClearModel();
+    utils::AddBoxGeometry(box1.get(), contact_mat, hdims1);
+    box1->GetCollisionModel()->BuildModel();
+    box1->AddAsset(chrono_types::make_shared<ChColorAsset>(ChColor(0.2f, 0.3f, 0.4f)));
+    sys->AddBody(box1);
+
+    auto box2 = std::shared_ptr<ChBody>(sys->NewBody());
+    box2->SetMass(10);
+    box2->SetPos(pos2);
+    box2->SetRot(rot2);
+    box2->SetInertiaXX(ChVector<>(1, 1, 1));
+    box2->SetBodyFixed(false);
+    box2->SetCollide(true);
+    box2->GetCollisionModel()->SetEnvelope(collision_envelope);
+    box2->GetCollisionModel()->ClearModel();
+    utils::AddBoxGeometry(box2.get(), contact_mat, hdims2);
+    box2->GetCollisionModel()->BuildModel();
+    box2->AddAsset(chrono_types::make_shared<ChColorAsset>(ChColor(0.2f, 0.3f, 0.4f)));
+    sys->AddBody(box2);
 
 #ifdef CHRONO_OPENGL
     // -------------------------------
@@ -221,8 +277,8 @@ int main(int argc, char** argv) {
     // -------------------------------
 
     opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-    gl_window.Initialize(1280, 720, "Rolling test", &system);
-    gl_window.SetCamera(ChVector<>(6, 6, 10), ChVector<>(0, 0, 0), ChVector<>(0, 1, 0), 0.05f);
+    gl_window.Initialize(1280, 720, "Rolling test", sys);
+    gl_window.SetCamera(ChVector<>(6, 6, 1), ChVector<>(0, 0, 1), ChVector<>(0, 0, 1), 0.05f);
     gl_window.SetRenderMode(opengl::WIREFRAME);
 #endif
 
@@ -230,25 +286,25 @@ int main(int argc, char** argv) {
     // Simulate system
     // ---------------
 
-    auto cmanager = chrono_types::make_shared<ContactManager>(box);
+    auto cmanager = chrono_types::make_shared<ContactManager>(box2);
 
-    while (system.GetChTime() < time_end) {
+    while (sys->GetChTime() < time_end) {
         // Advance dynamics
-        system.DoStepDynamics(time_step);
+        sys->DoStepDynamics(time_step);
 
-        std::cout << "\nTime: " << system.GetChTime() << std::endl;
+        std::cout << "\nTime: " << sys->GetChTime() << std::endl;
 
         // Process contacts
-        if (report_contacts && system.GetNcontacts() > 0) {
-            ReportContacts(system, box->GetId());
-            system.GetContactContainer()->ReportAllContacts(cmanager);
+        if (report_contacts && sys->GetNcontacts() > 0) {
+            ReportContacts(*sys, box2->GetId());
+            sys->GetContactContainer()->ReportAllContacts(cmanager);
         }
 
         // Display AABB information
         if (report_aabb) {
-            ReportShapeAABB(system);
-            system.CalculateBodyAABB();
-            ReportBodyAABB(system);
+            ReportShapeAABB(*sys);
+            sys->CalculateBodyAABB();
+            ReportBodyAABB(*sys);
         }
 
 #ifdef CHRONO_OPENGL
