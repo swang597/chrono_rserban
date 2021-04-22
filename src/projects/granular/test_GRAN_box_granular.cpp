@@ -334,6 +334,8 @@ int main(int argc, char** argv) {
             break;
     }
 
+    utils::PDSampler<double> sampler(h_sep);
+
     // Set starting value for body identifiers
     gen.setBodyIdentifier(Id_g);
 
@@ -342,7 +344,7 @@ int main(int argc, char** argv) {
     ChVector<> center(0, 0, v_sep);
 
     for (int il = 0; il < num_layers; il++) {
-        gen.createObjectsBox(utils::SamplingType::POISSON_DISK, h_sep, center, hdims);
+        gen.CreateObjectsBox(sampler, center, hdims);
         center.z() += v_sep;
     }
 

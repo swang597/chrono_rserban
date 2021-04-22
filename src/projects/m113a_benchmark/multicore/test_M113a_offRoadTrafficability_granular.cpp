@@ -159,6 +159,8 @@ int out_fps = 60;
 
 double CreateParticles(ChSystem* system, double sphereRatio) {
     // Create a particle generator and a mixture entirely made out of spheres
+    double r = 1.01 * r_g;
+    utils::PDSampler<double> sampler(2 * r);
     utils::Generator gen(system);
     std::shared_ptr<utils::MixtureIngredient> m1;
     if (sphereRatio == 1) {
@@ -184,12 +186,11 @@ double CreateParticles(ChSystem* system, double sphereRatio) {
     gen.setBodyIdentifier(Id_g);
 
     // Create particles in layers until reaching the desired number of particles
-    double r = 1.01 * r_g;
     ChVector<> hdims(hdimX - r, hdimY - r, 0);
     ChVector<> center(0, 0, 2 * r);
 
     while (gen.getTotalNumBodies() < num_particles) {
-        gen.createObjectsBox(utils::SamplingType::POISSON_DISK, 2 * r, center, hdims);
+        gen.CreateObjectsBox(sampler, center, hdims);
         center.z() += 2 * r;
     }
 
