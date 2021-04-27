@@ -5,6 +5,7 @@ if(NOT ENABLE_MODULE_VEHICLE)
 endif()  
 
 add_subdirectory(sequential)
+add_subdirectory(multicore)
 add_subdirectory(go_nogo)
 add_subdirectory(go_nogo_SCM)
 add_subdirectory(crg)
