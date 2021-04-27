@@ -13,6 +13,7 @@ ENDIF()
 # List all model files for this demo
 
 SET(PROGRAMS 
+  test_VEH_M113_seqA
   test_VEH_M113_mcoreA
   test_VEH_M113_mcoreB
   test_VEH_Marder_mcoreA
