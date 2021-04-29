@@ -54,9 +54,6 @@ using std::endl;
 // USER SETTINGS
 // =============================================================================
 
-// Comment the following line to use Chrono::Multicore
-//#define USE_SEQ
-
 // Comment the following line to use NSC contact
 #define USE_SMC
 
@@ -64,31 +61,10 @@ using std::endl;
 // Specification of the terrain
 // -----------------------------------------------------------------------------
 
-enum TerrainType { RIGID_TERRAIN, GRANULAR_TERRAIN };
-
-// Type of terrain
-TerrainType terrain_type = RIGID_TERRAIN;
-
-// Control visibility of containing bin walls
-bool visible_walls = false;
-
 // Dimensions
 double hdimX = 60;  ////5.5; //// 2.5;
 double hdimY = 3;    ////2.5;
-double hdimZ = 0.5;
 double hthick = 0.25;
-
-// Parameters for granular material
-int Id_g = 100;
-double r_g = 0.02;
-double rho_g = 2500;
-double vol_g = (4.0 / 3) * CH_C_PI * r_g * r_g * r_g;
-double mass_g = rho_g * vol_g;
-ChVector<> inertia_g = 0.4 * mass_g * r_g * r_g * ChVector<>(1, 1, 1);
-
-float mu_g = 0.8f;
-
-unsigned int num_particles = 100; //// 40000;
 
 // -----------------------------------------------------------------------------
 // Specification of the vehicle model
@@ -129,53 +105,8 @@ float contact_recovery_speed = -1;
 bool monitor_bilaterals = false;
 int bilateral_frame_interval = 100;
 
-// Output directories
-bool povray_output = false;
-
-const std::string out_dir = GetChronoOutputPath() + "M113_MULTICORE";
-const std::string pov_dir = out_dir + "/POVRAY";
-
+// Output
 int out_fps = 60;
-
-// =============================================================================
-
-double CreateParticles(ChSystem* system) {
-    // Create a material
-#ifdef USE_SMC
-    auto mat_g = chrono_types::make_shared<ChMaterialSurfaceSMC>();
-    mat_g->SetYoungModulus(1e8f);
-    mat_g->SetFriction(mu_g);
-    mat_g->SetRestitution(0.4f);
-#else
-    auto mat_g = chrono_types::make_shared<ChMaterialSurfaceNSC>();
-    mat_g->SetFriction(mu_g);
-#endif
-
-    // Create a particle generator and a mixture entirely made out of spheres
-    double r = 1.01 * r_g;
-    utils::PDSampler<double> sampler(2 * r);
-    utils::Generator gen(system);
-    std::shared_ptr<utils::MixtureIngredient> m1 = gen.AddMixtureIngredient(utils::MixtureType::SPHERE, 1.0);
-    m1->setDefaultMaterial(mat_g);
-    m1->setDefaultDensity(rho_g);
-    m1->setDefaultSize(r_g);
-
-    // Set starting value for body identifiers
-    gen.setBodyIdentifier(Id_g);
-
-    // Create particles in layers until reaching the desired number of particles
-    ChVector<> hdims(hdimX - r, hdimY - r, 0);
-    ChVector<> center(0, 0, 2 * r);
-
-    while (gen.getTotalNumBodies() < num_particles) {
-        gen.CreateObjectsBox(sampler, center, hdims);
-        center.z() += 2 * r;
-    }
-
-    std::cout << "Created " << gen.getTotalNumBodies() << " particles." << std::endl;
-
-    return center.z();
-}
 
 // =============================================================================
 // Utility function for displaying an ASCII progress bar for the quantity x
@@ -201,38 +132,10 @@ void progressbar(unsigned int x, unsigned int n, unsigned int w = 50) {
 int main(int argc, char* argv[]) {
     GetLog() << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
 
-    // -----------------
-    // Initialize output
-    // -----------------
-
-    if (povray_output) {
-        if (!filesystem::create_directory(filesystem::path(out_dir))) {
-            std::cout << "Error creating directory " << out_dir << std::endl;
-            return 1;
-        }
-
-        if (!filesystem::create_directory(filesystem::path(pov_dir))) {
-            std::cout << "Error creating directory " << pov_dir << std::endl;
-            return 1;
-        }
-    }
-
     // --------------
     // Create system.
     // --------------
 
-#ifdef USE_SEQ
-    // ----  Sequential
-#ifdef USE_SMC
-    std::cout << "Create SMC system" << std::endl;
-    ChSystemSMC* system = new ChSystemSMC();
-#else
-    std::cout << "Create NSC system" << std::endl;
-    ChSystemNSC* system = new ChSystemNSC();
-#endif
-
-#else
-    // ----  Multicore
 #ifdef USE_SMC
     std::cout << "Create Multicore SMC system" << std::endl;
     ChSystemMulticoreSMC* system = new ChSystemMulticoreSMC();
@@ -241,20 +144,12 @@ int main(int argc, char* argv[]) {
     ChSystemMulticoreNSC* system = new ChSystemMulticoreNSC();
 #endif
 
-#endif
-
     system->Set_G_acc(ChVector<>(0, 0, -9.81));
 
 
     // ---------------------
     // Edit system settings.
     // ---------------------
-
-#ifdef USE_SEQ
-
-    system->SetSolverMaxIterations(50);
-
-#else
 
     // Set number of threads
     system->SetNumThreads(threads);
@@ -274,18 +169,18 @@ int main(int argc, char* argv[]) {
     system->ChangeSolverType(SolverType::APGD);
     system->GetSettings()->collision.collision_envelope = 0.1 * r_g;
 #else
-    system->GetSettings()->solver.contact_force_model = ChSystemSMC::PlainCoulomb;
+    system->GetSettings()->solver.contact_force_model = ChSystemSMC::Hertz;
 #endif
 
     system->GetSettings()->collision.bins_per_axis = vec3(10, 10, 10);
-
-#endif
 
     // -------------------
     // Create the terrain.
     // -------------------
 
     // Contact material
+    float mu_g = 0.8f;
+
 #ifdef USE_SMC
     auto mat_g = chrono_types::make_shared<ChMaterialSurfaceSMC>();
     mat_g->SetYoungModulus(1e8f);
@@ -303,54 +198,21 @@ int main(int argc, char* argv[]) {
     ground->SetCollide(true);
 
     ground->GetCollisionModel()->ClearModel();
-
-    // Bottom box
     utils::AddBoxGeometry(ground.get(),                                           //
                           mat_g,                                                  //
                           ChVector<>(hdimX, hdimY, hthick),                       //
                           ChVector<>(0, 0, -hthick), ChQuaternion<>(1, 0, 0, 0),  //
                           true);
-    if (terrain_type == GRANULAR_TERRAIN) {
-        // Front box
-        utils::AddBoxGeometry(ground.get(),                                                               //
-                              mat_g,                                                                      //
-                              ChVector<>(hthick, hdimY, hdimZ + hthick),                                  //
-                              ChVector<>(hdimX + hthick, 0, hdimZ - hthick), ChQuaternion<>(1, 0, 0, 0),  //
-                              visible_walls);
-        // Rear box
-        utils::AddBoxGeometry(ground.get(),                                                                //
-                              mat_g,                                                                       //
-                              ChVector<>(hthick, hdimY, hdimZ + hthick),                                   //
-                              ChVector<>(-hdimX - hthick, 0, hdimZ - hthick), ChQuaternion<>(1, 0, 0, 0),  //
-                              visible_walls);
-        // Left box
-        utils::AddBoxGeometry(ground.get(),                                                               //
-                              mat_g,                                                                      //
-                              ChVector<>(hdimX, hthick, hdimZ + hthick),                                  //
-                              ChVector<>(0, hdimY + hthick, hdimZ - hthick), ChQuaternion<>(1, 0, 0, 0),  //
-                              visible_walls);
-        // Right box
-        utils::AddBoxGeometry(ground.get(),                                                                //
-                              mat_g,                                                                       //
-                              ChVector<>(hdimX, hthick, hdimZ + hthick),                                   //
-                              ChVector<>(0, -hdimY - hthick, hdimZ - hthick), ChQuaternion<>(1, 0, 0, 0),  //
-                              visible_walls);
-    }
-
     ground->GetCollisionModel()->BuildModel();
 
     system->AddBody(ground);
 
-    // Create the granular material.
-    double vertical_offset = 0;
-
-    if (terrain_type == GRANULAR_TERRAIN) {
-        vertical_offset = CreateParticles(system);
-    }
-
     // --------------------------
     // Construct the M113 vehicle
     // --------------------------
+
+    bool fix_chassis = false;
+    bool create_track = true;
 
     // Create and initialize vehicle system
     M113 m113(system);
@@ -359,6 +221,8 @@ int main(int argc, char* argv[]) {
     m113.SetBrakeType(BrakeType::SIMPLE);
     m113.SetPowertrainType(PowertrainModelType::SIMPLE_CVT);
     m113.SetChassisCollisionType(CollisionType::NONE);
+
+    m113.SetChassisFixed(fix_chassis);
 
     ////m113.GetVehicle().SetStepsize(0.0001);
 
@@ -397,7 +261,7 @@ int main(int argc, char* argv[]) {
     opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
     gl_window.Initialize(1280, 720, "M113", system);
     //gl_window.SetCamera(ChVector<>(0, -10, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1));
-    gl_window.SetCamera(initLoc - ChVector<>(0, 10, 0), initLoc, ChVector<>(0, 0, 1));
+    gl_window.SetCamera(initLoc - ChVector<>(3.5, 4, 0), initLoc - ChVector<>(3.5, 0, 0), ChVector<>(0, 0, 1));
     gl_window.SetRenderMode(opengl::WIREFRAME);
 
     // Number of simulation steps between two 3D view render frames
@@ -436,21 +300,9 @@ int main(int argc, char* argv[]) {
             cout << "     Vehicle speed:  " << m113.GetVehicle().GetVehicleSpeed() << endl;
             cout << "     Execution time: " << exec_time << endl;
 
-            if (povray_output) {
-                char filename[100];
-                sprintf(filename, "%s/data_%03d.dat", pov_dir.c_str(), out_frame + 1);
-                utils::WriteShapesPovray(system, filename);
-            }
-
             out_frame++;
             next_out_frame += out_steps;
             num_contacts = 0;
-        }
-
-        // Release the vehicle chassis at the end of the hold time.
-        if (m113.GetChassisBody()->GetBodyFixed() && time > time_hold) {
-            std::cout << std::endl << "Release vehicle t = " << time << std::endl;
-            m113.GetChassisBody()->SetBodyFixed(false);
         }
 
         // Update modules (process inputs from other modules)

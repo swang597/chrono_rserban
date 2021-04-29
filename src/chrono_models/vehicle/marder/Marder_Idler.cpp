@@ -44,8 +44,8 @@ const double Marder_Idler::m_carrier_radius = 0.02;
 
 const double Marder_Idler::m_tensioner_l0 = 0.75;
 const double Marder_Idler::m_tensioner_f = 9.81 * 25000.0 / 10.0;  // 10% Weight Force      M113: 2e4;
-const double Marder_Idler::m_tensioner_k = 2e6;
-const double Marder_Idler::m_tensioner_c = Marder_Idler::m_tensioner_k * 0.05;
+const double Marder_Idler::m_tensioner_k = 1.5e6;
+const double Marder_Idler::m_tensioner_c = Marder_Idler::m_tensioner_k * 0.01;
 
 const std::string Marder_IdlerLeft::m_meshFile = "Marder/Idler_L.obj";
 const std::string Marder_IdlerRight::m_meshFile = "Marder/Idler_R.obj";
@@ -76,7 +76,7 @@ void Marder_Idler::CreateContactMaterial(ChContactMethod contact_method) {
     MaterialInfo minfo;
     minfo.mu = 0.4f;
     minfo.cr = 0.75f;
-    minfo.Y = 1e7f;
+    minfo.Y = 1e8f;
     m_material = minfo.CreateMaterial(contact_method);
 }
 

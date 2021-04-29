@@ -76,7 +76,7 @@ void M113_Idler::CreateContactMaterial(ChContactMethod contact_method) {
     MaterialInfo minfo;
     minfo.mu = 0.4f;
     minfo.cr = 0.75f;
-    minfo.Y = 1e7f;
+    minfo.Y = 3e7f;
     m_material = minfo.CreateMaterial(contact_method);
 }
 

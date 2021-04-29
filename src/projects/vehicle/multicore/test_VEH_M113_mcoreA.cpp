@@ -57,9 +57,8 @@ ChQuaternion<> initRot(1, 0, 0, 0);
 // ChQuaternion<> initRot(0, 0, 0, 1);
 
 // Rigid terrain dimensions
-double terrainHeight = 0;
-double terrainLength = 100.0;  // size in X direction
-double terrainWidth = 10.0;    // size in Y direction
+double sizeX = 100.0;  // size in X direction
+double sizeY = 40.0;   // size in Y direction
 
 // Simulation step size
 double step_size = 1e-3;
@@ -144,10 +143,10 @@ int main(int argc, char* argv[]) {
     CollisionType chassis_collision_type = CollisionType::NONE;
     TrackShoeType shoe_type = TrackShoeType::SINGLE_PIN;
     BrakeType brake_type = BrakeType::SIMPLE;
-    ////DrivelineTypeTV driveline_type = DrivelineTypeTV::BDS;
-    ////PowertrainModelType powertrain_type = PowertrainModelType::SHAFTS;
-    DrivelineTypeTV driveline_type = DrivelineTypeTV::SIMPLE;
-    PowertrainModelType powertrain_type = PowertrainModelType::SIMPLE_CVT;
+    DrivelineTypeTV driveline_type = DrivelineTypeTV::BDS;
+    PowertrainModelType powertrain_type = PowertrainModelType::SHAFTS;
+    ////DrivelineTypeTV driveline_type = DrivelineTypeTV::SIMPLE;
+    ////PowertrainModelType powertrain_type = PowertrainModelType::SIMPLE_CVT;
 
     //// TODO
     if (shoe_type == TrackShoeType::DOUBLE_PIN)
@@ -182,12 +181,12 @@ int main(int argc, char* argv[]) {
     // Set visualization type for vehicle components.
     VisualizationType track_vis =
         (shoe_type == TrackShoeType::SINGLE_PIN) ? VisualizationType::MESH : VisualizationType::PRIMITIVES;
-    m113.SetChassisVisualizationType(VisualizationType::PRIMITIVES);
+    m113.SetChassisVisualizationType(VisualizationType::NONE);
     m113.SetSprocketVisualizationType(track_vis);
     m113.SetIdlerVisualizationType(track_vis);
     m113.SetRoadWheelAssemblyVisualizationType(track_vis);
     m113.SetRoadWheelVisualizationType(track_vis);
-    m113.SetTrackShoeVisualizationType(track_vis);
+    m113.SetTrackShoeVisualizationType(VisualizationType::PRIMITIVES);
 
     // --------------------------------------------------
     // Control internal collisions and contact monitoring
@@ -216,10 +215,10 @@ int main(int argc, char* argv[]) {
     ////m113.GetVehicle().MonitorContacts(TrackedCollisionFlag::SPROCKET_LEFT | TrackedCollisionFlag::SPROCKET_RIGHT);
 
     // Monitor only contacts involving the left idler.
-    ////m113.GetVehicle().MonitorContacts(TrackedCollisionFlag::IDLER_LEFT);
+    m113.GetVehicle().MonitorContacts(TrackedCollisionFlag::IDLER_LEFT);
     
     // Monitor only contacts involving one of the left track shoes.
-    m113.GetVehicle().MonitorContacts(TrackedCollisionFlag::SHOES_LEFT);
+    ////m113.GetVehicle().MonitorContacts(TrackedCollisionFlag::SHOES_LEFT);
 
     // Collect contact information.
     // If enabled, number of contacts and local contact point locations are collected for all
@@ -236,9 +235,8 @@ int main(int argc, char* argv[]) {
     minfo.cr = 0.2f;
     minfo.Y = 2e7f;
     auto patch_mat = minfo.CreateMaterial(contact_method);
-    auto patch = terrain.AddPatch(patch_mat, ChVector<>(0, 0, 0), ChVector<>(0, 0, 1), terrainLength, terrainWidth);
-    patch->SetColor(ChColor(0.5f, 0.8f, 0.5f));
-    ////patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 200);
+    auto patch = terrain.AddPatch(patch_mat, ChVector<>(0, 0, 0), ChVector<>(0, 0, 1), sizeX, sizeY);
+    patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), sizeX, sizeY);
     terrain.Initialize();
 
     // ---------------------------------------

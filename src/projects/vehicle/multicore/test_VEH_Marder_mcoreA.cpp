@@ -57,9 +57,8 @@ ChQuaternion<> initRot(1, 0, 0, 0);
 // ChQuaternion<> initRot(0, 0, 0, 1);
 
 // Rigid terrain dimensions
-double terrainHeight = 0;
-double terrainLength = 100.0;  // size in X direction
-double terrainWidth = 10.0;    // size in Y direction
+double sizeX = 100.0;  // size in X direction
+double sizeY = 40.0;   // size in Y direction
 
 // Simulation step size
 double step_size = 1e-3;
@@ -68,7 +67,7 @@ double step_size = 1e-3;
 double render_step_size = 1.0 / 120;  // FPS = 120
 
 // Point on chassis tracked by the camera
-ChVector<> trackPoint(0.0, 0.0, 0.0);
+ChVector<> trackPoint(-5, 0.0, 0.0);
 
 // Output
 const std::string out_dir = GetChronoOutputPath() + "Marder";
@@ -100,7 +99,7 @@ int main(int argc, char* argv[]) {
         case ChContactMethod::SMC: {
             auto sysSMC = chrono_types::make_shared<ChSystemMulticoreSMC>();
 
-            sysSMC->GetSettings()->solver.contact_force_model = ChSystemSMC::PlainCoulomb;
+            sysSMC->GetSettings()->solver.contact_force_model = ChSystemSMC::Hertz;
 
             system = sysSMC;
             break;
@@ -173,7 +172,7 @@ int main(int argc, char* argv[]) {
     // Set visualization type for vehicle components.
     VisualizationType track_vis =
         (shoe_type == TrackShoeType::SINGLE_PIN) ? VisualizationType::MESH : VisualizationType::PRIMITIVES;
-    marder.SetChassisVisualizationType(VisualizationType::MESH);
+    marder.SetChassisVisualizationType(VisualizationType::NONE);
     marder.SetSprocketVisualizationType(track_vis);
     marder.SetIdlerVisualizationType(track_vis);
     marder.SetRollerVisualizationType(track_vis);
@@ -202,7 +201,10 @@ int main(int argc, char* argv[]) {
     ////                        TrackedCollisionFlag::SHOES_LEFT | TrackedCollisionFlag::IDLER_LEFT);
 
     // Monitor only contacts involving the chassis.
-    marder.GetVehicle().MonitorContacts(TrackedCollisionFlag::CHASSIS);
+    ////marder.GetVehicle().MonitorContacts(TrackedCollisionFlag::CHASSIS);
+
+    // Monitor only contacts involving the left idler.
+    marder.GetVehicle().MonitorContacts(TrackedCollisionFlag::IDLER_LEFT);
 
     // Collect contact information.
     // If enabled, number of contacts and local contact point locations are collected for all
@@ -219,9 +221,8 @@ int main(int argc, char* argv[]) {
     minfo.cr = 0.75f;
     minfo.Y = 2e7f;
     auto patch_mat = minfo.CreateMaterial(contact_method);
-    auto patch = terrain.AddPatch(patch_mat, ChVector<>(0, 0, 0), ChVector<>(0, 0, 1), terrainLength, terrainWidth);
-    patch->SetColor(ChColor(0.5f, 0.8f, 0.5f));
-    patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 20);
+    auto patch = terrain.AddPatch(patch_mat, ChVector<>(0, 0, 0), ChVector<>(0, 0, 1), sizeX, sizeY);
+    patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), sizeX, sizeY);
     terrain.Initialize();
 
     // ---------------------------------------
