@@ -24,6 +24,9 @@
 #include <climits>
 #include <random>
 
+// Include the ChConfigMulticore header *before* any Thrust headers!
+#include "chrono_multicore/ChConfigMulticore.h"
+
 #include <thrust/transform.h>
 #include <thrust/transform_reduce.h>
 
