@@ -160,7 +160,7 @@ int main(int argc, char* argv[]) {
     //     texture in Chrono::Vehicle data directory
     //     bitmap in VehicleTests data directory
     RigidTerrain terrain(vehicle.GetSystem());
-    auto patch = terrain.AddPatch(patch_mat, CSYSNORM, vehicle::GetDataFile("M113a_benchmark/height_maps/slope4.bmp"), "my_mesh", 270, 20, -3, 3);
+    auto patch = terrain.AddPatch(patch_mat, CSYSNORM, vehicle::GetDataFile("M113a_benchmark/height_maps/slope4.bmp"), 270, 20, -3, 3);
     patch->SetColor(ChColor(0.4f, 0.2f, 0.0f));
     patch->SetTexture(vehicle::GetDataFile("terrain/textures/dirt.jpg"), 12, 12);
     terrain.Initialize();

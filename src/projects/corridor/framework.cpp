@@ -252,7 +252,7 @@ void Framework::CreateTerrain() {
     auto patch_mat = minfo.CreateMaterial(m_system->GetContactMethod());
 
     auto patch = m_terrain->AddPatch(patch_mat, ChCoordsys<>(ChVector<>(0, 0, 0), QUNIT), GetChronoDataFile(m_scene.m_coll_file),
-                                     "scene", 0.01, m_render_coll);
+                                     0.01, m_render_coll);
 
     ChVector<> bbmin, bbmax;
     patch->GetGroundBody()->GetCollisionModel()->GetAABB(bbmin, bbmax);

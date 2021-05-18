@@ -165,7 +165,7 @@ int main(int argc, char* argv[]) {
     patch_mat->SetFriction(0.9f);
     patch_mat->SetRestitution(0.01f);
     RigidTerrain terrain(wvp.GetSystem());
-    auto patch = terrain.AddPatch(patch_mat, CSYSNORM, vehicle::GetDataFile(terrainFile), "test_mesh", swept_radius);
+    auto patch = terrain.AddPatch(patch_mat, CSYSNORM, vehicle::GetDataFile(terrainFile), swept_radius);
     patch->SetColor(ChColor(0.8f, 0.8f, 0.5f));
     patch->SetTexture(vehicle::GetDataFile("terrain/textures/dirt.jpg"), 12, 12);
     terrain.Initialize();

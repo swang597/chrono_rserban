@@ -217,7 +217,7 @@ int main(int argc, char* argv[]) {
     patch_mat->SetRestitution(restitution);
     patch_mat->SetYoungModulus(E);
     patch_mat->SetPoissonRatio(nu);
-    auto patch = terrain.AddPatch(patch_mat, CSYSNORM, vehicle::GetDataFile(profile_filename), "test_mesh", swept_radius);
+    auto patch = terrain.AddPatch(patch_mat, CSYSNORM, vehicle::GetDataFile(profile_filename), swept_radius);
     patch->SetColor(ChColor(0.4f, 0.2f, 0.0f));
     patch->SetTexture(vehicle::GetDataFile("terrain/textures/dirt.jpg"), 12, 12);
     terrain.Initialize();
