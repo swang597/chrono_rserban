@@ -28,7 +28,7 @@
 #include "chrono/physics/ChBody.h"
 #include "chrono/solver/ChIterativeSolverLS.h"
 
-#include "chrono_mkl/ChSolverMKL.h"
+#include "chrono_pardisomkl/ChSolverPardisoMKL.h"
 
 #include "chrono_irrlicht/ChIrrApp.h"
 
@@ -43,7 +43,7 @@ using namespace irr;
 // =============================================================================
 
 // Solver type (PARDISO, MINRES, GMRES)
-ChSolver::Type solver_type = ChSolver::Type::PARDISO;
+ChSolver::Type solver_type = ChSolver::Type::PARDISO_MKL;
 
 // Integrator type (HHT, EULER_IMPLICIT, EULER_IMPLICIT_LINEARIZED)
 ChTimestepper::Type integrator_type = ChTimestepper::Type::HHT;
@@ -72,7 +72,7 @@ double damping_coef = 0.5 * critical_damping;
 // Functor class implementing the force for a ChLinkTSDA.
 class MySpringForce : public ChLinkTSDA::ForceFunctor {
     virtual double operator()(double time,         // current time
-                              double rest_length,  // undeformed length
+                              double length0,  // undeformed length
                               double length,       // current length
                               double vel,          // current velocity (positive when extending)
                               ChLinkTSDA* link     // back-pointer to associated link
@@ -81,7 +81,7 @@ class MySpringForce : public ChLinkTSDA::ForceFunctor {
         ////ChVectorDynamic<> states = link->GetStates();
         ////std::cout << "t = " << time << "  " << states(0) << " " << states(1) << std::endl;
 
-        double force = -spring_coef * (length - rest_length) - damping_coef * vel;
+        double force = -spring_coef * (length - length0) - damping_coef * vel;
         return force;
     }
 };
@@ -152,7 +152,7 @@ int main(int argc, char* argv[]) {
     spring->AddAsset(chrono_types::make_shared<ChPointPointSpring>(0.05, 80, 15));
 
     // Create the Irrlicht application
-    ChIrrApp application(&system, L"Active spring test", core::dimension2d<u32>(800, 600), false, true);
+    ChIrrApp application(&system, L"Active spring test", core::dimension2d<u32>(800, 600));
     application.AddTypicalLogo();
     application.AddTypicalSky();
     application.AddTypicalLights();
@@ -220,9 +220,9 @@ int main(int argc, char* argv[]) {
             system.SetSolver(solver);
             break;
         }
-        case ChSolver::Type::PARDISO: {
+        case ChSolver::Type::PARDISO_MKL: {
             btitle += "PARDISO - ";
-            auto solver = chrono_types::make_shared<ChSolverMKL>();
+            auto solver = chrono_types::make_shared<ChSolverPardisoMKL>();
             solver->LockSparsityPattern(false);
             solver->SetVerbose(verbose_solver);
             system.SetSolver(solver);

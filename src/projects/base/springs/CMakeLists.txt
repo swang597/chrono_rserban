@@ -1,4 +1,4 @@
-if(NOT ENABLE_MODULE_IRRLICHT OR NOT ENABLE_MODULE_MKL OR NOT ENABLE_MODULE_POSTPROCESS)
+if(NOT ENABLE_MODULE_IRRLICHT OR NOT ENABLE_MODULE_PARDISO_MKL OR NOT ENABLE_MODULE_POSTPROCESS)
   return()
 endif()
  
@@ -8,6 +8,7 @@ endif()
 set(DEMOS
     test_BASE_active_spring
     test_BASE_active_shock
+    test_BASE_tsda
 )
 
 include_directories(${CH_IRRLICHTINC})
@@ -24,5 +25,5 @@ foreach(PROGRAM ${DEMOS})
         COMPILE_FLAGS "${CH_CXX_FLAGS} ${CH_IRRLICHT_CXX_FLAGS}"
         LINK_FLAGS "${CH_LINKERFLAG_EXE}"
     )
-    target_link_libraries(${PROGRAM} ChronoEngine ChronoEngine_irrlicht ChronoEngine_mkl ChronoEngine_postprocess)
+    target_link_libraries(${PROGRAM} ChronoEngine ChronoEngine_irrlicht ChronoEngine_pardisomkl ChronoEngine_postprocess)
 endforeach(PROGRAM)

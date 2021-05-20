@@ -30,7 +30,7 @@
 #include "chrono/physics/ChLinkMotorLinearSpeed.h"
 #include "chrono/solver/ChIterativeSolverLS.h"
 
-#include "chrono_mkl/ChSolverMKL.h"
+#include "chrono_pardisomkl/ChSolverPardisoMKL.h"
 
 #include "chrono_irrlicht/ChIrrApp.h"
 
@@ -64,7 +64,7 @@ using namespace irr;
 // --------------------------------------------------
 
 // Solver type (PARDISO, MINRES, GMRES)
-ChSolver::Type solver_type = ChSolver::Type::PARDISO;
+ChSolver::Type solver_type = ChSolver::Type::PARDISO_MKL;
 
 // Integrator type (HHT, EULER_IMPLICIT, EULER_IMPLICIT_LINEARIZED)
 ChTimestepper::Type integrator_type = ChTimestepper::Type::HHT;
@@ -319,7 +319,7 @@ int main(int argc, char* argv[]) {
     spring->AddAsset(chrono_types::make_shared<ChPointPointSegment>());
 
     // Create the Irrlicht application
-    ChIrrApp application(&system, L"Active shock test", core::dimension2d<u32>(800, 600), false, true);
+    ChIrrApp application(&system, L"Active shock test", core::dimension2d<u32>(800, 600));
     application.AddTypicalLogo();
     application.AddTypicalSky();
     application.AddTypicalLights();
@@ -387,9 +387,9 @@ int main(int argc, char* argv[]) {
             system.SetSolver(solver);
             break;
         }
-        case ChSolver::Type::PARDISO: {
+        case ChSolver::Type::PARDISO_MKL: {
             title += "PARDISO - ";
-            auto solver = chrono_types::make_shared<ChSolverMKL>();
+            auto solver = chrono_types::make_shared<ChSolverPardisoMKL>();
             solver->LockSparsityPattern(false);
             solver->SetVerbose(verbose_solver);
             system.SetSolver(solver);
