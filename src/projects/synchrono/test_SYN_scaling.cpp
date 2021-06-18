@@ -44,17 +44,6 @@
     #include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
 #endif
 
-#undef CHRONO_SENSOR
-
-#ifdef CHRONO_SENSOR
-    #include "chrono_sensor/ChSensorManager.h"
-    #include "chrono_sensor/ChCameraSensor.h"
-    #include "chrono_sensor/filters/ChFilterAccess.h"
-    #include "chrono_sensor/filters/ChFilterSave.h"
-    #include "chrono_sensor/filters/ChFilterVisualize.h"
-using namespace chrono::sensor;
-#endif
-
 #include "chrono_thirdparty/cxxopts/ChCLI.h"
 
 using namespace chrono;
@@ -72,10 +61,10 @@ double terrainLength = 50;  // size in X direction
 double terrainWidth = 50;   // size in Y direction
 double delta = 0.05;        // SCM grid spacing
 
-double pathLength = 200;
+double target_speed = 10;
 
 // Simulation run time
-double end_time = 20;
+double end_time = 10;
 
 // Simulation step size
 double step_size = 2e-3;
@@ -88,6 +77,11 @@ const bool bulldozing = false;
 
 // How often SynChrono state messages are interchanged
 double heartbeat = 1e-2;  // 100[Hz]
+
+// Rank for run-time visualization
+int vis_rank = -1;
+
+// =============================================================================
 
 // Forward declares for straight forward helper functions
 void AddCommandLineOptions(ChCLI& cli);
@@ -118,9 +112,9 @@ int main(int argc, char* argv[]) {
     MPI_Barrier(MPI_COMM_WORLD);
 #endif
 
-    // -----------------------------------------------------
-    // CLI SETUP - Get most parameters from the command line
-    // -----------------------------------------------------
+    // ------------------------------------------------
+    // CLI SETUP - Get parameters from the command line
+    // ------------------------------------------------
 
     ChCLI cli(argv[0]);
 
@@ -134,14 +128,8 @@ int main(int argc, char* argv[]) {
     heartbeat = cli.GetAsType<double>("heartbeat");
     nthreads = cli.GetAsType<int>("nthreads");
 
-    const double size_x = cli.GetAsType<double>("sizeX");
-    const double size_y = cli.GetAsType<double>("sizeY");
-    const double cam_x = cli.GetAsType<std::vector<double>>("c_pos")[0];
-    const double cam_y = cli.GetAsType<std::vector<double>>("c_pos")[1];
-    const double dpu = cli.GetAsType<double>("dpu");
-    const int cam_res_width = cli.GetAsType<std::vector<int>>("res")[0];
-    const int cam_res_height = cli.GetAsType<std::vector<int>>("res")[1];
-    bool visualize = cli.HasValueInVector<int>("irr", node_id);
+    vis_rank = cli.GetAsType<int>("vis");
+    bool visualize = (vis_rank == node_id);
 
     // Change SynChronoManager settings
     syn_manager.SetHeartbeat(heartbeat);
@@ -150,20 +138,19 @@ int main(int argc, char* argv[]) {
     // Vehicle Initialization
     // ----------------------
     // Calculate initial position and paths for each vehicle
-    // Use up more of the mesh by not placing vehicles in the middle
-    ChVector<> offset(-size_x / 2 + 5, 0, 0);
+    double pathLength = 1.5 * target_speed * end_time;
 
     ChVector<> init_loc;
     ChQuaternion<> init_rot;
     std::shared_ptr<ChBezierCurve> path;
     if (node_id % 2 == 0) {
         // Start even vehicles in a row on the south side, driving north
-        init_loc = offset + ChVector<>(0, 2.0 * (node_id + 1), 0.5);
+        init_loc = ChVector<>(0, 2.0 * (node_id + 1), 0.5);
         init_rot = Q_from_AngZ(0);
         path = StraightLinePath(init_loc, init_loc + ChVector<>(pathLength, 0, 0));
     } else {
         // Start odd vehicles staggered going up the west edge, driving east
-        init_loc = offset + ChVector<>(2.0 * (node_id - 1), -5.0 - 2.0 * (node_id - 1), 0.5);
+        init_loc = ChVector<>(2.0 * (node_id - 1), -5.0 - 2.0 * (node_id - 1), 0.5);
         init_rot = Q_from_AngZ(CH_C_PI / 2);
         path = StraightLinePath(init_loc, init_loc + ChVector<>(0, pathLength, 0));
     }
@@ -196,7 +183,7 @@ int main(int argc, char* argv[]) {
     hmmwv.SetTireVisualizationType(VisualizationType::MESH);
 
     // What we defined earlier, a straight line
-    ChPathFollowerDriver driver(hmmwv.GetVehicle(), path, "Box path", 10);
+    ChPathFollowerDriver driver(hmmwv.GetVehicle(), path, "Box path", target_speed);
     driver.Initialize();
 
     // Reasonable defaults for the underlying PID
@@ -258,11 +245,6 @@ int main(int argc, char* argv[]) {
     auto terrain_agent = chrono_types::make_shared<SynSCMTerrainAgent>(scm);
     syn_manager.AddAgent(terrain_agent);
 
-    // Choice of soft parameters is arbitrary
-    SCMParameters params;
-    params.InitializeParametersAsSoft();
-    terrain_agent->SetSoilParametersFromStruct(&params);
-
     // Initialzie the SynChrono manager
     syn_manager.Initialize(system);
 
@@ -273,7 +255,7 @@ int main(int argc, char* argv[]) {
     // Create the vehicle Irrlicht interface
     std::shared_ptr<ChWheeledVehicleIrrApp> app;
     if (visualize) {
-        app = chrono_types::make_shared<ChWheeledVehicleIrrApp>(&hmmwv.GetVehicle(), L"SynChrono SCM Demo");
+        app = chrono_types::make_shared<ChWheeledVehicleIrrApp>(&hmmwv.GetVehicle(), L"SynChrono SCM test");
         app->SetSkyBox();
         app->AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250,
                               130);
@@ -284,62 +266,13 @@ int main(int argc, char* argv[]) {
     }
 #endif
 
-#ifdef CHRONO_SENSOR
-    ChSensorManager sensor_manager(system);
-    if (cli.HasValueInVector<int>("sens", node_id)) {
-        // Give the camera a fixed place to live
-        auto origin = chrono_types::make_shared<ChBody>();
-        origin->SetBodyFixed(true);
-        system->AddBody(origin);
-
-        // Happens to be a reasonable-looking height
-        ChVector<> camera_loc(cam_x, cam_y, 25);
-
-        // Rotations to get a nice angle
-        ChQuaternion<> rotation = QUNIT;
-        const bool USE_ISO_VIEW = true;
-        if (USE_ISO_VIEW) {
-            ChQuaternion<> qA = Q_from_AngAxis(35 * CH_C_DEG_TO_RAD, VECT_Y);
-            ChQuaternion<> qB = Q_from_AngAxis(135 * CH_C_DEG_TO_RAD, VECT_Z);
-            rotation = rotation >> qA >> qB;
-        } else {
-            // Top down view
-            ChQuaternion<> qA = Q_from_AngAxis(90 * CH_C_DEG_TO_RAD, VECT_Y);
-            ChQuaternion<> qB = Q_from_AngAxis(180 * CH_C_DEG_TO_RAD, VECT_Z);
-            rotation = rotation >> qA >> qB;
-        }
-
-        auto overhead_camera = chrono_types::make_shared<chrono::sensor::ChCameraSensor>(
-            origin,                                         // body camera is attached to
-            30.0f,                                          // update rate in Hz
-            chrono::ChFrame<double>(camera_loc, rotation),  // offset pose
-            cam_res_width,                                  // image width
-            cam_res_height,                                 // image height
-            (float)CH_C_PI / 3                              // FOV
-        );
-
-        overhead_camera->SetName("Overhead Cam");
-        overhead_camera->PushFilter(chrono_types::make_shared<ChFilterRGBA8Access>());
-
-        // Do we draw a window on the screen?
-        if (cli.GetAsType<bool>("sens_vis"))
-            overhead_camera->PushFilter(chrono_types::make_shared<ChFilterVisualize>(cam_res_width, cam_res_height));
-
-        // Do we save images to disc?
-        std::string file_path = std::string("SENSOR_OUTPUT/scm") + std::to_string(node_id) + std::string("/");
-        if (cli.GetAsType<bool>("sens_save"))
-            overhead_camera->PushFilter(chrono_types::make_shared<ChFilterSave>(file_path));
-
-        sensor_manager.AddSensor(overhead_camera);
-    }
-#endif
-
     // ---------------
     // Simulation loop
     // ---------------
     // Number of simulation steps between miscellaneous events
     double render_step_size = 1.0 / 100;
     int render_steps = (int)std::ceil(render_step_size / step_size);
+    bool stats_done = false;
 
     system->SetSolverMaxIterations(50);
 
@@ -353,10 +286,31 @@ int main(int argc, char* argv[]) {
     while (true) {
         double time = system->GetChTime();
 
-        // End simulation
-        if (time >= end_time         // ran out of time
-            || !syn_manager.IsOk())  // SynChronoManager has shutdown
+        if (!syn_manager.IsOk()) {
+            if (node_id == 0)
+                cout << "SynChronoManager has shutdown!" << endl;
             break;
+        }
+
+        if (time > end_time) {
+            if (!stats_done) {
+                timer.stop();
+                for (int i = 0; i < num_nodes; i++) {
+                    if (node_id == i) {
+                        cout << "stop timer at: " << end_time << endl;
+                        cout << "elapsed time:  " << timer() << endl;
+                        cout << "RTF:           " << (timer() / end_time) << endl;
+                        cout << "\nSCM stats for last step:" << endl;
+                        terrain.PrintStepStatistics(cout);
+                        cout << endl;
+                    }
+                }
+                stats_done = true;
+            }
+
+            if (vis_rank == -1)
+                break;
+        }
 
 #ifdef CHRONO_IRRLICHT
         if (app && !app->GetDevice()->run())  //  Irrlicht visualization has stopped
@@ -373,8 +327,10 @@ int main(int argc, char* argv[]) {
         // Get driver inputs
         ChDriver::Inputs driver_inputs = driver.GetInputs();
 
+        // Synchronize between nodes
+        syn_manager.Synchronize(time);
+
         // Update modules (process inputs from other modules)
-        syn_manager.Synchronize(time);  // Synchronize between nodes
         driver.Synchronize(time);
         terrain.Synchronize(time);
         hmmwv.Synchronize(time, driver_inputs, terrain);
@@ -382,9 +338,6 @@ int main(int argc, char* argv[]) {
         if (app)
             app->Synchronize("", driver_inputs);
 #endif
-
-        // Advance simulation for one timestep for all modules
-        ////system->DoStepDynamics(step_size);
 
         driver.Advance(step_size);
         terrain.Advance(step_size);
@@ -394,57 +347,20 @@ int main(int argc, char* argv[]) {
             app->Advance(step_size);
 #endif
 
-#ifdef CHRONO_SENSOR
-        sensor_manager.Update();
-#endif
-
         // Increment frame number
         step_number++;
 
         // Spin in place for real time to catch up
         ////realtime_timer.Spin(step_size);
     }
-    timer.stop();
-
-    for (int i = 0; i < num_nodes; i++) {
-        if (node_id == i) {
-            std::cout << "Stats for rank: " << node_id << std::endl;
-            std::cout << "stop timer at t = " << end_time << std::endl;
-            std::cout << "elapsed: " << timer() << std::endl;
-            std::cout << "RTF: " << (timer() / end_time) << std::endl;
-            std::cout << "\nSCM stats for last step:" << std::endl;
-            terrain.PrintStepStatistics(std::cout);
-            std::cout << std::endl;
-        }
-    }
 
     return 0;
 }
 
 void AddCommandLineOptions(ChCLI& cli) {
-    // Standard demo options
-    cli.AddOption<double>("Simulation", "s,step_size", "Step size", std::to_string(step_size));
-    cli.AddOption<double>("Simulation", "e,end_time", "End time", std::to_string(end_time));
-    cli.AddOption<double>("Simulation", "b,heartbeat", "Heartbeat", std::to_string(heartbeat));
-    cli.AddOption<int>("Simulation", "n,nthreads", "Number threads", std::to_string(nthreads));
-
-    // SCM specific options
-    cli.AddOption<double>("Demo", "d,dpu", "Divisions per unit", "20");
-    cli.AddOption<std::string>("Demo", "t,terrain_type", "Terrain Type", "SCM", "Rigid,SCM");
-
-    // Visualization is the only reason you should be shy about terrain size. The implementation can easily handle a
-    // practically infinite terrain (provided you don't need to visualize it)
-    cli.AddOption<double>("Demo", "x,sizeX", "Size in the X", "100");
-    cli.AddOption<double>("Demo", "y,sizeY", "Size in the Y", "50");
-
-    // Irrlicht options
-    cli.AddOption<std::vector<int>>("Irrlicht", "i,irr", "Ranks for irrlicht usage", "-1");
-
-    // Sensor options
-    cli.AddOption<std::vector<int>>("Sensor", "sens", "Ranks for sensor usage", "-1");
-    cli.AddOption<bool>("Sensor", "sens_save", "Toggle sensor saving ON", "false");
-    cli.AddOption<bool>("Sensor", "sens_vis", "Toggle sensor visualization ON", "false");
-
-    cli.AddOption<std::vector<int>>("Demo", "r,res", "Camera resolution", "1280,720", "width,height");
-    cli.AddOption<std::vector<double>>("Demo", "c_pos", "Camera Position", "-15,-25", "X,Y");
+    cli.AddOption<double>("Test", "s,step_size", "Step size", std::to_string(step_size));
+    cli.AddOption<double>("Test", "e,end_time", "End time", std::to_string(end_time));
+    cli.AddOption<double>("Test", "b,heartbeat", "Heartbeat", std::to_string(heartbeat));
+    cli.AddOption<int>("Test", "n,nthreads", "Number threads", std::to_string(nthreads));
+    cli.AddOption<int>("Test", "v,vis", "Run-time visualization rank", std::to_string(vis_rank));
 }

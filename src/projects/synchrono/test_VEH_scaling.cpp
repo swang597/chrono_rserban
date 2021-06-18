@@ -29,14 +29,12 @@
 
 #include "chrono_models/vehicle/hmmwv/HMMWV.h"
 
-#include "chrono_thirdparty/filesystem/path.h"
+#include "chrono_thirdparty/cxxopts/ChCLI.h"
 
 using namespace chrono;
 using namespace chrono::collision;
 using namespace chrono::vehicle;
 using namespace chrono::vehicle::hmmwv;
-
-#undef CHRONO_IRRLICHT
 
 #ifdef CHRONO_IRRLICHT
     #include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
@@ -48,12 +46,14 @@ using std::endl;
 
 // =============================================================================
 
-double terrainLength = 500;  // size in X direction
-double terrainWidth = 500;   // size in Y direction
-double delta = 0.05;         // SCM grid spacing
+double terrainLength = 50;  // size in X direction
+double terrainWidth = 50;   // size in Y direction
+double delta = 0.05;        // SCM grid spacing
+
+double target_speed = 10;
 
 // Simulation run time
-double end_time = 20;
+double end_time = 10;
 
 // Simulation step size
 double step_size = 2e-3;
@@ -64,10 +64,36 @@ int nthreads = 8;
 // Better conserve mass by displacing soil to the sides of a rut
 const bool bulldozing = false;
 
+// Run-time visualization?
+bool visualize = false;
+
+// =============================================================================
+
+// Forward declares for straight forward helper functions
+void AddCommandLineOptions(ChCLI& cli);
+
 // =============================================================================
 
 int main(int argc, char* argv[]) {
     GetLog() << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
+
+    // ------------------------------------------------
+    // CLI SETUP - Get parameters from the command line
+    // ------------------------------------------------
+
+    ChCLI cli(argv[0]);
+
+    AddCommandLineOptions(cli);
+    if (!cli.Parse(argc, argv, true))
+        return 0;
+
+    step_size = cli.GetAsType<double>("step_size");
+    end_time = cli.GetAsType<double>("end_time");
+    nthreads = cli.GetAsType<int>("nthreads");
+    visualize = cli.GetAsType<bool>("vis");
+#if !defined(CHRONO_IRRLICHT)
+    visualize = false;
+#endif
 
     // --------------------
     // Create HMMWV vehicle
@@ -75,21 +101,21 @@ int main(int argc, char* argv[]) {
     ChVector<> init_loc(0, 2, 0.5);
     ChQuaternion<> init_rot = Q_from_AngZ(0);
 
-    HMMWV_Full my_hmmwv;
-    my_hmmwv.SetContactMethod(ChContactMethod::SMC);
-    my_hmmwv.SetChassisFixed(false);
-    my_hmmwv.SetInitPosition(ChCoordsys<>(init_loc, init_rot));
-    my_hmmwv.SetPowertrainType(PowertrainModelType::SHAFTS);
-    my_hmmwv.SetDriveType(DrivelineTypeWV::AWD);
-    my_hmmwv.SetTireType(TireModelType::RIGID);
-    my_hmmwv.SetTireStepSize(step_size);
-    my_hmmwv.Initialize();
+    HMMWV_Full hmmwv;
+    hmmwv.SetContactMethod(ChContactMethod::SMC);
+    hmmwv.SetChassisFixed(false);
+    hmmwv.SetInitPosition(ChCoordsys<>(init_loc, init_rot));
+    hmmwv.SetPowertrainType(PowertrainModelType::SHAFTS);
+    hmmwv.SetDriveType(DrivelineTypeWV::AWD);
+    hmmwv.SetTireType(TireModelType::RIGID);
+    hmmwv.SetTireStepSize(step_size);
+    hmmwv.Initialize();
 
-    my_hmmwv.SetChassisVisualizationType(VisualizationType::NONE);
-    my_hmmwv.SetSuspensionVisualizationType(VisualizationType::MESH);
-    my_hmmwv.SetSteeringVisualizationType(VisualizationType::NONE);
-    my_hmmwv.SetWheelVisualizationType(VisualizationType::MESH);
-    my_hmmwv.SetTireVisualizationType(VisualizationType::MESH);
+    hmmwv.SetChassisVisualizationType(VisualizationType::NONE);
+    hmmwv.SetSuspensionVisualizationType(VisualizationType::MESH);
+    hmmwv.SetSteeringVisualizationType(VisualizationType::NONE);
+    hmmwv.SetWheelVisualizationType(VisualizationType::MESH);
+    hmmwv.SetTireVisualizationType(VisualizationType::MESH);
 
     // -----------------------------------------------------------
     // Set tire contact material, contact model, and visualization
@@ -99,14 +125,15 @@ int main(int argc, char* argv[]) {
     wheel_material->SetYoungModulus(1.0e6f);
     wheel_material->SetRestitution(0.1f);
 
-    my_hmmwv.SetTireVisualizationType(VisualizationType::MESH);
+    hmmwv.SetTireVisualizationType(VisualizationType::MESH);
 
     // --------------------
     // Create driver system
     // --------------------
 
-    auto path = StraightLinePath(init_loc, init_loc + ChVector<>(terrainLength, 0, 0), 0);
-    ChPathFollowerDriver driver(my_hmmwv.GetVehicle(), path, "Box path", 10);
+    double pathLength = 1.5 * target_speed * end_time;
+    auto path = StraightLinePath(init_loc, init_loc + ChVector<>(pathLength, 0, 0), 0);
+    ChPathFollowerDriver driver(hmmwv.GetVehicle(), path, "Box path", target_speed);
     driver.Initialize();
 
     // Reasonable defaults for the underlying PID
@@ -117,14 +144,11 @@ int main(int argc, char* argv[]) {
     // ------------------
     // Create the terrain
     // ------------------
-    ChSystem* system = my_hmmwv.GetSystem();
+    ChSystem* system = hmmwv.GetSystem();
     system->SetNumThreads(nthreads);
 
-#ifdef CHRONO_IRRLICHT
-    SCMDeformableTerrain terrain(system, true);
-#else
-    SCMDeformableTerrain terrain(system, false);
-#endif
+    SCMDeformableTerrain terrain(system, visualize);
+
     terrain.SetSoilParameters(2e6,   // Bekker Kphi
                               0,     // Bekker Kc
                               1.1,   // Bekker n exponent
@@ -144,10 +168,10 @@ int main(int argc, char* argv[]) {
     }
 
     // Optionally, enable moving patch feature (single patch around vehicle chassis)
-    terrain.AddMovingPatch(my_hmmwv.GetChassisBody(), ChVector<>(0, 0, 0), ChVector<>(5, 3, 1));
+    terrain.AddMovingPatch(hmmwv.GetChassisBody(), ChVector<>(0, 0, 0), ChVector<>(5, 3, 1));
 
     // Optionally, enable moving patch feature (multiple patches around each wheel)
-    ////for (auto& axle : my_hmmwv.GetVehicle().GetAxles()) {
+    ////for (auto& axle : hmmwv.GetVehicle().GetAxles()) {
     ////    terrain.AddMovingPatch(axle->m_wheels[0]->GetSpindle(), ChVector<>(0, 0, 0), ChVector<>(1, 0.5, 1));
     ////    terrain.AddMovingPatch(axle->m_wheels[1]->GetSpindle(), ChVector<>(0, 0, 0), ChVector<>(1, 0.5, 1));
     ////}
@@ -157,46 +181,66 @@ int main(int argc, char* argv[]) {
     terrain.Initialize(terrainLength, terrainWidth, delta);
 
 #ifdef CHRONO_IRRLICHT
-    // ---------------------------------------
     // Create the vehicle Irrlicht application
-    // ---------------------------------------
-    ChWheeledVehicleIrrApp app(&my_hmmwv.GetVehicle(), L"HMMWV Deformable Soil Demo");
-    app.SetSkyBox();
-    app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
-    app.SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 6.0, 0.5);
-    app.SetTimestep(step_size);
-    app.AssetBindAll();
-    app.AssetUpdateAll();
+    std::shared_ptr<ChWheeledVehicleIrrApp> app;
+    if (visualize) {
+        app = chrono_types::make_shared<ChWheeledVehicleIrrApp>(&hmmwv.GetVehicle(), L"Chrono SCM test");
+        app->SetSkyBox();
+        app->AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250,
+                              130);
+        app->SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 6.0, 0.5);
+        app->SetTimestep(step_size);
+        app->AssetBindAll();
+        app->AssetUpdateAll();
+    }
 #endif
 
     // ---------------
     // Simulation loop
     // ---------------
-    std::cout << "Total vehicle mass: " << my_hmmwv.GetTotalMass() << std::endl;
+    // Number of simulation steps between miscellaneous events
+    double render_step_size = 1.0 / 100;
+    int render_steps = (int)std::ceil(render_step_size / step_size);
+    bool stats_done = false;
 
     // Solver settings.
     system->SetSolverMaxIterations(50);
 
     // Initialize simulation frame counter
     int step_number = 0;
-    double time = 0;
 
     ChTimer<> timer;
     timer.start();
 
-#ifdef CHRONO_IRRLICHT
-    while (app.GetDevice()->run()) {
-#else
-    while (time < end_time) {
-#endif
-        time = system->GetChTime();
+    while (true) {
+        double time = system->GetChTime();
+
+        if (time > end_time) {
+            if (!stats_done) {
+                timer.stop();
+                cout << "stop timer at: " << end_time << endl;
+                cout << "elapsed time:  " << timer() << endl;
+                cout << "RTF:           " << (timer() / end_time) << endl;
+                cout << "\nSCM stats for last step:" << endl;
+                terrain.PrintStepStatistics(cout);
+                cout << endl;
+                stats_done = true;
+            }
+
+            if (!visualize)
+                break;            
+        }
 
 #ifdef CHRONO_IRRLICHT
+        if (app && !app->GetDevice()->run())  //  Irrlicht visualization has stopped
+            break;
+
         // Render scene
-        app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-        app.DrawAll();
-        tools::drawColorbar(0, 0.1, "Sinkage", app.GetDevice(), 30);
-        app.EndScene();
+        if (step_number % render_steps == 0 && app) {
+            app->BeginScene();
+            app->DrawAll();
+            app->EndScene();
+        }
 #endif
 
         // Driver inputs
@@ -205,29 +249,31 @@ int main(int argc, char* argv[]) {
         // Update modules
         driver.Synchronize(time);
         terrain.Synchronize(time);
-        my_hmmwv.Synchronize(time, driver_inputs, terrain);
+        hmmwv.Synchronize(time, driver_inputs, terrain);
 #ifdef CHRONO_IRRLICHT
-        app.Synchronize("", driver_inputs);
+        if (app)
+            app->Synchronize("", driver_inputs);
 #endif
 
         // Advance dynamics
         driver.Advance(step_size);
         terrain.Advance(step_size);
-        my_hmmwv.Advance(step_size);
+        hmmwv.Advance(step_size);
 #ifdef CHRONO_IRRLICHT
-        app.Advance(step_size);
-#endif  // CHRONO_IRRLICHT
+        if (app)
+            app->Advance(step_size);
+#endif
 
         // Increment frame number
         step_number++;
     }
 
-    timer.stop();
-
-    std::cout << "elapsed: " << timer() << std::endl;
-    std::cout << "RTF: " << (timer() / end_time) << std::endl;
-    std::cout << "\nSCM stats for last step:" << std::endl;
-    terrain.PrintStepStatistics(std::cout);
-
     return 0;
+}
+
+void AddCommandLineOptions(ChCLI& cli) {
+    cli.AddOption<double>("Test", "s,step_size", "Step size", std::to_string(step_size));
+    cli.AddOption<double>("Test", "e,end_time", "End time", std::to_string(end_time));
+    cli.AddOption<int>("Test", "n,nthreads", "Number threads", std::to_string(nthreads));
+    cli.AddOption<bool>("Test", "v,vis", "Enable run-time visualization", "false");
 }
