@@ -32,6 +32,7 @@
 #include "chrono/solver/ChIterativeSolverLS.h"
 #include "chrono/utils/ChFilters.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
+#include "chrono/assets/ChLineShape.h"
 
 #include "chrono_vehicle/ChDriver.h"
 #include "chrono_vehicle/ChVehicle.h"

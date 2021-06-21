@@ -21,6 +21,8 @@
 #include "chrono/utils/ChFilters.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
 #include "chrono/solver/ChSolverPSOR.h"
+#include "chrono/assets/ChCylinderShape.h"
+#include "chrono/assets/ChTexture.h"
 
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"

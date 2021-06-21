@@ -6,25 +6,26 @@
 
 message(STATUS "Projects: SCM scaling...")
 
-if(NOT ENABLE_MODULE_VEHICLE OR NOT ENABLE_MODULE_SYNCHRONO OR NOT ENABLE_MODULE_IRRLICHT)
+if(NOT ENABLE_MODULE_VEHICLE OR NOT ENABLE_MODULE_SYNCHRONO)
   return()
 endif()  
 
-include_directories(${CH_IRRLICHTINC})
-
 set(LIBRARIES
     ChronoEngine
-    ChronoEngine_irrlicht
     ChronoEngine_vehicle
-    ChronoEngine_vehicle_irrlicht
     ChronoEngine_synchrono
     )
+
+if (ENABLE_MODULE_IRRLICHT)
+    include_directories(${CH_IRRLICHTINC})
+    set(CXX_FLAGS "${CXX_FLAGS} ${CH_IRRLICHT_CXX_FLAGS}")
+    set(LIBRARIES ${LIBRARIES} ChronoEngine_irrlicht ChronoEngine_vehicle_irrlicht)
+endif()
 
 set(DEMOS
   test_SYN_scaling
   test_VEH_scaling
   )
-
 
 include_directories(${SYN_INCLUDES})
 
@@ -34,7 +35,7 @@ foreach(PROGRAM ${DEMOS})
     add_executable(${PROGRAM}  "${PROGRAM}.cpp")
     source_group(""  FILES "${PROGRAM}.cpp")
 
-    set_target_properties(${PROGRAM} PROPERTIES COMPILE_FLAGS "${SYN_CXX_FLAGS}")
+    set_target_properties(${PROGRAM} PROPERTIES COMPILE_FLAGS "${CXX_FLAGS} ${SYN_CXX_FLAGS}")
     set_property(TARGET ${PROGRAM} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROGRAM}>")
 
     target_link_libraries(${PROGRAM} ${LIBRARIES})
