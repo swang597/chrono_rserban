@@ -351,7 +351,7 @@ int main(int argc, char* argv[]) {
         ChVector<> vel_CG = vehicle.GetChassisBody()->GetPos_dt();
         ChVector<> acc_CG = vehicle.GetChassisBody()->GetPos_dtdt();
         acc_CG = vehicle.GetChassisBody()->GetCoord().TransformDirectionParentToLocal(acc_CG);
-        ChVector<> acc_driver = vehicle.GetVehicleAcceleration(driver_pos);
+        ChVector<> acc_driver = vehicle.GetVehiclePointAcceleration(driver_pos);
         double fwd_acc_CG = fwd_acc_GC_filter.Add(acc_CG.x());
         double lat_acc_CG = lat_acc_GC_filter.Add(acc_CG.y());
         double fwd_acc_driver = fwd_acc_driver_filter.Add(acc_driver.x());
