@@ -70,7 +70,7 @@ double end_time = 10;
 double step_size = 2e-3;
 
 // Number of threads
-int nthreads = 8;
+int nthreads = 4;
 
 // Better conserve mass by displacing soil to the sides of a rut
 const bool bulldozing = false;
@@ -202,7 +202,7 @@ int main(int argc, char* argv[]) {
     // Terrain specific setup
     // ----------------------
     ChSystem* system = hmmwv.GetSystem();
-    system->SetNumThreads(nthreads);
+    system->SetNumThreads(nthreads, 1, 1);
     std::cout << "Num threads: " << nthreads << std::endl;
 
     SCMDeformableTerrain terrain(system, visualize);
@@ -264,14 +264,14 @@ int main(int argc, char* argv[]) {
         app->AssetBindAll();
         app->AssetUpdateAll();
     }
+
+    double render_step_size = 1.0 / 100;
+    int render_steps = (int)std::ceil(render_step_size / step_size);
 #endif
 
     // ---------------
     // Simulation loop
     // ---------------
-    // Number of simulation steps between miscellaneous events
-    double render_step_size = 1.0 / 100;
-    int render_steps = (int)std::ceil(render_step_size / step_size);
     bool stats_done = false;
 
     system->SetSolverMaxIterations(50);
