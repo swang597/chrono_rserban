@@ -72,6 +72,9 @@ double step_size = 2e-3;
 // Number of threads
 int nthreads = 4;
 
+// Moving patches under each wheel
+bool wheel_patches = false;
+
 // Better conserve mass by displacing soil to the sides of a rut
 const bool bulldozing = false;
 
@@ -127,8 +130,14 @@ int main(int argc, char* argv[]) {
     end_time = cli.GetAsType<double>("end_time");
     heartbeat = cli.GetAsType<double>("heartbeat");
     nthreads = cli.GetAsType<int>("nthreads");
+    wheel_patches = cli.GetAsType<bool>("wheel_patches");
 
     vis_rank = cli.GetAsType<int>("vis");
+#if !defined(CHRONO_IRRLICHT)
+    if (vis_rank >= 0 && node_id == 0)
+        cout << "Chrono::Irrlicht not available. Disabling visualization." << endl;
+    vis_rank = -1;
+#endif
     bool visualize = (vis_rank == node_id);
 
     // Change SynChronoManager settings
@@ -203,7 +212,8 @@ int main(int argc, char* argv[]) {
     // ----------------------
     ChSystem* system = hmmwv.GetSystem();
     system->SetNumThreads(nthreads, 1, 1);
-    std::cout << "Num threads: " << nthreads << std::endl;
+    if (node_id == 0)
+        std::cout << "Num threads: " << nthreads << std::endl;
 
     SCMDeformableTerrain terrain(system, visualize);
     terrain.SetSoilParameters(2e6,   // Bekker Kphi
@@ -226,15 +236,16 @@ int main(int argc, char* argv[]) {
             10);  // number of concentric vertex selections subject to erosion
     }
 
-    // The physics do not change when you add a moving patch, you just make it much easier for the SCM
-    // implementation to do its job by restricting where it has to look for contacts
-    terrain.AddMovingPatch(hmmwv.GetVehicle().GetChassisBody(), ChVector<>(0, 0, 0), ChVector<>(5, 3, 1));
-
-    // Optionally, enable moving patch feature (multiple patches around each wheel)
-    ////for (auto& axle : my_hmmwv.GetVehicle().GetAxles()) {
-    ////    terrain.AddMovingPatch(axle->m_wheels[0]->GetSpindle(), ChVector<>(0, 0, 0), ChVector<>(1, 0.5, 1));
-    ////    terrain.AddMovingPatch(axle->m_wheels[1]->GetSpindle(), ChVector<>(0, 0, 0), ChVector<>(1, 0.5, 1));
-    ////}
+    if (wheel_patches) {
+        // Optionally, enable moving patch feature (multiple patches around each wheel)
+        for (auto& axle : hmmwv.GetVehicle().GetAxles()) {
+            terrain.AddMovingPatch(axle->m_wheels[0]->GetSpindle(), ChVector<>(0, 0, 0), ChVector<>(1, 0.5, 1));
+            terrain.AddMovingPatch(axle->m_wheels[1]->GetSpindle(), ChVector<>(0, 0, 0), ChVector<>(1, 0.5, 1));
+        }
+    } else {
+        // Optionally, enable moving patch feature (single patch around vehicle chassis)
+        terrain.AddMovingPatch(hmmwv.GetChassisBody(), ChVector<>(0, 0, 0), ChVector<>(5, 3, 1));
+    }
 
     terrain.SetPlotType(vehicle::SCMDeformableTerrain::PLOT_SINKAGE, 0, 0.1);
 
@@ -297,13 +308,14 @@ int main(int argc, char* argv[]) {
                 timer.stop();
                 for (int i = 0; i < num_nodes; i++) {
                     if (node_id == i) {
+                        cout << endl;
                         cout << "stop timer at: " << end_time << endl;
                         cout << "elapsed time:  " << timer() << endl;
                         cout << "RTF:           " << (timer() / end_time) << endl;
                         cout << "\nSCM stats for last step:" << endl;
                         terrain.PrintStepStatistics(cout);
-                        cout << endl;
                     }
+                    MPI_Barrier(MPI_COMM_WORLD);
                 }
                 stats_done = true;
             }
@@ -362,5 +374,6 @@ void AddCommandLineOptions(ChCLI& cli) {
     cli.AddOption<double>("Test", "e,end_time", "End time", std::to_string(end_time));
     cli.AddOption<double>("Test", "b,heartbeat", "Heartbeat", std::to_string(heartbeat));
     cli.AddOption<int>("Test", "n,nthreads", "Number threads", std::to_string(nthreads));
+    cli.AddOption<bool>("Test", "w,wheel_patches", "Use patches under each wheel", "false");
     cli.AddOption<int>("Test", "v,vis", "Run-time visualization rank", std::to_string(vis_rank));
 }

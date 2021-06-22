@@ -61,6 +61,9 @@ double step_size = 2e-3;
 // Number of threads
 int nthreads = 4;
 
+// Moving patches under each wheel
+bool wheel_patches = false;
+
 // Better conserve mass by displacing soil to the sides of a rut
 const bool bulldozing = false;
 
@@ -91,7 +94,10 @@ int main(int argc, char* argv[]) {
     end_time = cli.GetAsType<double>("end_time");
     nthreads = cli.GetAsType<int>("nthreads");
     visualize = cli.GetAsType<bool>("vis");
+    wheel_patches = cli.GetAsType<bool>("wheel_patches");
 #if !defined(CHRONO_IRRLICHT)
+    if (visualize)
+        cout << "Chrono::Irrlicht not available. Disabling visualization." << endl;
     visualize = false;
 #endif
 
@@ -168,14 +174,16 @@ int main(int argc, char* argv[]) {
                                         10);  // number of concentric vertex selections subject to erosion
     }
 
-    // Optionally, enable moving patch feature (single patch around vehicle chassis)
-    terrain.AddMovingPatch(hmmwv.GetChassisBody(), ChVector<>(0, 0, 0), ChVector<>(5, 3, 1));
-
-    // Optionally, enable moving patch feature (multiple patches around each wheel)
-    ////for (auto& axle : hmmwv.GetVehicle().GetAxles()) {
-    ////    terrain.AddMovingPatch(axle->m_wheels[0]->GetSpindle(), ChVector<>(0, 0, 0), ChVector<>(1, 0.5, 1));
-    ////    terrain.AddMovingPatch(axle->m_wheels[1]->GetSpindle(), ChVector<>(0, 0, 0), ChVector<>(1, 0.5, 1));
-    ////}
+    if (wheel_patches) {
+        // Optionally, enable moving patch feature (multiple patches around each wheel)
+        for (auto& axle : hmmwv.GetVehicle().GetAxles()) {
+            terrain.AddMovingPatch(axle->m_wheels[0]->GetSpindle(), ChVector<>(0, 0, 0), ChVector<>(1, 0.5, 1));
+            terrain.AddMovingPatch(axle->m_wheels[1]->GetSpindle(), ChVector<>(0, 0, 0), ChVector<>(1, 0.5, 1));
+        }    
+    } else {
+        // Optionally, enable moving patch feature (single patch around vehicle chassis)
+        terrain.AddMovingPatch(hmmwv.GetChassisBody(), ChVector<>(0, 0, 0), ChVector<>(5, 3, 1));
+    }
 
     terrain.SetPlotType(vehicle::SCMDeformableTerrain::PLOT_SINKAGE, 0, 0.1);
 
@@ -276,5 +284,6 @@ void AddCommandLineOptions(ChCLI& cli) {
     cli.AddOption<double>("Test", "s,step_size", "Step size", std::to_string(step_size));
     cli.AddOption<double>("Test", "e,end_time", "End time", std::to_string(end_time));
     cli.AddOption<int>("Test", "n,nthreads", "Number threads", std::to_string(nthreads));
+    cli.AddOption<bool>("Test", "w,wheel_patches", "Use patches under each wheel", "false");
     cli.AddOption<bool>("Test", "v,vis", "Enable run-time visualization", "false");
 }
