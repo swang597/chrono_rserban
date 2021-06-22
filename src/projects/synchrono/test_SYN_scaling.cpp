@@ -88,6 +88,7 @@ int vis_rank = -1;
 
 // Forward declares for straight forward helper functions
 void AddCommandLineOptions(ChCLI& cli);
+void PrintStepStatistics(std::ostream& os, ChSystem* sys);
 
 // =============================================================================
 
@@ -291,6 +292,8 @@ int main(int argc, char* argv[]) {
     int step_number = 0;
     ChRealtimeStepTimer realtime_timer;
 
+    double chrono_step = 0;
+
     ChTimer<> timer;
     timer.start();
 
@@ -311,9 +314,12 @@ int main(int argc, char* argv[]) {
                         cout << endl;
                         cout << "stop timer at: " << end_time << endl;
                         cout << "elapsed time:  " << timer() << endl;
+                        cout << "chrono solver: " << chrono_step << endl;
                         cout << "RTF:           " << (timer() / end_time) << endl;
                         cout << "\nSCM stats for last step:" << endl;
                         terrain.PrintStepStatistics(cout);
+                        cout << "\nChrono stats for last step:" << endl;
+                        PrintStepStatistics(cout, system);
                     }
                     MPI_Barrier(MPI_COMM_WORLD);
                 }
@@ -359,6 +365,8 @@ int main(int argc, char* argv[]) {
             app->Advance(step_size);
 #endif
 
+        chrono_step += system->GetTimerStep();
+
         // Increment frame number
         step_number++;
 
@@ -376,4 +384,15 @@ void AddCommandLineOptions(ChCLI& cli) {
     cli.AddOption<int>("Test", "n,nthreads", "Number threads", std::to_string(nthreads));
     cli.AddOption<bool>("Test", "w,wheel_patches", "Use patches under each wheel", "false");
     cli.AddOption<int>("Test", "v,vis", "Run-time visualization rank", std::to_string(vis_rank));
+}
+
+void PrintStepStatistics(std::ostream& os, ChSystem* sys) {
+    os << " Step (ms):    " << 1e3 * sys->GetTimerStep() << std::endl;
+    os << "   Advance:    " << 1e3 * sys->GetTimerAdvance() << std::endl;
+    os << "   LSsolve:    " << 1e3 * sys->GetTimerLSsolve() << std::endl;
+    os << "   LSsetup:    " << 1e3 * sys->GetTimerLSsetup() << std::endl;
+    os << "   Jacobian:   " << 1e3 * sys->GetTimerJacobian() << std::endl;
+    os << "   Collision:  " << 1e3 * sys->GetTimerCollision() << std::endl;
+    os << "   Setup:      " << 1e3 * sys->GetTimerSetup() << std::endl;
+    os << "   Update:     " << 1e3 * sys->GetTimerUpdate() << std::endl;
 }
