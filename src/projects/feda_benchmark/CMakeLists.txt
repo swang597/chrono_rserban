@@ -26,11 +26,16 @@ SET(DEMOS
     test_FEDA_sequential
     test_FEDA_wall2wall_turning
     test_FEDA_accel
-    test_FEDA_shock
-    test_FEDA_ride
     test_FEDA_lanechange
     test_FEDA_steady_state_cornering
 )
+
+if(HAVE_OPENCRG)
+   set(DEMOS ${DEMOS}
+       test_FEDA_shock
+       test_FEDA_ride
+   )
+endif()
 
 # ------------------------------------------------------------------------------
 # Add all executables
