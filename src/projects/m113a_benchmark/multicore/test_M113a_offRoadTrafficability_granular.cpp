@@ -27,7 +27,6 @@
 // Chrono::Multicore header files
 #include "chrono_multicore/physics/ChSystemMulticore.h"
 #include "chrono_multicore/solver/ChSystemDescriptorMulticore.h"
-#include "chrono_multicore/collision/ChNarrowphaseRUtils.h"
 
 // Chrono::Multicore OpenGL header files
 //#undef CHRONO_OPENGL
@@ -157,28 +156,28 @@ int out_fps = 60;
 
 // =============================================================================
 
-double CreateParticles(ChSystem* system, double sphereRatio) {
+double CreateParticles(ChSystem* system, double sphRatio) {
     // Create a particle generator and a mixture entirely made out of spheres
     double r = 1.01 * r_g;
     utils::PDSampler<double> sampler(2 * r);
     utils::Generator gen(system);
     std::shared_ptr<utils::MixtureIngredient> m1;
-    if (sphereRatio == 1) {
+    if (sphRatio == 1) {
         m1 = gen.AddMixtureIngredient(utils::MixtureType::SPHERE, 1.0);
         m1->setDefaultMaterial(mat_g);
         m1->setDefaultDensity(rho_g);
         m1->setDefaultSize(r_g);
     } else {
-        if (sphereRatio < 1) {
+        if (sphRatio < 1) {
             m1 = gen.AddMixtureIngredient(utils::MixtureType::ELLIPSOID, 1.0);
             m1->setDefaultMaterial(mat_g);
             m1->setDefaultDensity(rho_g);
-            m1->setDefaultSize(ChVector<>(r_g, sphereRatio * r_g, r_g));
+            m1->setDefaultSize(ChVector<>(r_g, sphRatio * r_g, r_g));
         } else {
             m1 = gen.AddMixtureIngredient(utils::MixtureType::ELLIPSOID, 1.0);
             m1->setDefaultMaterial(mat_g);
             m1->setDefaultDensity(rho_g);
-            m1->setDefaultSize(ChVector<>(r_g / sphereRatio, r_g, r_g / sphereRatio));
+            m1->setDefaultSize(ChVector<>(r_g / sphRatio, r_g, r_g / sphRatio));
         }
     }
 
@@ -247,9 +246,9 @@ void progressbar(unsigned int x, unsigned int n, unsigned int w = 50) {
     unsigned int c = (unsigned int)(ratio * w);
 
     std::cout << std::setw(3) << (int)(ratio * 100) << "% [";
-    for (unsigned int x = 0; x < c; x++)
+    for (unsigned int xx = 0; xx < c; xx++)
         std::cout << "=";
-    for (unsigned int x = c; x < w; x++)
+    for (unsigned int xx = c; xx < w; xx++)
         std::cout << " ";
     std::cout << "]\r" << std::flush;
 }

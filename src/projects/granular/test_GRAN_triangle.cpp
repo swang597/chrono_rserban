@@ -28,7 +28,6 @@
 
 #include "chrono_multicore/physics/ChSystemMulticore.h"
 #include "chrono_multicore/solver/ChSystemDescriptorMulticore.h"
-#include "chrono_multicore/collision/ChNarrowphaseRUtils.h"
 
 // Note: CHRONO_OPENGL is defined in ChConfig.h
 #ifdef CHRONO_OPENGL
@@ -88,7 +87,7 @@ int out_fps = 60;
 // =============================================================================
 void CreateGround(ChSystemMulticore* system) {
 
-    auto ground = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+    auto ground = chrono_types::make_shared<ChBody>(ChCollisionSystemType::CHRONO);
 
 #ifdef USE_SMC
     auto mat_g = chrono_types::make_shared<ChMaterialSurfaceSMC>();
@@ -128,7 +127,7 @@ void CreateGround(ChSystemMulticore* system) {
 std::shared_ptr<ChBody> CreateObject(ChSystemMulticore* system) {
     double rho_o = 2000.0;
 
-    auto obj = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+    auto obj = chrono_types::make_shared<ChBody>(ChCollisionSystemType::CHRONO);
 
 #ifdef USE_SMC
     auto mat_o = chrono_types::make_shared<ChMaterialSurfaceSMC>();
@@ -207,7 +206,7 @@ int main(int argc, char* argv[]) {
     msystem->GetSettings()->solver.tolerance = 1e-3;
 
 #ifdef USE_SMC
-    msystem->GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
+    msystem->GetSettings()->collision.narrowphase_algorithm = ChNarrowphase::Algorithm::HYBRID;
 #else
     msystem->GetSettings()->solver.solver_mode = SolverMode::SLIDING;
     msystem->GetSettings()->solver.max_iteration_normal = max_iteration_normal;

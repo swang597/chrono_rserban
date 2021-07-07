@@ -32,9 +32,9 @@
 
 #include "chrono/core/ChTimer.h"
 #include "chrono/parallel/ChOpenMP.h"
-
-#include "chrono_multicore/math/real3.h"
-#include "chrono_multicore/collision/ChCollision.h"
+#include "chrono/collision/ChCollisionSystem.h"
+#include "chrono/multicore_math/real3.h"
+#include "chrono/multicore_math/other_types.h"
 
 #if defined(CHRONO_OPENMP_ENABLED)
 #include <thrust/system/omp/execution_policy.h>
@@ -67,8 +67,8 @@ struct bbox_transformation : public thrust::unary_function<real3, bbox> {
     bbox operator()(real3 point) { return bbox(point, point); }
 };
 
-void RigidBoundingBox(const custom_vector<real3>& aabb_min,
-                      const custom_vector<real3>& aabb_max,
+void RigidBoundingBox(const std::vector<real3>& aabb_min,
+                      const std::vector<real3>& aabb_max,
                       real3& min_point,
                       real3& max_point) {
     if (aabb_min.size() == 0)
@@ -85,10 +85,10 @@ void RigidBoundingBox(const custom_vector<real3>& aabb_min,
 }
 
 // A sequential implementation of the conditional algorithm
-void RigidBoundingBox_seq(const custom_vector<real3>& aabb_min,
-                          const custom_vector<real3>& aabb_max,
-                          const custom_vector<uint>& id_rigid,
-                          const custom_vector<char>& collide_rigid,
+void RigidBoundingBox_seq(const std::vector<real3>& aabb_min,
+                          const std::vector<real3>& aabb_max,
+                          const std::vector<uint>& id_rigid,
+                          const std::vector<char>& collide_rigid,
                           real3& min_point,
                           real3& max_point) {
     uint num_rigid_shapes = static_cast<uint>(aabb_min.size());
@@ -96,8 +96,8 @@ void RigidBoundingBox_seq(const custom_vector<real3>& aabb_min,
     if (aabb_min.size() == 0)
         return;
 
-    min_point = real3(+C_LARGE_REAL, +C_LARGE_REAL, +C_LARGE_REAL);
-    max_point = real3(-C_LARGE_REAL, -C_LARGE_REAL, -C_LARGE_REAL);
+    min_point = real3(+C_REAL_MAX, +C_REAL_MAX, +C_REAL_MAX);
+    max_point = real3(-C_REAL_MAX, -C_REAL_MAX, -C_REAL_MAX);
 
     for (uint i = 0; i < num_rigid_shapes; i++) {
         uint id = id_rigid[i];
@@ -116,12 +116,11 @@ void RigidBoundingBox_seq(const custom_vector<real3>& aabb_min,
 }
 
 // A parallel implementation of the conditional algorithm
-auto inverted = thrust::make_tuple(real3(+C_LARGE_REAL, +C_LARGE_REAL, +C_LARGE_REAL),
-                                   real3(-C_LARGE_REAL, -C_LARGE_REAL, -C_LARGE_REAL),
-                                   0);
+auto inverted =
+    thrust::make_tuple(real3(+C_REAL_MAX, +C_REAL_MAX, +C_REAL_MAX), real3(-C_REAL_MAX, -C_REAL_MAX, -C_REAL_MAX), 0);
 
 struct BoxInvert {
-    BoxInvert(const custom_vector<char>* collide) : m_collide(collide) {}
+    BoxInvert(const std::vector<char>* collide) : m_collide(collide) {}
     thrust::tuple<real3, real3, uint> operator()(const thrust::tuple<real3, real3, uint>& lhs) {
         uint lhs_id = thrust::get<2>(lhs);
         if (lhs_id == UINT_MAX || (*m_collide)[lhs_id] == 0)
@@ -129,7 +128,7 @@ struct BoxInvert {
         else
             return lhs;
     }
-    const custom_vector<char>* m_collide;
+    const std::vector<char>* m_collide;
 };
 
 struct BoxReduce {
@@ -148,10 +147,10 @@ struct BoxReduce {
     }
 };
 
-void RigidBoundingBox_par(const custom_vector<real3>& aabb_min,
-                          const custom_vector<real3>& aabb_max,
-                          const custom_vector<uint>& id_rigid,
-                          const custom_vector<char>& collide_rigid,
+void RigidBoundingBox_par(const std::vector<real3>& aabb_min,
+                          const std::vector<real3>& aabb_max,
+                          const std::vector<uint>& id_rigid,
+                          const std::vector<char>& collide_rigid,
                           real3& min_point,
                           real3& max_point) {
     auto begin = thrust::make_zip_iterator(thrust::make_tuple(aabb_min.begin(), aabb_max.begin(), id_rigid.begin()));
@@ -194,8 +193,8 @@ int main(int argc, char* argv[]) {
     uint nshapes = 1000000;
 
     // Set bounding boxes for the "shapes"
-    custom_vector<real3> aabb_min(nshapes);
-    custom_vector<real3> aabb_max(nshapes);
+    std::vector<real3> aabb_min(nshapes);
+    std::vector<real3> aabb_max(nshapes);
     for (uint i = 0; i < nshapes; i++) {
         aabb_min[i].x = 10 * dist_loc(gen);
         aabb_min[i].y = 20 * dist_loc(gen);
@@ -213,8 +212,8 @@ int main(int argc, char* argv[]) {
     // Set "body" identifiers for all "shapes"
     // id_1:  all shapes active (valid body IDs)
     // id_2:  some shapes inactive (some IDs = UINT_MAX)
-    custom_vector<uint> id_1(nshapes);
-    custom_vector<uint> id_2(nshapes);
+    std::vector<uint> id_1(nshapes);
+    std::vector<uint> id_2(nshapes);
     for (uint i = 0; i < nshapes; i++) {
         id_1[i] = dist_id(gen);
         bool flip = dist_coll(gen);
@@ -224,8 +223,8 @@ int main(int argc, char* argv[]) {
     // Set collide flags for all "bodies"
     // collide_1:  all bodies collide
     // collide_2:  some bodies do not collide
-    custom_vector<char> collide_1(nbodies);
-    custom_vector<char> collide_2(nbodies);
+    std::vector<char> collide_1(nbodies);
+    std::vector<char> collide_2(nbodies);
     for (uint i = 0; i < nbodies; i++) {
         collide_1[i] = true;
         collide_2[i] = dist_coll(gen);

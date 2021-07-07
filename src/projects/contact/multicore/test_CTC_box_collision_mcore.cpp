@@ -78,11 +78,11 @@ void ReportContacts(ChSystemMulticore& system, unsigned int id) {
     printf("  ------------\n");
     printf("  Total number contacts: %d\n", system.GetNcontacts());
 
-    auto& bb = system.data_manager->host_data.bids_rigid_rigid;
-    auto& p1 = system.data_manager->host_data.cpta_rigid_rigid;
-    auto& p2 = system.data_manager->host_data.cptb_rigid_rigid;
+    auto& bb = system.data_manager->cd_data->bids_rigid_rigid;
+    auto& p1 = system.data_manager->cd_data->cpta_rigid_rigid;
+    auto& p2 = system.data_manager->cd_data->cptb_rigid_rigid;
 
-    for (uint i = 0; i < system.data_manager->num_rigid_contacts; i++) {
+    for (uint i = 0; i < system.data_manager->cd_data->num_rigid_contacts; i++) {
         // IDs of bodies in contact
         int b1 = bb[i].x;
         int b2 = bb[i].y;
@@ -101,15 +101,15 @@ void ReportContacts(ChSystemMulticore& system, unsigned int id) {
 void ReportShapeAABB(ChSystemMulticore& system) {
     printf("  ------------\n");
 
-    auto& aabb_min = system.data_manager->host_data.aabb_min;
-    auto& aabb_max = system.data_manager->host_data.aabb_max;
-    auto& id_rigid = system.data_manager->shape_data.id_rigid;
+    auto& aabb_min = system.data_manager->cd_data->aabb_min;
+    auto& aabb_max = system.data_manager->cd_data->aabb_max;
+    auto& id_rigid = system.data_manager->cd_data->shape_data.id_rigid;
     auto& offset = system.data_manager->measures.collision.global_origin;
 
     printf("  AABB offset: %6.3f %6.3f %6.3f\n", offset.x, offset.y, offset.z);
-    printf("  Number rigid shapes: %d\n", system.data_manager->num_rigid_shapes);
+    printf("  Number rigid shapes: %d\n", system.data_manager->cd_data->num_rigid_shapes);
 
-    for (uint i = 0; i < system.data_manager->num_rigid_shapes; i++) {
+    for (uint i = 0; i < system.data_manager->cd_data->num_rigid_shapes; i++) {
         auto min = aabb_min[i] + offset;
         auto max = aabb_max[i] + offset;
         printf("  shape %d (on body %d)   AABB (%6.3f %6.3f %6.3f) - (%6.3f %6.3f %6.3f)\n",  //
@@ -197,7 +197,7 @@ int main(int argc, char** argv) {
     sys->Set_G_acc(ChVector<>(0, 0, -10));
     sys->SetNumThreads(1);
     sys->GetSettings()->collision.collision_envelope = collision_envelope;
-    sys->GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
+    sys->GetSettings()->collision.narrowphase_algorithm = collision::ChNarrowphase::Algorithm::HYBRID;
     sys->GetSettings()->collision.bins_per_axis = vec3(1, 1, 1);
     sys->GetSettings()->solver.use_full_inertia_tensor = false;
     sys->GetSettings()->solver.tolerance = tolerance;

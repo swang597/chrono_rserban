@@ -164,7 +164,7 @@ class MyLuggedTire : public ChTireContactCallback {
     }
 
     virtual void onCallback(std::shared_ptr<ChBody> wheelBody) {
-        auto coll_model = chrono_types::make_shared<collision::ChCollisionModelMulticore>();
+        auto coll_model = chrono_types::make_shared<collision::ChCollisionModelCore>();
         wheelBody->SetCollisionModel(coll_model);
 
         coll_model->ClearModel();
@@ -404,9 +404,8 @@ int main(int argc, char* argv[]) {
     ////system->SetLoggingLevel(LoggingLevel::LOG_TRACE);
 
     system->GetSettings()->collision.collision_envelope = envelope;
-    system->GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
+    system->GetSettings()->collision.narrowphase_algorithm = ChNarrowphase::Algorithm::HYBRID;
     system->GetSettings()->collision.bins_per_axis = vec3(100, 30, 2);
-    system->GetSettings()->collision.fixed_bins = true;
 
     // Specify active box.
     system->GetSettings()->collision.use_aabb_active = false;
@@ -614,7 +613,7 @@ double CreateContainer(ChSystem* system,  // containing system
     material->SetCohesion((float)coh);
     material->SetCompliance(1e-9f);
 
-    auto ground = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+    auto ground = chrono_types::make_shared<ChBody>(ChCollisionSystemType::CHRONO);
     ground->SetIdentifier(-1);
     ground->SetMass(1000);
     ground->SetBodyFixed(true);

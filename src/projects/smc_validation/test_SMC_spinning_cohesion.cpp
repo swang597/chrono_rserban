@@ -42,7 +42,7 @@ void WriteData(std::ofstream& dat, ChSystemMulticoreSMC* msystem, const std::str
         const std::shared_ptr<ChBody> body = msystem->Get_bodylist().at(i);
 
         // Get the radius of the object
-        auto shape = std::static_pointer_cast<ChCollisionShapeMulticore>(body->GetCollisionModel()->GetShape(0));
+        auto shape = std::static_pointer_cast<ChCollisionShapeChrono>(body->GetCollisionModel()->GetShape(0));
         double radius = 0;
         // I'm assuming that there is only one object per collision model. Fix this later.
         switch (shape->GetType()) {

@@ -230,7 +230,7 @@ void CreateMechanismBodies(ChSystemMulticore* system) {
     // Create the ground body -- always FIRST body in system
     // ----------------------
 
-    auto ground = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+    auto ground = chrono_types::make_shared<ChBody>(ChCollisionSystemType::CHRONO);
 
     ground->SetIdentifier(Id_ground);
     ground->SetBodyFixed(true);
@@ -258,7 +258,7 @@ void CreateMechanismBodies(ChSystemMulticore* system) {
     // Initially, the shear box is fixed to ground.
     // During the shearing phase it may be released (if using an actuator)
 
-    auto box = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+    auto box = chrono_types::make_shared<ChBody>(ChCollisionSystemType::CHRONO);
 
     box->SetIdentifier(Id_box);
     box->SetPos(ChVector<>(0, 0, 2 * hdimZ + r_g));
@@ -296,7 +296,7 @@ void CreateMechanismBodies(ChSystemMulticore* system) {
     double area = 4 * hdimX * hdimY;
     double mass = normalPressure * area / gravity;
 
-    auto plate = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+    auto plate = chrono_types::make_shared<ChBody>(ChCollisionSystemType::CHRONO);
 
     plate->SetIdentifier(Id_plate);
     plate->SetMass(mass);
@@ -430,7 +430,7 @@ void CreateBall(ChSystemMulticore* system) {
     // Create the ball
     // ---------------
 
-    auto ball = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+    auto ball = chrono_types::make_shared<ChBody>(ChCollisionSystemType::CHRONO);
 
     ball->SetIdentifier(Id_ball);
     ball->SetMass(mass_ball);
@@ -534,7 +534,7 @@ int main(int argc, char* argv[]) {
     msystem->GetSettings()->solver.bilateral_clamp_speed = bilateral_clamp_speed;
 
 #ifdef USE_SMC
-    msystem->GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_R;
+    msystem->GetSettings()->collision.narrowphase_algorithm = ChNarrowphase::Algorithm::PRIMS;
     msystem->GetSettings()->solver.contact_force_model = contact_force_model;
     msystem->GetSettings()->solver.tangential_displ_mode = tangential_displ_mode;
 #else

@@ -165,7 +165,7 @@ double CreateContainer(ChSystem* system,  // containing system
     material->SetCohesion((float)coh);
     material->SetCompliance((float)compliance);
 
-    auto ground = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+    auto ground = chrono_types::make_shared<ChBody>(ChCollisionSystemType::CHRONO);
     ground->SetIdentifier(-1);
     ground->SetMass(1000);
     ground->SetBodyFixed(true);
@@ -397,9 +397,8 @@ int main(int argc, char* argv[]) {
     ////system->SetLoggingLevel(LoggingLevel::LOG_TRACE);
 
     system->GetSettings()->collision.collision_envelope = 0.1 * radius;
-    system->GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
+    system->GetSettings()->collision.narrowphase_algorithm = ChNarrowphase::Algorithm::HYBRID;
     system->GetSettings()->collision.bins_per_axis = vec3(100, 30, 2);
-    system->GetSettings()->collision.fixed_bins = true;
 
     // Specify active box.
     system->GetSettings()->collision.use_aabb_active = false;

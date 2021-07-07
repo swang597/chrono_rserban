@@ -280,9 +280,8 @@ int main(int argc, char* argv[]) {
     system->ChangeSolverType(SolverType::BB);
 
     system->GetSettings()->collision.collision_envelope = envelope;
-    system->GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
+    system->GetSettings()->collision.narrowphase_algorithm = ChNarrowphase::Algorithm::HYBRID;
     system->GetSettings()->collision.bins_per_axis = vec3(100, 30, 2);
-    system->GetSettings()->collision.fixed_bins = true;
 
     // Specify active box.
     // NOTE: this would need to be moved with the patch!
@@ -571,9 +570,9 @@ void progressbar(unsigned int x, unsigned int n, unsigned int w) {
     unsigned int c = (unsigned int)(ratio * w);
 
     std::cout << std::setw(3) << (int)(ratio * 100) << "% [";
-    for (unsigned int x = 0; x < c; x++)
+    for (unsigned int xx = 0; xx < c; xx++)
         std::cout << "=";
-    for (unsigned int x = c; x < w; x++)
+    for (unsigned int xx = c; xx < w; xx++)
         std::cout << " ";
     std::cout << "]\r" << std::flush;
 }

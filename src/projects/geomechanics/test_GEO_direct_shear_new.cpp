@@ -327,7 +327,7 @@ int main(int argc, char* argv[]) {
     settings_stream << "Bins: " << bins_x << " X " << bins_y << " X " << bins_z << endl;
 
     m_sys.GetSettings()->collision.bins_per_axis = vec3(bins_x, bins_y, bins_z);
-    m_sys.GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
+    m_sys.GetSettings()->collision.narrowphase_algorithm = ChNarrowphase::Algorithm::HYBRID;
 
     // Add containing box and compression plate
     std::shared_ptr<ChBody> plate;  // Weighted plate - top face of shear box

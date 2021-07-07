@@ -33,6 +33,7 @@
 
 #include "chrono/ChConfig.h"
 #include "chrono/core/ChStream.h"
+#include "chrono/collision/ChCollisionModelChrono.h"
 #include "chrono/utils/ChUtilsCreators.h"
 #include "chrono/utils/ChUtilsGenerators.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
@@ -220,7 +221,7 @@ void AdjustInertia(ChSystemMulticore* m_sys) {
     for (int i = 2; i < blist.size(); i++) {
         auto body = blist[i];
         double mass = body->GetMass();
-        double r = std::static_pointer_cast<ChCollisionShapeMulticore>(body->GetCollisionModel()->GetShape(0))->B[0];
+        double r = std::static_pointer_cast<ChCollisionShapeChrono>(body->GetCollisionModel()->GetShape(0))->B[0];
         body->SetInertiaXX(2 * mass * r * r / 3);
     }
 }
@@ -251,7 +252,7 @@ void CreateMechanismBodies(ChSystemMulticore* system) {
     // Create the ground body -- always FIRST body in system
     // ----------------------
 
-    auto ground = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+    auto ground = chrono_types::make_shared<ChBody>(ChCollisionSystemType::CHRONO);
 
     ground->SetIdentifier(Id_ground);
     ground->SetBodyFixed(true);
@@ -279,7 +280,7 @@ void CreateMechanismBodies(ChSystemMulticore* system) {
     // Initially, the shear box is fixed to ground.
     // During the shearing phase it may be released (if using an actuator)
 
-    auto box = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+    auto box = chrono_types::make_shared<ChBody>(ChCollisionSystemType::CHRONO);
 
     box->SetIdentifier(Id_box);
     box->SetPos(ChVector<>(0, 0, 2 * hdimZ + r_g));
@@ -317,7 +318,7 @@ void CreateMechanismBodies(ChSystemMulticore* system) {
     double area = 4 * hdimX * hdimY;
     double mass = normalPressure * area / gravity;
 
-    auto plate = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+    auto plate = chrono_types::make_shared<ChBody>(ChCollisionSystemType::CHRONO);
 
     plate->SetIdentifier(Id_plate);
     plate->SetMass(mass);
@@ -571,7 +572,7 @@ int main(int argc, char* argv[]) {
     msystem->GetSettings()->solver.bilateral_clamp_speed = bilateral_clamp_speed;
 
 #ifdef USE_SMC
-    msystem->GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_R;
+    msystem->GetSettings()->collision.narrowphase_algorithm = ChNarrowphase::Algorithm::PRIMS;
     msystem->GetSettings()->solver.contact_force_model = contact_force_model;
     msystem->GetSettings()->solver.tangential_displ_mode = tangential_displ_mode;
 #else

@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
     my_sys.GetSettings()->solver.max_iteration_bilateral = max_iteration;
     my_sys.GetSettings()->solver.tolerance = tolerance;
 
-    my_sys.GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_R;
+    my_sys.GetSettings()->collision.narrowphase_algorithm = ChNarrowphase::Algorithm::PRIMS;
     my_sys.GetSettings()->collision.bins_per_axis = vec3(10, 10, 10);
 
     my_sys.GetSettings()->solver.contact_force_model = ChSystemSMC::ContactForceModel::Hertz;

@@ -24,6 +24,7 @@
 #include "chrono/assets/ChColorAsset.h"
 #include "chrono/utils/ChUtilsCreators.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
+#include "chrono/collision/ChCollisionShapeChrono.h"
 #include "chrono_thirdparty/filesystem/path.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
@@ -76,7 +77,7 @@ std::shared_ptr<ChBody> AddSphere(int id,
     ChVector<> init_w(0, 0, 0);
 
     // Create a spherical body. Set body parameters and sphere collision model
-    auto body = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+    auto body = chrono_types::make_shared<ChBody>(ChCollisionSystemType::CHRONO);
     body->SetIdentifier(id);
     body->SetMass(mass);
     body->SetPos(pos);
@@ -116,7 +117,7 @@ std::shared_ptr<ChBody> AddWall(int id,
     ChQuaternion<> rot(1, 0, 0, 0);
 
     // Create container. Set body parameters and container collision model
-    auto body = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+    auto body = chrono_types::make_shared<ChBody>(ChCollisionSystemType::CHRONO);
     body->SetIdentifier(id);
     body->SetMass(mass);
     body->SetPos(pos);
@@ -152,11 +153,9 @@ void SetSimParameters(ChSystemMulticoreSMC* msystem, ChVector<> gravity, ChSyste
     msystem->GetSettings()->solver.tangential_displ_mode = ChSystemSMC::TangentialDisplacementModel::MultiStep;
 
     msystem->GetSettings()->collision.bins_per_axis = vec3(10, 10, 10);
-    msystem->GetSettings()->collision.narrowphase_algorithm =
-        NarrowPhaseType::NARROWPHASE_HYBRID_MPR;  /// Types: NARROWPHASE_HYBRID_MPR, NARROWPHASE_R, NARROWPHASE_MPR
+    msystem->GetSettings()->collision.narrowphase_algorithm = ChNarrowphase::Algorithm::HYBRID;
 
-    msystem->ChangeCollisionSystem(
-        CollisionSystemType::COLLSYS_MULTICORE);                  /// Types:: COLLSYS_MULTICORE, COLLSYS_BULLET_MULTICORE
+    msystem->SetCollisionSystemType(ChCollisionSystemType::CHRONO);
     msystem->SetTimestepperType(ChTimestepper::Type::LEAPFROG);  /// Types: LEAPFROG....
 }
 

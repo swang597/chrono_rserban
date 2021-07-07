@@ -78,7 +78,7 @@ std::shared_ptr<ChBody> AddBoxBody(int id,
                        (1.0 / 12.0) * mass * (pow(size.x(), 2) + pow(size.y(), 2)));
 
     // Create container. Set body parameters and container collision model
-    auto body = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+    auto body = chrono_types::make_shared<ChBody>(ChCollisionSystemType::CHRONO);
     body->SetIdentifier(id);
     body->SetMass(mass);
     body->SetInertiaXX(inertia);
@@ -112,7 +112,7 @@ std::shared_ptr<ChBody> AddSphereBody(int id,
                        (1.0 / 12.0) * mass * (pow(size.x(), 2) + pow(size.y(), 2)));
 
     // Create container. Set body parameters and container collision model
-    auto body = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+    auto body = chrono_types::make_shared<ChBody>(ChCollisionSystemType::CHRONO);
     body->SetIdentifier(id);
     body->SetMass(mass);
     body->SetInertiaXX(inertia);
@@ -233,8 +233,8 @@ int main(int argc, char* argv[]) {
         msystem.GetSettings()->solver.adhesion_force_model = ChSystemSMC::AdhesionForceModel::Constant;
         msystem.GetSettings()->solver.tangential_displ_mode = ChSystemSMC::TangentialDisplacementModel::OneStep;
         msystem.GetSettings()->collision.bins_per_axis = vec3(10, 10, 10);
-        msystem.GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
-        msystem.ChangeCollisionSystem(CollisionSystemType::COLLSYS_MULTICORE);
+        msystem.GetSettings()->collision.narrowphase_algorithm = ChNarrowphase::Algorithm::HYBRID;
+        msystem.SetCollisionSystemType(ChCollisionSystemType::CHRONO);
         msystem.SetNumThreads(2);
 
         // Add the wall to the system

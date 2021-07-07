@@ -34,7 +34,7 @@ int main(int argc, char* argv[]) {
     my_sys.GetSettings()->solver.max_iteration_bilateral = max_iteration;
     my_sys.GetSettings()->solver.tolerance = tolerance;
 
-    my_sys.GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_R;
+    my_sys.GetSettings()->collision.narrowphase_algorithm = ChNarrowphase::Algorithm::PRIMS;
     my_sys.GetSettings()->collision.bins_per_axis = vec3(10, 10, 10);
 
     my_sys.GetSettings()->solver.contact_force_model = ChSystemSMC::ContactForceModel::Hertz;
@@ -56,7 +56,7 @@ int main(int argc, char* argv[]) {
     ChVector<> inertia = (2.0 / 5.0) * mass * radius * radius * ChVector<>(1, 1, 1);
 
     // Lower ball
-    auto ball_lower = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+    auto ball_lower = chrono_types::make_shared<ChBody>(ChCollisionSystemType::CHRONO);
 
     ball_lower->SetIdentifier(1);
     ball_lower->SetMass(mass);
@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
     my_sys.AddBody(ball_lower);
 
     // Upper ball
-    auto ball_upper = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+    auto ball_upper = chrono_types::make_shared<ChBody>(ChCollisionSystemType::CHRONO);
 
     ball_upper->SetIdentifier(2);
     ball_upper->SetMass(mass);
@@ -90,7 +90,7 @@ int main(int argc, char* argv[]) {
     my_sys.AddBody(ball_upper);
 
     // Plate
-    auto plate = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+    auto plate = chrono_types::make_shared<ChBody>(ChCollisionSystemType::CHRONO);
 
     plate->SetIdentifier(0);
     plate->SetPos(ChVector<>(0, 0, 8));

@@ -32,7 +32,7 @@ void AddContainer(ChSystemMulticoreNSC* sys) {
     mat->SetFriction(0.4f);
 
     // Create the containing bin (4 x 4 x 1), tilted about Y
-    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<collision::ChCollisionModelMulticore>());
+    auto bin = chrono_types::make_shared<ChBody>(collision::ChCollisionSystemType::CHRONO);
     bin->SetMass(1);
     bin->SetPos(ChVector<>(0, 0, 0));
     bin->SetRot(Q_from_AngY(CH_C_PI / 20));
@@ -74,7 +74,7 @@ void AddFallingBalls(ChSystemMulticore* sys) {
         for (int iy = -2; iy <= 2; iy++) {
             ChVector<> pos(0.4 * ix, 0.4 * iy, 1);
 
-            auto ball = chrono_types::make_shared<ChBody>(chrono_types::make_shared<collision::ChCollisionModelMulticore>());
+            auto ball = chrono_types::make_shared<ChBody>(collision::ChCollisionSystemType::CHRONO);
 
             ball->SetMass(mass);
             ball->SetInertiaXX(inertia);
@@ -123,7 +123,7 @@ int main(int argc, char* argv[]) {
     msystem.GetSettings()->solver.alpha = 0;
     msystem.GetSettings()->solver.contact_recovery_speed = 10000;
     msystem.ChangeSolverType(SolverType::APGD);
-    msystem.GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
+    msystem.GetSettings()->collision.narrowphase_algorithm = collision::ChNarrowphase::Algorithm::HYBRID;
 
     msystem.GetSettings()->collision.collision_envelope = 0.01;
     msystem.GetSettings()->collision.bins_per_axis = vec3(10, 10, 10);

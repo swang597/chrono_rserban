@@ -25,7 +25,6 @@
 // Chrono::Multicore header files
 #include "chrono_multicore/physics/ChSystemMulticore.h"
 #include "chrono_multicore/solver/ChSystemDescriptorMulticore.h"
-#include "chrono_multicore/collision/ChNarrowphaseRUtils.h"
 
 // Chrono::Multicore OpenGL header files
 //#undef CHRONO_OPENGL
@@ -333,7 +332,7 @@ int main(int argc, char* argv[]) {
     system->GetSettings()->solver.max_iteration_bilateral = max_iteration_bilateral;
     system->GetSettings()->solver.use_full_inertia_tensor = false;
     system->GetSettings()->solver.tolerance = tolerance;
-    system->GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
+    system->GetSettings()->collision.narrowphase_algorithm = ChNarrowphase::Algorithm::HYBRID;
 
 #ifndef USE_SMC
     system->GetSettings()->solver.solver_mode = SolverMode::SLIDING;
