@@ -102,7 +102,7 @@ int main(int argc, char* argv[]) {
     ///analysis->SetResidualTolerance(1e-8);
     analysis->SetIncrementalSteps(6);
     analysis->SetVerbose(true);
-    system.DoStaticNonlinear(analysis);
+    system.DoStaticAnalysis(analysis);
     std::cout << "Body1 pos: " << body1->GetPos() << std::endl;
     std::cout << "Reaction force rev1: " << rev1->Get_react_force() << std::endl;
     std::cout << std::endl;
