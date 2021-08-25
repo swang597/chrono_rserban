@@ -562,8 +562,8 @@ int main(int argc, char* argv[]) {
     // - Create / load objects
 
     double time_min = 0;
-    double time_end;
-    int out_fps;
+    double time_end = 0;
+    int out_fps = 0;
     std::shared_ptr<ChBody> ground;
     std::shared_ptr<ChBody> shearBox;
     std::shared_ptr<ChBody> loadPlate;
@@ -729,7 +729,6 @@ int main(int argc, char* argv[]) {
     // ----------------------
 
     // Set number of simulation steps and steps between successive output
-    int num_steps = (int)std::ceil(time_end / time_step);
     int out_steps = (int)std::ceil((1.0 / time_step) / out_fps);
     int write_steps = (int)std::ceil((1.0 / time_step) / write_fps);
 
@@ -892,17 +891,17 @@ int main(int argc, char* argv[]) {
 
         // Find maximum constraint violation
         if (prismatic_box_ground) {
-            auto C = prismatic_box_ground->GetC();
+            auto C = prismatic_box_ground->GetConstraintViolation();
             for (int i = 0; i < 5; i++)
                 max_cnstr_viol[0] = std::max(max_cnstr_viol[0], std::abs(C(i)));
         }
         if (prismatic_plate_ground) {
-            auto C = prismatic_plate_ground->GetC();
+            auto C = prismatic_plate_ground->GetConstraintViolation();
             for (int i = 0; i < 5; i++)
                 max_cnstr_viol[1] = std::max(max_cnstr_viol[1], std::abs(C(i)));
         }
         if (actuator) {
-            auto C = actuator->GetC();
+            auto C = actuator->GetConstraintViolation();
             max_cnstr_viol[2] = std::max(max_cnstr_viol[2], std::abs(C(0)));
         }
 

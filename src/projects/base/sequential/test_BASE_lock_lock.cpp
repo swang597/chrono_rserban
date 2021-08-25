@@ -97,7 +97,7 @@ int main(int argc, char* argv[]) {
 
         GetLog() << "Time: " << m_System->GetChTime();
 
-        auto cnstr = m_Link->GetC();
+        auto cnstr = m_Link->GetConstraintViolation();
         for (int i = 0; i < 6; i++) {
             GetLog() << "  " << cnstr(i);
         }

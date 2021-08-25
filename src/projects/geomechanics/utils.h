@@ -19,9 +19,9 @@ static inline void progressbar(unsigned int x, unsigned int n, unsigned int w = 
   unsigned int c = (unsigned int)(ratio * w);
 
   std::cout << std::setw(3) << (int)(ratio * 100) << "% [";
-  for (unsigned int x = 0; x < c; x++)
+  for (unsigned int i = 0; i < c; i++)
     std::cout << "=";
-  for (unsigned int x = c; x < w; x++)
+  for (unsigned int i = c; i < w; i++)
     std::cout << " ";
   std::cout << "]\r" << std::flush;
 }

@@ -169,7 +169,6 @@ int main(int argc, char* argv[]) {
     const int a = 50;
     const int b = 10;
     const int c = 10;
-    int numballs = a * b * c;  // number of falling balls = (a X b X c)
 
     bool dense = false;
 
@@ -185,18 +184,16 @@ int main(int argc, char* argv[]) {
 
     float mu_ext = 0.13f;
 
-    int groundId = 0;
     int binId = -1;
     int boxId = -2;
-    int plateId = -3;
     double width = 0.12;
     double length = 0.12;
     double height = 0.06;
     double thickness = 0.01;
 
-    double shear_Area;
-    double shear_Height;
-    double shear_Disp;
+    double shear_Area = 0;
+    double shear_Height = 0;
+    double shear_Disp = 0;
 
     ChVector<> pos(0, 0, 0);
     ChQuaternion<> rot(1, 0, 0, 0);
