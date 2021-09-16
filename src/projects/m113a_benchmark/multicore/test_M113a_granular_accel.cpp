@@ -508,7 +508,7 @@ int main(int argc, char* argv[]) {
         csv << vehicle.GetTrackAssembly(LEFT)->GetSprocket()->GetAxleSpeed()
             << vehicle.GetTrackAssembly(RIGHT)->GetSprocket()->GetAxleSpeed();
         csv << powertrain->GetMotorSpeed() << powertrain->GetMotorTorque();
-        csv << powertrain->GetOutputTorque() << vehicle.GetDriveshaftSpeed();
+        csv << powertrain->GetOutputTorque() << vehicle.GetDriveline()->GetDriveshaftSpeed();
         // Chassis Position & Velocity
         csv << vehicle.GetChassis()->GetPos().x() << vehicle.GetChassis()->GetPos().y()
             << vehicle.GetChassis()->GetPos().z();

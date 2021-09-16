@@ -53,22 +53,6 @@ void WVP_SimpleDriveline::Initialize(std::shared_ptr<ChChassis> chassis,
 }
 
 // -----------------------------------------------------------------------------
-// -----------------------------------------------------------------------------
-double WVP_SimpleDriveline::GetDriveshaftSpeed() const {
-    if (!m_diffLockCenter) {
-        double speed_front =
-            0.5 * m_gearHubReduction * m_diffGearReduction * (m_front_left->GetPos_dt() + m_front_right->GetPos_dt());
-        double speed_rear =
-            0.5 * m_gearHubReduction * m_diffGearReduction * (m_rear_left->GetPos_dt() + m_rear_right->GetPos_dt());
-        double alpha = m_frontTorqueFraction;
-
-        return -1 * (alpha * speed_front + (1 - alpha) * speed_rear);
-    } else {
-        return 0;  // what should it return when locked?
-    }
-}
-
-// -----------------------------------------------------------------------------
 // This utility function implements a simple model of Torsen limited-slip
 // differential with a max_bias:1 torque bias ratio.
 // We hardcode the speed difference range over which the torque bias grows from
@@ -106,6 +90,20 @@ void differentialSplit(double torque,
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 void WVP_SimpleDriveline::Synchronize(double torque) {
+    // Enforce driveshaft speed
+    double driveshaft_speed = 0;
+    if (!m_diffLockCenter) {
+        double speed_front =
+            0.5 * m_gearHubReduction * m_diffGearReduction * (m_front_left->GetPos_dt() + m_front_right->GetPos_dt());
+        double speed_rear =
+            0.5 * m_gearHubReduction * m_diffGearReduction * (m_rear_left->GetPos_dt() + m_rear_right->GetPos_dt());
+        double alpha = m_frontTorqueFraction;
+
+        driveshaft_speed = -(alpha * speed_front + (1 - alpha) * speed_rear);
+    }
+    //// TODO What should the speed be when locked?!?
+    m_driveshaft->SetPos_dt(driveshaft_speed);
+
     // Split the input torque front/back.
     double torque_front = torque * m_frontTorqueFraction;
     double torque_rear = torque - torque_front;

@@ -137,18 +137,10 @@ int main(int argc, char* argv[]) {
     // --------------------------
 
     CollisionType chassis_collision_type = CollisionType::NONE;
-    TrackShoeType shoe_type = TrackShoeType::SINGLE_PIN;
-    DrivelineTypeTV driveline_type = DrivelineTypeTV::SIMPLE;
     BrakeType brake_type = BrakeType::SIMPLE;
     PowertrainModelType powertrain_type = PowertrainModelType::SIMPLE_CVT;
 
-    //// TODO
-    if (shoe_type == TrackShoeType::DOUBLE_PIN)
-        contact_method = ChContactMethod::NSC;
-
     Marder marder(system.get());
-    marder.SetTrackShoeType(shoe_type);
-    marder.SetDrivelineType(driveline_type);
     marder.SetBrakeType(brake_type);
     marder.SetPowertrainType(powertrain_type);
     marder.SetChassisCollisionType(chassis_collision_type);
@@ -169,8 +161,7 @@ int main(int argc, char* argv[]) {
     marder.Initialize();
 
     // Set visualization type for vehicle components.
-    VisualizationType track_vis =
-        (shoe_type == TrackShoeType::SINGLE_PIN) ? VisualizationType::MESH : VisualizationType::PRIMITIVES;
+    VisualizationType track_vis = VisualizationType::MESH;
     marder.SetChassisVisualizationType(VisualizationType::NONE);
     marder.SetSprocketVisualizationType(track_vis);
     marder.SetIdlerVisualizationType(track_vis);
