@@ -7,6 +7,7 @@ endif()
 set(PROGRAMS
     test_CTC_hulls
     test_CTC_mesh
+    test_CTC_box_mesh
     test_CTC_penalty
     test_CTC_box_collision_seq
     test_CTC_rolling_seq
