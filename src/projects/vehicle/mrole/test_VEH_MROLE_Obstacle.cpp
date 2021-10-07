@@ -335,7 +335,7 @@ int main(int argc, char* argv[]) {
             if (povray_output) {
                 char filename[100];
                 sprintf(filename, "%s/data_%03d.dat", pov_dir.c_str(), render_frame + 1);
-                utils::WriteShapesPovray(mrole.GetSystem(), filename);
+                utils::WriteVisualizationAssets(mrole.GetSystem(), filename);
             }
             if (img_output && step_number > 200) {
                 char filename[100];
