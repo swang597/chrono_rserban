@@ -47,10 +47,10 @@ std::string terrainFile = "terrain/rms1_normalized_mod.obj";
 bool useIrrlicht = true;
 
 // Collision system type (BULLET or CHRONO)
-collision::ChCollisionSystemType collsys_type = collision::ChCollisionSystemType::CHRONO;
+collision::ChCollisionSystemType collsys_type = collision::ChCollisionSystemType::BULLET;
 
 // Initial vehicle position
-ChVector<> initLoc(40, 0, 0.8);
+ChVector<> initLoc(0, 0, 0.8);
 
 // Initial vehicle orientation
 ChQuaternion<> initRot(1, 0, 0, 0);
@@ -59,7 +59,8 @@ ChQuaternion<> initRot(1, 0, 0, 0);
 double step_size = 5e-4;
 
 // Time interval between two render frames
-double render_step_size = 1.0 / 60;  // FPS = 60
+double render_step_size = 1.0 / 60;
+double output_step_size = 1.0 / 100;
 
 // Point on chassis tracked by the camera
 ChVector<> trackPoint(0.0, 0.0, 0.0);
@@ -113,7 +114,7 @@ int main(int argc, char* argv[]) {
     // Add the mesh
     patch = terrain.AddPatch(patch_mat,
                              chrono::ChCoordsys<>(chrono::ChVector<>(terrainLength / 2.0 - 0.05, 0, 0), chrono::QUNIT),
-                             vehicle::GetDataFile(terrainFile), 0.005);
+                             vehicle::GetDataFile(terrainFile), false, 0.005);
     patch->SetColor(chrono::ChColor(0.2f, 0.2f, 0.5f));
 
     terrain.Initialize();
@@ -154,26 +155,22 @@ int main(int argc, char* argv[]) {
 
     // Number of simulation steps between two 3D view render frames
     int render_steps = (int)std::ceil(render_step_size / step_size);
+    int output_steps = (int)std::ceil(output_step_size / step_size);
 
     // Initialize simulation frame counter
     int step_number = 0;
-    int render_frame = 0;
 
-    while (m113.GetVehicleCOMPos().x() < 300) {
-        if (step_number % render_steps == 0) {
-            // Render scene
-            if (useIrrlicht) {
+    utils::CSV_writer csv(" ");
+
+    while (m113.GetVehiclePos().x() < 300) {
+        if (useIrrlicht) {
+            if (!app->GetDevice()->run())
+                break;
+            if (step_number % render_steps == 0) {
                 app->BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
                 app->DrawAll();
                 app->EndScene();
             }
-            render_frame++;
-
-            fprintf(stderr, "%5.2f) position: %6.3f, %6.3f, %6.3f (%.2f m/s)\n", m113.GetChTime(),
-                                                                                 m113.GetVehiclePos().x(),
-                                                                                 m113.GetVehiclePos().y(),
-                                                                                 m113.GetVehiclePos().z(),
-                                                                                 m113.GetVehicleSpeed());
         }
 
         // Collect output data from modules
@@ -198,13 +195,22 @@ int main(int argc, char* argv[]) {
             app->Advance(step_size);
         }
 
+        if (step_number % output_steps == 0) {
+            csv << time << step_number;
+            csv << m113.GetVehiclePos().x() << m113.GetVehicleSpeed();
+            csv << "    ";
+            csv << m113.GetSystem()->GetNcontacts();
+            csv << "    ";
+            csv << m113.GetSystem()->GetTimerStep()
+                << m113.GetSystem()->GetTimerCollisionBroad()
+                << m113.GetSystem()->GetTimerCollisionNarrow() << m113.GetSystem()->GetTimerCollision() << std::endl;
+        }
+
         // Increment frame number
         step_number++;
-
-        if (useIrrlicht && !app->GetDevice()->run()) {
-            break;
-        }
     }
+
+    csv.write_to_file("timing.out");
 
     return 0;
 }
