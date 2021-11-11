@@ -6,6 +6,10 @@
 
 message(STATUS "Projects: SMC validation...")
 
+if(NOT ENABLE_MODULE_VEHICLE)
+  return()
+endif()
+
 if(NOT ENABLE_MODULE_IRRLICHT OR NOT ENABLE_MODULE_MULTICORE)
   return()
 endif()  
