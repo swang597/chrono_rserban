@@ -62,7 +62,7 @@ MixerTestNSC<N>::MixerTestNSC() : m_system(new ChSystemMulticoreNSC()), m_step(1
     m_system->GetSettings()->solver.alpha = 0;
     m_system->GetSettings()->solver.contact_recovery_speed = 10000;
     m_system->ChangeSolverType(SolverType::APGD);
-    m_system->GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
+    m_system->GetSettings()->collision.narrowphase_algorithm = ChNarrowphase::Algorithm::HYBRID;
     m_system->GetSettings()->collision.collision_envelope = 0.01;
     m_system->GetSettings()->collision.bins_per_axis = vec3(10, 10, 10);
 
@@ -78,7 +78,7 @@ MixerTestNSC<N>::MixerTestNSC() : m_system(new ChSystemMulticoreNSC()), m_step(1
     auto bin = utils::CreateBoxContainer(m_system, -100, mat, ChVector<>(1, 1, 0.1 + 0.4 * num_layers * radius), 0.1);
 
     // The rotating mixer body (1.6 x 0.2 x 0.4)
-    auto mixer = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+    auto mixer = std::shared_ptr<ChBody>(m_system->NewBody());
     mixer->SetIdentifier(-200);
     mixer->SetMass(10.0);
     mixer->SetInertiaXX(ChVector<>(50, 50, 50));
@@ -104,7 +104,7 @@ MixerTestNSC<N>::MixerTestNSC() : m_system(new ChSystemMulticoreNSC()), m_step(1
         double height = 1 + 2.01 * radius * il;
         for (int ix = -2; ix < 3; ix++) {
             for (int iy = -2; iy < 3; iy++) {
-                auto ball = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+                auto ball = std::shared_ptr<ChBody>(m_system->NewBody());
                 ball->SetIdentifier(num_balls);
                 ball->SetMass(mass);
                 ball->SetInertiaXX(inertia);
