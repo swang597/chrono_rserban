@@ -71,12 +71,12 @@ double damping_coef = 0.5 * critical_damping;
 
 // Functor class implementing the force for a ChLinkTSDA.
 class MySpringForce : public ChLinkTSDA::ForceFunctor {
-    virtual double operator()(double time,         // current time
-                              double length0,  // undeformed length
-                              double length,       // current length
-                              double vel,          // current velocity (positive when extending)
-                              ChLinkTSDA* link     // back-pointer to associated link
-                              ) override {
+    virtual double evaluate(double time,      // current time
+                            double length0,   // undeformed length
+                            double length,    // current length
+                            double vel,       // current velocity (positive when extending)
+                            ChLinkTSDA* link  // back-pointer to associated link
+                            ) override {
         // Access current states.
         ////ChVectorDynamic<> states = link->GetStates();
         ////std::cout << "t = " << time << "  " << states(0) << " " << states(1) << std::endl;

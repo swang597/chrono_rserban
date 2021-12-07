@@ -29,12 +29,12 @@ using namespace chrono::irrlicht;
 // -----------------------------------------------------------------------------
 
 // Callback class implementing the torque for a ChLinkRotSpringCB link.
-class RotationalDamper : public ChLinkRotSpringCB::TorqueFunctor {
-    virtual double operator()(double time,             // current time
-                              double angle,            // relative angle of rotation
-                              double vel,              // relative angular speed
-                              ChLinkRotSpringCB* link  // back-pointer to associated link
-                              ) override {
+class RotationalDamper : public ChLinkRSDA::TorqueFunctor {
+    virtual double evaluate(double time,      // current time
+                            double angle,     // relative angle of rotation
+                            double vel,       // relative angular speed
+                            ChLinkRSDA* link  // back-pointer to associated link
+                            ) override {
         double torque = -300 * vel;
         return torque;
     }
@@ -108,7 +108,7 @@ int main(int argc, char* argv[]) {
 
     // Add a rotational spring-damper
     auto torque = chrono_types::make_shared<RotationalDamper>();
-    auto rsda = chrono_types::make_shared<ChLinkRotSpringCB>();
+    auto rsda = chrono_types::make_shared<ChLinkRSDA>();
     rsda->Initialize(ground, body, ChCoordsys<>());
     rsda->RegisterTorqueFunctor(torque);
     system.AddLink(rsda);

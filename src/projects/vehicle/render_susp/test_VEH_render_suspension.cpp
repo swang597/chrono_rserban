@@ -38,6 +38,7 @@
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/utils/ChUtilsJSON.h"
 #include "chrono_vehicle/utils/ChVehicleIrrApp.h"
+#include "chrono_vehicle/wheeled_vehicle/vehicle/WheeledVehicle.h"
 #include "chrono_vehicle/wheeled_vehicle/test_rig/ChSuspensionTestRig.h"
 #include "chrono_vehicle/wheeled_vehicle/test_rig/ChDataDriverSTR.h"
 
@@ -78,38 +79,41 @@ std::string out_dir = "../RENDER_SUSPENSION";
 int main(int argc, char* argv[]) {
     GetLog() << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
 
-    // Create tires.
-    std::string tire_file("hmmwv/tire/HMMWV_TMeasyTire.json");
-    auto tire_L = ReadTireJSON(vehicle::GetDataFile(tire_file));
-    auto tire_R = ReadTireJSON(vehicle::GetDataFile(tire_file));
+    // Create the vehicle and the test rig
+    auto vehicle = chrono_types::make_shared<WheeledVehicle>(vehicle::GetDataFile(vehicle_file), ChContactMethod::SMC);
+    ChSuspensionTestRigPushrod rig(vehicle, {axle_index}, 0.1);
 
-    // Create the suspension test rig.
-    auto rig = std::unique_ptr<ChSuspensionTestRigPushrod>(
-        new ChSuspensionTestRigPushrod(vehicle::GetDataFile(vehicle_file), axle_index, 0.1, tire_L, tire_R));
+    // Create the tires
+    std::string tire_file("hmmwv/tire/HMMWV_TMeasyTire.json");
+
+    for (auto& axle : vehicle->GetAxles()) {
+        for (auto& wheel : axle->GetWheels()) {
+            auto tire = ReadTireJSON(vehicle::GetDataFile(tire_file));
+            vehicle->InitializeTire(tire, wheel, VisualizationType::NONE);
+        }
+    }
 
     if (ride_height > 0)
-        rig->SetInitialRideHeight(ride_height);
+        rig.SetInitialRideHeight(ride_height);
 
-    rig->SetSuspensionVisualizationType(VisualizationType::PRIMITIVES);
-    rig->SetWheelVisualizationType(VisualizationType::NONE);
-    if (rig->HasSteering()) {
-        rig->SetSteeringVisualizationType(VisualizationType::PRIMITIVES);
-    }
-    rig->SetTireVisualizationType(VisualizationType::NONE);
+    rig.SetSuspensionVisualizationType(VisualizationType::PRIMITIVES);
+    rig.SetWheelVisualizationType(VisualizationType::NONE);
+    rig.SetSteeringVisualizationType(VisualizationType::PRIMITIVES);
+    rig.SetTireVisualizationType(VisualizationType::NONE);
 
     // Create the vehicle Irrlicht application.
-    ChVehicleIrrApp app(rig.get(), L"Suspension Test Rig");
+    ChVehicleIrrApp app(vehicle.get(), L"Suspension Test Rig");
     app.SetSkyBox();
     app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
-    app.SetChaseCamera(0.5 * (rig->GetSpindlePos(LEFT) + rig->GetSpindlePos(RIGHT)), 2.0, 0.5);
+    app.SetChaseCamera(0.5 * (rig.GetSpindlePos(0, LEFT) + rig.GetSpindlePos(0, RIGHT)), 2.0, 0.5);
 
     // Create and attach the driver system.
     std::string driver_file("hmmwv/suspensionTest/ST_inputs.dat");
     auto driver = chrono_types::make_shared<ChDataDriverSTR>(vehicle::GetDataFile(driver_file));
-    rig->SetDriver(driver);
+    rig.SetDriver(driver);
 
     // Initialize suspension test rig.
-    rig->Initialize();
+    rig.Initialize();
 
     app.AssetBindAll();
     app.AssetUpdateAll();
@@ -119,7 +123,9 @@ int main(int argc, char* argv[]) {
         std::cout << "Error creating directory " << out_dir << std::endl;
         return 1;
     }
-    std::string susp_name = rig->GetSuspension()->GetTemplateName();
+    auto suspension = vehicle->GetAxle(axle_index);
+    auto susp_name = suspension->m_suspension->GetTemplateName();
+    auto susp_pos = rig.GetSpindlePos(0, LEFT) + rig.GetSpindlePos(0, RIGHT);
 
     // Simulation loop
     double step_size = 1e-3;
@@ -130,28 +136,28 @@ int main(int argc, char* argv[]) {
         app.EndScene();
 
         // Advance simulation of the rig
-        rig->Advance(step_size);
+        rig.Advance(step_size);
 
         // Update visualization app
-        app.Synchronize(tire_L->GetTemplateName(), {rig->GetSteeringInput(), 0, 0});
+        app.Synchronize("", {rig.GetSteeringInput(), 0, 0});
         app.Advance(step_size);
 
         // Save POV-Ray file once the rig is at specified ride height
         if (ride_height < 0 || driver->Started()) {
             // Hack: create a dummy body (to render a global reference frame)
-            auto dummy = std::shared_ptr<ChBody>(rig->GetSystem()->NewBody());
-            dummy->SetPos(rig->GetSuspension()->GetLocation());
+            auto dummy = std::shared_ptr<ChBody>(vehicle->GetSystem()->NewBody());
+            dummy->SetPos(susp_pos);
             dummy->SetIdentifier(-1);
-            rig->GetSystem()->AddBody(dummy);
+            vehicle->GetSystem()->AddBody(dummy);
 
             std::string filename = out_dir + "/" + susp_name + ".dat";
-            utils::WriteVisualizationAssets(rig->GetSystem(), filename);
+            utils::WriteVisualizationAssets(vehicle->GetSystem(), filename);
             break;
         }
     }
 
     // Left spindle location
-    auto locL = rig->GetSuspension()->GetSpindlePos(LEFT);
+    auto locL = rig.GetSpindlePos(0, LEFT);
     std::cout << "\n\nSuspension template:  " << susp_name << "\n";
     std::cout << "Suspension left spindle location:  " << locL << std::endl;
 

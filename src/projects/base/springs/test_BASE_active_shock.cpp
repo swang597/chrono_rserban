@@ -89,12 +89,12 @@ bool verbose_solver = true;
 
 class ShockForce : public ChLinkTSDA::ForceFunctor {
   public:
-    virtual double operator()(double time,         // current time
-                              double rest_length,  // undeformed length
-                              double length,       // current length
-                              double vel,          // current velocity (positive when extending)
-                              ChLinkTSDA* link     // back-pointer to associated link
-                              ) override {
+    virtual double evaluate(double time,         // current time
+                            double rest_length,  // undeformed length
+                            double length,       // current length
+                            double vel,          // current velocity (positive when extending)
+                            ChLinkTSDA* link     // back-pointer to associated link
+                            ) override {
         // Damper force is the value oif the 2nd state.
         // Flip the sign to make the force acting against velocity
         return -link->GetStates()(1);

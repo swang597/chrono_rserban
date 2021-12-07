@@ -41,12 +41,12 @@ const double M113a_Suspension::m_torsion_upperstop = 47.59 / 180.0 * CH_C_PI;
 // -----------------------------------------------------------------------------
 // M113 spring functor class - implements a (non)linear rotational spring
 // -----------------------------------------------------------------------------
-class M113a_SpringTorque : public ChLinkRotSpringCB::TorqueFunctor {
+class M113a_SpringTorque : public ChLinkRSDA::TorqueFunctor {
 public:
     M113a_SpringTorque(double k, double c, double t, double kstop, double lowerstop, double upperstop) 
         : m_k(k), m_c(c), m_t(t), m_kstop(kstop), m_lowerstop(lowerstop), m_upperstop(upperstop) {}
 
-    virtual double operator()(double time, double angle, double vel, ChLinkRotSpringCB* link) override {
+    virtual double evaluate(double time, double angle, double vel, ChLinkRSDA* link) override {
         double force = m_t - m_k * angle - m_c * vel;
 
         //Apply bump stop spring rates if needed
@@ -76,11 +76,7 @@ class M113a_ShockForce : public ChLinkTSDA::ForceFunctor {
   public:
     M113a_ShockForce(){}
 
-    virtual double operator()(double time,
-                              double rest_length,
-                              double length,
-                              double vel,
-                              ChLinkTSDA* link) override {
+    virtual double evaluate(double time, double rest_length, double length, double vel, ChLinkTSDA* link) override {
         // Clip the velocity to within +/- 0.254 m/s [10 in/s]
         ChClampValue(vel, -0.254, 0.254);
 

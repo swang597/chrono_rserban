@@ -86,49 +86,48 @@ double out_step_size = 1.0 / 100;
 // =============================================================================
 int main(int argc, char* argv[]) {
     // Create and initialize a WVP vehicle.
-    WVP_Vehicle vehicle(true);
-    vehicle.Initialize(ChCoordsys<>(ChVector<>(0, 0, 0), ChQuaternion<>(1, 0, 0, 0)));
-
-    // Use rigid wheels to actuate suspension.
-    ////auto tire_L = chrono_types::make_shared<WVP_RigidTire>("Left", true);
-    ////auto tire_R = chrono_types::make_shared<WVP_RigidTire>("Right", true);
-    auto tire_L = chrono_types::make_shared<WVP_TMeasyTire>("Left");
-    auto tire_R = chrono_types::make_shared<WVP_TMeasyTire>("Right");
+    auto vehicle = chrono_types::make_shared<WVP_Vehicle>(true);
 
     // Create and intialize the suspension test rig.
     int steering_index = (axle_index == 0) ? 0 : -1;
-    ChSuspensionTestRigPlatform rig(vehicle, axle_index, steering_index, post_limit, tire_L, tire_R);
+    ChSuspensionTestRigPlatform rig(vehicle, {axle_index}, post_limit);
+    if (axle_index == 0)
+        rig.IncludeSteeringMechanism(steering_index);
+
+    // Create the tires
+    for (auto& axle : vehicle->GetAxles()) {
+        for (auto& wheel : axle->GetWheels()) {
+            auto tire = chrono_types::make_shared<WVP_TMeasyTire>("");
+            vehicle->InitializeTire(tire, wheel, VisualizationType::NONE);
+        }
+    }
 
     rig.SetInitialRideHeight(0.5);
 
     rig.SetSuspensionVisualizationType(VisualizationType::PRIMITIVES);
     rig.SetWheelVisualizationType(VisualizationType::PRIMITIVES);
-    if (rig.HasSteering()) {
-        rig.SetSteeringVisualizationType(VisualizationType::PRIMITIVES);
-    }
+    rig.SetSteeringVisualizationType(VisualizationType::PRIMITIVES);
     rig.SetTireVisualizationType(VisualizationType::PRIMITIVES);
 
     // Create the vehicle Irrlicht application.
-    ChVehicleIrrApp app(&rig, L"WVP Suspension Test Rig");
+    ChVehicleIrrApp app(vehicle.get(), L"WVP Suspension Test Rig");
     app.SetSkyBox();
     app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
-    app.SetChaseCamera(0.5 * (rig.GetSpindlePos(LEFT) + rig.GetSpindlePos(RIGHT)), 2.0, 1.0);
+    app.SetChaseCamera(0.5 * (rig.GetSpindlePos(0, LEFT) + rig.GetSpindlePos(0, RIGHT)), 2.0, 1.0);
     app.SetTimestep(step_size);
 
     // Create and initialize the driver system.
-    std::unique_ptr<ChDriverSTR> driver;
     if (use_data_driver) {
         // Driver with inputs from file
-        auto data_driver = new ChDataDriverSTR(vehicle::GetDataFile(driver_file));
-        driver = std::unique_ptr<ChDriverSTR>(data_driver);
+        auto driver = chrono_types::make_shared<ChDataDriverSTR>(vehicle::GetDataFile(driver_file));
+        rig.SetDriver(driver);
     } else {
         // Interactive driver
-        auto irr_driver = new ChIrrGuiDriverSTR(app);
-        double steering_time = 1.0;      // time to go from 0 to max
-        double displacement_time = 2.0;  // time to go from 0 to max applied post motion
-        driver = std::unique_ptr<ChDriverSTR>(irr_driver);
+        auto driver = chrono_types::make_shared<ChIrrGuiDriverSTR>(app);
+        driver->SetSteeringDelta(1.0 / 50);
+        driver->SetDisplacementDelta(1.0 / 250);
+        rig.SetDriver(driver);
     }
-    rig.SetDriver(std::move(driver));
 
     // Initialize suspension test rig.
     rig.Initialize();
@@ -163,12 +162,7 @@ int main(int argc, char* argv[]) {
         // Write output data
         if (collect_output && step_number % out_steps == 0) {
             // Current tire forces
-            auto tire_force_L = rig.ReportTireForce(VehicleSide::LEFT);
-            auto tire_force_R = rig.ReportTireForce(VehicleSide::RIGHT);
-            out_csv << rig.GetLeftInput() << rig.GetRightInput() << rig.GetSteeringInput();
-            out_csv << rig.GetActuatorDisp(VehicleSide::LEFT) << rig.GetActuatorDisp(VehicleSide::RIGHT);
-            out_csv << tire_force_L.point << tire_force_L.force << tire_force_L.moment;
-            out_csv << tire_force_R.point << tire_force_R.force << tire_force_R.moment;
+            out_csv << rig.GetActuatorDisp(0, LEFT) << rig.GetActuatorDisp(0, RIGHT);
             out_csv << std::endl;
         }
 
@@ -176,7 +170,7 @@ int main(int argc, char* argv[]) {
         rig.Advance(step_size);
 
         // Update visualization app
-        app.Synchronize(tire_L->GetTemplateName(), {rig.GetSteeringInput(), 0, 0});
+        app.Synchronize(rig.GetDriverMessage(), {rig.GetSteeringInput(), 0, 0});
         app.Advance(step_size);
 
         // Increment frame number
