@@ -56,11 +56,11 @@ const ChVector<> GD250_ToeBarGAxleSimple::m_tierodInertia(1.0, 0.1, 1.0);
 const ChVector<> GD250_ToeBarGAxleSimple::m_draglinkInertia(0.1, 1.0, 0.1);
 
 const double GD250_ToeBarGAxleSimple::m_springDesignLength = 0.3;
-const double GD250_ToeBarGAxleSimple::m_springCoefficient = 153492.0876;
-const double GD250_ToeBarGAxleSimple::m_springRestLength = m_springDesignLength + 0.0621225507207084;
+const double GD250_ToeBarGAxleSimple::m_springCoefficient = 76746.04382;
+const double GD250_ToeBarGAxleSimple::m_springRestLength = m_springDesignLength + 0.03;
 const double GD250_ToeBarGAxleSimple::m_springMinLength = m_springDesignLength - 0.08;
 const double GD250_ToeBarGAxleSimple::m_springMaxLength = m_springDesignLength + 0.08;
-const double GD250_ToeBarGAxleSimple::m_damperCoefficient = 27143.36053;
+const double GD250_ToeBarGAxleSimple::m_damperCoefficient = 13571.68026;
 const double GD250_ToeBarGAxleSimple::m_damperDegressivityCompression = 3.0;
 const double GD250_ToeBarGAxleSimple::m_damperDegressivityExpansion = 1.0;
 const double GD250_ToeBarGAxleSimple::m_axleShaftInertia = 0.4;

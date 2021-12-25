@@ -47,11 +47,11 @@ const ChVector<> GD250_GAxleSimple::m_spindleInertia(0.04117, 0.07352, 0.04117);
 const ChVector<> GD250_GAxleSimple::m_panhardRodInertia(1.0, 0.04, 1.0);
 
 const double GD250_GAxleSimple::m_springDesignLength = 0.3;
-const double GD250_GAxleSimple::m_springCoefficient = 204656.1169;
-const double GD250_GAxleSimple::m_springRestLength = m_springDesignLength + 0.0621225507207084;
+const double GD250_GAxleSimple::m_springCoefficient = 102328.0584;
+const double GD250_GAxleSimple::m_springRestLength = m_springDesignLength + 0.03;
 const double GD250_GAxleSimple::m_springMinLength = m_springDesignLength - 0.08;
 const double GD250_GAxleSimple::m_springMaxLength = m_springDesignLength + 0.08;
-const double GD250_GAxleSimple::m_damperCoefficient = 36191.14737;
+const double GD250_GAxleSimple::m_damperCoefficient = 18095.57368;
 const double GD250_GAxleSimple::m_damperDegressivityCompression = 3.0;
 const double GD250_GAxleSimple::m_damperDegressivityExpansion = 1.0;
 const double GD250_GAxleSimple::m_axleShaftInertia = 0.4;
