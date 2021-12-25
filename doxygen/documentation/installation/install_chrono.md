@@ -5,11 +5,6 @@ Looking for Linux installation instructions?<br>
 A detailed install guide may be found [here](@ref tutorial_install_chrono_linux).
 </div>
 
-A summary of the process required to **build** Chrono is provided in the picture below. 
-
-<img src="http://www.projectchrono.org/assets/manual/Pic_build_ce.png" class="img-responsive">
-<br>
-
 ## 1) Check/Install a C++ compiler
 
 Recommended compilers:
@@ -21,8 +16,7 @@ While it is likely possible to build Chrono with other toolchains, this might re
 
 <div class="ce-warning"> 
 The Microsoft Visual C++ compiler is included in the Visual Studio package, but it is **not** installed by default.<br>
-So, make sure to install the C++ toolchain during the setup!<br>
-Moreover, make sure to also select, under the *Single Components* tab, the `Windows Universal CRT SDK` and the `Windows 8.1 SDK`.
+Make sure to install the C++ toolchain during the setup!<br>
 </div> 
 
 <div class="ce-danger">
@@ -30,7 +24,6 @@ Visual Studio 2017 has problems with the heavy use of inlining in recent version
 For the latest version of Chrono (specifically due to the reimplemented ANCF elements), this can result in very long compilation times or even hang ups.
 We recommend using VS 2019 or newer.
 </div>
-
 
 ## 2) Download and install the Eigen library
 
@@ -42,20 +35,39 @@ Most Chrono modules will build and work with Eigen 3.3.0 or newer.<br>
 However, if you are building the Chrono::FSI or Chrono::Granular modules, note that CUDA 9.1 removed a header file (math_functions.hpp) which was referenced in older versions of Eigen; this issue was addressed as of Eigen 3.3.6. 
 </div>
 
-## 3) Install [CMake](http://www.cmake.org/cmake/resources/software.html)
+## 3) Download the Irrlicht library
 
-The free CMake utility is used to manage the building process. It creates a project/solution for your specific compiler/IDE that will allow the user to compile the Chrono source code with minimal effort.<br>
+While Chrono::Irrlicht is an optional module and not required to begin modeling with Chrono, it is suggested you enable this module to get access to many Chrono demos which rely on Irrlicht for their run-time visualization.
+
+- **download** [Irrlicht Engine](http://irrlicht.sourceforge.net/downloads.html); the newest tested version is [1.8.4](http://downloads.sourceforge.net/irrlicht/irrlicht-1.8.4.zip)
+- **unzip** it in a directory of your choice. For example, here we suppose that you unzipped it in <tt>C:/workspace/libraries/irrlicht-1.8.4</tt>.
+
+<div class="ce-info">
+Some Windows users may experience issues (black rendering window) when using shadow lights, as done in a few Chrono demos.<br>
+In such situations, we recommend either disabling use of shadows, or else installing the appropriate legacy DirectX SDK from [Microsoft](https://www.microsoft.com/en-gb/download/details.aspx?id=35).<br>
+Irrlicht 1.8.4 requires the June 2010 DirectX SDK.
+</div>
+
+<div class="ce-info">
+Release v.1.8.4 should work perfectly. MacOS users should use this, since previous releases showed some issues. The best way to install irrlicht on the Mac is: <tt>brew install irrlicht</tt>. Cmake can find irrlicht automatically then without any extra settings. Actually MacOS 11 (Big Sur) has been released by Apple. Chrono_opengl demos run well, but chrono_irrlicht demos have a scaling problem, but they work yet. We hope, this can be resolved soon.<br>
+If you encounter any problem with version 1.8.4 please try to roll back to [release 1.8.2](http://downloads.sourceforge.net/irrlicht/irrlicht-1.8.2.zip).<br>
+Release v.1.8.3 does not contain the precompiled 64bit DLL.<br>
+Release v.1.8.0 has issues with soft shadows.<br>
+</div>
+
+## 4) Install CMake
+
+[CMake](https://cmake.org/) is used to manage the building process. It creates a project/solution for your specific compiler/IDE that will allow the user to compile the Chrono source code with minimal effort.<br>
 For Visual Studio users: make sure to put the CMake executable in your *Path* environmental variable (the installer can do this for you). <br>
 For Xcode users: the CMake.app bundle also contains command line tools, you must set appropriate links to use it from the terminal. It is
 better to install a pure command line version via homebrew (https://brew.sh). After installing the home brew package manager type: <tt>brew install cmake</tt> in the terminal.
 
-
-## 4) Install a GIT client
+## 5) Install a GIT client
 
 On Windows and MacOS, you might want to **download and install** [SourceTree](http://www.sourcetreeapp.com/). <br>
 On MacOS you will find an Application Bundle under /Applications<br>
 
-## 5) Download the project by cloning the Git repository
+## 6) Download the project by cloning the Git repository
 
 Download the Chrono SDK by performing a **clone** of the Git repository in a directory on your machine. 
 Assuming you are using [SourceTree](http://www.sourcetreeapp.com/):
@@ -77,27 +89,6 @@ Assuming you are using [SourceTree](http://www.sourcetreeapp.com/):
 <div class="ce-info">
 The `master` branch contains the various Chrono releases and contains the most stable code. If you are interested in using the latest features as they are developed and before the next official release, you can checkout the `develop` branch at any time after the initial cloning. <br>
 </div>
-
-## 6) Download the Irrlicht library
-
-While Chrono::Irrlicht is an optional module and not required to begin modeling with Chrono, it is suggested you enable this module to get access to many Chrono demos which rely on Irrlicht for their run-time visualization.
-
-- **download** [Irrlicht Engine](http://irrlicht.sourceforge.net/downloads.html); the newest tested version is [1.8.4](http://downloads.sourceforge.net/irrlicht/irrlicht-1.8.4.zip)
-- **unzip** it in a directory of your choice. For example, here we suppose that you unzipped it in <tt>C:/workspace/libraries/irrlicht-1.8.4</tt>.
-
-<div class="ce-info">
-Some Windows users may experience issues (black rendering window) when using shadow lights, as done in a few Chrono demos.<br>
-In such situations, we recommend either disabling use of shadows, or else installing the appropriate legacy DirectX SDK from [Microsoft](https://www.microsoft.com/en-gb/download/details.aspx?id=35).<br>
-Irrlicht 1.8.4 requires the June 2010 DirectX SDK.
-</div>
-
-<div class="ce-info">
-Release v.1.8.4 should work perfectly. MacOS users should use this, since previous releases showed some issues. The best way to install irrlicht on the Mac is: <tt>brew install irrlicht</tt>. Cmake can find irrlicht automatically then without any extra settings. Actually MacOS 11 (Big Sur) has been released by Apple. Chrono_opengl demos run well, but chrono_irrlicht demos have a scaling problem, but they work yet. We hope, this can be resolved soon.<br>
-If you encounter any problem with version 1.8.4 please try to roll back to [release 1.8.2](http://downloads.sourceforge.net/irrlicht/irrlicht-1.8.2.zip).<br>
-Release v.1.8.3 does not contain the precompiled 64bit DLL.<br>
-Release v.1.8.0 has issues with soft shadows.<br>
-</div>
-
 
 ## 7) Run CMake
 
