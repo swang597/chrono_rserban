@@ -16,6 +16,39 @@ set(CVM_COMMON_FILES
 )
 source_group("" FILES ${CVM_COMMON_FILES})
 
+set(CVM_GWAGON_FILES
+    g-wagon/gd250.cpp
+    g-wagon/gd250.h
+    g-wagon/gd250_Vehicle.cpp
+    g-wagon/gd250_Vehicle.h
+    g-wagon/gd250_BrakeShafts.cpp
+    g-wagon/gd250_BrakeShafts.h
+    g-wagon/gd250_BrakeSimple.cpp
+    g-wagon/gd250_BrakeSimple.h
+    g-wagon/gd250_Chassis.cpp
+    g-wagon/gd250_Chassis.h
+    g-wagon/gd250_Driveline4WD.cpp
+    g-wagon/gd250_Driveline4WD.h
+    g-wagon/gd250_GAxleSimple.cpp
+    g-wagon/gd250_GAxleSimple.h
+    g-wagon/gd250_RigidTire.cpp
+    g-wagon/gd250_RigidTire.h
+    g-wagon/gd250_RotaryArm.cpp
+    g-wagon/gd250_RotaryArm.h
+    g-wagon/gd250_Pac02Tire.cpp
+    g-wagon/gd250_Pac02Tire.h
+    g-wagon/gd250_SimpleMapPowertrain.cpp
+    g-wagon/gd250_SimpleMapPowertrain.h
+    g-wagon/gd250_TMeasyTire.cpp
+    g-wagon/gd250_TMeasyTire.h
+    g-wagon/gd250_ToeBarGAxleSimple.cpp
+    g-wagon/gd250_ToeBarGAxleSimple.h
+    g-wagon/gd250_Wheel.cpp
+    g-wagon/gd250_Wheel.h
+)
+
+source_group("gwagon" FILES ${CVM_GWAGON_FILES})
+
 set(CVM_HMMWV_FILES
     hmmwv/HMMWV.cpp
     hmmwv/HMMWV.h
@@ -699,6 +732,7 @@ set(LIBRARIES ChronoEngine ChronoEngine_vehicle)
 
 add_library(ChronoModels_vehicle SHARED
     ${CVM_COMMON_FILES}
+    ${CVM_GWAGON_FILES}
     ${CVM_HMMWV_FILES}
     ${CVM_FEDA_FILES}
     ${CVM_FMTV_FILES}
