@@ -43,12 +43,12 @@ namespace chrono {
             const ChVector<> GD250_GAxleSimple::m_axleTubeInertia(22.21, 0.0775, 22.21);
             const ChVector<> GD250_GAxleSimple::m_spindleInertia(0.04117, 0.07352, 0.04117);
 
-            const double GD250_GAxleSimple::m_springDesignLength = 0.2;
-            const double GD250_GAxleSimple::m_springCoefficient = 102643.885771329;
+            const double GD250_GAxleSimple::m_springDesignLength = 0.3;
+            const double GD250_GAxleSimple::m_springCoefficient = 102328.0584;
             const double GD250_GAxleSimple::m_springRestLength  = m_springDesignLength + 0.0621225507207084;
             const double GD250_GAxleSimple::m_springMinLength = m_springDesignLength - 0.08;
             const double GD250_GAxleSimple::m_springMaxLength = m_springDesignLength + 0.08;
-            const double GD250_GAxleSimple::m_damperCoefficient = 16336.2817986669;
+            const double GD250_GAxleSimple::m_damperCoefficient = 18095.57368;
             const double GD250_GAxleSimple::m_damperDegressivityCompression = 3.0;
             const double GD250_GAxleSimple::m_damperDegressivityExpansion = 1.0;
             const double GD250_GAxleSimple::m_axleShaftInertia = 0.4;
@@ -173,9 +173,9 @@ namespace chrono {
                     case SPRING_C:
                         return ChVector<>(0.0, 0.5142, m_axleTubeRadius+m_springDesignLength);
                     case SHOCK_A:
-                        return ChVector<>(-0.125, 0.441, -0.0507);
+                        return ChVector<>(0.125, 0.5842, -0.0507);
                     case SHOCK_C:
-                        return ChVector<>(-0.3648,  0.4193, 0.4298);
+                        return ChVector<>(0.20,  0.5142, m_axleTubeRadius+m_springDesignLength);
                     case SPINDLE:
                         return ChVector<>(0.0, 0.7325, 0.0);
                     default:

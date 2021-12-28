@@ -52,12 +52,12 @@ const ChVector<> GD250_ToeBarGAxleSimple::m_knuckleInertia(0.1, 0.1, 0.1);
 const ChVector<> GD250_ToeBarGAxleSimple::m_tierodInertia(1.0, 0.1, 1.0);
 const ChVector<> GD250_ToeBarGAxleSimple::m_draglinkInertia(0.1, 1.0, 0.1);
 
-const double GD250_ToeBarGAxleSimple::m_springDesignLength = 0.2;
-const double GD250_ToeBarGAxleSimple::m_springCoefficient = 94748.2022504578;
+const double GD250_ToeBarGAxleSimple::m_springDesignLength = 0.3;
+const double GD250_ToeBarGAxleSimple::m_springCoefficient = 76746.04382;
 const double GD250_ToeBarGAxleSimple::m_springRestLength = m_springDesignLength + 0.0621225507207084;
 const double GD250_ToeBarGAxleSimple::m_springMinLength = m_springDesignLength - 0.08;
 const double GD250_ToeBarGAxleSimple::m_springMaxLength = m_springDesignLength + 0.08;
-const double GD250_ToeBarGAxleSimple::m_damperCoefficient = 15079.644737231;
+const double GD250_ToeBarGAxleSimple::m_damperCoefficient = 13571.68026;
 const double GD250_ToeBarGAxleSimple::m_damperDegressivityCompression = 3.0;
 const double GD250_ToeBarGAxleSimple::m_damperDegressivityExpansion = 1.0;
 const double GD250_ToeBarGAxleSimple::m_axleShaftInertia = 0.4;
@@ -176,9 +176,9 @@ const ChVector<> GD250_ToeBarGAxleSimple::getLocation(PointId which) {
         case SPRING_C:
             return ChVector<>(0.0, 0.3824, m_axleTubeRadius + m_springDesignLength);
         case SHOCK_A:
-            return ChVector<>(-0.125, 0.441, -0.0507);
+            return ChVector<>(-0.1, 0.441, -0.0507);
         case SHOCK_C:
-            return ChVector<>(-0.3648, 0.4193, 0.3298);
+            return ChVector<>(-0.2, 0.4193, 0.4298);
         case SPINDLE:
             return ChVector<>(0.0, 0.7325, 0.0);
         case KNUCKLE_CM:

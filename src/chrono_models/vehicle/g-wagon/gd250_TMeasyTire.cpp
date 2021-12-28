@@ -54,7 +54,7 @@ namespace chrono {
                 double r = 0.75;
                 double rimdia = 16.0 * in2m;
                 double pres_li = 590000;
-                double pres_use = 220000;
+                double pres_use = 200000;
 
                 GuessTruck80Par(li,       // tire load index []
                         w,        // tire width [m]
@@ -102,7 +102,7 @@ namespace chrono {
                 double r = 0.75;
                 double rimdia = 16.0 * in2m;
                 double pres_li = 590000;
-                double pres_use = 240000;
+                double pres_use = 270000;
 
                 GuessTruck80Par(li,       // tire load index []
                         w,        // tire width [m]
