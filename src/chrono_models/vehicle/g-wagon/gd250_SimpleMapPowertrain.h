@@ -12,7 +12,7 @@
 // Authors: Radu Serban
 // =============================================================================
 //
-// Simple powertrain model for the GD250 vehicle.
+// Simple powertrain model for the UAZBUS vehicle.
 // - based on torque-speed engine maps
 // - both power and torque limited
 // - no torque converter
@@ -28,52 +28,41 @@
 #include "chrono_models/ChApiModels.h"
 
 namespace chrono {
-    namespace vehicle {
-        namespace gwagon {
+namespace vehicle {
+namespace gwagon {
 
 /// @addtogroup vehicle_models_uaz
 /// @{
 
-/// Simple GD250 powertrain subsystem (based on engine speed-torque maps).
-            class CH_MODELS_API GD250_SimpleMapPowertrain
+/// Simple UAZBUS powertrain subsystem (based on engine speed-torque maps).
+class CH_MODELS_API GD250_SimpleMapPowertrain : public ChSimpleMapPowertrain {
+  public:
+    GD250_SimpleMapPowertrain(const std::string& name);
 
-            : public ChSimpleMapPowertrain {
-            public:
+    /// Specify maximum engine speed.
+    virtual double GetMaxEngineSpeed() override;
 
-            GD250_SimpleMapPowertrain(const std::string &name);
+    /// Set the engine speed-torque maps.
+    /// A concrete class must add the speed-torque points to the provided maps,
+    /// using the ChFunction_Recorder::AddPoint() function.
+    virtual void SetEngineTorqueMaps(ChFunction_Recorder& map0,  ///< [out] engine map at zero throttle
+                                     ChFunction_Recorder& mapF   ///< [out] engine map at full throttle
+                                     ) override;
 
-            /// Specify maximum engine speed.
-            virtual double GetMaxEngineSpeed()
+    /// Set the transmission gear ratios (one or more forward gear ratios and a single reverse gear ratio).
+    virtual void SetGearRatios(std::vector<double>& fwd, double& rev) override;
 
-            override;
+    /// Set the ideal shift points for automatic gear shifting.
+    /// For each forward gear, specify a pair (min, max) with the minimum and
+    /// maximum engine speed for shifting (down and up, respectively).
+    virtual void SetShiftPoints(
+        std::vector<std::pair<double, double>>& shift_bands  ///< [out] down-shift/up-shift points
+        ) override;
+};
 
-            /// Set the engine speed-torque maps.
-            /// A concrete class must add the speed-torque points to the provided maps,
-            /// using the ChFunction_Recorder::AddPoint() function.
-            virtual void SetEngineTorqueMaps(ChFunction_Recorder &map0,  ///< [out] engine map at zero throttle
-                    ChFunction_Recorder &mapF   ///< [out] engine map at full throttle
-            )
+/// @} vehicle_models_uaz
 
-            override;
-
-            /// Set the transmission gear ratios (one or more forward gear ratios and a single reverse gear ratio).
-            virtual void SetGearRatios(std::vector<double> &fwd, double &rev)
-
-            override;
-
-            /// Set the ideal shift points for automatic gear shifting.
-            /// For each forward gear, specify a pair (min, max) with the minimum and
-            /// maximum engine speed for shifting (down and up, respectively).
-            virtual void SetShiftPoints(
-                    std::vector <std::pair<double, double>> &shift_bands  ///< [out] down-shift/up-shift points
-            )
-
-            override;
-        };
-
-/// @} vehicle_models_gwagon
-
-    }  // end namespace gwagon
+}  // end namespace uaz
 }  // end namespace vehicle
 }  // end namespace chrono
 

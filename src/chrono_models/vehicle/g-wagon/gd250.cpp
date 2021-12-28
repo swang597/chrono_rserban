@@ -12,7 +12,7 @@
 // Authors: Radu Serban
 // =============================================================================
 //
-// Wrapper classes for modeling an entire Mercedes GD250 vehicle assembly
+// Wrapper classes for modeling an entire GD250 vehicle assembly
 // (including the vehicle itself, the powertrain, and the tires).
 //
 // =============================================================================
@@ -75,7 +75,7 @@ namespace chrono {
 
 // -----------------------------------------------------------------------------
             void GD250::Initialize() {
-                // Create and initialize the UAZBUS vehicle
+                // Create and initialize the GD250 vehicle
                 m_vehicle =
                         m_system ? new GD250_Vehicle(m_system, m_fixed, m_brake_type, m_steeringType, m_chassisCollisionType)
                                 : new GD250_Vehicle(m_fixed, m_brake_type, m_steeringType, m_contactMethod, m_chassisCollisionType);
@@ -173,6 +173,6 @@ namespace chrono {
                 return m_vehicle->GetVehicleMass() + 4 * m_tire_mass;
             }
 
-        }  // end namespace gwagon
+        }  // end namespace uaz
     }  // end namespace vehicle
 }  // end namespace chrono

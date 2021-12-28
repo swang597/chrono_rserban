@@ -12,7 +12,7 @@
 // Authors: Radu Serban, Michael Taylor, Rainer Gericke
 // =============================================================================
 //
-// HMMWV PAC02 tire subsystem
+// GD250 PAC02 tire subsystem
 //
 // Coefficents were pulled from the Adams/Tire help - Adams 2017.1.
 // https://simcompanion.mscsoftware.com/infocenter/index?page=content&id=DOC11293&cat=2017.1_ADAMS_DOCS&actp=LIST

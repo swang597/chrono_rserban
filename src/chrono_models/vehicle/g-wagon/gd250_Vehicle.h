@@ -12,7 +12,7 @@
 // Authors: Radu Serban, Asher Elmquist
 // =============================================================================
 //
-// Base class for the UAZBUS vehicle models
+// Base class for the GD250 vehicle models
 //
 // =============================================================================
 
@@ -28,61 +28,61 @@ namespace chrono {
     namespace vehicle {
         namespace gwagon {
 
-/// @addtogroup vehicle_models_gwagon
+/// @addtogroup vehicle_models_uaz
 /// @{
 
-/// Mercedes GD250 vehicle system.
+/// UAZ vehicle system.
             class CH_MODELS_API GD250_Vehicle : public ChWheeledVehicle {
             public:
-            GD250_Vehicle(const bool fixed,
-                    BrakeType brake_type,
-                    SteeringTypeWV steering_model,
-                    ChContactMethod contact_method = ChContactMethod::NSC,
-                    CollisionType chassis_collision_type = CollisionType::NONE);
+                GD250_Vehicle(const bool fixed,
+                        BrakeType brake_type,
+                        SteeringTypeWV steering_model,
+                        ChContactMethod contact_method = ChContactMethod::NSC,
+                        CollisionType chassis_collision_type = CollisionType::NONE);
 
-            GD250_Vehicle(ChSystem* system,
-            const bool fixed,
-                    BrakeType brake_type,
-            SteeringTypeWV steering_model,
-                    CollisionType chassis_collision_type = CollisionType::NONE);
+                GD250_Vehicle(ChSystem* system,
+                        const bool fixed,
+                        BrakeType brake_type,
+                        SteeringTypeWV steering_model,
+                        CollisionType chassis_collision_type = CollisionType::NONE);
 
-            ~GD250_Vehicle();
+                ~GD250_Vehicle();
 
-            virtual int GetNumberAxles() const override { return 2; }
+                virtual int GetNumberAxles() const override { return 2; }
 
-        virtual double GetWheelbase() const override { return 2.3; }
-    virtual double GetMinTurningRadius() const override { return 5.8; }
-virtual double GetMaxSteeringAngle() const override { return 27 * CH_C_DEG_TO_RAD; }
+                virtual double GetWheelbase() const override { return 2.3; }
+                virtual double GetMinTurningRadius() const override { return 5.8; }
+                virtual double GetMaxSteeringAngle() const override { return 27 * CH_C_DEG_TO_RAD; }
 
-void SetInitWheelAngVel(const std::vector<double>& omega) {
-    assert(omega.size() == 4);
-    m_omega = omega;
-}
+                void SetInitWheelAngVel(const std::vector<double>& omega) {
+                    assert(omega.size() == 4);
+                    m_omega = omega;
+                }
 
-double GetSpringForce(int axle, VehicleSide side) const;
-double GetSpringLength(int axle, VehicleSide side) const;
-double GetSpringDeformation(int axle, VehicleSide side) const;
+                double GetSpringForce(int axle, VehicleSide side) const;
+                double GetSpringLength(int axle, VehicleSide side) const;
+                double GetSpringDeformation(int axle, VehicleSide side) const;
 
-double GetShockForce(int axle, VehicleSide side) const;
-double GetShockLength(int axle, VehicleSide side) const;
-double GetShockVelocity(int axle, VehicleSide side) const;
+                double GetShockForce(int axle, VehicleSide side) const;
+                double GetShockLength(int axle, VehicleSide side) const;
+                double GetShockVelocity(int axle, VehicleSide side) const;
 
-virtual void Initialize(const ChCoordsys<>& chassisPos, double chassisFwdVel = 0) override;
+                virtual void Initialize(const ChCoordsys<>& chassisPos, double chassisFwdVel = 0) override;
 
-// Log debugging information
-void LogHardpointLocations();  /// suspension hardpoints at design
-void DebugLog(int what);       /// shock forces and lengths, constraints, etc.
+                // Log debugging information
+                void LogHardpointLocations();  /// suspension hardpoints at design
+                void DebugLog(int what);       /// shock forces and lengths, constraints, etc.
 
-private:
-void Create(bool fixed, BrakeType brake_type, SteeringTypeWV steering_model, CollisionType chassis_collision_type);
+            private:
+                void Create(bool fixed, BrakeType brake_type, SteeringTypeWV steering_model, CollisionType chassis_collision_type);
 
-std::vector<double> m_omega;
-};
+                std::vector<double> m_omega;
+            };
 
-/// @} vehicle_models_gwagon
+/// @} vehicle_models_gd250
 
-}  // end namespace gwagon
-}  // end namespace vehicle
+        }  // end namespace gwagon
+    }  // end namespace vehicle
 }  // end namespace chrono
 
 #endif

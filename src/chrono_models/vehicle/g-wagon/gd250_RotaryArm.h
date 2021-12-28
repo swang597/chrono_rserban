@@ -27,42 +27,42 @@ namespace chrono {
     namespace vehicle {
         namespace gwagon {
 
-/// @addtogroup vehicle_models_uaz
+/// @addtogroup vehicle_models_gd250
 /// @{
 
 /// RotaryArm steering subsystem for the uaz vehicle.
             class CH_MODELS_API GD250_RotaryArm : public ChRotaryArm {
             public:
-            GD250_RotaryArm(const std::string& name);
-            ~GD250_RotaryArm() {}
+                GD250_RotaryArm(const std::string& name);
+                ~GD250_RotaryArm() {}
 
-            virtual double getPitmanArmMass() const override { return m_pitmanArmMass; }
+                virtual double getPitmanArmMass() const override { return m_pitmanArmMass; }
 
-        virtual double getPitmanArmRadius() const override { return m_pitmanArmRadius; }
+                virtual double getPitmanArmRadius() const override { return m_pitmanArmRadius; }
 
-    virtual const ChVector<>& getPitmanArmInertiaMoments() const override { return m_pitmanArmInertiaMoments; }
-virtual const ChVector<>& getPitmanArmInertiaProducts() const override { return m_pitmanArmInertiaProducts; }
+                virtual const ChVector<>& getPitmanArmInertiaMoments() const override { return m_pitmanArmInertiaMoments; }
+                virtual const ChVector<>& getPitmanArmInertiaProducts() const override { return m_pitmanArmInertiaProducts; }
 
-virtual double getMaxAngle() const override { return m_maxAngle; }
+                virtual double getMaxAngle() const override { return m_maxAngle; }
 
-virtual const ChVector<> getLocation(PointId which) override;
-virtual const ChVector<> getDirection(DirectionId which) override;
+                virtual const ChVector<> getLocation(PointId which) override;
+                virtual const ChVector<> getDirection(DirectionId which) override;
 
-private:
-static const double m_pitmanArmMass;
+            private:
+                static const double m_pitmanArmMass;
 
-static const double m_pitmanArmRadius;
+                static const double m_pitmanArmRadius;
 
-static const double m_maxAngle;
+                static const double m_maxAngle;
 
-static const ChVector<> m_pitmanArmInertiaMoments;
-static const ChVector<> m_pitmanArmInertiaProducts;
-};
+                static const ChVector<> m_pitmanArmInertiaMoments;
+                static const ChVector<> m_pitmanArmInertiaProducts;
+            };
 
-/// @} vehicle_models_gwagon
+/// @} vehicle_models_gd250
 
-}  // end namespace gwagon
-}  // end namespace vehicle
+        }  // end namespace gwagon
+    }  // end namespace vehicle
 }  // end namespace chrono
 
 #endif

@@ -33,7 +33,7 @@ namespace chrono {
             const double GD250_Chassis::m_mass = 2321.0;
             const ChVector<> GD250_Chassis::m_inertiaXX(785.0, 2612.0, 2761.0);
             const ChVector<> GD250_Chassis::m_inertiaXY(0, 0, 0);
-            const ChVector<> GD250_Chassis::m_COM_loc(-1.42, 0.0, 0.3);
+            const ChVector<> GD250_Chassis::m_COM_loc(-1.204, 0.0, 0.3);
             const ChVector<> GD250_Chassis::m_connector_rear_loc(-3.5, 0, -0.05);
             const ChCoordsys<> GD250_Chassis::m_driverCsys(ChVector<>(0.0, 0.7, 0.5), ChQuaternion<>(1, 0, 0, 0));
 
@@ -60,7 +60,7 @@ namespace chrono {
                 m_geometry.m_vis_boxes.push_back(box1);
 
                 m_geometry.m_has_mesh = true;
-                m_geometry.m_vis_mesh_file = "uaz/uazbus_chassis.obj";
+                m_geometry.m_vis_mesh_file = "uaz/GD250_Chassis.obj";
 
                 m_geometry.m_has_collision = (chassis_collision_type != CollisionType::NONE);
                 switch (chassis_collision_type) {
@@ -69,7 +69,7 @@ namespace chrono {
                         m_geometry.m_coll_boxes.push_back(box1);
                         break;
                     case CollisionType::HULLS: {
-                        ChVehicleGeometry::ConvexHullsShape hull("uaz/uazbus_chassis_simple.obj", 0);
+                        ChVehicleGeometry::ConvexHullsShape hull("uaz/GD250_Chassis_simple.obj", 0);
                         m_geometry.m_coll_hulls.push_back(hull);
                         break;
                     }

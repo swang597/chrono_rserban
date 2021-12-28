@@ -134,6 +134,6 @@ namespace chrono {
                 RemoveVisualizationMesh(m_trimesh_shape);
             }
 
-        }  // end namespace gwagon
+        }  // end namespace uaz
     }  // end namespace vehicle
 }  // end namespace chrono

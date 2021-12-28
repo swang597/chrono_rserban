@@ -12,91 +12,86 @@
 // Authors: Radu Serban
 // =============================================================================
 //
-// UAZBUS leafspring axle.
+// GD250 leafspring axle.
 //
 // =============================================================================
 
-#ifndef UAZBUS_LEAFSPRING_AXLE_H
-#define UAZBUS_LEAFSPRING_AXLE_H
+#ifndef GD250_G_AXLE_SIMPLE_H
+#define GD250_G_AXLE_SIMPLE_H
 
 #include "chrono_vehicle/wheeled_vehicle/suspension/ChGAxleSimple.h"
 
 #include "chrono_models/ChApiModels.h"
 
 namespace chrono {
-namespace vehicle {
-namespace gwagon {
+    namespace vehicle {
+        namespace gwagon {
 
 /// @addtogroup vehicle_models_uaz
 /// @{
 
 /// Leafspring axle subsystem for the uaz vehicle.
 
-class CH_MODELS_API GD250_GAxleSimple : public ChGAxleSimple {
-  public:
-    GD250_GAxleSimple(const std::string& name);
-    ~GD250_GAxleSimple();
+            class CH_MODELS_API GD250_GAxleSimple : public ChGAxleSimple {
+            public:
+                GD250_GAxleSimple(const std::string& name);
+                ~GD250_GAxleSimple();
 
-  protected:
-    virtual const ChVector<> getLocation(PointId which) override;
 
-    virtual double getAxleTubeMass() const override { return m_axleTubeMass; }
-    virtual double getSpindleMass() const override { return m_spindleMass; }
-    virtual double getPanhardRodMass() const override { return m_panhardRodMass; }
+            protected:
+                virtual const ChVector<> getLocation(PointId which) override;
 
-    virtual double getAxleTubeRadius() const override { return m_axleTubeRadius; }
-    virtual double getSpindleRadius() const override { return m_spindleRadius; }
-    virtual double getSpindleWidth() const override { return m_spindleWidth; }
-    virtual double getPanhardRodRadius() const override { return m_panhardRodRadius; }
+                virtual double getAxleTubeMass() const override { return m_axleTubeMass; }
+                virtual double getSpindleMass() const override { return m_spindleMass; }
 
-    virtual const ChVector<> getAxleTubeCOM() const override { return ChVector<>(0, 0, 0); }
+                virtual double getAxleTubeRadius() const override { return m_axleTubeRadius; }
+                virtual double getSpindleRadius() const override { return m_spindleRadius; }
+                virtual double getSpindleWidth() const override { return m_spindleWidth; }
 
-    virtual const ChVector<>& getAxleTubeInertia() const override { return m_axleTubeInertia; }
-    virtual const ChVector<>& getSpindleInertia() const override { return m_spindleInertia; }
-    virtual const ChVector<>& getPanhardRodInertia() const override { return m_panhardRodInertia; }
+                virtual const ChVector<> getAxleTubeCOM() const override { return ChVector<>(0,0,0); }
 
-    virtual double getAxleInertia() const override { return m_axleShaftInertia; }
+                virtual const ChVector<>& getAxleTubeInertia() const override { return m_axleTubeInertia; }
+                virtual const ChVector<>& getSpindleInertia() const override { return m_spindleInertia; }
 
-    virtual double getSpringRestLength() const override { return m_springRestLength; }
-    /// Return the functor object for spring force.
-    virtual std::shared_ptr<ChLinkTSDA::ForceFunctor> getSpringForceFunctor() const override { return m_springForceCB; }
-    /// Return the functor object for shock force.
-    virtual std::shared_ptr<ChLinkTSDA::ForceFunctor> getShockForceFunctor() const override { return m_shockForceCB; }
+                virtual double getAxleInertia() const override { return m_axleShaftInertia; }
 
-  private:
-    std::shared_ptr<ChLinkTSDA::ForceFunctor> m_springForceCB;
-    std::shared_ptr<ChLinkTSDA::ForceFunctor> m_shockForceCB;
+                virtual double getSpringRestLength() const override { return m_springRestLength; }
+                /// Return the functor object for spring force.
+                virtual std::shared_ptr<ChLinkTSDA::ForceFunctor> getSpringForceFunctor() const override { return m_springForceCB; }
+                /// Return the functor object for shock force.
+                virtual std::shared_ptr<ChLinkTSDA::ForceFunctor> getShockForceFunctor() const override { return m_shockForceCB; }
 
-    static const double m_axleShaftInertia;
+            private:
+                std::shared_ptr<ChLinkTSDA::ForceFunctor> m_springForceCB;
+                std::shared_ptr<ChLinkTSDA::ForceFunctor> m_shockForceCB;
 
-    static const double m_axleTubeMass;
-    static const double m_spindleMass;
-    static const double m_panhardRodMass;
+                static const double m_axleShaftInertia;
 
-    static const double m_axleTubeRadius;
-    static const double m_spindleRadius;
-    static const double m_spindleWidth;
-    static const double m_panhardRodRadius;
+                static const double m_axleTubeMass;
+                static const double m_spindleMass;
 
-    static const ChVector<> m_axleTubeInertia;
-    static const ChVector<> m_spindleInertia;
-    static const ChVector<> m_panhardRodInertia;
+                static const double m_axleTubeRadius;
+                static const double m_spindleRadius;
+                static const double m_spindleWidth;
 
-    static const double m_springCoefficient;
-    static const double m_springRestLength;
-    static const double m_springDesignLength;
-    static const double m_springMinLength;
-    static const double m_springMaxLength;
+                static const ChVector<> m_axleTubeInertia;
+                static const ChVector<> m_spindleInertia;
 
-    static const double m_damperCoefficient;
-    static const double m_damperDegressivityExpansion;
-    static const double m_damperDegressivityCompression;
-};
+                static const double m_springCoefficient;
+                static const double m_springRestLength;
+                static const double m_springDesignLength;
+                static const double m_springMinLength;
+                static const double m_springMaxLength;
 
-/// @} vehicle_models_uaz
+                static const double m_damperCoefficient;
+                static const double m_damperDegressivityExpansion;
+                static const double m_damperDegressivityCompression;
+            };
 
-}  // namespace gwagon
-}  // end namespace vehicle
+/// @} vehicle_models_gd250
+
+        }  // end namespace gwagon
+    }  // end namespace vehicle
 }  // end namespace chrono
 
 #endif

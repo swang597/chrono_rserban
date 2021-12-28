@@ -34,14 +34,12 @@ namespace gwagon {
 // -----------------------------------------------------------------------------
 
 const double GD250_ToeBarGAxleSimple::m_axleTubeMass = 124.0;
-const double GD250_ToeBarGAxleSimple::m_panhardRodMass = 10.0;
 const double GD250_ToeBarGAxleSimple::m_spindleMass = 14.705;
 const double GD250_ToeBarGAxleSimple::m_knuckleMass = 10.0;
 const double GD250_ToeBarGAxleSimple::m_tierodMass = 5.0;
 const double GD250_ToeBarGAxleSimple::m_draglinkMass = 5.0;
 
 const double GD250_ToeBarGAxleSimple::m_axleTubeRadius = 0.0476;
-const double GD250_ToeBarGAxleSimple::m_panhardRodRadius = 0.03;
 const double GD250_ToeBarGAxleSimple::m_spindleRadius = 0.10;
 const double GD250_ToeBarGAxleSimple::m_spindleWidth = 0.06;
 const double GD250_ToeBarGAxleSimple::m_knuckleRadius = 0.05;
@@ -49,18 +47,17 @@ const double GD250_ToeBarGAxleSimple::m_tierodRadius = 0.02;
 const double GD250_ToeBarGAxleSimple::m_draglinkRadius = 0.02;
 
 const ChVector<> GD250_ToeBarGAxleSimple::m_axleTubeInertia(22.21, 0.0775, 22.21);
-const ChVector<> GD250_ToeBarGAxleSimple::m_panhardRodInertia(1.0, 0.04, 1.0);
 const ChVector<> GD250_ToeBarGAxleSimple::m_spindleInertia(0.04117, 0.07352, 0.04117);
 const ChVector<> GD250_ToeBarGAxleSimple::m_knuckleInertia(0.1, 0.1, 0.1);
 const ChVector<> GD250_ToeBarGAxleSimple::m_tierodInertia(1.0, 0.1, 1.0);
 const ChVector<> GD250_ToeBarGAxleSimple::m_draglinkInertia(0.1, 1.0, 0.1);
 
-const double GD250_ToeBarGAxleSimple::m_springDesignLength = 0.3;
-const double GD250_ToeBarGAxleSimple::m_springCoefficient = 76746.04382;
-const double GD250_ToeBarGAxleSimple::m_springRestLength = m_springDesignLength + 0.03;
+const double GD250_ToeBarGAxleSimple::m_springDesignLength = 0.2;
+const double GD250_ToeBarGAxleSimple::m_springCoefficient = 94748.2022504578;
+const double GD250_ToeBarGAxleSimple::m_springRestLength = m_springDesignLength + 0.0621225507207084;
 const double GD250_ToeBarGAxleSimple::m_springMinLength = m_springDesignLength - 0.08;
 const double GD250_ToeBarGAxleSimple::m_springMaxLength = m_springDesignLength + 0.08;
-const double GD250_ToeBarGAxleSimple::m_damperCoefficient = 13571.68026;
+const double GD250_ToeBarGAxleSimple::m_damperCoefficient = 15079.644737231;
 const double GD250_ToeBarGAxleSimple::m_damperDegressivityCompression = 3.0;
 const double GD250_ToeBarGAxleSimple::m_damperDegressivityExpansion = 1.0;
 const double GD250_ToeBarGAxleSimple::m_axleShaftInertia = 0.4;
@@ -68,9 +65,9 @@ const double GD250_ToeBarGAxleSimple::m_axleShaftInertia = 0.4;
 // ---------------------------------------------------------------------------------------
 // UAZBUS spring functor class - implements a linear spring + bump stop + rebound stop
 // ---------------------------------------------------------------------------------------
-class GD250_SpringForceFront : public ChLinkTSDA::ForceFunctor {
+class UAZBUS_SpringForceFront : public ChLinkTSDA::ForceFunctor {
   public:
-    GD250_SpringForceFront(double spring_constant, double min_length, double max_length);
+    UAZBUS_SpringForceFront(double spring_constant, double min_length, double max_length);
 
     virtual double evaluate(double time, double rest_length, double length, double vel, ChLinkTSDA* link) override;
 
@@ -82,7 +79,7 @@ class GD250_SpringForceFront : public ChLinkTSDA::ForceFunctor {
     ChFunction_Recorder m_bump;
 };
 
-GD250_SpringForceFront::GD250_SpringForceFront(double spring_constant, double min_length, double max_length)
+UAZBUS_SpringForceFront::UAZBUS_SpringForceFront(double spring_constant, double min_length, double max_length)
     : m_spring_constant(spring_constant), m_min_length(min_length), m_max_length(max_length) {
     // From ADAMS/Car
     m_bump.AddPoint(0.0, 0.0);
@@ -97,7 +94,7 @@ GD250_SpringForceFront::GD250_SpringForceFront(double spring_constant, double mi
     m_bump.AddPoint(50.0e-3, 12500.0);
 }
 
-double GD250_SpringForceFront::evaluate(double time, double rest_length, double length, double vel, ChLinkTSDA* link) {
+double UAZBUS_SpringForceFront::evaluate(double time, double rest_length, double length, double vel, ChLinkTSDA* link) {
     double force = 0;
 
     double defl_spring = rest_length - length;
@@ -120,12 +117,12 @@ double GD250_SpringForceFront::evaluate(double time, double rest_length, double 
 // -----------------------------------------------------------------------------
 // UAZBUS shock functor class - implements a nonlinear damper
 // -----------------------------------------------------------------------------
-class GD250_ShockForceFront : public ChLinkTSDA::ForceFunctor {
+class UAZBUS_ShockForceFront : public ChLinkTSDA::ForceFunctor {
   public:
-    GD250_ShockForceFront(double compression_slope,
-                          double compression_degressivity,
-                          double expansion_slope,
-                          double expansion_degressivity);
+    UAZBUS_ShockForceFront(double compression_slope,
+                           double compression_degressivity,
+                           double expansion_slope,
+                           double expansion_degressivity);
 
     virtual double evaluate(double time, double rest_length, double length, double vel, ChLinkTSDA* link) override;
 
@@ -136,16 +133,16 @@ class GD250_ShockForceFront : public ChLinkTSDA::ForceFunctor {
     double m_degres_expand;
 };
 
-GD250_ShockForceFront::GD250_ShockForceFront(double compression_slope,
-                                             double compression_degressivity,
-                                             double expansion_slope,
-                                             double expansion_degressivity)
+UAZBUS_ShockForceFront::UAZBUS_ShockForceFront(double compression_slope,
+                                               double compression_degressivity,
+                                               double expansion_slope,
+                                               double expansion_degressivity)
     : m_slope_compr(compression_slope),
       m_degres_compr(compression_degressivity),
       m_slope_expand(expansion_slope),
       m_degres_expand(expansion_degressivity) {}
 
-double GD250_ShockForceFront::evaluate(double time, double rest_length, double length, double vel, ChLinkTSDA* link) {
+double UAZBUS_ShockForceFront::evaluate(double time, double rest_length, double length, double vel, ChLinkTSDA* link) {
     // Simple model of a degressive damping characteristic
     double force = 0;
 
@@ -161,9 +158,9 @@ double GD250_ShockForceFront::evaluate(double time, double rest_length, double l
 
 GD250_ToeBarGAxleSimple::GD250_ToeBarGAxleSimple(const std::string& name) : ChToeBarGAxleSimple(name) {
     m_springForceCB =
-        chrono_types::make_shared<GD250_SpringForceFront>(m_springCoefficient, m_springMinLength, m_springMaxLength);
+        chrono_types::make_shared<UAZBUS_SpringForceFront>(m_springCoefficient, m_springMinLength, m_springMaxLength);
 
-    m_shockForceCB = chrono_types::make_shared<GD250_ShockForceFront>(
+    m_shockForceCB = chrono_types::make_shared<UAZBUS_ShockForceFront>(
         m_damperCoefficient, m_damperDegressivityCompression, m_damperCoefficient, m_damperDegressivityExpansion);
 }
 
@@ -175,9 +172,9 @@ GD250_ToeBarGAxleSimple::~GD250_ToeBarGAxleSimple() {}
 const ChVector<> GD250_ToeBarGAxleSimple::getLocation(PointId which) {
     switch (which) {
         case SPRING_A:
-            return ChVector<>(0.0, 0.4824, m_axleTubeRadius);
+            return ChVector<>(0.0, 0.3824, m_axleTubeRadius);
         case SPRING_C:
-            return ChVector<>(0.0, 0.4824, m_axleTubeRadius + m_springDesignLength);
+            return ChVector<>(0.0, 0.3824, m_axleTubeRadius + m_springDesignLength);
         case SHOCK_A:
             return ChVector<>(-0.125, 0.441, -0.0507);
         case SHOCK_C:
@@ -187,19 +184,15 @@ const ChVector<> GD250_ToeBarGAxleSimple::getLocation(PointId which) {
         case KNUCKLE_CM:
             return ChVector<>(0.0, 0.7325 - 0.07, 0.0);
         case KNUCKLE_L:
-            return ChVector<>(0.0, 0.672305806756909, -0.1);
+            return ChVector<>(0.0, 0.7325 - 0.07 + 0.0098058067569092, -0.1);
         case KNUCKLE_U:
-            return ChVector<>(0.0, 0.652694193243091, 0.1);
+            return ChVector<>(0.0, 0.7325 - 0.07 - 0.0098058067569092, 0.1);
         case KNUCKLE_DRL:
-            return ChVector<>(0.2, -0.5325, 0.1);
+            return ChVector<>(0.0, 0.7325 - 0.2, 0.2);
         case TIEROD_K:
-            return ChVector<>(-0.190568826619798, 0.601807971522173, 0.1);
+            return ChVector<>(-0.190568826619798, 0.7325 - 0.07 - 0.060692028477827, 0.1);
         case DRAGLINK_C:
-            return ChVector<>(0.2, 0.5325, 0.1);
-        case PANHARD_A:
-            return ChVector<>(0.15, -0.4824, 0.0);
-        case PANHARD_C:
-            return ChVector<>(0.15, 0.4824, 0.0);
+            return ChVector<>(0.6, 0.7325 - 0.2, 0.2);
         default:
             return ChVector<>(0, 0, 0);
     }

@@ -12,7 +12,7 @@
 // Authors: Radu Serban
 // =============================================================================
 //
-// Simple powertrain model for the GD250 vehicle.
+// Simple powertrain model for the UAZBUS vehicle.
 // - based on torque-speed engine maps
 // - both power and torque limited
 // - no torque converter
@@ -86,6 +86,6 @@ namespace chrono {
                 // shift_bands.push_back(std::pair<double, double>(1000 * rpm2rads, 4000 * rpm2rads));
             }
 
-        }  // end namespace gwagon
+        }  // end namespace uaz
     }  // end namespace vehicle
 }  // end namespace chrono

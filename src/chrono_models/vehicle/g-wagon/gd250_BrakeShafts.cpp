@@ -16,28 +16,28 @@
 //
 // =============================================================================
 
-#include "chrono_models/vehicle/g-wagon/gd250_BrakeShafts.h"
+#include "chrono_models/vehicle/g-wagon/GD250_BrakeShafts.h"
 
 namespace chrono {
-    namespace vehicle {
-        namespace gwagon {
+namespace vehicle {
+namespace gwagon {
 
 // -----------------------------------------------------------------------------
 // Static variables
 // -----------------------------------------------------------------------------
 
-            const double GD250_BrakeShaftsFront::m_maxtorque = 1600;
-            const double GD250_BrakeShaftsFront::m_shaft_inertia = 0.4;
+const double GD250_BrakeShaftsFront::m_maxtorque = 1600;
+const double GD250_BrakeShaftsFront::m_shaft_inertia = 0.4;
 
-            const double GD250_BrakeShaftsRear::m_maxtorque = 1500;
-            const double GD250_BrakeShaftsRear::m_shaft_inertia = 0.4;
+const double GD250_BrakeShaftsRear::m_maxtorque = 1500;
+const double GD250_BrakeShaftsRear::m_shaft_inertia = 0.4;
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-            GD250_BrakeShaftsFront::GD250_BrakeShaftsFront(const std::string& name) : ChBrakeShafts(name) {}
+GD250_BrakeShaftsFront::GD250_BrakeShaftsFront(const std::string& name) : ChBrakeShafts(name) {}
 
-            GD250_BrakeShaftsRear::GD250_BrakeShaftsRear(const std::string& name) : ChBrakeShafts(name) {}
+GD250_BrakeShaftsRear::GD250_BrakeShaftsRear(const std::string& name) : ChBrakeShafts(name) {}
 
-        }  // end namespace uaz
-    }  // end namespace vehicle
+}  // end namespace gwagon
+}  // end namespace vehicle
 }  // end namespace chrono

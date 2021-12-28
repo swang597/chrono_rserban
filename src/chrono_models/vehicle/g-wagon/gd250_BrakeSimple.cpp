@@ -16,7 +16,7 @@
 //
 // =============================================================================
 
-#include "chrono_models/vehicle/g-wagon/GD250_BrakeSimple.h"
+#include "chrono_models/vehicle/g-wagon/gd250_BrakeSimple.h"
 
 namespace chrono {
     namespace vehicle {
