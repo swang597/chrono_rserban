@@ -12,7 +12,7 @@
 // Authors: Radu Serban
 // =============================================================================
 //
-// UAZ shafts-based brake model.
+// GD250 shafts-based brake model.
 //
 // =============================================================================
 
@@ -24,43 +24,43 @@
 #include "chrono_models/ChApiModels.h"
 
 namespace chrono {
-    namespace vehicle {
-        namespace gwagon {
+namespace vehicle {
+namespace gwagon {
 
 /// @addtogroup vehicle_models_uaz
 /// @{
 
 /// Shafts-based UAZ front brake subsystem (uses a clutch between two shafts).
-            class CH_MODELS_API GD250_BrakeShaftsFront : public ChBrakeShafts {
-            public:
-            GD250_BrakeShaftsFront(const std::string& name);
-            ~GD250_BrakeShaftsFront() {}
+class CH_MODELS_API GD250_BrakeShaftsFront : public ChBrakeShafts {
+  public:
+    GD250_BrakeShaftsFront(const std::string& name);
+    ~GD250_BrakeShaftsFront() {}
 
-            virtual double GetMaxBrakingTorque() override { return m_maxtorque; }
-        virtual double GetShaftInertia() override { return m_shaft_inertia; }
+    virtual double GetMaxBrakingTorque() override { return m_maxtorque; }
+    virtual double GetShaftInertia() override { return m_shaft_inertia; }
 
-    private:
+  private:
     static const double m_maxtorque;
     static const double m_shaft_inertia;
 };
 
 /// Shafts-based UAZ rear brake subsystem (uses a clutch between two shafts).
 class CH_MODELS_API GD250_BrakeShaftsRear : public ChBrakeShafts {
-public:
-GD250_BrakeShaftsRear(const std::string& name);
-~GD250_BrakeShaftsRear() {}
+  public:
+    GD250_BrakeShaftsRear(const std::string& name);
+    ~GD250_BrakeShaftsRear() {}
 
-virtual double GetMaxBrakingTorque() override { return m_maxtorque; }
-virtual double GetShaftInertia() override { return m_shaft_inertia; }
+    virtual double GetMaxBrakingTorque() override { return m_maxtorque; }
+    virtual double GetShaftInertia() override { return m_shaft_inertia; }
 
-private:
-static const double m_maxtorque;
-static const double m_shaft_inertia;
+  private:
+    static const double m_maxtorque;
+    static const double m_shaft_inertia;
 };
 
-/// @} vehicle_models_gwagon
+/// @} vehicle_models_uaz
 
-}  // end namespace gwagon
+}  // namespace gwagon
 }  // end namespace vehicle
 }  // end namespace chrono
 

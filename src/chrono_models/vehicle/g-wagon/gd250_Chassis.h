@@ -27,50 +27,50 @@
 #include "chrono_models/vehicle/ChVehicleModelDefs.h"
 
 namespace chrono {
-    namespace vehicle {
-        namespace gwagon {
+namespace vehicle {
+namespace gwagon {
 
-/// @addtogroup vehicle_models_uaz
+/// @addtogroup vehicle_models_gd250
 /// @{
 
 /// UAZBUS chassis subsystem.
-            class CH_MODELS_API GD250_Chassis : public ChRigidChassis {
-            public:
-            GD250_Chassis(const std::string& name,
-                    bool fixed = false,
-                    CollisionType chassis_collision_type = CollisionType::NONE);
-            ~GD250_Chassis() {}
+class CH_MODELS_API GD250_Chassis : public ChRigidChassis {
+  public:
+    GD250_Chassis(const std::string& name,
+                  bool fixed = false,
+                  CollisionType chassis_collision_type = CollisionType::NONE);
+    ~GD250_Chassis() {}
 
-            /// Return the mass of the chassis body.
-            virtual double GetMass() const override { return m_mass; }
+    /// Return the mass of the chassis body.
+    virtual double GetMass() const override { return m_mass; }
 
-        /// Return the inertia tensor of the chassis body.
-        virtual const ChMatrix33<>& GetInertia() const override { return m_inertia; }
+    /// Return the inertia tensor of the chassis body.
+    virtual const ChMatrix33<>& GetInertia() const override { return m_inertia; }
 
     /// Get the location of the center of mass in the chassis frame.
     virtual const ChVector<>& GetLocalPosCOM() const override { return m_COM_loc; }
 
-/// Get the location (in the local frame of this chassis) of the connection to a rear chassis.
-virtual const ChVector<> GetLocalPosRearConnector() const override { return m_connector_rear_loc; }
+    /// Get the location (in the local frame of this chassis) of the connection to a rear chassis.
+    virtual const ChVector<> GetLocalPosRearConnector() const override { return m_connector_rear_loc; }
 
-/// Get the local driver position and orientation.
-/// This is a coordinate system relative to the chassis reference frame.
-virtual ChCoordsys<> GetLocalDriverCoordsys() const override { return m_driverCsys; }
+    /// Get the local driver position and orientation.
+    /// This is a coordinate system relative to the chassis reference frame.
+    virtual ChCoordsys<> GetLocalDriverCoordsys() const override { return m_driverCsys; }
 
-protected:
-virtual void CreateContactMaterials(ChContactMethod contact_method) override;
+  protected:
+    virtual void CreateContactMaterials(ChContactMethod contact_method) override;
 
-ChMatrix33<> m_inertia;
+    ChMatrix33<> m_inertia;
 
-static const double m_mass;
-static const ChVector<> m_inertiaXX;
-static const ChVector<> m_inertiaXY;
-static const ChVector<> m_COM_loc;
-static const ChVector<> m_connector_rear_loc;
-static const ChCoordsys<> m_driverCsys;
+    static const double m_mass;
+    static const ChVector<> m_inertiaXX;
+    static const ChVector<> m_inertiaXY;
+    static const ChVector<> m_COM_loc;
+    static const ChVector<> m_connector_rear_loc;
+    static const ChCoordsys<> m_driverCsys;
 };
 
-/// @} vehicle_models_gwagon
+/// @} vehicle_models_gd250
 
 }  // end namespace gwagon
 }  // end namespace vehicle

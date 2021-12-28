@@ -28,31 +28,31 @@
 #include "chrono_models/ChApiModels.h"
 
 namespace chrono {
-    namespace vehicle {
-        namespace gwagon {
+namespace vehicle {
+namespace gwagon {
 
-/// @addtogroup vehicle_models_gwagon
+/// @addtogroup vehicle_models_uaz
 /// @{
 
-/// GD250 wheel (can be used on any axle, left or right).
-            class CH_MODELS_API GD250_Wheel : public ChWheel {
-            public:
-            GD250_Wheel(const std::string& name);
-            ~GD250_Wheel() {}
+/// UAZBUS wheel (can be used on any axle, left or right).
+class CH_MODELS_API GD250_Wheel : public ChWheel {
+  public:
+    GD250_Wheel(const std::string& name);
+    ~GD250_Wheel() {}
 
-            virtual double GetMass() const override { return m_mass; }
-        virtual ChVector<> GetInertia() const override { return m_inertia; }
+    virtual double GetMass() const override { return m_mass; }
+    virtual ChVector<> GetInertia() const override { return m_inertia; }
     virtual double GetRadius() const override { return m_radius; }
-virtual double GetWidth() const override { return m_width; }
+    virtual double GetWidth() const override { return m_width; }
 
-protected:
-static const double m_radius;
-static const double m_width;
-static const double m_mass;
-static const ChVector<> m_inertia;
+  protected:
+    static const double m_radius;
+    static const double m_width;
+    static const double m_mass;
+    static const ChVector<> m_inertia;
 };
 
-/// @} vehicle_models_gwagon
+/// @} vehicle_models_gd250
 
 }  // end namespace gwagon
 }  // end namespace vehicle

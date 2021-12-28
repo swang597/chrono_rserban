@@ -27,38 +27,38 @@ namespace chrono {
     namespace vehicle {
         namespace gwagon {
 
-/// @addtogroup vehicle_models_gwagon
+/// @addtogroup vehicle_models_gd250
 /// @{
 
 /// Rigid tire model for the GD250 vehicle.
             class CH_MODELS_API GD250_RigidTire : public ChRigidTire {
             public:
-            GD250_RigidTire(const std::string& name, bool use_mesh = false);
-            ~GD250_RigidTire() {}
+                GD250_RigidTire(const std::string& name, bool use_mesh = false);
+                ~GD250_RigidTire() {}
 
-            virtual double GetRadius() const override { return m_radius; }
-        virtual double GetWidth() const override { return m_width; }
-    virtual double GetMass() const override { return m_mass; }
-virtual ChVector<> GetInertia() const override { return m_inertia; }
+                virtual double GetRadius() const override { return m_radius; }
+                virtual double GetWidth() const override { return m_width; }
+                virtual double GetMass() const override { return m_mass; }
+                virtual ChVector<> GetInertia() const override { return m_inertia; }
 
-private:
-virtual void CreateContactMaterial(ChContactMethod contact_method) override;
-virtual void AddVisualizationAssets(VisualizationType vis) override;
-virtual void RemoveVisualizationAssets() override final;
+            private:
+                virtual void CreateContactMaterial(ChContactMethod contact_method) override;
+                virtual void AddVisualizationAssets(VisualizationType vis) override;
+                virtual void RemoveVisualizationAssets() override final;
 
-static const double m_radius;
-static const double m_width;
-static const double m_mass;
-static const ChVector<> m_inertia;
+                static const double m_radius;
+                static const double m_width;
+                static const double m_mass;
+                static const ChVector<> m_inertia;
 
-static const std::string m_meshFile;
-std::shared_ptr<ChTriangleMeshShape> m_trimesh_shape;
-};
+                static const std::string m_meshFile;
+                std::shared_ptr<ChTriangleMeshShape> m_trimesh_shape;
+            };
 
-/// @} vehicle_models_gwagon
+/// @} vehicle_models_gd250
 
-}  // end namespace gwagon
-}  // end namespace vehicle
+        }  // end namespace gwagon
+    }  // end namespace vehicle
 }  // end namespace chrono
 
 #endif

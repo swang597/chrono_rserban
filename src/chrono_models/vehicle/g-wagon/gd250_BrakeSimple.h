@@ -24,39 +24,39 @@
 #include "chrono_models/ChApiModels.h"
 
 namespace chrono {
-    namespace vehicle {
-        namespace gwagon {
+namespace vehicle {
+namespace gwagon {
 
 /// @addtogroup vehicle_models_uaz
 /// @{
 
 /// Simple UAZBUS front brake subsystem (torque applied directly to the spindle joint).
-            class CH_MODELS_API GD250_BrakeSimpleFront : public ChBrakeSimple {
-            public:
-            GD250_BrakeSimpleFront(const std::string& name);
-            virtual ~GD250_BrakeSimpleFront() {}
+class CH_MODELS_API GD250_BrakeSimpleFront : public ChBrakeSimple {
+  public:
+    GD250_BrakeSimpleFront(const std::string& name);
+    virtual ~GD250_BrakeSimpleFront() {}
 
-            virtual double GetMaxBrakingTorque() override { return m_maxtorque; }
+    virtual double GetMaxBrakingTorque() override { return m_maxtorque; }
 
-        private:
-        static const double m_maxtorque;
-    };
+  private:
+    static const double m_maxtorque;
+};
 
 /// Simple UAZBUS rear brake subsystem (torque applied directly to the spindle joint).
-    class CH_MODELS_API GD250_BrakeSimpleRear : public ChBrakeSimple {
-    public:
+class CH_MODELS_API GD250_BrakeSimpleRear : public ChBrakeSimple {
+  public:
     GD250_BrakeSimpleRear(const std::string& name);
     virtual ~GD250_BrakeSimpleRear() {}
 
     virtual double GetMaxBrakingTorque() override { return m_maxtorque; }
 
-private:
-static const double m_maxtorque;
+  private:
+    static const double m_maxtorque;
 };
 
 /// @} vehicle_models_uaz
 
-}  // end namespace gwagon
+}  // namespace gwagon
 }  // end namespace vehicle
 }  // end namespace chrono
 
