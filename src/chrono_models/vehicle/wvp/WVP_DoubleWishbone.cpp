@@ -136,7 +136,7 @@ WVP_SpringForce::WVP_SpringForce(int axle, double rest_length, double preload)
     m_map.AddPoint(196.0e-3, 70.22e3);
 }
 
-double WVP_SpringForce::evaluate(double time, double rest_length, double length, double vel, ChLinkTSDA* link) {
+double WVP_SpringForce::evaluate(double time, double rest_length, double length, double vel, const ChLinkTSDA& link) {
     // grab the value from the spring map
     return m_map.Get_y(m_rest_length - length) + m_preload;
 }
@@ -499,13 +499,13 @@ WVP_ShockForce::WVP_ShockForce(int axle_index, double rest_length)
 	m_roll_map.AddPoint(227.2e-3, 19.5e3 + 11.4e3);
 }
 
-double WVP_ShockForce::evaluate(double time, double rest_length, double length, double vel, ChLinkTSDA* link) {
+double WVP_ShockForce::evaluate(double time, double rest_length, double length, double vel, const ChLinkTSDA& link) {
     double length_mine;
     double length_other;
     double vel_mine;
     double vel_other;
 
-    if (link == m_shock_left.get()) {
+    if (&link == m_shock_left.get()) {
         length_mine = m_shock_left->GetLength();
         vel_mine = m_shock_left->GetVelocity();
         length_other = m_shock_right->GetLength();

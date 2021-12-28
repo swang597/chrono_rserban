@@ -89,15 +89,15 @@ bool verbose_solver = true;
 
 class ShockForce : public ChLinkTSDA::ForceFunctor {
   public:
-    virtual double evaluate(double time,         // current time
-                            double rest_length,  // undeformed length
-                            double length,       // current length
-                            double vel,          // current velocity (positive when extending)
-                            ChLinkTSDA* link     // back-pointer to associated link
+    virtual double evaluate(double time,            // current time
+                            double rest_length,     // undeformed length
+                            double length,          // current length
+                            double vel,             // current velocity (positive when extending)
+                            const ChLinkTSDA& link  // associated link
                             ) override {
         // Damper force is the value oif the 2nd state.
         // Flip the sign to make the force acting against velocity
-        return -link->GetStates()(1);
+        return -link.GetStates()(1);
     }
 };
 
@@ -141,7 +141,7 @@ class ShockODE : public ChLinkTSDA::ODE {
 
     virtual int GetNumStates() const override { return 2; }
     virtual void SetInitialConditions(ChVectorDynamic<>& states,  // output vector containig initial conditions
-                                      ChLinkTSDA* link            // back-pointer to associated link
+                                      const ChLinkTSDA& link      // associated link
                                       ) override {
         // we start with zero velocity and zero force
         states(0) = 0;
@@ -151,7 +151,7 @@ class ShockODE : public ChLinkTSDA::ODE {
     virtual void CalculateRHS(double time,                      // current time
                               const ChVectorDynamic<>& states,  // current states
                               ChVectorDynamic<>& rhs,           // output vector containing the ODE right-hand side
-                              ChLinkTSDA* link                  // back-pointer to associated link
+                              const ChLinkTSDA& link            // associated link
                               ) override {
         // ODE1
         // y_dot0 = (u0 - y0)/T0;
@@ -159,7 +159,7 @@ class ShockODE : public ChLinkTSDA::ODE {
         // y0 = delayed damper velocity v_del = stage(0) = output
         const double T0 = 0.04;
         const double T1 = 1.02e-3;
-        double vel = link->GetVelocity();
+        double vel = link.GetVelocity();
         rhs(0) = (vel - states(0)) / T0;
         double vel_delayed = states(0);
         double vel_min = std::min(vel, vel_delayed);

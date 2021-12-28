@@ -188,7 +188,11 @@ class CH_MODELS_API WVP_SpringForce : public ChLinkTSDA::ForceFunctor {
   public:
     WVP_SpringForce(int axle_index, double rest_length, double preload);
 
-    virtual double evaluate(double time, double rest_length, double length, double vel, ChLinkTSDA* link) override;
+    virtual double evaluate(double time,
+                            double rest_length,
+                            double length,
+                            double vel,
+                            const ChLinkTSDA& link) override;
 
     double evaluate(double displ);
 
@@ -205,7 +209,11 @@ class CH_MODELS_API WVP_ShockForce : public ChLinkTSDA::ForceFunctor {
   public:
     WVP_ShockForce(int axle_index, double rest_length);
 
-    virtual double evaluate(double time, double rest_length, double length, double vel, ChLinkTSDA* link) override;
+    virtual double evaluate(double time,
+                            double rest_length,
+                            double length,
+                            double vel,
+                            const ChLinkTSDA& link) override;
 
     double evaluate(double displ, double vel, double displ_other, double vel_other);
 

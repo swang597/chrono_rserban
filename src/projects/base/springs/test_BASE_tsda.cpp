@@ -45,7 +45,8 @@ int main(int, char*[]) {
     // Massless, linear spring-damper shock
     link_shock = chrono_types::make_shared<ChLinkTSDA>();
     link_shock->SetName("Shock");
-    link_shock->Initialize(anchor, mass, false, anchor->GetPos(), mass->GetPos(), false, 0.0);
+    link_shock->Initialize(anchor, mass, false, anchor->GetPos(), mass->GetPos());
+    link_shock->SetRestLength(0.0);
     link_shock->SetSpringCoefficient(Shock_SpringCoeff);
     link_shock->SetDampingCoefficient(Shock_DampingCoeff);
     my_system.AddLink(link_shock);

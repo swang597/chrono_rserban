@@ -86,7 +86,8 @@ int main(int argc, char* argv[]) {
     // Create the spring between body1 and ground.
     // The spring end points are specified in the body relative frames.
     auto spring = chrono_types::make_shared<ChLinkTSDA>();
-    spring->Initialize(ground, body1, true, ChVector<>(1.5, 1, 0), ChVector<>(0, 0.5, 0), false, 0.5);
+    spring->Initialize(ground, body1, true, ChVector<>(1.5, 1, 0), ChVector<>(0, 0.5, 0));
+    spring->SetRestLength(0.5);
     spring->SetSpringCoefficient(3e2);
     spring->SetDampingCoefficient(2e2);
     system.AddLink(spring);

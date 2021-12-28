@@ -49,11 +49,11 @@ double damping_coef = 1;
 
 // Functor class implementing the force for a ChLinkTSDA.
 class MySpringForce : public ChLinkTSDA::ForceFunctor {
-    virtual double evaluate(double time,         // current time
-                            double rest_length,  // undeformed length
-                            double length,       // current length
-                            double vel,          // current velocity (positive when extending)
-                            ChLinkTSDA* link     // back-pointer to associated link
+    virtual double evaluate(double time,            // current time
+                            double rest_length,     // undeformed length
+                            double length,          // current length
+                            double vel,             // current velocity (positive when extending)
+                            const ChLinkTSDA& link  // associated link
                             ) override {
         // Access current states.
         ////ChVectorDynamic<> states = link->GetStates();
@@ -67,16 +67,16 @@ class MySpringForce : public ChLinkTSDA::ForceFunctor {
 // Functor class implementing the ODE right-hand side for a ChLinkTSDA.
 class MySpringRHS : public ChLinkTSDA::ODE {
     virtual int GetNumStates() const override { return 2; }
-    virtual void SetInitialConditions(ChVectorDynamic<>& states,  ///< output vector containig initial conditions
-                                      ChLinkTSDA* link            ///< back-pointer to associated link
+    virtual void SetInitialConditions(ChVectorDynamic<>& states,  // output vector containig initial conditions
+                                      const ChLinkTSDA& link      // associated link
                                       ) override {
         states(0) = 1;
         states(1) = 0;
     }
     virtual void CalculateRHS(double time,
-                              const ChVectorDynamic<>& states,  ///< current states
-                              ChVectorDynamic<>& rhs,           ///< output vector containing the ODE right-hand side
-                              ChLinkTSDA* link                  ///< back-pointer to associated link
+                              const ChVectorDynamic<>& states,  // current states
+                              ChVectorDynamic<>& rhs,           // output vector containing the ODE right-hand side
+                              const ChLinkTSDA& link            // associated link
     ) override {
         rhs(0) = states(0);
         rhs(1) = std::cos(time);
@@ -121,7 +121,8 @@ int main(int argc, char* argv[]) {
     MySpringRHS rhs;
 
     auto spring = chrono_types::make_shared<ChLinkTSDA>();
-    spring->Initialize(body, ground, true, ChVector<>(0, 0, 0), ChVector<>(0, 0, 0), false, rest_length);
+    spring->Initialize(body, ground, true, ChVector<>(0, 0, 0), ChVector<>(0, 0, 0));
+    spring->SetRestLength(rest_length);
     spring->RegisterForceFunctor(force);
     spring->RegisterODE(&rhs);
     system.AddLink(spring);
