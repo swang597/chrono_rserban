@@ -41,12 +41,14 @@ namespace chrono {
                 virtual const ChVector<> getLocation(PointId which) override;
 
                 virtual double getAxleTubeMass() const override { return m_axleTubeMass; }
+                virtual double getPanhardRodMass() const override { return m_panhardRodMass; }
                 virtual double getSpindleMass() const override { return m_spindleMass; }
                 virtual double getKnuckleMass() const override { return m_knuckleMass; }
                 virtual double getTierodMass() const override { return m_tierodMass; }
                 virtual double getDraglinkMass() const override { return m_draglinkMass; }
 
                 virtual double getAxleTubeRadius() const override { return m_axleTubeRadius; }
+                virtual double getPanhardRodRadius() const override { return m_panhardRodRadius; }
                 virtual double getSpindleRadius() const override { return m_spindleRadius; }
                 virtual double getSpindleWidth() const override { return m_spindleWidth; }
                 virtual double getKnuckleRadius() const override { return m_knuckleRadius; }
@@ -56,6 +58,7 @@ namespace chrono {
                 virtual const ChVector<> getAxleTubeCOM() const override { return ChVector<>(0,0,0); }
 
                 virtual const ChVector<>& getAxleTubeInertia() const override { return m_axleTubeInertia; }
+                virtual const ChVector<>& getPanhardRodInertia() const override { return m_panhardRodInertia; }
                 virtual const ChVector<>& getSpindleInertia() const override { return m_spindleInertia; }
                 virtual const ChVector<>& getKnuckleInertia() const override { return m_knuckleInertia; }
                 virtual const ChVector<>& getTierodInertia() const override { return m_tierodInertia; }
@@ -76,12 +79,14 @@ namespace chrono {
                 static const double m_axleShaftInertia;
 
                 static const double m_axleTubeMass;
+                static const double m_panhardRodMass;
                 static const double m_spindleMass;
                 static const double m_knuckleMass;
                 static const double m_tierodMass;
                 static const double m_draglinkMass;
 
                 static const double m_axleTubeRadius;
+                static const double m_panhardRodRadius;
                 static const double m_spindleRadius;
                 static const double m_spindleWidth;
                 static const double m_knuckleRadius;
@@ -89,6 +94,7 @@ namespace chrono {
                 static const double m_draglinkRadius;
 
                 static const ChVector<> m_axleTubeInertia;
+                static const ChVector<> m_panhardRodInertia;
                 static const ChVector<> m_spindleInertia;
                 static const ChVector<> m_knuckleInertia;
                 static const ChVector<> m_tierodInertia;
