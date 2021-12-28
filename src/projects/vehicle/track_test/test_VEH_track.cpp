@@ -3,6 +3,7 @@
 
 #include "chrono/solver/ChIterativeSolverLS.h"
 #include "chrono/solver/ChIterativeSolverVI.h"
+#include "chrono/solver/ChDirectSolverLS.h"
 #include "chrono/solver/ChSolverPSOR.h"
 #include "chrono/solver/ChSolverBB.h"
 
