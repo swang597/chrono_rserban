@@ -30,10 +30,10 @@ using namespace chrono::irrlicht;
 
 // Callback class implementing the torque for a ChLinkRotSpringCB link.
 class RotationalDamper : public ChLinkRSDA::TorqueFunctor {
-    virtual double evaluate(double time,      // current time
-                            double angle,     // relative angle of rotation
-                            double vel,       // relative angular speed
-                            ChLinkRSDA* link  // back-pointer to associated link
+    virtual double evaluate(double time,            // current time
+                            double angle,           // relative angle of rotation
+                            double vel,             // relative angular speed
+                            const ChLinkRSDA& link  // associated link
                             ) override {
         double torque = -300 * vel;
         return torque;
@@ -100,7 +100,7 @@ int main(int argc, char* argv[]) {
         body->AddAsset(col);
     }
 
-    // Connect the body to the ground through a universal joint (loacted at the origin).
+    // Connect the body to the ground through a universal joint (located at the origin).
     // Its kinematic constraints will enforce orthogonality of the associated cross.
     auto ujoint = chrono_types::make_shared<ChLinkUniversal>();
     system.AddLink(ujoint);

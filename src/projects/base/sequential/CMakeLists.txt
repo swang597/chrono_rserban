@@ -14,7 +14,6 @@ set(DEMOS
     test_BASE_equilibrium
     test_BASE_archive
     test_BASE_lock_lock
-    test_BASE_ujoint_spring
 )
 
 include_directories(${CH_IRRLICHTINC})

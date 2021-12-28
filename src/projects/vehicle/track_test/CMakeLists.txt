@@ -1,20 +1,26 @@
-if(NOT ENABLE_MODULE_IRRLICHT OR NOT ENABLE_MODULE_POSTPROCESS)
-  return()
+#=============================================================================
+# CMake configuration file for demos of various Chrono::Vehicle test rigs.
+# These example programs require Irrlicht run-time visualization.
+#=============================================================================
+
+if(NOT ENABLE_MODULE_IRRLICHT)
+    return()
 endif()
- 
+
+#--------------------------------------------------------------
+# List all demos
+
 set(DEMOS
-    test_BASE_tsda
-    test_BASE_rsda
-    test_BASE_rsda_ujoint
-    test_BASE_rsda_turns
 )
 
-if (ENABLE_MODULE_PARDISO_MKL)
-set(DEMOS ${DEMOS}
-    test_BASE_active_spring
-    test_BASE_active_shock
-)
+if(ENABLE_MODULE_PARDISO_MKL OR ENABLE_MODULE_MUMPS)
+    set(DEMOS ${DEMOS}
+        test_VEH_track
+        )
 endif()
+
+#--------------------------------------------------------------
+# Include directories, compiler flags, libraries
 
 include_directories(${CH_IRRLICHTINC})
 set(COMPILER_FLAGS "${CH_CXX_FLAGS}  ${CH_IRRLICHT_CXX_FLAGS}")
@@ -33,6 +39,9 @@ if(ENABLE_MODULE_MUMPS)
     list(APPEND LIBS "ChronoEngine_mumps")
 endif()
 
+#--------------------------------------------------------------
+# Create the executables
+
 foreach(PROGRAM ${DEMOS})
     message(STATUS "...add ${PROGRAM}")
 
@@ -49,5 +58,8 @@ foreach(PROGRAM ${DEMOS})
     target_link_libraries(${PROGRAM}
                           ChronoEngine
                           ChronoEngine_irrlicht
+                          ChronoEngine_vehicle
+                          ChronoEngine_vehicle_irrlicht
+                          ChronoModels_vehicle
                           ${LIBS})
 endforeach()
