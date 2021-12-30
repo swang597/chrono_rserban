@@ -31,40 +31,38 @@ namespace chrono {
             GD250_SimpleMapPowertrain::GD250_SimpleMapPowertrain(const std::string& name) : ChSimpleMapPowertrain(name) {}
 
             double GD250_SimpleMapPowertrain::GetMaxEngineSpeed() {
-                return 4000 * rpm2rads;
+                return 4600 * rpm2rads;
             }
 
             void GD250_SimpleMapPowertrain::SetEngineTorqueMaps(ChFunction_Recorder& map0, ChFunction_Recorder& mapF) {
+                // Mercedes 5 Cyl. Diesel Engine OM602D25 66kW
                 map0.AddPoint(-10.0,	                          0.0);
                 map0.AddPoint(10.0,	                          0.0);
-                map0.AddPoint(rpm2rads*7.3654652540894313e+02,	   -10.0);
-                map0.AddPoint(rpm2rads*9.8766401357229211e+02,	   -10.0);
-                map0.AddPoint(rpm2rads*1.5002376354371584e+03,	   -15.0);
-                map0.AddPoint(rpm2rads*1.9805319424140143e+03,	   -15.0);
-                map0.AddPoint(rpm2rads*2.3483645267445136e+03,	   -15.0);
-                map0.AddPoint(rpm2rads*2.7370849651969356e+03,	   -20.0);
-                map0.AddPoint(rpm2rads*3.1899218510296519e+03,	   -20.0);
-                map0.AddPoint(rpm2rads*3.6847450081517964e+03,	   -30.0);
-                map0.AddPoint(rpm2rads*3.9080471179935125e+03,	   -100.0);
+                map0.AddPoint(rpm2rads*1000.00,	-10.00);
+                map0.AddPoint(rpm2rads*1530.00,	-12.00);
+                map0.AddPoint(rpm2rads*2050.00,	-14.00);
+                map0.AddPoint(rpm2rads*2550.00,	-16.00);
+                map0.AddPoint(rpm2rads*2880.00,	-18.00);
+                map0.AddPoint(rpm2rads*3070.00,	-20.00);
+                map0.AddPoint(rpm2rads*3560.00,	-22.00);
+                map0.AddPoint(rpm2rads*4030.00,	-24.00);
+                map0.AddPoint(rpm2rads*4550.00,	-26.00);
+                map0.AddPoint(rpm2rads*4700.00,	-28.00);
 
-                mapF.AddPoint(-10.0,	                          0.6*1.7442687747035581e+02);
-                mapF.AddPoint(rpm2rads*7.3654652540894313e+02,	   1.7442687747035581e+02);
-                mapF.AddPoint(rpm2rads*9.8766401357229211e+02,	   1.8272727272727280e+02);
-                mapF.AddPoint(rpm2rads*1.2386762202128491e+03,	   1.8984189723320162e+02);
-                mapF.AddPoint(rpm2rads*1.5002376354371584e+03,	   1.9577075098814234e+02);
-                mapF.AddPoint(rpm2rads*1.7244030537657691e+03,	   2.0051383399209493e+02);
-                mapF.AddPoint(rpm2rads*1.9805319424140143e+03,	   2.0525691699604749e+02);
-                mapF.AddPoint(rpm2rads*2.1885050625372241e+03,	   2.0762845849802375e+02);
-                mapF.AddPoint(rpm2rads*2.3483645267445136e+03,	   2.0810276679841903e+02);
-                mapF.AddPoint(rpm2rads*2.4920316927464028e+03,	   2.0620553359683799e+02);
-                mapF.AddPoint(rpm2rads*2.7370849651969356e+03,	   2.0620553359683799e+02);
-                mapF.AddPoint(rpm2rads*2.9927927277540134e+03,	   2.0620553359683799e+02);
-                mapF.AddPoint(rpm2rads*3.1899218510296519e+03,	   2.0644268774703562e+02);
-                mapF.AddPoint(rpm2rads*3.4879527857490921e+03,	   2.0312252964426881e+02);
-                mapF.AddPoint(rpm2rads*3.6847450081517964e+03,	   1.9956521739130440e+02);
-                mapF.AddPoint(rpm2rads*3.9080471179935125e+03,	   1.9458498023715421e+02);
-                mapF.AddPoint(rpm2rads*4100.0,	                  -100.0);
-                mapF.AddPoint(rpm2rads*4200.0,	                  -200.0);
+                mapF.AddPoint(-10.0,	        25);
+                mapF.AddPoint(rpm2rads*300.00,	50.00);
+                mapF.AddPoint(rpm2rads*700.00,	100.00);
+                mapF.AddPoint(rpm2rads*1000.00,	132.00);
+                mapF.AddPoint(rpm2rads*1530.00,	144.00);
+                mapF.AddPoint(rpm2rads*2050.00,	152.00);
+                mapF.AddPoint(rpm2rads*2550.00,	155.00);
+                mapF.AddPoint(rpm2rads*2880.00,	156.00);
+                mapF.AddPoint(rpm2rads*3070.00,	154.00);
+                mapF.AddPoint(rpm2rads*3560.00,	153.00);
+                mapF.AddPoint(rpm2rads*4030.00,	150.00);
+                mapF.AddPoint(rpm2rads*4550.00,	140.00);
+                mapF.AddPoint(rpm2rads*4600.00,	-100);
+                mapF.AddPoint(rpm2rads*4700.00,	-500);
             }
 
             void GD250_SimpleMapPowertrain::SetGearRatios(std::vector<double>& fwd, double& rev) {

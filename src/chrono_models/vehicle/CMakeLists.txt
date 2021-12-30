@@ -27,6 +27,8 @@ set(CVM_GWAGON_FILES
     g-wagon/gd250_Chassis.h
     g-wagon/gd250_Driveline4WD.cpp
     g-wagon/gd250_Driveline4WD.h
+    g-wagon/gd250_GAxle.cpp
+    g-wagon/gd250_GAxle.h
     g-wagon/gd250_GAxleSimple.cpp
     g-wagon/gd250_GAxleSimple.h
     g-wagon/gd250_Pac02Tire.cpp
@@ -39,6 +41,8 @@ set(CVM_GWAGON_FILES
     g-wagon/gd250_SimpleMapPowertrain.h
     g-wagon/gd250_TMeasyTire.cpp
     g-wagon/gd250_TMeasyTire.h
+    g-wagon/gd250_ToeBarGAxle.cpp
+    g-wagon/gd250_ToeBarGAxle.h
     g-wagon/gd250_ToeBarGAxleSimple.cpp
     g-wagon/gd250_ToeBarGAxleSimple.h
     g-wagon/gd250_Vehicle.cpp

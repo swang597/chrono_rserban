@@ -88,18 +88,18 @@ ChVector<> trackPoint(0.0, 0.0, 1.75);
 ChContactMethod contact_method = ChContactMethod::SMC;
 bool contact_vis = false;
 
-// Simulation step sizes
+// Simulation step sizes (don't increase!!)
 double step_size = 3e-4;
 double tire_step_size = 1e-4;
 
 // Simulation end time
-double t_end = 1000;
+double t_end = 100;
 
 // Time interval between two render frames
 double render_step_size = 1.0 / 50;  // FPS = 50
 
 // Output directories
-const std::string out_dir = GetChronoOutputPath() + "mrole";
+const std::string out_dir = GetChronoOutputPath() + "gd250";
 const std::string pov_dir = out_dir + "/POVRAY";
 
 // Debug logging

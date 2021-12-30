@@ -27,10 +27,10 @@
 #include "chrono_models/vehicle/g-wagon/gd250_BrakeShafts.h"
 #include "chrono_models/vehicle/g-wagon/gd250_Chassis.h"
 #include "chrono_models/vehicle/g-wagon/gd250_Driveline4WD.h"
-#include "chrono_models/vehicle/g-wagon/gd250_GAxleSimple.h"
+#include "chrono_models/vehicle/g-wagon/gd250_GAxle.h"
 #include "chrono_models/vehicle/g-wagon/gd250_RotaryArm.h"
 #include "chrono_models/vehicle/g-wagon/gd250_SimpleMapPowertrain.h"
-#include "chrono_models/vehicle/g-wagon/gd250_ToeBarGAxleSimple.h"
+#include "chrono_models/vehicle/g-wagon/gd250_ToeBarGAxle.h"
 #include "chrono_models/vehicle/g-wagon/gd250_Wheel.h"
 
 namespace chrono {
@@ -73,8 +73,8 @@ void GD250_Vehicle::Create(bool fixed,
     m_axles[0] = chrono_types::make_shared<ChAxle>();
     m_axles[1] = chrono_types::make_shared<ChAxle>();
 
-    m_axles[0]->m_suspension = chrono_types::make_shared<GD250_ToeBarGAxleSimple>("FrontSusp");
-    m_axles[1]->m_suspension = chrono_types::make_shared<GD250_GAxleSimple>("RearSusp");
+    m_axles[0]->m_suspension = chrono_types::make_shared<GD250_ToeBarGAxle>("FrontSusp");
+    m_axles[1]->m_suspension = chrono_types::make_shared<GD250_GAxle>("RearSusp");
 
     m_axles[0]->m_wheels.resize(2);
     m_axles[0]->m_wheels[0] = chrono_types::make_shared<GD250_Wheel>("Wheel_FL");
@@ -134,46 +134,46 @@ void GD250_Vehicle::Initialize(const ChCoordsys<>& chassisPos, double chassisFwd
 // -----------------------------------------------------------------------------
 double GD250_Vehicle::GetSpringForce(int axle, VehicleSide side) const {
     if (axle == 0)
-        return std::static_pointer_cast<ChToeBarGAxleSimple>(m_axles[axle]->m_suspension)->GetSpringForce(side);
+        return std::static_pointer_cast<ChToeBarGAxle>(m_axles[axle]->m_suspension)->GetSpringForce(side);
     else
-        return std::static_pointer_cast<ChGAxleSimple>(m_axles[axle]->m_suspension)->GetSpringForce(side);
+        return std::static_pointer_cast<ChGAxle>(m_axles[axle]->m_suspension)->GetSpringForce(side);
 }
 
 double GD250_Vehicle::GetSpringLength(int axle, VehicleSide side) const {
     if (axle == 0)
-        return std::static_pointer_cast<ChToeBarGAxleSimple>(m_axles[axle]->m_suspension)->GetSpringLength(side);
+        return std::static_pointer_cast<ChToeBarGAxle>(m_axles[axle]->m_suspension)->GetSpringLength(side);
     else
-        return std::static_pointer_cast<ChGAxleSimple>(m_axles[axle]->m_suspension)->GetSpringLength(side);
+        return std::static_pointer_cast<ChGAxle>(m_axles[axle]->m_suspension)->GetSpringLength(side);
 }
 
 double GD250_Vehicle::GetSpringDeformation(int axle, VehicleSide side) const {
     if (axle == 0)
-        return std::static_pointer_cast<ChToeBarGAxleSimple>(m_axles[axle]->m_suspension)->GetSpringDeformation(side);
+        return std::static_pointer_cast<ChToeBarGAxle>(m_axles[axle]->m_suspension)->GetSpringDeformation(side);
     else
-        return std::static_pointer_cast<ChGAxleSimple>(m_axles[axle]->m_suspension)->GetSpringDeformation(side);
+        return std::static_pointer_cast<ChGAxle>(m_axles[axle]->m_suspension)->GetSpringDeformation(side);
 }
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 double GD250_Vehicle::GetShockForce(int axle, VehicleSide side) const {
     if (axle == 0)
-        return std::static_pointer_cast<ChToeBarGAxleSimple>(m_axles[axle]->m_suspension)->GetShockForce(side);
+        return std::static_pointer_cast<ChToeBarGAxle>(m_axles[axle]->m_suspension)->GetShockForce(side);
     else
-        return std::static_pointer_cast<ChGAxleSimple>(m_axles[axle]->m_suspension)->GetShockForce(side);
+        return std::static_pointer_cast<ChGAxle>(m_axles[axle]->m_suspension)->GetShockForce(side);
 }
 
 double GD250_Vehicle::GetShockLength(int axle, VehicleSide side) const {
     if (axle == 0)
-        return std::static_pointer_cast<ChToeBarGAxleSimple>(m_axles[axle]->m_suspension)->GetShockLength(side);
+        return std::static_pointer_cast<ChToeBarGAxle>(m_axles[axle]->m_suspension)->GetShockLength(side);
     else
-        return std::static_pointer_cast<ChGAxleSimple>(m_axles[axle]->m_suspension)->GetShockLength(side);
+        return std::static_pointer_cast<ChGAxle>(m_axles[axle]->m_suspension)->GetShockLength(side);
 }
 
 double GD250_Vehicle::GetShockVelocity(int axle, VehicleSide side) const {
     if (axle == 0)
-        return std::static_pointer_cast<ChToeBarGAxleSimple>(m_axles[axle]->m_suspension)->GetShockVelocity(side);
+        return std::static_pointer_cast<ChToeBarGAxle>(m_axles[axle]->m_suspension)->GetShockVelocity(side);
     else
-        return std::static_pointer_cast<ChGAxleSimple>(m_axles[axle]->m_suspension)->GetShockVelocity(side);
+        return std::static_pointer_cast<ChGAxle>(m_axles[axle]->m_suspension)->GetShockVelocity(side);
 }
 
 // -----------------------------------------------------------------------------
@@ -184,11 +184,11 @@ void GD250_Vehicle::LogHardpointLocations() {
     GetLog().SetNumFormat("%7.3f");
 
     GetLog() << "\n---- FRONT suspension hardpoint locations (LEFT side)\n";
-    std::static_pointer_cast<ChToeBarGAxleSimple>(m_axles[0]->m_suspension)
+    std::static_pointer_cast<ChToeBarGAxle>(m_axles[0]->m_suspension)
         ->LogHardpointLocations(ChVector<>(0, 0, 0), false);
 
     GetLog() << "\n---- REAR suspension hardpoint locations (LEFT side)\n";
-    std::static_pointer_cast<ChGAxleSimple>(m_axles[1]->m_suspension)
+    std::static_pointer_cast<ChGAxle>(m_axles[1]->m_suspension)
         ->LogHardpointLocations(ChVector<>(0, 0, 0), false);
 
     GetLog() << "\n\n";
