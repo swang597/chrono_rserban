@@ -35,7 +35,7 @@ namespace chrono {
             const double GD250_RigidTire::m_mass = 19.8;
             const ChVector<> GD250_RigidTire::m_inertia(1.2369, 2.22357, 1.2369);
 
-            const std::string GD250_RigidTire::m_meshFile = "uaz/uaz_tire_fine.obj";
+            const std::string GD250_RigidTire::m_meshFile = "g-wagon/gd250_tire_fine.obj";
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------

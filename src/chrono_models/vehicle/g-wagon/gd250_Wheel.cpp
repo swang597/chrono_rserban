@@ -39,7 +39,7 @@ namespace chrono {
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
             GD250_Wheel::GD250_Wheel(const std::string& name) : ChWheel(name) {
-                m_vis_mesh_file = "uaz/uaz_rim.obj";
+                m_vis_mesh_file = "g-wagon/gd250_rim.obj";
             }
 
         }  // end namespace uaz

@@ -32,11 +32,11 @@ namespace chrono {
 
             const double GD250_TMeasyTireFront::m_mass = 37.6;
             const ChVector<> GD250_TMeasyTireFront::m_inertia(3.84, 6.69, 3.84);
-            const std::string GD250_TMeasyTireFront::m_meshFile = "uaz/uaz_tire.obj";
+            const std::string GD250_TMeasyTireFront::m_meshFile = "g-wagon/gd250_tire.obj";
 
             const double GD250_TMeasyTireRear::m_mass = 37.6;
             const ChVector<> GD250_TMeasyTireRear::m_inertia(3.84, 6.69, 3.84);
-            const std::string GD250_TMeasyTireRear::m_meshFile = "uaz/uaz_tire.obj";
+            const std::string GD250_TMeasyTireRear::m_meshFile = "g-wagon/gd250_tire.obj";
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
