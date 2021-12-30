@@ -60,7 +60,7 @@ namespace chrono {
                 m_geometry.m_vis_boxes.push_back(box1);
 
                 m_geometry.m_has_mesh = true;
-                m_geometry.m_vis_mesh_file = "uaz/GD250_Chassis.obj";
+                m_geometry.m_vis_mesh_file = "g-wagon/gd250_Chassis.obj";
 
                 m_geometry.m_has_collision = (chassis_collision_type != CollisionType::NONE);
                 switch (chassis_collision_type) {
