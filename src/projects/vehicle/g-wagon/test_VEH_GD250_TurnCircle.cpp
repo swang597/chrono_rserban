@@ -119,29 +119,31 @@ int main(int argc, char* argv[]) {
     // --------------
 
     // Create the mrole vehicle, set parameters, and initialize
-    GD250 my_mrole;
-    my_mrole.SetContactMethod(contact_method);
-    my_mrole.SetChassisCollisionType(chassis_collision_type);
-    my_mrole.SetChassisFixed(false);
-    my_mrole.SetInitPosition(ChCoordsys<>(initLoc, initRot));
-    //my_mrole.SetPowertrainType(powertrain_model);
-    //my_mrole.SetDriveType(drive_type);
-    my_mrole.SetBrakeType(brake_type);
-    my_mrole.SetTireType(tire_model);
-    my_mrole.SetTireStepSize(tire_step_size);
-    my_mrole.Initialize();
+    GD250 my_gd250;
+    my_gd250.SetContactMethod(contact_method);
+    my_gd250.SetChassisCollisionType(chassis_collision_type);
+    my_gd250.SetChassisFixed(false);
+    my_gd250.SetKinematicMode(false);
+    my_gd250.SetLowRangeDriveline(false);
+    my_gd250.SetInitPosition(ChCoordsys<>(initLoc, initRot));
+    //my_gd250.SetPowertrainType(powertrain_model);
+    //my_gd250.SetDriveType(drive_type);
+    my_gd250.SetBrakeType(brake_type);
+    my_gd250.SetTireType(tire_model);
+    my_gd250.SetTireStepSize(tire_step_size);
+    my_gd250.Initialize();
 
     if (tire_model == TireModelType::RIGID_MESH)
         tire_vis_type = VisualizationType::MESH;
 
-    my_mrole.SetChassisVisualizationType(chassis_vis_type);
-    my_mrole.SetSuspensionVisualizationType(suspension_vis_type);
-    my_mrole.SetSteeringVisualizationType(steering_vis_type);
-    my_mrole.SetWheelVisualizationType(wheel_vis_type);
-    my_mrole.SetTireVisualizationType(tire_vis_type);
+    my_gd250.SetChassisVisualizationType(chassis_vis_type);
+    my_gd250.SetSuspensionVisualizationType(suspension_vis_type);
+    my_gd250.SetSteeringVisualizationType(steering_vis_type);
+    my_gd250.SetWheelVisualizationType(wheel_vis_type);
+    my_gd250.SetTireVisualizationType(tire_vis_type);
 
     // Create the terrain
-    RigidTerrain terrain(my_mrole.GetSystem());
+    RigidTerrain terrain(my_gd250.GetSystem());
 
     MaterialInfo minfo;
     minfo.mu = 0.9f;
@@ -170,7 +172,7 @@ int main(int argc, char* argv[]) {
     terrain.Initialize();
 
     // Create the vehicle Irrlicht interface
-    ChWheeledVehicleIrrApp app(&my_mrole.GetVehicle(), L"mrole Demo");
+    ChWheeledVehicleIrrApp app(&my_gd250.GetVehicle(), L"GD250 Wall2Wall Demo");
     app.SetSkyBox();
     app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
     app.SetChaseCamera(trackPoint, 6.0, 0.5);
@@ -199,13 +201,13 @@ int main(int argc, char* argv[]) {
     utils::CSV_writer driver_csv(" ");
 
     // Set up vehicle output
-    my_mrole.GetVehicle().SetChassisOutput(true);
-    my_mrole.GetVehicle().SetSuspensionOutput(0, true);
-    my_mrole.GetVehicle().SetSteeringOutput(0, true);
-    my_mrole.GetVehicle().SetOutput(ChVehicleOutput::ASCII, out_dir, "output", 0.1);
+    my_gd250.GetVehicle().SetChassisOutput(true);
+    my_gd250.GetVehicle().SetSuspensionOutput(0, true);
+    my_gd250.GetVehicle().SetSteeringOutput(0, true);
+    my_gd250.GetVehicle().SetOutput(ChVehicleOutput::ASCII, out_dir, "output", 0.1);
 
     // Generate JSON information with available output channels
-    my_mrole.GetVehicle().ExportComponentList(out_dir + "/component_list.json");
+    my_gd250.GetVehicle().ExportComponentList(out_dir + "/component_list.json");
 
     // ------------------------
     // Create the driver system
@@ -235,11 +237,11 @@ int main(int argc, char* argv[]) {
     // Simulation loop
     // ---------------
 
-    my_mrole.GetVehicle().LogSubsystemTypes();
+    my_gd250.GetVehicle().LogSubsystemTypes();
 
     if (debug_output) {
         GetLog() << "\n\n============ System Configuration ============\n";
-        my_mrole.LogHardpointLocations();
+        my_gd250.LogHardpointLocations();
     }
 
     // Number of simulation steps between miscellaneous events
@@ -261,7 +263,7 @@ int main(int argc, char* argv[]) {
     std::vector<double> trace_x, trace_y;
 
     while (app.GetDevice()->run()) {
-        double time = my_mrole.GetSystem()->GetChTime();
+        double time = my_gd250.GetSystem()->GetChTime();
 
         // End simulation
         if (time >= t_end)
@@ -276,23 +278,23 @@ int main(int argc, char* argv[]) {
             if (povray_output) {
                 char filename[100];
                 sprintf(filename, "%s/data_%03d.dat", pov_dir.c_str(), render_frame + 1);
-                utils::WriteVisualizationAssets(my_mrole.GetSystem(), filename);
+                utils::WriteVisualizationAssets(my_gd250.GetSystem(), filename);
             }
 
             render_frame++;
         }
 
-        trace_x.push_back(my_mrole.GetVehicle().GetVehiclePos().x());
-        trace_y.push_back(my_mrole.GetVehicle().GetVehiclePos().y());
+        trace_x.push_back(my_gd250.GetVehicle().GetVehiclePos().x());
+        trace_y.push_back(my_gd250.GetVehicle().GetVehiclePos().y());
 
         // Debug logging
         if (debug_output && step_number % debug_steps == 0) {
             GetLog() << "\n\n============ System Information ============\n";
             GetLog() << "Time = " << time << "\n\n";
-            my_mrole.DebugLog(OUT_SPRINGS | OUT_SHOCKS | OUT_CONSTRAINTS);
+            my_gd250.DebugLog(OUT_SPRINGS | OUT_SHOCKS | OUT_CONSTRAINTS);
 
-            auto marker_driver = my_mrole.GetChassis()->GetMarkers()[0]->GetAbsCoord().pos;
-            auto marker_com = my_mrole.GetChassis()->GetMarkers()[1]->GetAbsCoord().pos;
+            auto marker_driver = my_gd250.GetChassis()->GetMarkers()[0]->GetAbsCoord().pos;
+            auto marker_com = my_gd250.GetChassis()->GetMarkers()[1]->GetAbsCoord().pos;
             GetLog() << "Markers\n";
             std::cout << "  Driver loc:      " << marker_driver.x() << " " << marker_driver.y() << " "
                       << marker_driver.z() << std::endl;
@@ -312,13 +314,13 @@ int main(int argc, char* argv[]) {
         // Update modules (process inputs from other modules)
         driver.Synchronize(time);
         terrain.Synchronize(time);
-        my_mrole.Synchronize(time, driver_inputs, terrain);
+        my_gd250.Synchronize(time, driver_inputs, terrain);
         app.Synchronize(driver.GetInputModeAsString(), driver_inputs);
 
         // Advance simulation for one timestep for all modules
         driver.Advance(step_size);
         terrain.Advance(step_size);
-        my_mrole.Advance(step_size);
+        my_gd250.Advance(step_size);
         app.Advance(step_size);
 
         // Increment frame number
@@ -358,7 +360,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Turn Diameter      = " << delta << " m" << std::endl;
     std::cout << "Turn Radius        = " << delta / 2.0 << " m" << std::endl;
     std::cout << "Turn Radius VehCenter = " << (delta - 3.0) / 2.0 << " m" << std::endl;
-    std::cout << "Vehicle Mass       = " << my_mrole.GetVehicle().GetVehicleMass() << " kg" << std::endl;
-    std::cout << "Vehicle CoG height = " << my_mrole.GetVehicle().GetVehicleCOMPos().z() << " m" << std::endl;
+    std::cout << "Vehicle Mass       = " << my_gd250.GetVehicle().GetVehicleMass() << " kg" << std::endl;
+    std::cout << "Vehicle CoG height = " << my_gd250.GetVehicle().GetVehicleCOMPos().z() << " m" << std::endl;
     return 0;
 }

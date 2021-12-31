@@ -207,11 +207,11 @@ const ChVector<> GD250_ToeBarGAxleSimple::getLocation(PointId which) {
         case KNUCKLE_U:
             return ChVector<>(0.0, 0.7325 - 0.07 - 0.0098058067569092, 0.1);
         case KNUCKLE_DRL:
-            return ChVector<>(0.0, 0.7325 - 0.2, 0.2);
+            return ChVector<>(0.2, 0.7, 0.1);
         case TIEROD_K:
             return ChVector<>(-0.190568826619798, 0.7325 - 0.07 - 0.060692028477827, 0.1);
         case DRAGLINK_C:
-            return ChVector<>(0.6, 0.7325 - 0.2, 0.2);
+            return ChVector<>(0.2, 0.2, 0.1);
         case PANHARD_A:
             return ChVector<>(0.1, -0.44, 0.0);
         case PANHARD_C:

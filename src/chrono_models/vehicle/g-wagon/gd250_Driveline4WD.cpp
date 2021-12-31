@@ -38,15 +38,33 @@ const double GD250_Driveline4WD::m_rear_conicalgear_ratio = 1 / 5.286;
 const double GD250_Driveline4WD::m_axle_differential_locking_limit = 100;
 const double GD250_Driveline4WD::m_central_differential_locking_limit = 100;
 
-// -----------------------------------------------------------------------------
+    const double GD250_Driveline4WD_LowRange::m_central_differentialbox_inertia = 0.6;
+    const double GD250_Driveline4WD_LowRange::m_front_differentialbox_inertia = 0.6;
+    const double GD250_Driveline4WD_LowRange::m_rear_differentialbox_inertia = 0.6;
+    const double GD250_Driveline4WD_LowRange::m_driveshaft_inertia = 0.5;
+    const double GD250_Driveline4WD_LowRange::m_frontshaft_inertia = 0.5;
+    const double GD250_Driveline4WD_LowRange::m_rearshaft_inertia = 0.5;
+
+    const double GD250_Driveline4WD_LowRange::m_front_conicalgear_ratio = 1 / 5.286 /2;
+    const double GD250_Driveline4WD_LowRange::m_rear_conicalgear_ratio = 1 / 5.286 / 2;
+
+    const double GD250_Driveline4WD_LowRange::m_axle_differential_locking_limit = 100;
+    const double GD250_Driveline4WD_LowRange::m_central_differential_locking_limit = 100;
+
+    // -----------------------------------------------------------------------------
 // Constructor of the GD250_Driveline4WD.
 // The direction of the motor block is along the X axis, while the directions of
 // the axles is along the Y axis (relative to the chassis coordinate frame),
 // -----------------------------------------------------------------------------
-GD250_Driveline4WD::GD250_Driveline4WD(const std::string& name) : ChShaftsDriveline4WD(name) {
-    SetMotorBlockDirection(ChVector<>(1, 0, 0));
-    SetAxleDirection(ChVector<>(0, 1, 0));
-}
+    GD250_Driveline4WD::GD250_Driveline4WD(const std::string& name) : ChShaftsDriveline4WD(name) {
+        SetMotorBlockDirection(ChVector<>(1, 0, 0));
+        SetAxleDirection(ChVector<>(0, 1, 0));
+    }
+
+    GD250_Driveline4WD_LowRange::GD250_Driveline4WD_LowRange(const std::string& name) : ChShaftsDriveline4WD(name) {
+        SetMotorBlockDirection(ChVector<>(1, 0, 0));
+        SetAxleDirection(ChVector<>(0, 1, 0));
+    }
 
 }  // end namespace gwagon
 }  // end namespace vehicle

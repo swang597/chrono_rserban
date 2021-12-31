@@ -86,7 +86,8 @@ class CH_MODELS_API GD250 {
     void SetSteeringVisualizationType(VisualizationType vis) { m_vehicle->SetSteeringVisualizationType(vis); }
     void SetWheelVisualizationType(VisualizationType vis) { m_vehicle->SetWheelVisualizationType(vis); }
     void SetTireVisualizationType(VisualizationType vis) { m_vehicle->SetWheelVisualizationType(vis); }
-
+    void SetKinematicMode(bool mode) { m_kinematic_mode = mode; }
+    void SetLowRangeDriveline(bool mode) { m_low_range = mode; }
     void Synchronize(double time, const ChDriver::Inputs& driver_inputs, const ChTerrain& terrain);
     void Advance(double step);
 
@@ -118,6 +119,8 @@ class CH_MODELS_API GD250 {
     double m_area;
     double m_air_density;
 
+    bool m_kinematic_mode;
+    bool m_low_range;
     double m_tire_mass;
 };
 

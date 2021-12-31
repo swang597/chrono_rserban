@@ -38,19 +38,23 @@ namespace chrono {
                         BrakeType brake_type,
                         SteeringTypeWV steering_model,
                         ChContactMethod contact_method = ChContactMethod::NSC,
-                        CollisionType chassis_collision_type = CollisionType::NONE);
+                        CollisionType chassis_collision_type = CollisionType::NONE,
+                        bool kinematic_mode=true,
+                        bool low_range = false);
 
                 GD250_Vehicle(ChSystem* system,
                         const bool fixed,
                         BrakeType brake_type,
                         SteeringTypeWV steering_model,
-                        CollisionType chassis_collision_type = CollisionType::NONE);
+                        CollisionType chassis_collision_type = CollisionType::NONE,
+                        bool kinematic_mode=true,
+                        bool low_range = false);
 
                 ~GD250_Vehicle();
 
                 virtual int GetNumberAxles() const override { return 2; }
 
-                virtual double GetWheelbase() const override { return 2.3; }
+                virtual double GetWheelbase() const override { return 2.4; }
                 virtual double GetMinTurningRadius() const override { return 5.8; }
                 virtual double GetMaxSteeringAngle() const override { return 27 * CH_C_DEG_TO_RAD; }
 
@@ -77,6 +81,8 @@ namespace chrono {
                 void Create(bool fixed, BrakeType brake_type, SteeringTypeWV steering_model, CollisionType chassis_collision_type);
 
                 std::vector<double> m_omega;
+                bool m_kinematic;
+                bool m_low_range;
             };
 
 /// @} vehicle_models_gd250
