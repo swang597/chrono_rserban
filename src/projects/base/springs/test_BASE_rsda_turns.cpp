@@ -44,13 +44,13 @@ int main(int argc, char* argv[]) {
     ////ChSolver::Type solver_type = ChSolver::Type::MINRES;
     ////ChSolver::Type solver_type = ChSolver::Type::GMRES;
     ////ChSolver::Type solver_type = ChSolver::Type::SPARSE_LU;
-    ChSolver::Type solver_type = ChSolver::Type::SPARSE_QR;
-    ////ChSolver::Type solver_type = ChSolver::Type::PARDISO_MKL;
+    ////ChSolver::Type solver_type = ChSolver::Type::SPARSE_QR;
+    ChSolver::Type solver_type = ChSolver::Type::PARDISO_MKL;
     ////ChSolver::Type solver_type = ChSolver::Type::MUMPS;
 
     ////ChTimestepper::Type integrator_type = ChTimestepper::Type::EULER_IMPLICIT;
-    ChTimestepper::Type integrator_type = ChTimestepper::Type::EULER_IMPLICIT_PROJECTED;
-    ////ChTimestepper::Type integrator_type = ChTimestepper::Type::HHT;
+    ////ChTimestepper::Type integrator_type = ChTimestepper::Type::EULER_IMPLICIT_PROJECTED;
+    ChTimestepper::Type integrator_type = ChTimestepper::Type::HHT;
 
     bool verbose_solver = false;
     bool verbose_integrator = true;
@@ -62,13 +62,25 @@ int main(int argc, char* argv[]) {
     sys.Set_G_acc(ChVector<>(0, 0, g));
 
     if (solver_type == ChSolver::Type::PARDISO_MKL) {
+#ifndef CHRONO_PARDISO_MKL
+        solver_type = ChSolver::Type::SPARSE_QR;
+#endif
+    } else if (solver_type == ChSolver::Type::PARDISO_PROJECT) {
+#ifndef CHRONO_PARDISOPROJECT
+        solver_type = ChSolver::Type::SPARSE_QR;
+#endif
+    } else if (solver_type == ChSolver::Type::MUMPS) {
+#ifndef CHRONO_MUMPS
+        solver_type = ChSolver::Type::SPARSE_QR;
+#endif
+    }
+
+    if (solver_type == ChSolver::Type::PARDISO_MKL) {
 #ifdef CHRONO_PARDISO_MKL
         std::cout << "Using Pardiso MKL solver" << std::endl;
         auto solver = chrono_types::make_shared<ChSolverPardisoMKL>();
         solver->LockSparsityPattern(true);
         sys.SetSolver(solver);
-#else
-        solver_type = ChSolver::Type::PSOR;
 #endif
     } else if (solver_type == ChSolver::Type::PARDISO_PROJECT) {
 #ifdef CHRONO_PARDISOPROJECT
@@ -76,8 +88,6 @@ int main(int argc, char* argv[]) {
         auto solver = chrono_types::make_shared<ChSolverPardisoProject>();
         solver->LockSparsityPattern(true);
         sys.SetSolver(solver);
-#else
-        solver_type = ChSolver::Type::PSOR;
 #endif
     } else if (solver_type == ChSolver::Type::MUMPS) {
 #ifdef CHRONO_MUMPS
@@ -87,8 +97,6 @@ int main(int argc, char* argv[]) {
         solver->EnableNullPivotDetection(true);
         solver->GetMumpsEngine().SetICNTL(14, 50);
         sys.SetSolver(solver);
-#else
-        solver_type = ChSolver::Type::PSOR;
 #endif
     } else {
         sys.SetSolverType(solver_type);
