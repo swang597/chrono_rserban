@@ -19,7 +19,7 @@
 #ifndef GD250_G_AXLE_SIMPLE_H
 #define GD250_G_AXLE_SIMPLE_H
 
-#include "chrono_vehicle/wheeled_vehicle/suspension/ChGAxleSimple.h"
+#include "chrono_models/vehicle/g-wagon/base/ChGAxleSimple.h"
 
 #include "chrono_models/ChApiModels.h"
 

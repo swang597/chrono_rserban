@@ -426,10 +426,6 @@ set(CV_WV_SUSPENSION_FILES
     wheeled_vehicle/suspension/ChRigidSuspension.cpp
     wheeled_vehicle/suspension/ChRigidPinnedAxle.h
     wheeled_vehicle/suspension/ChRigidPinnedAxle.cpp
-    wheeled_vehicle/suspension/ChGAxle.h
-    wheeled_vehicle/suspension/ChGAxle.cpp
-    wheeled_vehicle/suspension/ChGAxleSimple.h
-    wheeled_vehicle/suspension/ChGAxleSimple.cpp
     wheeled_vehicle/suspension/ChLeafspringAxle.h
     wheeled_vehicle/suspension/ChLeafspringAxle.cpp
     wheeled_vehicle/suspension/ChSAELeafspringAxle.h
@@ -438,10 +434,6 @@ set(CV_WV_SUSPENSION_FILES
     wheeled_vehicle/suspension/ChSolidBellcrankThreeLinkAxle.cpp
     wheeled_vehicle/suspension/ChSolidThreeLinkAxle.h
     wheeled_vehicle/suspension/ChSolidThreeLinkAxle.cpp
-    wheeled_vehicle/suspension/ChToeBarGAxle.h
-    wheeled_vehicle/suspension/ChToeBarGAxle.cpp
-    wheeled_vehicle/suspension/ChToeBarGAxleSimple.h
-    wheeled_vehicle/suspension/ChToeBarGAxleSimple.cpp
     wheeled_vehicle/suspension/ChToeBarLeafspringAxle.h
     wheeled_vehicle/suspension/ChToeBarLeafspringAxle.cpp
     wheeled_vehicle/suspension/ChSAEToeBarLeafspringAxle.h

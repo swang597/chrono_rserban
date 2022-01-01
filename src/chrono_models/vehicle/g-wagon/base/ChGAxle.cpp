@@ -35,7 +35,7 @@
 #include "chrono/assets/ChCylinderShape.h"
 #include "chrono/assets/ChPointPointDrawing.h"
 
-#include "chrono_vehicle/wheeled_vehicle/suspension/ChGAxle.h"
+#include "chrono_models/vehicle/g-wagon/base/ChGAxle.h"
 
 namespace chrono {
 namespace vehicle {

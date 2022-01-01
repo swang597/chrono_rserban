@@ -19,7 +19,7 @@
 #ifndef GD250_TOEBAR_G_AXLE_SIMPLE_H
 #define GD250_TOEBAR_G_AXLE_SIMPLE_H
 
-#include "chrono_vehicle/wheeled_vehicle/suspension/ChToeBarGAxleSimple.h"
+#include "chrono_models/vehicle/g-wagon/base/ChToeBarGAxleSimple.h"
 
 #include "chrono_models/ChApiModels.h"
 

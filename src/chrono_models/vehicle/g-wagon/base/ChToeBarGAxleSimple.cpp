@@ -40,7 +40,7 @@
 #include "chrono/assets/ChPointPointDrawing.h"
 #include "chrono/assets/ChColorAsset.h"
 
-#include "chrono_vehicle/wheeled_vehicle/suspension/ChToeBarGAxleSimple.h"
+#include "chrono_models/vehicle/g-wagon/base/ChToeBarGAxleSimple.h"
 
 namespace chrono {
 namespace vehicle {
