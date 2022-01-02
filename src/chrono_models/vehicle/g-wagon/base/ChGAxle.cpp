@@ -304,7 +304,7 @@ void ChGAxle::InitializeSide(VehicleSide side,
 // Get the total mass of the suspension subsystem.
 // -----------------------------------------------------------------------------
 double ChGAxle::GetMass() const {
-    return getAxleTubeMass() + getPanhardRodMass() + 2 * (getSpindleMass()) + 2 * getLongLinkMass();
+    return getAxleTubeMass() + getPanhardRodMass() + 2 * getARBMass() + 2 * (getSpindleMass()) + 2 * getLongLinkMass();
 }
 
 // -----------------------------------------------------------------------------
@@ -315,6 +315,9 @@ ChVector<> ChGAxle::GetCOMPos() const {
 
     com += getAxleTubeMass() * m_axleTube->GetPos();
     com += getPanhardRodMass() * m_panhardRod->GetPos();
+
+    com += getARBMass() * m_arb[LEFT]->GetPos();
+    com += getARBMass() * m_arb[RIGHT]->GetPos();
 
     com += getLongLinkMass() * m_longLink[LEFT]->GetPos();
     com += getLongLinkMass() * m_longLink[RIGHT]->GetPos();

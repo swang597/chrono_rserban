@@ -35,6 +35,7 @@ namespace gwagon {
 
 const double GD250_ToeBarGAxleSimple::m_axleTubeMass = 124.0;
 const double GD250_ToeBarGAxleSimple::m_panhardRodMass = 10.0;
+const double GD250_ToeBarGAxleSimple::m_arbMass = 5.0;
 const double GD250_ToeBarGAxleSimple::m_spindleMass = 14.705;
 const double GD250_ToeBarGAxleSimple::m_knuckleMass = 10.0;
 const double GD250_ToeBarGAxleSimple::m_tierodMass = 5.0;
@@ -42,6 +43,7 @@ const double GD250_ToeBarGAxleSimple::m_draglinkMass = 5.0;
 
 const double GD250_ToeBarGAxleSimple::m_axleTubeRadius = 0.0476;
 const double GD250_ToeBarGAxleSimple::m_panhardRodRadius = 0.03;
+const double GD250_ToeBarGAxleSimple::m_arbRadius = 0.025;
 const double GD250_ToeBarGAxleSimple::m_spindleRadius = 0.10;
 const double GD250_ToeBarGAxleSimple::m_spindleWidth = 0.06;
 const double GD250_ToeBarGAxleSimple::m_knuckleRadius = 0.05;
@@ -50,10 +52,14 @@ const double GD250_ToeBarGAxleSimple::m_draglinkRadius = 0.02;
 
 const ChVector<> GD250_ToeBarGAxleSimple::m_axleTubeInertia(22.21, 0.0775, 22.21);
 const ChVector<> GD250_ToeBarGAxleSimple::m_panhardRodInertia(1.0, 0.04, 1.0);
+const ChVector<> GD250_ToeBarGAxleSimple::m_arbInertia(0.5, 0.02, 0.5);
 const ChVector<> GD250_ToeBarGAxleSimple::m_spindleInertia(0.04117, 0.07352, 0.04117);
 const ChVector<> GD250_ToeBarGAxleSimple::m_knuckleInertia(0.1, 0.1, 0.1);
 const ChVector<> GD250_ToeBarGAxleSimple::m_tierodInertia(1.0, 0.1, 1.0);
 const ChVector<> GD250_ToeBarGAxleSimple::m_draglinkInertia(0.1, 1.0, 0.1);
+
+const double GD250_ToeBarGAxleSimple::m_arb_stiffness = 1000.0;
+const double GD250_ToeBarGAxleSimple::m_arb_damping = 10.0;
 
 const double GD250_ToeBarGAxleSimple::m_springDesignLength = 0.3;
 const double GD250_ToeBarGAxleSimple::m_springCoefficient = 76746.04382;
@@ -216,6 +222,10 @@ const ChVector<> GD250_ToeBarGAxleSimple::getLocation(PointId which) {
             return ChVector<>(0.1, -0.44, 0.0);
         case PANHARD_C:
             return ChVector<>(0.1, 0.44, 0.0);
+        case ANTIROLL_A:
+            return ChVector<>(0.0, 0.35, -0.05);
+        case ANTIROLL_C:
+            return ChVector<>(-0.4, 0.35, -0.05);
         default:
             return ChVector<>(0, 0, 0);
     }

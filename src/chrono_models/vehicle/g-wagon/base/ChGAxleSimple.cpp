@@ -46,8 +46,9 @@ namespace vehicle {
 // -----------------------------------------------------------------------------
 // Static variables
 // -----------------------------------------------------------------------------
-const std::string ChGAxleSimple::m_pointNames[] = {"SHOCK_A    ", "SHOCK_C    ", "SPRING_A   ", "SPRING_C   ",
-                                                   "SPINDLE    ", "PANHARD_A  ", "PANHARD_C  "};
+const std::string ChGAxleSimple::m_pointNames[] = {"SHOCK_A    ", "SHOCK_C    ", "SPRING_A   ",
+                                                   "SPRING_C   ", "SPINDLE    ", "PANHARD_A  ",
+                                                   "PANHARD_C  ", "ANTIROLL_A ", "ANTIROLL_C "};
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
@@ -104,6 +105,18 @@ void ChGAxleSimple::Initialize(std::shared_ptr<ChChassis> chassis,
     m_ptPanhardChassis = suspension_to_abs.TransformPointLocalToParent(panhardChassis_local);
     ChVector<> ptPanhardCom = 0.5 * (m_ptPanhardAxle + m_ptPanhardChassis);
 
+    ChVector<> arbC_local(getLocation(ANTIROLL_C));
+    m_ptARBChassis[LEFT] = suspension_to_abs.TransformPointLocalToParent(arbC_local);
+    arbC_local.y() *= -1.0;
+    m_ptARBChassis[RIGHT] = suspension_to_abs.TransformPointLocalToParent(arbC_local);
+
+    ChVector<> arbA_local(getLocation(ANTIROLL_A));
+    m_ptARBAxle[LEFT] = suspension_to_abs.TransformPointLocalToParent(arbA_local);
+    arbA_local.y() *= -1.0;
+    m_ptARBAxle[RIGHT] = suspension_to_abs.TransformPointLocalToParent(arbA_local);
+
+    m_ptARBCenter = 0.5 * (m_ptARBChassis[LEFT] + m_ptARBChassis[RIGHT]);
+
     // Create and initialize the axle body.
     m_axleTube = std::shared_ptr<ChBody>(chassis->GetBody()->GetSystem()->NewBody());
     m_axleTube->SetNameString(m_name + "_axleTube");
@@ -155,12 +168,12 @@ void ChGAxleSimple::Initialize(std::shared_ptr<ChChassis> chassis,
     // Initialize left and right sides.
     std::shared_ptr<ChBody> scbeamL = (subchassis == nullptr) ? chassis->GetBody() : subchassis->GetBeam(LEFT);
     std::shared_ptr<ChBody> scbeamR = (subchassis == nullptr) ? chassis->GetBody() : subchassis->GetBeam(RIGHT);
-    InitializeSide(LEFT, chassis->GetBody(), scbeamL, m_pointsL, left_ang_vel);
-    InitializeSide(RIGHT, chassis->GetBody(), scbeamR, m_pointsR, right_ang_vel);
+    InitializeSide(LEFT, chassis, scbeamL, m_pointsL, left_ang_vel);
+    InitializeSide(RIGHT, chassis, scbeamR, m_pointsR, right_ang_vel);
 }
 
 void ChGAxleSimple::InitializeSide(VehicleSide side,
-                                   std::shared_ptr<ChBodyAuxRef> chassis,
+                                   std::shared_ptr<ChChassis> chassis,
                                    std::shared_ptr<ChBody> scbeam,
                                    const std::vector<ChVector<>>& points,
                                    double ang_vel) {
@@ -172,9 +185,11 @@ void ChGAxleSimple::InitializeSide(VehicleSide side,
     ChVector<> w;
     ChMatrix33<> rot;
 
+    std::shared_ptr<ChBodyAuxRef> chassisBody = chassis->GetBody();
+
     // Chassis orientation (expressed in absolute frame)
     // Recall that the suspension reference frame is aligned with the chassis.
-    ChQuaternion<> chassisRot = chassis->GetFrame_REF_to_abs().GetRot();
+    ChQuaternion<> chassisRot = chassisBody->GetFrame_REF_to_abs().GetRot();
 
     // Create and initialize spindle body (same orientation as the chassis)
     m_spindle[side] = std::shared_ptr<ChBody>(chassis->GetSystem()->NewBody());
@@ -196,7 +211,7 @@ void ChGAxleSimple::InitializeSide(VehicleSide side,
     // Create and initialize the shock damper
     m_shock[side] = chrono_types::make_shared<ChLinkTSDA>();
     m_shock[side]->SetNameString(m_name + "_shock" + suffix);
-    m_shock[side]->Initialize(chassis, m_axleTube, false, points[SHOCK_C], points[SHOCK_A]);
+    m_shock[side]->Initialize(chassisBody, m_axleTube, false, points[SHOCK_C], points[SHOCK_A]);
     m_shock[side]->RegisterForceFunctor(getShockForceFunctor());
     chassis->GetSystem()->AddLink(m_shock[side]);
 
@@ -220,13 +235,43 @@ void ChGAxleSimple::InitializeSide(VehicleSide side,
     m_axle_to_spindle[side]->SetNameString(m_name + "_axle_to_spindle" + suffix);
     m_axle_to_spindle[side]->Initialize(m_axle[side], m_spindle[side], ChVector<>(0, -1, 0));
     chassis->GetSystem()->Add(m_axle_to_spindle[side]);
+
+    m_arb[side] = std::shared_ptr<ChBody>(chassis->GetSystem()->NewBody());
+    m_arb[side]->SetNameString(m_name + "_arb" + suffix);
+    m_arb[side]->SetPos(0.5 * (points[ANTIROLL_C] + m_ptARBCenter));
+    m_arb[side]->SetRot(chassisRot);
+    m_arb[side]->SetMass(getARBMass());
+    m_arb[side]->SetInertiaXX(getARBInertia());
+    chassis->GetSystem()->AddBody(m_arb[side]);
+
+    if (side == LEFT) {
+        m_revARBChassis = chrono_types::make_shared<ChVehicleJoint>(
+            ChVehicleJoint::Type::REVOLUTE, m_name + "_revARBchassis", chassisBody, m_arb[side],
+            ChCoordsys<>(m_ptARBCenter, chassisRot * Q_from_AngAxis(CH_C_PI / 2.0, VECT_X)));
+        chassis->AddJoint(m_revARBChassis);
+    } else {
+        m_revARBLeftRight = chrono_types::make_shared<ChLinkLockRevolute>();
+        m_revARBLeftRight->SetNameString(m_name + "_revARBleftRight");
+        m_revARBLeftRight->Initialize(m_arb[LEFT], m_arb[RIGHT],
+                                      ChCoordsys<>(m_ptARBCenter, chassisRot * Q_from_AngAxis(CH_C_PI / 2.0, VECT_X)));
+        chassis->GetSystem()->AddLink(m_revARBLeftRight);
+
+        m_revARBLeftRight->GetForce_Rz().SetActive(1);
+        m_revARBLeftRight->GetForce_Rz().SetK(getARBStiffness());
+        m_revARBLeftRight->GetForce_Rz().SetR(getARBDamping());
+    }
+
+    m_slideARB[side] = chrono_types::make_shared<ChVehicleJoint>(
+        ChVehicleJoint::Type::POINTPLANE, m_name + "_revARBslide" + suffix, m_arb[side], m_axleTube,
+        ChCoordsys<>(m_ptARBAxle[side], chassisRot * QUNIT));
+    chassis->AddJoint(m_slideARB[side]);
 }
 
 // -----------------------------------------------------------------------------
 // Get the total mass of the suspension subsystem.
 // -----------------------------------------------------------------------------
 double ChGAxleSimple::GetMass() const {
-    return getAxleTubeMass() + getPanhardRodMass() + 2 * (getSpindleMass());
+    return getAxleTubeMass() + getPanhardRodMass() + 2 * getARBMass() + 2 * (getSpindleMass());
 }
 
 // -----------------------------------------------------------------------------
@@ -237,6 +282,9 @@ ChVector<> ChGAxleSimple::GetCOMPos() const {
 
     com += getAxleTubeMass() * m_axleTube->GetPos();
     com += getPanhardRodMass() * m_panhardRod->GetPos();
+
+    com += getARBMass() * m_arb[LEFT]->GetPos();
+    com += getARBMass() * m_arb[RIGHT]->GetPos();
 
     com += getSpindleMass() * m_spindle[LEFT]->GetPos();
     com += getSpindleMass() * m_spindle[RIGHT]->GetPos();
@@ -303,6 +351,14 @@ void ChGAxleSimple::AddVisualizationAssets(VisualizationType vis) {
     AddVisualizationLink(m_axleTube, m_axleOuterL, m_axleOuterR, getAxleTubeRadius(), ChColor(0.7f, 0.7f, 0.7f));
     AddVisualizationLink(m_panhardRod, m_ptPanhardChassis, m_ptPanhardAxle, getPanhardRodRadius(),
                          ChColor(0.5f, 0.7f, 0.3f));
+
+    AddVisualizationLink(m_arb[LEFT], m_ptARBAxle[LEFT], m_ptARBChassis[LEFT], getARBRadius(),
+                         ChColor(0.5f, 7.0f, 0.5f));
+    AddVisualizationLink(m_arb[LEFT], m_ptARBCenter, m_ptARBChassis[LEFT], getARBRadius(), ChColor(0.5f, 0.7f, 0.5f));
+
+    AddVisualizationLink(m_arb[RIGHT], m_ptARBAxle[RIGHT], m_ptARBChassis[RIGHT], getARBRadius(),
+                         ChColor(0.7f, 0.5f, 0.5f));
+    AddVisualizationLink(m_arb[RIGHT], m_ptARBCenter, m_ptARBChassis[RIGHT], getARBRadius(), ChColor(0.7f, 0.5f, 0.5f));
 
     // Add visualization for the springs and shocks
     m_spring[LEFT]->AddAsset(chrono_types::make_shared<ChPointPointSpring>(0.06, 150, 15));

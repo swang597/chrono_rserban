@@ -36,6 +36,7 @@ namespace gwagon {
 const double GD250_ToeBarGAxle::m_axleTubeMass = 124.0;
 const double GD250_ToeBarGAxle::m_panhardRodMass = 10.0;
 const double GD250_ToeBarGAxle::m_longLinkMass = 10.0;
+const double GD250_ToeBarGAxle::m_arbMass = 5.0;
 const double GD250_ToeBarGAxle::m_spindleMass = 14.705;
 const double GD250_ToeBarGAxle::m_knuckleMass = 10.0;
 const double GD250_ToeBarGAxle::m_tierodMass = 5.0;
@@ -44,6 +45,7 @@ const double GD250_ToeBarGAxle::m_draglinkMass = 5.0;
 const double GD250_ToeBarGAxle::m_axleTubeRadius = 0.0476;
 const double GD250_ToeBarGAxle::m_panhardRodRadius = 0.03;
 const double GD250_ToeBarGAxle::m_longLinkRadius = 0.03;
+const double GD250_ToeBarGAxle::m_arbRadius = 0.025;
 const double GD250_ToeBarGAxle::m_spindleRadius = 0.10;
 const double GD250_ToeBarGAxle::m_spindleWidth = 0.06;
 const double GD250_ToeBarGAxle::m_knuckleRadius = 0.05;
@@ -53,10 +55,14 @@ const double GD250_ToeBarGAxle::m_draglinkRadius = 0.02;
 const ChVector<> GD250_ToeBarGAxle::m_axleTubeInertia(22.21, 0.0775, 22.21);
 const ChVector<> GD250_ToeBarGAxle::m_panhardRodInertia(1.0, 0.04, 1.0);
 const ChVector<> GD250_ToeBarGAxle::m_longLinkInertia(0.04, 1.0, 1.0);
+const ChVector<> GD250_ToeBarGAxle::m_arbInertia(0.5, 0.02, 0.5);
 const ChVector<> GD250_ToeBarGAxle::m_spindleInertia(0.04117, 0.07352, 0.04117);
 const ChVector<> GD250_ToeBarGAxle::m_knuckleInertia(0.1, 0.1, 0.1);
 const ChVector<> GD250_ToeBarGAxle::m_tierodInertia(1.0, 0.1, 1.0);
 const ChVector<> GD250_ToeBarGAxle::m_draglinkInertia(0.1, 1.0, 0.1);
+
+const double GD250_ToeBarGAxle::m_arb_stiffness = 1000.0;
+const double GD250_ToeBarGAxle::m_arb_damping = 10.0;
 
 const double GD250_ToeBarGAxle::m_springDesignLength = 0.3;
 const double GD250_ToeBarGAxle::m_springCoefficient = 76746.04382;
@@ -189,20 +195,21 @@ GD250_ToeBarGAxle::GD250_ToeBarGAxle(const std::string& name) : ChToeBarGAxle(na
     // Hutchinson Radiaflex #511157
     double load = 1200;
     double defl = 0.007;
-    m_bushingData->K_lin = load/defl;
+    m_bushingData->K_lin = load / defl;
     // rubber wisdom from
-    // ContiTech https://www.continental-industry.com/antivibration/de/Theorie?site2open=SchwingmetallProduktbeschreibungWirkungsweiseDaempfung
+    // ContiTech
+    // https://www.continental-industry.com/antivibration/de/Theorie?site2open=SchwingmetallProduktbeschreibungWirkungsweiseDaempfung
     // D = 0.5*tan(phi)
     // 40 Shore -> phi = 2.54 deg
     // 55 Shore -> phi = 4.5 deg
     // 65 Shore -> phi = 7.0 deg
-    double phi = 2.54; // mechanical loss angle
-    double D = 0.5*tan(CH_C_DEG_TO_RAD*phi); // Degree of damping
-    double m = 120; // axle mass
-    double f0 = 10.0; // est. axle eigenfrequency
-    double w0 = CH_C_2PI*f0; // nat. axle eigenfrequency
-    m_bushingData->D_lin = 2.0*m*w0*D;
-    std::cout << "Test Damping = " << (100.0*m_bushingData->D_lin/m_bushingData->K_lin) << " %" << std::endl;
+    double phi = 2.54;                            // mechanical loss angle
+    double D = 0.5 * tan(CH_C_DEG_TO_RAD * phi);  // Degree of damping
+    double m = 120;                               // axle mass
+    double f0 = 10.0;                             // est. axle eigenfrequency
+    double w0 = CH_C_2PI * f0;                    // nat. axle eigenfrequency
+    m_bushingData->D_lin = 2.0 * m * w0 * D;
+    std::cout << "Test Damping = " << (100.0 * m_bushingData->D_lin / m_bushingData->K_lin) << " %" << std::endl;
 }
 
 // -----------------------------------------------------------------------------
@@ -244,6 +251,10 @@ const ChVector<> GD250_ToeBarGAxle::getLocation(PointId which) {
             return ChVector<>(-0.1, 0.41, -0.05);
         case LONGLINK_C:
             return ChVector<>(-0.8, 0.41, -0.05);
+        case ANTIROLL_A:
+            return ChVector<>(0.0, 0.35, -0.05);
+        case ANTIROLL_C:
+            return ChVector<>(-0.4, 0.35, -0.05);
         default:
             return ChVector<>(0, 0, 0);
     }
