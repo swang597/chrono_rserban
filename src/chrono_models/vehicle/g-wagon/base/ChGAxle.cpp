@@ -43,8 +43,9 @@ namespace vehicle {
 // -----------------------------------------------------------------------------
 // Static variables
 // -----------------------------------------------------------------------------
-const std::string ChGAxle::m_pointNames[] = {"SHOCK_A    ", "SHOCK_C    ", "SPRING_A   ", "SPRING_C   ", "SPINDLE    ",
-                                             "PANHARD_A  ", "PANHARD_C  ", "LONGLINK_O ", "LONGLINK_I ", "LONGLINK_C "};
+const std::string ChGAxle::m_pointNames[] = {"SHOCK_A    ", "SHOCK_C    ", "SPRING_A   ", "SPRING_C   ",
+                                             "SPINDLE    ", "PANHARD_A  ", "PANHARD_C  ", "LONGLINK_O ",
+                                             "LONGLINK_I ", "LONGLINK_C ", "ANTIROLL_A ", "ANTIROLL_C "};
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
@@ -109,6 +110,18 @@ void ChGAxle::Initialize(std::shared_ptr<ChChassis> chassis,
     m_ptLongLinkChassis[LEFT] = suspension_to_abs.TransformPointLocalToParent(linkC_local);
     linkC_local.y() *= -1.0;
     m_ptLongLinkChassis[RIGHT] = suspension_to_abs.TransformPointLocalToParent(linkC_local);
+
+    ChVector<> arbC_local(getLocation(ANTIROLL_C));
+    m_ptARBChassis[LEFT] = suspension_to_abs.TransformPointLocalToParent(arbC_local);
+    arbC_local.y() *= -1.0;
+    m_ptARBChassis[RIGHT] = suspension_to_abs.TransformPointLocalToParent(arbC_local);
+
+    ChVector<> arbA_local(getLocation(ANTIROLL_A));
+    m_ptARBAxle[LEFT] = suspension_to_abs.TransformPointLocalToParent(arbA_local);
+    arbA_local.y() *= -1.0;
+    m_ptARBAxle[RIGHT] = suspension_to_abs.TransformPointLocalToParent(arbA_local);
+
+    m_ptARBCenter = 0.5 * (m_ptARBChassis[LEFT] + m_ptARBChassis[RIGHT]);
 
     // Create and initialize the axle body.
     m_axleTube = std::shared_ptr<ChBody>(chassis->GetBody()->GetSystem()->NewBody());
@@ -205,20 +218,20 @@ void ChGAxle::InitializeSide(VehicleSide side,
 
     // connect the long link to the chassis
     m_sphLongLinkChassis[side] = chrono_types::make_shared<ChVehicleJoint>(
-            ChVehicleJoint::Type::SPHERICAL, m_name + "_sphericalLongLinkChassis", chassisBody, m_longLink[side],
-            ChCoordsys<>(points[LONGLINK_C], QUNIT));
+        ChVehicleJoint::Type::SPHERICAL, m_name + "_sphericalLongLinkChassis", chassisBody, m_longLink[side],
+        ChCoordsys<>(points[LONGLINK_C], QUNIT));
     chassis->AddJoint(m_sphLongLinkChassis[side]);
 
     // connect the long link to the outer axle connection point
     m_sphLongLinkAxleOuter[side] = chrono_types::make_shared<ChVehicleJoint>(
-            ChVehicleJoint::Type::SPHERICAL, m_name + "_sphericalLongLinkAxleOuter", m_axleTube, m_longLink[side],
-            ChCoordsys<>(points[LONGLINK_O], QUNIT), getBushingData());
+        ChVehicleJoint::Type::SPHERICAL, m_name + "_sphericalLongLinkAxleOuter", m_axleTube, m_longLink[side],
+        ChCoordsys<>(points[LONGLINK_O], QUNIT), getBushingData());
     chassis->AddJoint(m_sphLongLinkAxleOuter[side]);
 
     // connect the long link to the inner axle connection point
     m_sphLongLinkAxleInner[side] = chrono_types::make_shared<ChVehicleJoint>(
-            ChVehicleJoint::Type::SPHERICAL, m_name + "_sphericalLongLinkAxleInner", m_axleTube, m_longLink[side],
-            ChCoordsys<>(points[LONGLINK_I], QUNIT), getBushingData());
+        ChVehicleJoint::Type::SPHERICAL, m_name + "_sphericalLongLinkAxleInner", m_axleTube, m_longLink[side],
+        ChCoordsys<>(points[LONGLINK_I], QUNIT), getBushingData());
     chassis->AddJoint(m_sphLongLinkAxleInner[side]);
 
     // Create and initialize the revolute joint between axle tube and spindle.
@@ -255,6 +268,36 @@ void ChGAxle::InitializeSide(VehicleSide side,
     m_axle_to_spindle[side]->SetNameString(m_name + "_axle_to_spindle" + suffix);
     m_axle_to_spindle[side]->Initialize(m_axle[side], m_spindle[side], ChVector<>(0, -1, 0));
     chassis->GetSystem()->Add(m_axle_to_spindle[side]);
+
+    m_arb[side] = std::shared_ptr<ChBody>(chassis->GetSystem()->NewBody());
+    m_arb[side]->SetNameString(m_name + "_arb" + suffix);
+    m_arb[side]->SetPos(0.5 * (points[ANTIROLL_C] + m_ptARBCenter));
+    m_arb[side]->SetRot(chassisRot);
+    m_arb[side]->SetMass(getARBMass());
+    m_arb[side]->SetInertiaXX(getARBInertia());
+    chassis->GetSystem()->AddBody(m_arb[side]);
+
+    if (side == LEFT) {
+        m_revARBChassis = chrono_types::make_shared<ChVehicleJoint>(
+            ChVehicleJoint::Type::REVOLUTE, m_name + "_revARBchassis", chassisBody, m_arb[side],
+            ChCoordsys<>(m_ptARBCenter, chassisRot * Q_from_AngAxis(CH_C_PI / 2.0, VECT_X)));
+        chassis->AddJoint(m_revARBChassis);
+    } else {
+        m_revARBLeftRight = chrono_types::make_shared<ChLinkLockRevolute>();
+        m_revARBLeftRight->SetNameString(m_name + "_revARBleftRight");
+        m_revARBLeftRight->Initialize(m_arb[LEFT], m_arb[RIGHT],
+                                      ChCoordsys<>(m_ptARBCenter, chassisRot * Q_from_AngAxis(CH_C_PI / 2.0, VECT_X)));
+        chassis->GetSystem()->AddLink(m_revARBLeftRight);
+
+        m_revARBLeftRight->GetForce_Rz().SetActive(1);
+        m_revARBLeftRight->GetForce_Rz().SetK(getARBStiffness());
+        m_revARBLeftRight->GetForce_Rz().SetR(getARBDamping());
+    }
+
+    m_slideARB[side] = chrono_types::make_shared<ChVehicleJoint>(
+        ChVehicleJoint::Type::POINTPLANE, m_name + "_revARBslide" + suffix, m_arb[side], m_axleTube,
+        ChCoordsys<>(m_ptARBAxle[side], chassisRot * QUNIT));
+    chassis->AddJoint(m_slideARB[side]);
 }
 
 // -----------------------------------------------------------------------------
@@ -346,6 +389,14 @@ void ChGAxle::AddVisualizationAssets(VisualizationType vis) {
                          ChColor(0.3f, 0.7f, 0.5f));
     AddVisualizationLink(m_longLink[RIGHT], m_ptLongLinkAxle[RIGHT], m_ptLongLinkChassis[RIGHT], getLongLinkRadius(),
                          ChColor(0.3f, 0.7f, 0.5f));
+
+    AddVisualizationLink(m_arb[LEFT], m_ptARBAxle[LEFT], m_ptARBChassis[LEFT], getARBRadius(),
+                         ChColor(0.5f, 7.0f, 0.5f));
+    AddVisualizationLink(m_arb[LEFT], m_ptARBCenter, m_ptARBChassis[LEFT], getARBRadius(), ChColor(0.5f, 0.7f, 0.5f));
+
+    AddVisualizationLink(m_arb[RIGHT], m_ptARBAxle[RIGHT], m_ptARBChassis[RIGHT], getARBRadius(),
+                         ChColor(0.7f, 0.5f, 0.5f));
+    AddVisualizationLink(m_arb[RIGHT], m_ptARBCenter, m_ptARBChassis[RIGHT], getARBRadius(), ChColor(0.7f, 0.5f, 0.5f));
 
     // Add visualization for the springs and shocks
     m_spring[LEFT]->AddAsset(chrono_types::make_shared<ChPointPointSpring>(0.06, 150, 15));

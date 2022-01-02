@@ -54,7 +54,7 @@ enum DriverMode { DEFAULT, RECORD, PLAYBACK };
 DriverMode driver_mode = DEFAULT;
 
 // Visualization type for vehicle parts (PRIMITIVES, MESH, or NONE)
-VisualizationType chassis_vis_type = VisualizationType::MESH;
+VisualizationType chassis_vis_type = VisualizationType::NONE;
 VisualizationType suspension_vis_type = VisualizationType::PRIMITIVES;
 VisualizationType steering_vis_type = VisualizationType::PRIMITIVES;
 VisualizationType wheel_vis_type = VisualizationType::MESH;

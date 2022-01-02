@@ -140,16 +140,18 @@ class CH_MODELS_API ChGAxle : public ChSuspension {
   protected:
     /// Identifiers for the various hardpoints.
     enum PointId {
-        SHOCK_A,    ///< shock, axle
-        SHOCK_C,    ///< shock, chassis
-        SPRING_A,   ///< spring, axle
-        SPRING_C,   ///< spring, chassis
-        SPINDLE,    ///< spindle location
-        PANHARD_A,  ///< panhard rod axle location
-        PANHARD_C,  ///< panhard rod chassis location
-        LONGLINK_O, ///< outer connector longitudinal link on axle
-        LONGLINK_I, ///< inner connector longitudinal link on axle
-        LONGLINK_C, ///< connector longitudinal link on chassis
+        SHOCK_A,     ///< shock, axle
+        SHOCK_C,     ///< shock, chassis
+        SPRING_A,    ///< spring, axle
+        SPRING_C,    ///< spring, chassis
+        SPINDLE,     ///< spindle location
+        PANHARD_A,   ///< panhard rod axle location
+        PANHARD_C,   ///< panhard rod chassis location
+        LONGLINK_O,  ///< outer connector longitudinal link on axle
+        LONGLINK_I,  ///< inner connector longitudinal link on axle
+        LONGLINK_C,  ///< connector longitudinal link on chassis
+        ANTIROLL_A,  ///< connector antirollbar on axle tube
+        ANTIROLL_C,  ///< connector antirollbar on chassis
         NUM_POINTS
     };
 
@@ -168,6 +170,13 @@ class CH_MODELS_API ChGAxle : public ChSuspension {
     virtual double getLongLinkMass() const = 0;
     /// Return the mass of the spindle body.
     virtual double getSpindleMass() const = 0;
+    /// Return the mass of the antiroll bar body.
+    virtual double getARBMass() const = 0;
+
+    /// Return the mass of the antiroll bar rotational stiffness.
+    virtual double getARBStiffness() const = 0;
+    /// Return the mass of the antiroll bar rotational damping.
+    virtual double getARBDamping() const = 0;
 
     /// Return the radius of the axle tube body (visualization only).
     virtual double getAxleTubeRadius() const = 0;
@@ -175,6 +184,8 @@ class CH_MODELS_API ChGAxle : public ChSuspension {
     virtual double getPanhardRodRadius() const = 0;
     /// Return the radius of the longitudinal link bodies (visualization only).
     virtual double getLongLinkRadius() const = 0;
+    /// Return the radius of the antiroll bar bodies (visualization only).
+    virtual double getARBRadius() const = 0;
 
     /// Return the moments of inertia of the axle tube body.
     virtual const ChVector<>& getAxleTubeInertia() const = 0;
@@ -184,6 +195,8 @@ class CH_MODELS_API ChGAxle : public ChSuspension {
     virtual const ChVector<>& getLongLinkInertia() const = 0;
     /// Return the moments of inertia of the spindle body.
     virtual const ChVector<>& getSpindleInertia() const = 0;
+    /// Return the moments of inertia of the antiroll bar body.
+    virtual const ChVector<>& getARBInertia() const = 0;
 
     /// Return the inertia of the axle shaft.
     virtual double getAxleInertia() const = 0;
@@ -198,9 +211,10 @@ class CH_MODELS_API ChGAxle : public ChSuspension {
     /// Return pointer to the bushing parameters
     virtual std::shared_ptr<ChVehicleBushingData> getBushingData() const = 0;
 
-    std::shared_ptr<ChBody> m_axleTube;    ///< handles to the axle tube body
-    std::shared_ptr<ChBody> m_panhardRod;  ///< handles to the axle tube body
+    std::shared_ptr<ChBody> m_axleTube;     ///< handles to the axle tube body
+    std::shared_ptr<ChBody> m_panhardRod;   ///< handles to the axle tube body
     std::shared_ptr<ChBody> m_longLink[2];  ///< handles to the longitudinal link bodies
+    std::shared_ptr<ChBody> m_arb[2];       ///< handles to the antiroll bar bodies
 
     std::shared_ptr<ChLinkLockFree> m_axleTubeGuide;  ///< allows translation X,Y,Z and rotation X,Y,Z
     std::shared_ptr<ChVehicleJoint> m_sphPanhardAxle;
@@ -208,6 +222,9 @@ class CH_MODELS_API ChGAxle : public ChSuspension {
     std::shared_ptr<ChVehicleJoint> m_sphLongLinkChassis[2];
     std::shared_ptr<ChVehicleJoint> m_sphLongLinkAxleOuter[2];
     std::shared_ptr<ChVehicleJoint> m_sphLongLinkAxleInner[2];
+    std::shared_ptr<ChVehicleJoint> m_revARBChassis;
+    std::shared_ptr<ChLinkLockRevolute> m_revARBLeftRight;
+    std::shared_ptr<ChVehicleJoint> m_slideARB[2];
 
     std::shared_ptr<ChLinkTSDA> m_shock[2];   ///< handles to the spring links (L/R)
     std::shared_ptr<ChLinkTSDA> m_spring[2];  ///< handles to the shock links (L/R)
@@ -232,6 +249,11 @@ class CH_MODELS_API ChGAxle : public ChSuspension {
     // Points for panhard rod visualization
     ChVector<> m_ptPanhardAxle;
     ChVector<> m_ptPanhardChassis;
+
+    // Points for antiroll bar visualization
+    ChVector<> m_ptARBAxle[2];
+    ChVector<> m_ptARBChassis[2];
+    ChVector<> m_ptARBCenter;
 
     void InitializeSide(VehicleSide side,
                         std::shared_ptr<ChChassis> chassis,

@@ -44,11 +44,16 @@ class CH_MODELS_API GD250_GAxle : public ChGAxle {
     virtual double getPanhardRodMass() const override { return m_panhardRodMass; }
     virtual double getLongLinkMass() const override { return m_longLinkMass; }
     virtual double getSpindleMass() const override { return m_spindleMass; }
+    virtual double getARBMass() const override { return m_arbMass; }
+
+    virtual double getARBStiffness() const override { return m_arb_stiffness; }
+    virtual double getARBDamping() const override { return m_arb_damping; }
 
     virtual double getAxleTubeRadius() const override { return m_axleTubeRadius; }
     virtual double getPanhardRodRadius() const override { return m_panhardRodRadius; }
     virtual double getLongLinkRadius() const override { return m_longLinkRadius; }
     virtual double getSpindleRadius() const override { return m_spindleRadius; }
+    virtual double getARBRadius() const override { return m_arbRadius; }
     virtual double getSpindleWidth() const override { return m_spindleWidth; }
 
     virtual const ChVector<> getAxleTubeCOM() const override { return ChVector<>(0, 0, 0); }
@@ -57,6 +62,7 @@ class CH_MODELS_API GD250_GAxle : public ChGAxle {
     virtual const ChVector<>& getPanhardRodInertia() const override { return m_panhardRodInertia; }
     virtual const ChVector<>& getLongLinkInertia() const override { return m_longLinkInertia; }
     virtual const ChVector<>& getSpindleInertia() const override { return m_spindleInertia; }
+    virtual const ChVector<>& getARBInertia() const override { return m_arbInertia; }
 
     virtual double getAxleInertia() const override { return m_axleShaftInertia; }
 
@@ -78,17 +84,20 @@ private:
     static const double m_axleTubeMass;
     static const double m_panhardRodMass;
     static const double m_longLinkMass;
+    static const double m_arbMass;
     static const double m_spindleMass;
 
     static const double m_axleTubeRadius;
     static const double m_panhardRodRadius;
     static const double m_longLinkRadius;
+    static const double m_arbRadius;
     static const double m_spindleRadius;
     static const double m_spindleWidth;
 
     static const ChVector<> m_axleTubeInertia;
     static const ChVector<> m_panhardRodInertia;
     static const ChVector<> m_longLinkInertia;
+    static const ChVector<> m_arbInertia;
     static const ChVector<> m_spindleInertia;
 
     static const double m_springCoefficient;
@@ -100,6 +109,9 @@ private:
     static const double m_damperCoefficient;
     static const double m_damperDegressivityExpansion;
     static const double m_damperDegressivityCompression;
+
+    static const double m_arb_stiffness;
+    static const double m_arb_damping;
 
     std::shared_ptr<ChVehicleBushingData> m_bushingData;
 };
