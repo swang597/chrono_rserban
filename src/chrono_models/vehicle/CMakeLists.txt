@@ -20,7 +20,7 @@ set(CVM_GWAGON_FILES
     g-wagon/base/ChGAxle.cpp
     g-wagon/base/ChGAxle.h
     g-wagon/base/ChGAxleSimple.cpp
-    g-wagon/base/ChToeBarGAxleSimple.h
+    g-wagon/base/ChGAxleSimple.h
     g-wagon/base/ChToeBarGAxle.cpp
     g-wagon/base/ChToeBarGAxle.h
     g-wagon/base/ChToeBarGAxleSimple.cpp
