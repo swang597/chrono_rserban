@@ -122,7 +122,10 @@ void GD250::Initialize() {
             auto tire_FR = chrono_types::make_shared<GD250_TMeasyTireFront>("FR");
             auto tire_RL = chrono_types::make_shared<GD250_TMeasyTireFront>("RL");
             auto tire_RR = chrono_types::make_shared<GD250_TMeasyTireFront>("RR");
-
+            tire_FL->SetCollisionType(ChTire::CollisionType::ENVELOPE);
+            tire_FR->SetCollisionType(ChTire::CollisionType::ENVELOPE);
+            tire_RL->SetCollisionType(ChTire::CollisionType::ENVELOPE);
+            tire_RR->SetCollisionType(ChTire::CollisionType::ENVELOPE);
             m_vehicle->InitializeTire(tire_FL, m_vehicle->GetAxle(0)->m_wheels[LEFT], VisualizationType::MESH);
             m_vehicle->InitializeTire(tire_FR, m_vehicle->GetAxle(0)->m_wheels[RIGHT], VisualizationType::MESH);
             m_vehicle->InitializeTire(tire_RL, m_vehicle->GetAxle(1)->m_wheels[LEFT], VisualizationType::MESH);
