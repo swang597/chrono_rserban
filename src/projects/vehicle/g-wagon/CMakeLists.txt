@@ -12,6 +12,7 @@ endif()
 
 set(PROGRAMS
     test_VEH_GD250_Ride
+    test_VEH_GD250_Shock
     test_VEH_GD250_TurnCircle
 )
 
