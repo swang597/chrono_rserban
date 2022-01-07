@@ -48,8 +48,8 @@ const double GD250_Driveline4WD::m_central_differential_locking_limit = 100;
     const double GD250_Driveline4WD_LowRange::m_front_conicalgear_ratio = 1 / 5.286 /2;
     const double GD250_Driveline4WD_LowRange::m_rear_conicalgear_ratio = 1 / 5.286 / 2;
 
-    const double GD250_Driveline4WD_LowRange::m_axle_differential_locking_limit = 100;
-    const double GD250_Driveline4WD_LowRange::m_central_differential_locking_limit = 100;
+    const double GD250_Driveline4WD_LowRange::m_axle_differential_locking_limit = 1000;
+    const double GD250_Driveline4WD_LowRange::m_central_differential_locking_limit = 10000;
 
     // -----------------------------------------------------------------------------
 // Constructor of the GD250_Driveline4WD.

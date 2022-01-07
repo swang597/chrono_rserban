@@ -11,6 +11,7 @@ endif()
 # List all demos
 
 set(PROGRAMS
+    test_VEH_GD250_ObstacleTool
     test_VEH_GD250_Ride
     test_VEH_GD250_Shock
     test_VEH_GD250_TurnCircle
