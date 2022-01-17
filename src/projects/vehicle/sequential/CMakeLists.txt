@@ -23,6 +23,7 @@ SET(LIBRARIES
 SET(DEMOS
     test_VEH_bump
     test_VEH_Bezier
+    test_VEH_BezierTracker
     test_VEH_steering_compliance
     test_VEH_steering_input
     test_VEH_ISO2631_shock_ramp
