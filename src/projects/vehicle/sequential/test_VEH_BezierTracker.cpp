@@ -63,15 +63,22 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    // Create a new tracker every time to check correctness of first closest point calculation.
+    // Save "sentinel" pont and "target" (closest point on path to sentinel)
     std::ofstream out(out_dir + "/" + "track.dat", std::ios::out);
     for (int i = 0; i < 50; i++) {
-        // Create a new tracker every time to check correctness of first closest point calculation.
-        ChBezierCurveTracker tracker(path, false);
-        double x = 110.0 * (i / 50.0);
-        ChVector<> s = ChVector<>(x, 0, 0);
+        ChBezierCurveTracker tracker(path, false);        
+        ChVector<> s = ChVector<>(110.0 * (i / 50.0), 0, 0);
         ChVector<> t;
         tracker.calcClosestPoint(s, t);
-        // Save "sentinel" pont and "target" (closest point on path to sentinel)
+        out << s.x() << " " << s.y() << " " << s.z() << " ";
+        out << t.x() << " " << t.y() << " " << t.z() << std::endl;
+    }
+    for (int i = 0; i < 50; i++) {
+        ChBezierCurveTracker tracker(path, false);
+        ChVector<> s = ChVector<>(110, 110.0 * (i / 50.0), 0);
+        ChVector<> t;
+        tracker.calcClosestPoint(s, t);
         out << s.x() << " " << s.y() << " " << s.z() << " ";
         out << t.x() << " " << t.y() << " " << t.z() << std::endl;
     }
