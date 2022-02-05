@@ -31,7 +31,7 @@
 #include <thrust/transform_reduce.h>
 
 #include "chrono/core/ChTimer.h"
-#include "chrono/parallel/ChOpenMP.h"
+#include "chrono/utils/ChOpenMP.h"
 #include "chrono/collision/ChCollisionSystem.h"
 #include "chrono/multicore_math/real3.h"
 #include "chrono/multicore_math/other_types.h"
