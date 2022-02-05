@@ -12,49 +12,47 @@
 // Authors: Alessandro Tasora
 // =============================================================================
 
-#ifndef CHAPI_CASCADE_H
-#define CHAPI_CASCADE_H
+#ifndef CHAPIMODAL_H
+#define CHAPIMODAL_H
 
+#include "chrono/ChVersion.h"
 #include "chrono/core/ChPlatform.h"
 
-// When compiling this library, remember to define CH_API_COMPILE_CASCADE
-// (so that the symbols with 'ChApiCASCADE' in front of them will be
+// When compiling this library, remember to define CH_API_COMPILE_MODAL
+// (so that the symbols with 'ChApiPostProcess' in front of them will be
 // marked as exported). Otherwise, just do not define it if you
 // link the library to your code, and the symbols will be imported.
 
-#if defined(CH_API_COMPILE_CASCADE)
-#define ChApiCASCADE ChApiEXPORT
+#if defined(CH_API_COMPILE_MODAL)
+#define ChApiModal ChApiEXPORT
 #else
-#define ChApiCASCADE ChApiIMPORT
+#define ChApiModal ChApiIMPORT
 #endif
 
 /**
-    @defgroup cascade_module CASCADE module
-    @brief Tools for interoperation with CAD files. 
+    @defgroup modal_module MODAL module
+    @brief Modal analysis and substructuring
 
-    This module allows using the OpenCASCADE solid modeling kernel in Chrono::Engine.
+    Using this module, you can perform modal analysis directly in 
+	Chrono. This can be useful for computing natural frequencies, for
+	computing stability (complex eigenvalue analysis, with damping matrices),
+	for substructuring (where subassemblies are replaced by modal bodies).
 
     For additional information, see:
-    - the [installation guide](@ref module_cascade_installation)
+    - the [installation guide](@ref module_modal_installation)
     - the [tutorials](@ref tutorial_root)
 */
 
-
 namespace chrono {
 
-/// @addtogroup cascade_module
+/// @addtogroup modal_module
 /// @{
 
-/// \brief Namespace with classes for the CASCADE module.
-/// The "cascade" namespace contains tools for interoperation with CAD
-/// files. The OpenCASCADE open-source library is used to this end:
-/// it can load STEP files saved from most 3D CADs.
-namespace cascade {}
+/// Namespace with classes for the modal module.
+namespace modal {}
 
 /// @}
 
 }
 
-
-
-#endif  // END of header
+#endif
