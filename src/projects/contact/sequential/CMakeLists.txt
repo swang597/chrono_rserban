@@ -18,6 +18,7 @@ set(PROGRAMS
 if(THRUST_FOUND)
     set(PROGRAMS ${PROGRAMS}
         test_CTC_box_triangle_collision
+        test_CTC_box_triangle_collision_2
     )
 endif()
 
@@ -41,5 +42,6 @@ foreach(PROGRAM ${PROGRAMS})
         COMPILE_FLAGS "${CXX_FLAGS}"
         LINK_FLAGS "${CH_LINKERFLAG_EXE}"
     )
+    set_property(TARGET ${PROGRAM} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROGRAM}>")
     target_link_libraries(${PROGRAM} ${LIBRARIES})
 endforeach(PROGRAM)
