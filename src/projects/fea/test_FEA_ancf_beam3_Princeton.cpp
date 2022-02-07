@@ -238,10 +238,10 @@ TestBeam::TestBeam(int num_elements, double beam_angle_rad, double vert_tip_load
 void TestBeam::SimulateVis() {
 #ifdef CHRONO_IRRLICHT
     irrlicht::ChIrrApp application(m_system, L"Princeton Beam Experiment - ANCF 3 Node Beams", irr::core::dimension2d<irr::u32>(800, 600), false, true);
-    application.AddTypicalLogo();
-    application.AddTypicalSky();
+    application.AddLogo();
+    application.AddSkyBox();
     application.AddTypicalLights();
-    application.AddTypicalCamera(irr::core::vector3df(-0.2f, 0.2f, 0.2f), irr::core::vector3df(0, 0, 0));
+    application.AddCamera(irr::core::vector3df(-0.2f, 0.2f, 0.2f), irr::core::vector3df(0, 0, 0));
 
     application.AssetBindAll();
     application.AssetUpdateAll();

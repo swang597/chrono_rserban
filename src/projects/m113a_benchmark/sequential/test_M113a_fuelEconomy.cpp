@@ -168,7 +168,6 @@ int main(int argc, char* argv[]) {
     // ---------------------------------------
 
     ChTrackedVehicleIrrApp app(&vehicle, L"M113 fuel economy");
-    app.SetSkyBox();
     for (int ix = 0; ix < 3; ix++) {
         for (int iy = 0; iy < 5; iy++) {
             app.GetDevice()->getSceneManager()->addLightSceneNode(

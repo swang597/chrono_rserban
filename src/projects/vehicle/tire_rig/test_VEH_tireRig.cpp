@@ -815,11 +815,11 @@ int main() {
 // -------------------------------------------------
 #ifdef USE_IRRLICHT
     ChIrrApp* application = new ChIrrApp(my_system, L"Tire Test Rig", core::dimension2d<u32>(1920, 1080), false, true);
-    application->AddTypicalLogo();
-    application->AddTypicalSky();
+    application->AddLogo();
+    application->AddSkyBox();
     application->AddTypicalLights();
     core::vector3df lookat((f32)0, (f32)0, (f32)0);
-    application->AddTypicalCamera(lookat + core::vector3df(1, 1, 1), lookat);
+    application->AddCamera(lookat + core::vector3df(1, 1, 1), lookat);
 
     application->AssetBindAll();
     application->AssetUpdateAll();

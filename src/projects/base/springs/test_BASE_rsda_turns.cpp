@@ -203,10 +203,10 @@ int main(int argc, char* argv[]) {
 
     // Create the Irrlicht application
     ChIrrApp application(&sys, L"Track RSDA test", irr::core::dimension2d<irr::u32>(800, 600), VerticalDir::Z);
-    application.AddTypicalLogo();
-    application.AddTypicalSky();
+    application.AddLogo();
+    application.AddSkyBox();
     application.AddTypicalLights();
-    application.AddTypicalCamera(irr::core::vector3df(0, 2, 0), irr::core::vector3df(0, 0, 0));
+    application.AddCamera(irr::core::vector3df(0, 2, 0), irr::core::vector3df(0, 0, 0));
 
     application.AssetBindAll();
     application.AssetUpdateAll();

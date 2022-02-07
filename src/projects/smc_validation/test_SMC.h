@@ -211,10 +211,10 @@ ChIrrApp* SetSimVis(ChSystemMulticoreSMC* msystem, double time_step, bool vis) {
         ChIrrApp* application = new ChIrrApp(msystem, L"Two sphere SMC test", core::dimension2d<u32>(800, 600));
 
         // Add camera, lights, logo and sky in Irrlicht scene
-        application->AddTypicalLogo();
-        application->AddTypicalSky();
+        application->AddLogo();
+        application->AddSkyBox();
         application->AddTypicalLights();
-        application->AddTypicalCamera(core::vector3df(0, 0, -7.5));
+        application->AddCamera(core::vector3df(0, 0, -7.5));
 
         // Complete asset construction: convert all assets to Irrlicht
         application->SetStepManage(true);

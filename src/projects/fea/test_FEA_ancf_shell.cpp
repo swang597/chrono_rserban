@@ -323,10 +323,10 @@ int main(int argc, char* argv[]) {
                          false,                              // Shadows?
                          false,                              // Anti-Aliasing?
                          video::EDT_OPENGL);                 // Graphics Driver
-    application.AddTypicalLogo();
-    application.AddTypicalSky();
+    application.AddLogo();
+    application.AddSkyBox();
     application.AddTypicalLights();
-    application.AddTypicalCamera(core::vector3df(0, (f32)0.6, -1));
+    application.AddCamera(core::vector3df(0, (f32)0.6, -1));
     application.AddLightWithShadow(core::vector3df(1.5, 5.5, -2.5), core::vector3df(0, 0, 0), 3, 2.2, 7.2, 40, 512,
                                    video::SColorf(1, 1, 1));
     application.SetContactsDrawMode(ChIrrTools::CONTACT_DISTANCES);

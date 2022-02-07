@@ -373,10 +373,10 @@ int main(int argc, char* argv[]) {
     // Create the Irrlicht app
     // -----------------------
     ChIrrApp app(system, L"Tire Test Rig", irr::core::dimension2d<irr::u32>(800, 600), false, true);
-    app.AddTypicalLogo();
-    app.AddTypicalSky();
-    app.AddTypicalLights(irr::core::vector3df(-130.f, -130.f, 50.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
-    app.AddTypicalCamera(irr::core::vector3df(0, -1, 0.2f), irr::core::vector3dfCH(init_loc));
+    app.AddLogo();
+    app.AddSkyBox();
+    app.AddTypicalLights();
+    app.AddCamera(irr::core::vector3df(0, -1, 0.2f), irr::core::vector3dfCH(init_loc));
 
     app.AssetBindAll();
     app.AssetUpdateAll();

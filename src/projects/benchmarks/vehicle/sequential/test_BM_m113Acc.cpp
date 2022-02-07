@@ -145,8 +145,7 @@ void M113AccTest<EnumClass, SHOE_TYPE>::ExecuteStep() {
 template <typename EnumClass, EnumClass SHOE_TYPE>
 void M113AccTest<EnumClass, SHOE_TYPE>::SimulateVis() {
     ChTrackedVehicleIrrApp app(m_m113, L"M113 acceleration test");
-    app.SetSkyBox();
-    app.AddTypicalLights(irr::core::vector3df(-200.f, -30.f, 100.f), irr::core::vector3df(-200.f, 50.f, 100.f), 250, 130);
+    app.AddTypicalLights();
     app.SetChaseCamera(ChVector<>(0.0, 0.0, 0.0), 6.0, 0.5);
 
     app.AssetBindAll();

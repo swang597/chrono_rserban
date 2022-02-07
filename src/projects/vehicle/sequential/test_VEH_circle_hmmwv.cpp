@@ -92,10 +92,8 @@ int main(int argc, char* argv[]) {
     // Create the vehicle Irrlicht application
     ChVehicleIrrApp app(&my_hmmwv.GetVehicle(), L"Constant radius test");
     app.SetHUDLocation(500, 20);
-    app.SetSkyBox();
-    app.AddTypicalLogo();
-    app.AddTypicalLights(irr::core::vector3df(-150.f, 0.f, 200.f), irr::core::vector3df(-150.f, 0.f, 200.f), 100, 100);
-    app.AddTypicalLights(irr::core::vector3df(150.f, 0.f, 200.f), irr::core::vector3df(150.0f, 0.f, 200.f), 100, 100);
+    app.AddLogo();
+    app.AddTypicalLights();
     app.SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 6.0, 0.5);
 
     // Visualization of controller points (sentinel & target)

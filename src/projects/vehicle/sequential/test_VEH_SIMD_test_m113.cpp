@@ -134,8 +134,7 @@ int main(int argc, char* argv[]) {
     ChTrackedVehicleIrrApp *app;
     if (useIrrlicht) {
         app = new ChTrackedVehicleIrrApp(&m113, L"M113 Vehicle Demo");
-        app->SetSkyBox();
-        app->AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
+        app->AddTypicalLights();
         app->SetChaseCamera(trackPoint, 6.0, 1.5);
         app->SetChaseCameraMultipliers(1e-4, 10);
         app->SetTimestep(step_size);

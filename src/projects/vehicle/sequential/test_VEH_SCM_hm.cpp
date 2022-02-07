@@ -41,10 +41,10 @@ int main(int argc, char* argv[]) {
 
     // Create the Irrlicht visualization
     ChIrrApp application(&my_system, L"SCM test", core::dimension2d<u32>(1280, 720), VerticalDir::Z);
-    application.AddTypicalLogo();
-    application.AddTypicalSky();
+    application.AddLogo();
+    application.AddSkyBox();
     application.AddTypicalLights();
-    application.AddTypicalCamera(core::vector3df(2.0f, 2.0f, 2.5f));
+    application.AddCamera(core::vector3df(2.0f, 2.0f, 2.5f));
 
     std::shared_ptr<ChBody> mtruss(new ChBody);
     mtruss->SetBodyFixed(true);

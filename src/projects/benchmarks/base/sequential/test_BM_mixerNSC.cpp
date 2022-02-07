@@ -108,10 +108,10 @@ MixerTestNSC<N>::MixerTestNSC() : m_system(new ChSystemNSC()), m_step(0.02) {
 template <int N>
 void MixerTestNSC<N>::SimulateVis() {
     ChIrrApp application(m_system, L"Rigid contacts", irr::core::dimension2d<irr::u32>(800, 600), false, true);
-    application.AddTypicalLogo();
-    application.AddTypicalSky();
+    application.AddLogo();
+    application.AddSkyBox();
     application.AddTypicalLights();
-    application.AddTypicalCamera(irr::core::vector3df(0, 14, -20));
+    application.AddCamera(irr::core::vector3df(0, 14, -20));
 
     application.AssetBindAll();
     application.AssetUpdateAll();

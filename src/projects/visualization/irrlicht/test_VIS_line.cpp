@@ -77,9 +77,9 @@ int main(int argc, char* argv[]) {
 
     // Create the Irrlicht visualization
     ChIrrApp application(&msystem, L"Line render test", irr::core::dimension2d<irr::u32>(800, 600));
-    application.AddTypicalLogo();
+    application.AddLogo();
     application.AddTypicalLights();
-    application.AddTypicalCamera(irr::core::vector3df(0, 0, -20));
+    application.AddCamera(irr::core::vector3df(0, 0, -20));
 
     // Complete asset construction
     application.AssetBindAll();

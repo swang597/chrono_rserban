@@ -459,18 +459,18 @@ int main(int argc, char* argv[]) {
     MechanismYUP mYUP(&sysYUP);
 
     irrlicht::ChIrrApp appISO(&sysISO, L"Tire ISO csys", irr::core::dimension2d<irr::u32>(800, 600));
-    appISO.AddTypicalLogo();
-    appISO.AddTypicalSky();
+    appISO.AddLogo();
+    appISO.AddSkyBox();
     appISO.AddTypicalLights();
-    appISO.AddTypicalCamera(irr::core::vector3df(1, 1, 3), irr::core::vector3df(0, 0, 0));
+    appISO.AddCamera(irr::core::vector3df(1, 1, 3), irr::core::vector3df(0, 0, 0));
     appISO.AssetBindAll();
     appISO.AssetUpdateAll();
 
     irrlicht::ChIrrApp appYUP(&sysYUP, L"Tire YUP csys", irr::core::dimension2d<irr::u32>(800, 600));
-    appYUP.AddTypicalLogo();
-    appYUP.AddTypicalSky();
+    appYUP.AddLogo();
+    appYUP.AddSkyBox();
     appYUP.AddTypicalLights();
-    appYUP.AddTypicalCamera(irr::core::vector3df(1, 1, 3), irr::core::vector3df(0, 0, 0));
+    appYUP.AddCamera(irr::core::vector3df(1, 1, 3), irr::core::vector3df(0, 0, 0));
     appYUP.AssetBindAll();
     appYUP.AssetUpdateAll();
 

@@ -98,10 +98,10 @@ int main(int argc, char* argv[]) {
 
     // Create the visualization window
     irrlicht::ChIrrApp application(&sys, L"Collision family", irr::core::dimension2d<irr::u32>(800, 600));
-    application.AddTypicalLogo();
-    application.AddTypicalSky();
+    application.AddLogo();
+    application.AddSkyBox();
     application.AddTypicalLights();
-    application.AddTypicalCamera(irr::core::vector3df(0, 2, -4));
+    application.AddCamera(irr::core::vector3df(0, 2, -4));
     application.AssetBindAll();
     application.AssetUpdateAll();
 

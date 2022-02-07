@@ -276,12 +276,11 @@ int main(int argc, char* argv[]) {
     // -----------------------
 
     ChIrrApp application(&my_system, L"ANCF Rolling Tire", core::dimension2d<u32>(1080, 800), false);
-    application.AddTypicalLogo();
-    application.AddTypicalSky();
+    application.AddLogo();
+    application.AddSkyBox();
     application.AddTypicalLights();
-    application.AddTypicalCamera(core::vector3df(0.5f, 0.5f, 1.15f),   // camera location
-                                 core::vector3df(0.65f, 0.0f, 0.0f));  // "look at" location
-    application.AddTypicalLights(core::vector3df(30.f, -30.f, 100.f), core::vector3df(30.f, 50.f, 100.f), 160, 70);
+    application.AddCamera(core::vector3df(0.5f, 0.5f, 1.15f),   // camera location
+                          core::vector3df(0.65f, 0.0f, 0.0f));  // "look at" location
 
     application.AssetBindAll();
     application.AssetUpdateAll();

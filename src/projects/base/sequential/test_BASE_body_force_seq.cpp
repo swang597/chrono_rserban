@@ -108,10 +108,9 @@ int main(int argc, char* argv[]) {
 
     // Create the visualization window
     irrlicht::ChIrrApp application(&my_sys, L"Body force test", irr::core::dimension2d<irr::u32>(800, 600));
-    application.AddTypicalLogo();
-    application.AddTypicalSky();
-    application.AddTypicalLights(irr::core::vector3df(30.f, -100.f, 30.f), irr::core::vector3df(30.f, -80.f, -30.f));
-    application.AddTypicalCamera(irr::core::vector3df(0, -4, 2));
+    application.AddLogo();
+    application.AddTypicalLights();
+    application.AddCamera(irr::core::vector3df(0, -4, 2));
     application.AssetBindAll();
     application.AssetUpdateAll();
 

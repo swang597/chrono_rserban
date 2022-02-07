@@ -141,10 +141,10 @@ int main(int argc, char* argv[]) {
 
     // Run-time visualization
     irrlicht::ChIrrApp application(&sys, L"Cables FEM", irr::core::dimension2d<irr::u32>(800, 600), false, true);
-    application.AddTypicalLogo();
-    application.AddTypicalSky();
+    application.AddLogo();
+    application.AddSkyBox();
     application.AddTypicalLights();
-    application.AddTypicalCamera(irr::core::vector3df(0.0f, 0.05f, 0.2f));
+    application.AddCamera(irr::core::vector3df(0.0f, 0.05f, 0.2f));
 
     application.AssetBindAll();
     application.AssetUpdateAll();

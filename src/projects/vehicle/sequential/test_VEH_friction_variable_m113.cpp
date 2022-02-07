@@ -102,9 +102,8 @@ int main(int argc, char* argv[]) {
 
     // Create the vehicle Irrlicht interface
     ChTrackedVehicleIrrApp app(&vehicle, L"M113 friction test");
-    app.SetSkyBox();
-    app.AddTypicalLogo();
-    app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
+    app.AddLogo();
+    app.AddTypicalLights();
     app.SetChaseCamera(ChVector<>(0.0, 0.0, 0.0), 6.0, 0.5);
     app.SetTimestep(step_size);
 

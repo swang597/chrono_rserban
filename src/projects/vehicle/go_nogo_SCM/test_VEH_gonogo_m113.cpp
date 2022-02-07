@@ -355,10 +355,9 @@ int main(int argc, char* argv[]) {
     // ---------------------------------------
 
     ChTrackedVehicleIrrApp app(&m113, L"M113 go/no-go");
-    app.SetSkyBox();
     app.AddLight(irr::core::vector3df(-100.f, -150.f, 150.f), 150, irr::video::SColorf(0.65f, 0.65f, 0.7f));
     app.AddLight(irr::core::vector3df(-100.f, +150.f, 150.f), 150, irr::video::SColorf(0.65f, 0.65f, 0.7f));
-    app.AddTypicalLogo();
+    app.AddLogo();
     app.SetChaseCamera(trackPoint, 5.0, 0.25);
     app.AssetBindAll();
     app.AssetUpdateAll();

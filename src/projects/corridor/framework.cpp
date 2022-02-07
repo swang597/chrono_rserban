@@ -310,11 +310,8 @@ void Framework::Initialize() {
 
         m_app = new IrrApp(this);
 
-        m_app->SetSkyBox();
-        m_app->AddTypicalLogo();
-        m_app->AddTypicalLights(irr::core::vector3df((irr::f32)pos1.x(), (irr::f32)pos1.y(), (irr::f32)pos1.z()),
-                                irr::core::vector3df((irr::f32)pos2.x(), (irr::f32)pos2.y(), (irr::f32)pos2.z()), 250,
-                                130);
+        m_app->AddLogo();
+        m_app->AddTypicalLights();
         m_app->SetChaseCamera(ChVector<>(0.0, 0.0, .75), 6.0, 0.5);
         m_app->SetTimestep(m_step);
 

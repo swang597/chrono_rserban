@@ -107,10 +107,10 @@ int main(int argc, char* argv[]) {
     // ----------------------
     ChIrrApp application(&mphysicalSystem, L"Test ANCF Cables", irr::core::dimension2d<irr::u32>(1600, 1200), false,
                          true);
-    application.AddTypicalLogo();
-    application.AddTypicalSky();
-    application.AddTypicalLights(irr::core::vector3df(30.f, -100.f, 30.f), irr::core::vector3df(30.f, -80.f, -30.f));
-    application.AddTypicalCamera(irr::core::vector3df(0.05f, -0.3f, 0.05f), irr::core::vector3df(0.05f, 0.0f, 0.0f));
+    application.AddLogo();
+    application.AddSkyBox();
+    application.AddTypicalLights();
+    application.AddCamera(irr::core::vector3df(0.05f, -0.3f, 0.05f), irr::core::vector3df(0.05f, 0.0f, 0.0f));
 
     application.AssetBindAll();
     application.AssetUpdateAll();

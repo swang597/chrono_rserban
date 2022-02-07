@@ -151,8 +151,7 @@ int main(int argc, char* argv[]) {
         wTitle.append(L" (right)");
 
     ChWheeledVehicleIrrApp app(&feda.GetVehicle(), wTitle.c_str());
-    app.SetSkyBox();
-    app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
+    app.AddTypicalLights();
     app.SetChaseCamera(trackPoint, 8.0, 0.5);
     app.SetTimestep(step_size);
     app.AssetBindAll();

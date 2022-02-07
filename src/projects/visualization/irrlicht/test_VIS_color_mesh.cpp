@@ -52,9 +52,9 @@ int main(int argc, char* argv[]) {
 
     // Create the Irrlicht visualization
     ChIrrApp application(&msystem, L"Mesh color", irr::core::dimension2d<irr::u32>(800, 600));
-    application.AddTypicalLogo();
+    application.AddLogo();
     application.AddTypicalLights();
-    application.AddTypicalCamera(irr::core::vector3df(2, 0, 0));
+    application.AddCamera(irr::core::vector3df(2, 0, 0));
 
     // Complete asset construction
     application.AssetBindAll();

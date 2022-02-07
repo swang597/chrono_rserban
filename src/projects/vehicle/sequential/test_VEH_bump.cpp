@@ -173,9 +173,8 @@ int main(int argc, char* argv[]) {
                         irr::core::dimension2d<irr::u32>(800, 640));
 
     app.SetHUDLocation(500, 20);
-    app.SetSkyBox();
-    app.AddTypicalLogo();
-    app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 150.f), irr::core::vector3df(30.f, 50.f, 150.f), 250, 250);
+    app.AddLogo();
+    app.AddTypicalLights();
     app.SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 6.0, 0.5);
     app.SetTimestep(step_size);
 

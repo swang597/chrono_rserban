@@ -114,10 +114,10 @@ int main(int argc, char* argv[]) {
 
     // Bind visualization assets
     ChIrrApp application(&my_system, L"ANCF Collision Test", irr::core::dimension2d<irr::u32>(800, 600));
-    application.AddTypicalLogo();
-    application.AddTypicalSky();
+    application.AddLogo();
+    application.AddSkyBox();
     application.AddTypicalLights();
-    application.AddTypicalCamera(irr::core::vector3df(1.0f, 0.0f, 0.0f),  // camera location
+    application.AddCamera(irr::core::vector3df(1.0f, 0.0f, 0.0f),  // camera location
                                  irr::core::vector3df(0.0f, 0.0f, 0.f));  // "look at" location
     application.SetContactsDrawMode(IrrContactsDrawMode::CONTACT_DISTANCES);
 

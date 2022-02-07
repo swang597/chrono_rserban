@@ -181,10 +181,9 @@ int main(int argc, char* argv[]) {
 
     irrlicht::ChIrrApp application(&system, L"Box-triangle test", irr::core::dimension2d<irr::u32>(800, 600),
                                    irrlicht::VerticalDir::Z);
-    application.AddTypicalLogo();
-    application.AddTypicalSky();
-    application.AddTypicalLights(irr::core::vector3df(30.f, 50.f, 40.f), irr::core::vector3df(-50.f, -30.f, -40.f));
-    application.AddTypicalCamera(irr::core::vector3df(2, 2, 1));
+    application.AddLogo();
+    application.AddTypicalLights();
+    application.AddCamera(irr::core::vector3df(2, 2, 1));
     application.AssetBindAll();
     application.AssetUpdateAll();
 

@@ -110,10 +110,10 @@ int main(int argc, char* argv[]) {
 
     // Create Irrlicht window.
     ChIrrApp application(&system, L"Equilibrium demo", core::dimension2d<u32>(800, 600));
-    application.AddTypicalLogo();
-    application.AddTypicalSky();
+    application.AddLogo();
+    application.AddSkyBox();
     application.AddTypicalLights();
-    application.AddTypicalCamera(core::vector3df(0, 0, 6));
+    application.AddCamera(core::vector3df(0, 0, 6));
 
     application.AssetBindAll();
     application.AssetUpdateAll();

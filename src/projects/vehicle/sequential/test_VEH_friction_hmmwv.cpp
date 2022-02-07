@@ -152,9 +152,8 @@ int main(int argc, char* argv[]) {
 
     // Create the vehicle Irrlicht interface (associated with 2nd vehicle)
     ChWheeledVehicleIrrApp app(&hmmwv_2.GetVehicle(), L"Terrain friction test");
-    app.SetSkyBox();
-    app.AddTypicalLogo();
-    app.AddTypicalLights(irr::core::vector3df(30.f, -30.f, 100.f), irr::core::vector3df(30.f, 50.f, 100.f), 250, 130);
+    app.AddLogo();
+    app.AddTypicalLights();
     app.SetChaseCamera(ChVector<>(0.0, 0.0, .75), 6.0, 0.5);
     app.SetChaseCameraState(utils::ChChaseCamera::Track);
     app.SetChaseCameraPosition(ChVector<>(-50, -10, 2.0));

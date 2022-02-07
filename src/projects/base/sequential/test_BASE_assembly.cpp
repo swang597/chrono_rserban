@@ -93,10 +93,10 @@ int main(int argc, char* argv[]) {
     m_System.SetStep(1e-10);
 
     ChIrrApp application(&m_System, L"ChBodyAuxRef demo", core::dimension2d<u32>(800, 600), false, true);
-    application.AddTypicalLogo();
-    application.AddTypicalSky();
+    application.AddLogo();
+    application.AddSkyBox();
     application.AddTypicalLights();
-    application.AddTypicalCamera(core::vector3df(0, 20, 150));
+    application.AddCamera(core::vector3df(0, 20, 150));
 
     application.AssetBindAll();
     application.AssetUpdateAll();

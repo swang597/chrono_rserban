@@ -193,10 +193,10 @@ void FEAcontactTest::CreateCables(std::shared_ptr<ChMaterialSurfaceSMC> cmat) {
 void FEAcontactTest::SimulateVis() {
 #ifdef CHRONO_IRRLICHT
     irrlicht::ChIrrApp application(m_system, L"FEA contacts", irr::core::dimension2d<irr::u32>(800, 600), false, true);
-    application.AddTypicalLogo();
-    application.AddTypicalSky();
+    application.AddLogo();
+    application.AddSkyBox();
     application.AddTypicalLights();
-    application.AddTypicalCamera(irr::core::vector3df(0, (irr::f32)0.6, -1));
+    application.AddCamera(irr::core::vector3df(0, (irr::f32)0.6, -1));
     application.AddLightWithShadow(irr::core::vector3df(1.5, 5.5, -2.5), irr::core::vector3df(0, 0, 0), 3, 2.2, 7.2, 40,
                                    512, irr::video::SColorf(1, 1, 1));
 

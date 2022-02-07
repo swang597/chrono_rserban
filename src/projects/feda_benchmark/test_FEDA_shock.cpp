@@ -225,12 +225,8 @@ int main(int argc, char* argv[]) {
     // ---------------------------------------
 
     app.SetHUDLocation(500, 20);
-    app.SetSkyBox();
-    app.AddTypicalLogo();
-    app.AddTypicalLights(irr::core::vector3df(-150.f, -150.f, 200.f), irr::core::vector3df(-150.f, 150.f, 200.f), 100,
-                         100);
-    app.AddTypicalLights(irr::core::vector3df(150.f, -150.f, 200.f), irr::core::vector3df(150.0f, 150.f, 200.f), 100,
-                         100);
+    app.AddLogo();
+    app.AddTypicalLights();
     app.SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 6.0, 0.5);
 
     app.SetTimestep(step_size);

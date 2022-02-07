@@ -320,10 +320,10 @@ int main(int argc, char* argv[]) {
 
     // Create the Irrlicht application
     ChIrrApp application(&system, L"Active shock test", core::dimension2d<u32>(800, 600));
-    application.AddTypicalLogo();
-    application.AddTypicalSky();
+    application.AddLogo();
+    application.AddSkyBox();
     application.AddTypicalLights();
-    application.AddTypicalCamera(core::vector3df(0, 0, 6));
+    application.AddCamera(core::vector3df(0, 0, 6));
     application.AssetBindAll();
     application.AssetUpdateAll();
 

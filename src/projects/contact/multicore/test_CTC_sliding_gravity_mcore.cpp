@@ -252,10 +252,10 @@ int main(int argc, char* argv[]) {
 
         // Create the Irrlicht visualization.
         ChIrrApp* application = new ChIrrApp(&msystem, L"Sliding box SMC test", core::dimension2d<u32>(800, 600));
-        application->AddTypicalLogo();
-        application->AddTypicalSky();
+        application->AddLogo();
+        application->AddSkyBox();
         application->AddTypicalLights();
-        application->AddTypicalCamera(core::vector3df(0, 0, -7.5));
+        application->AddCamera(core::vector3df(0, 0, -7.5));
         application->SetStepManage(true);
         application->SetTimestep(time_step);
         application->AssetBindAll();
