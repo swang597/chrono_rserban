@@ -76,7 +76,7 @@ namespace fmtv {}
 namespace rccar {}
 
 /// namespace for the Kraz truck vehicle model
-        namespace kraz {}
+namespace kraz {}
 
 /// namespace for the G-Wagon offroad vehicle models
         namespace gwagon {}
