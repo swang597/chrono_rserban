@@ -1,0 +1,20 @@
+{
+	"Name":						"MRZR Fiala Tire",
+	"Type":						"Tire",
+	"Template":					"FialaTire",
+	
+	"Fiala Parameters":
+	{
+		"Unloaded Radius":				0.330229,
+		"Width":						0.2121,
+		"Vertical Stiffness":			172246,
+		"Vertical Damping":				352.487,
+		"Rolling Resistance":			0.0308346,
+		"CSLIP":						???,
+		"CALPHA":						???,
+		"UMIN":							-1,
+		"UMAX":							1,
+		"X Relaxation Length":			???,
+		"Y Relaxation Length":			???
+	}
+}
