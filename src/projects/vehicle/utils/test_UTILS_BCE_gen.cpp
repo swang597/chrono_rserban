@@ -311,14 +311,14 @@ int main(int argc, char* argv[]) {
         gl_window.Render();
     }
 
-    /// Create output directory
+    // Create output directory
     const std::string out_dir = "../TEST_BCE_GEN";
     if (!filesystem::create_directory(filesystem::path(out_dir))) {
         std::cout << "Error creating directory " << out_dir << std::endl;
         return 1;
     }
 
-    /// write particles to file
+    // Write particles to file
     std::ofstream myFile(out_dir + "/" + filesystem::path(obj_file).stem() + ".txt", std::ios::trunc);
     myFile << "x"
            << ","
