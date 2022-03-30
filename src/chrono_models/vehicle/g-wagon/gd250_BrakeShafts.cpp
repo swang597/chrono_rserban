@@ -16,7 +16,7 @@
 //
 // =============================================================================
 
-#include "chrono_models/vehicle/g-wagon/GD250_BrakeShafts.h"
+#include "chrono_models/vehicle/g-wagon/gd250_BrakeShafts.h"
 
 namespace chrono {
 namespace vehicle {
