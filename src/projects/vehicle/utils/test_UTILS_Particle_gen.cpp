@@ -17,16 +17,27 @@ using namespace chrono;
 
 // =============================================================================
 
-bool GetProblemSpecs(int argc, char** argv, std::string& obj_file, double& delta, double& min_depth) {
+bool GetProblemSpecs(int argc,
+                     char** argv,
+                     std::string& obj_file,
+                     double& delta,
+                     double& min_depth,
+                     int& num_bce,
+                     bool& flat_bottom,
+                     bool& flat_top) {
     delta = 0.1;
-    min_depth = 0.2;
+    min_depth = 0.3;
+    num_bce = 3;
 
     ChCLI cli(argv[0], "BCE generator");
 
     cli.AddOption<std::string>("", "obj_file", "Input OBJ file (assumed relative to data/ directory)");
     cli.AddOption<double>("", "delta", "Particle spacing", std::to_string(delta));
     cli.AddOption<double>("", "min_depth", "Minimum soil depth", std::to_string(min_depth));
-
+    cli.AddOption<int>("", "num_bce", "Number of BCE layers", std::to_string(num_bce));
+    cli.AddOption<bool>("", "flat_bottom", "Flat container bottom");
+    cli.AddOption<bool>("", "flat_top", "Flat container top");
+    
     if (!cli.Parse(argc, argv)) {
         cli.Help();
         return false;
@@ -41,6 +52,9 @@ bool GetProblemSpecs(int argc, char** argv, std::string& obj_file, double& delta
     }
     delta = cli.GetAsType<double>("delta");
     min_depth = cli.GetAsType<double>("min_depth");
+    num_bce = cli.GetAsType<int>("num_bce");
+    flat_bottom = cli.GetAsType<bool>("flat_bottom");
+    flat_top = cli.GetAsType<bool>("flat_top");
 
     return true;
 }
@@ -73,8 +87,11 @@ int main(int argc, char* argv[]) {
     std::string obj_file;
     double delta;
     double min_depth;
+    int num_bce;
+    bool flat_bottom = false;
+    bool flat_top = false;
 
-    if (!GetProblemSpecs(argc, argv, obj_file, delta, min_depth)) {
+    if (!GetProblemSpecs(argc, argv, obj_file, delta, min_depth, num_bce, flat_bottom, flat_top)) {
         return 1;
     }
 
@@ -101,14 +118,16 @@ int main(int argc, char* argv[]) {
 
     auto sizeX = (maxX - minX);
     auto sizeY = (maxY - minY);
+    auto sizeZ = (maxZ - minZ);
     ChVector<> center((maxX + minX) / 2, (maxY + minY) / 2, 0);
 
     int nx = static_cast<int>(std::ceil((sizeX / 2) / delta));  // half number of divisions in X direction
     int ny = static_cast<int>(std::ceil((sizeY / 2) / delta));  // number of divisions in Y direction
     delta = sizeX / (2.0 * nx);                                 // actual grid spacing
 
-    std::cout << nx << "  " << ny << std::endl;
+    std::cout << "Search grid size: " << nx << " x " << ny << std::endl;
 
+    // Parse all mesh faces and generate a height map 
     std::unordered_map<ChVector2<int>, double, CoordHash> h_map;
     double a1, a2, a3;
     for (const auto& f : faces) {
@@ -139,38 +158,110 @@ int main(int argc, char* argv[]) {
             }
         }
     }
+    std::cout << "Height map size: " <<  h_map.size() << std::endl;
 
-    std::cout << h_map.size() << std::endl;
+    // Parse the grid and identify side boundaries
+    std::unordered_map<ChVector2<int>, double, CoordHash> s_map;
+
+    for (int i = -nx; i <= nx; i++) {
+        int jmin = -ny;
+        int jmax = +ny;
+        while (h_map.find(ChVector2<int>(i, jmin)) == h_map.end())
+            jmin++;
+        while (h_map.find(ChVector2<int>(i, jmax)) == h_map.end())
+            jmax--;
+        for (int j = jmin - num_bce; j < jmin; j++)
+            s_map.insert({ChVector2<int>(i,j), h_map[ChVector2<int>(i, jmin)]});
+        for (int j = jmax + num_bce; j > jmax; j--)
+            s_map.insert({ChVector2<int>(i, j), h_map[ChVector2<int>(i, jmax)]});
+    }
+
+    for (int j = -ny; j <= ny; j++) {
+        int imin = -nx;
+        int imax = +nx;
+        while (h_map.find(ChVector2<int>(imin, j)) == h_map.end())
+            imin++;
+        while (h_map.find(ChVector2<int>(imax, j)) == h_map.end())
+            imax--;
+        for (int i = imin - num_bce; i < imin; i++)
+            s_map.insert({ChVector2<int>(i, j), h_map[ChVector2<int>(imin, j)]});
+        for (int i = imax + num_bce; i > imax; i--)
+            s_map.insert({ChVector2<int>(i, j), h_map[ChVector2<int>(imax, j)]});
+    }
+
+    std::cout << "Side map size: " << s_map.size() << std::endl;
 
     // Create a Chrono system
     ChSystemSMC sys;
     sys.Set_G_acc(VNULL);
-    double radius = delta;
 
-    // Parse the hash map and create points in the corresponding vertical segment [-min_depth, h]
+    double radius = delta / 2;
+    double side = 0.9 * delta;
+
+    // Parse the hash map and create points & bce markers in the corresponding vertical segment
     std::vector<ChVector<>> points;
+    std::vector<ChVector<>> bce;
     for (const auto& p : h_map) {
         const auto& ij = p.first;
-        auto v = ChVector<>(ij.x() * delta, ij.y() * delta, -min_depth) + center;
-        while (v.z() <= p.second) {
+        auto v = ChVector<>(ij.x() * delta, ij.y() * delta, 0) + center;
+        double h;
+
+        // SPH markers
+        h = flat_bottom ? -min_depth : p.second - min_depth;
+        while (h <= p.second) {
+            auto w = v + ChVector<>(0, 0, h);
             // Cache the point
-            points.push_back(v);
-            // Create and add a body for each point
+            points.push_back(w);
+            // Create and add a body for each marker
             auto body = chrono_types::make_shared<ChBodyEasySphere>(radius, 1, true, false);
-            body->SetPos(v);
+            body->SetPos(w);
             sys.AddBody(body);
             // Move up
-            v.z() += delta;
+            h += delta;
+        }
+
+        // BCE markers (bottom)
+        h = (flat_bottom ? -min_depth : p.second - min_depth) - delta;
+        for (int i = 0; i < num_bce; i++, h -= delta) {
+            auto w = v + ChVector<>(0, 0, h);
+            // Cache the point
+            bce.push_back(w);
+            // Create and add a body for each marker
+            auto body = chrono_types::make_shared<ChBodyEasyBox>(side, side, side, 1, true, false);
+            body->SetPos(w);
+            sys.AddBody(body);
+        }
+    }
+
+    // Parse the side map and create bce markers in the corresponding vertical segment
+    for (const auto& p : s_map) {
+        const auto& ij = p.first;
+        auto v = ChVector<>(ij.x() * delta, ij.y() * delta, 0) + center;
+        double h = (flat_bottom ? -min_depth : p.second - min_depth) - num_bce * delta;
+        double h_max = (flat_top ? sizeZ : p.second) + num_bce * delta;
+
+        // BCE markers (sides)
+        while (h <= h_max) {
+            auto w = v + ChVector<>(0, 0, h);
+            // Cache the point
+            bce.push_back(w);
+            // Create and add a body for each marker
+            auto body = chrono_types::make_shared<ChBodyEasyBox>(side, side, side, 1, true, false);
+            body->SetPos(w);
+            sys.AddBody(body);
+            // Move up
+            h += delta;
         }
     }
 
     sys.Setup();
-    std::cout << sys.GetNbodies() << std::endl;
+    std::cout << "Num particles: " << points.size() << std::endl;
+    std::cout << "Num BCE markers: " << bce.size() << std::endl;
 
     // Initialize OpenGL
     opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
     gl_window.Initialize(1280, 720, "JSON visualization", &sys);
-    gl_window.SetCamera(ChVector<>(maxX, maxY, maxZ), ChVector<>(0, 0, 0.5), ChVector<>(0, 0, 1));
+    gl_window.SetCamera(ChVector<>(maxX, maxY, maxZ) + ChVector<>(3), ChVector<>(0), ChVector<>(0, 0, 1));
     gl_window.SetRenderMode(opengl::SOLID);
 
     while (gl_window.Active()) {
