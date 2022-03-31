@@ -25,6 +25,6 @@
 
     "Visualization":
   {
-    "Mesh": "mrzr/meshes_old/Polaris_chassis.obj"
+    "Mesh": "mrzr/meshes_new/Polaris_chassis.obj"
   }
 }

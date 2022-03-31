@@ -83,8 +83,8 @@
   // Visualization mesh (OPTIONAL)
 
     "Visualization": {
-        "Mesh Filename Left": "mrzr/meshes_old/Polaris_tire.obj",
-        "Mesh Filename Right": "mrzr/meshes_old/Polaris_tire.obj"
+        "Mesh Filename Left": "mrzr/meshes_new/Polaris_tire.obj",
+        "Mesh Filename Right": "mrzr/meshes_new/Polaris_tire.obj"
     }
 
 }

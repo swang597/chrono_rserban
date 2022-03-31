@@ -13,7 +13,7 @@
     {
       "Suspension Input File":   "mrzr/suspension/MRZR_Front_DoubleWishbone.json",
       ////"Suspension Location":     [0, 0, 0],
-      "Suspension Location":     [0, 0, 0.15],
+      "Suspension Location":     [0, 0, 0.07],
       "Steering Index":          0,
       "Left Wheel Input File":   "mrzr/wheel/MRZR_Wheel.json",
       "Right Wheel Input File":  "mrzr/wheel/MRZR_Wheel.json",
@@ -24,7 +24,7 @@
     {
       "Suspension Input File":   "mrzr/suspension/MRZR_Rear_TrailingArm.json",
       ////"Suspension Location":     [0, 0, 0],
-      "Suspension Location":     [0, 0, 0.15],
+      "Suspension Location":     [0, 0, 0.07],
       "Left Wheel Input File":   "mrzr/wheel/MRZR_Wheel.json",
       "Right Wheel Input File":  "mrzr/wheel/MRZR_Wheel.json",
       "Left Brake Input File":   "mrzr/brake/MRZR_BrakeSimple.json",

@@ -66,10 +66,10 @@ int main(int argc, char* argv[]) {
     WheeledVehicle vehicle(vehicle::GetDataFile("mrzr/vehicle/MRZR.json"), ChContactMethod::SMC);
     vehicle.Initialize(ChCoordsys<>(initLoc, Q_from_AngZ(initYaw)));
     vehicle.GetChassis()->SetFixed(false);
-    vehicle.SetChassisVisualizationType(VisualizationType::NONE);
+    vehicle.SetChassisVisualizationType(VisualizationType::MESH);
     vehicle.SetSuspensionVisualizationType(VisualizationType::PRIMITIVES);
     vehicle.SetSteeringVisualizationType(VisualizationType::PRIMITIVES);
-    vehicle.SetWheelVisualizationType(VisualizationType::NONE);
+    vehicle.SetWheelVisualizationType(VisualizationType::MESH);
 
     // Create and initialize the powertrain system
     auto powertrain = ReadPowertrainJSON(vehicle::GetDataFile("mrzr/powertrain/MRZR_SimplePowertrain.json"));
