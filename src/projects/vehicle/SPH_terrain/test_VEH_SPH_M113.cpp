@@ -1,7 +1,7 @@
 // =============================================================================
 // PROJECT CHRONO - http://projectchrono.org
 //
-// Copyright (c) 2014 projectchrono.org
+// Copyright (c) 2022 projectchrono.org
 // All rights reserved.
 //
 // Use of this source code is governed by a BSD-style license that can be found
@@ -288,7 +288,7 @@ int main(int argc, char* argv[]) {
     myFsiSystem.SetSubDomain(paramsH);
 
     /// Setup the output directory for FSI data
-    myFsiSystem.SetFsiOutputDir(paramsH, demo_dir, out_dir, inputJson.c_str());
+    myFsiSystem.SetFsiOutputDir(paramsH, demo_dir, out_dir, inputJson);
 
     /// Set FSI information output
     myFsiSystem.SetFsiInfoOutput(false);
@@ -312,7 +312,7 @@ int main(int argc, char* argv[]) {
                                  ChVector<>(0)          // tauxyxzyz
         );
     }
-    myFsiSystem.AddRefArray(0, (int)numPart, -1, -1);
+    myFsiSystem.AddRefArray(0, numPart, -1, -1);
 
     /// Create MBD and BCE particles for the solid domain
     CreateSolidPhase(mphysicalSystem, myFsiSystem, paramsH);
