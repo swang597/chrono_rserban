@@ -36,14 +36,8 @@ using namespace chrono::vehicle;
 
 // -----------------------------------------------------------------------------
 
-std::string ground_obj = "terrain/sph_markers/rms4_20x4.obj";
-std::string ground_bce = "terrain/sph_markers/rms4_20x4_20mm_bce.txt";
-std::string sph_particles = "terrain/sph_markers/rms4_20x4_20mm_particles.txt";
-
-std::string vehicle_json = "mrzr/vehicle/MRZR.json";
-std::string powertrain_json = "mrzr/powertrain/MRZR_SimplePowertrain.json";
-std::string tire_json = "mrzr/tire/MRZR_TMeasyTire.json";
-std::string tire_coll_obj = "mrzr/meshes_new/Polaris_tire_collision.obj";
+std::string terrain_dir = "terrain/sph/rms2.0_4.0_0.0";
+////std::string terrain_dir = "terrain/sph/rms4.0_4.0_0.0";
 
 std::string sph_params = "fsi/input_json/test_VEH_SPH_Polaris.json";
 
@@ -163,7 +157,7 @@ void CreateTerrain(ChSystem& sys, ChSystemFsi& sysFSI, std::shared_ptr<fsi::SimP
     std::string line;
     std::string cell;
 
-    std::ifstream is(vehicle::GetDataFile(sph_particles));
+    std::ifstream is(vehicle::GetDataFile(terrain_dir + "/particles_20mm.txt"));
     getline(is, line);  // Comment line
     while (getline(is, line)) {
         std::stringstream ls(line);
@@ -183,7 +177,7 @@ void CreateTerrain(ChSystem& sys, ChSystemFsi& sysFSI, std::shared_ptr<fsi::SimP
     // Set computational domain
     ChVector<> aabb_dim = aabb_max - aabb_min;
     aabb_dim.z() *= 10;
-    sysFSI.SetBoundaries(aabb_min - 1.5 * aabb_dim, aabb_max + 1.5 * aabb_dim, params);
+    sysFSI.SetBoundaries(aabb_min - 0.1 * aabb_dim, aabb_max + 0.1 * aabb_dim, params);
 
     // Setup sub domains for a faster neighbor particle searching
     sysFSI.SetSubDomain(params);
@@ -198,19 +192,24 @@ void CreateTerrain(ChSystem& sys, ChSystemFsi& sysFSI, std::shared_ptr<fsi::SimP
     sys.AddBody(body);
 
     auto trimesh = chrono_types::make_shared<geometry::ChTriangleMeshConnected>();
-    trimesh->LoadWavefrontMesh(vehicle::GetDataFile(ground_obj), true, false);
+    trimesh->LoadWavefrontMesh(vehicle::GetDataFile(terrain_dir + "/mesh.obj"), true, false);
     auto trimesh_shape = chrono_types::make_shared<ChTriangleMeshShape>();
     trimesh_shape->SetMesh(trimesh);
     trimesh_shape->SetStatic(true);
     body->AddAsset(trimesh_shape);
 
-    sysFSI.AddBceFile(params, body, vehicle::GetDataFile(ground_bce), VNULL, QUNIT, 1.0, false);
+    sysFSI.AddBceFile(params, body, vehicle::GetDataFile(terrain_dir + "/bce_20mm.txt"), VNULL, QUNIT, 1.0, false);
 }
 
 std::shared_ptr<WheeledVehicle> CreateVehicle(ChSystem& sys,
                                               const ChCoordsys<>& init_pos,
                                               ChSystemFsi& sysFSI,
                                               std::shared_ptr<fsi::SimParams> params) {
+    std::string vehicle_json = "mrzr/vehicle/MRZR.json";
+    std::string powertrain_json = "mrzr/powertrain/MRZR_SimplePowertrain.json";
+    std::string tire_json = "mrzr/tire/MRZR_TMeasyTire.json";
+    std::string tire_coll_obj = "mrzr/meshes_new/Polaris_tire_collision.obj";
+
     // Create and initialize the vehicle
     auto vehicle = chrono_types::make_shared<WheeledVehicle>(&sys, vehicle::GetDataFile(vehicle_json));
     vehicle->Initialize(init_pos);
@@ -245,6 +244,9 @@ std::shared_ptr<WheeledVehicle> CreateVehicle(ChSystem& sys,
 }
 
 int main(int argc, char* argv[]) {
+    bool output = false;
+    double output_fps = 100; 
+
     // Create the Chrono systems
     ChSystemNSC sys;
     ChSystemFsi sysFSI(sys);
@@ -254,16 +256,15 @@ int main(int argc, char* argv[]) {
     std::shared_ptr<fsi::SimParams> params = sysFSI.GetSimParams();
     sysFSI.SetSimParameter(GetChronoDataFile(sph_params), params, ChVector<>(1));
     sysFSI.SetDiscreType(false, false);
+    sysFSI.SetWallBC(BceVersion::ORIGINAL);
     sysFSI.SetFluidDynamics(params->fluid_dynamic_type);
 
     // Set simulation data output and FSI information output
-    std::string out_dir = GetChronoOutputPath() + "FSI_M113/";
+    std::string out_dir = GetChronoOutputPath() + "FSI_POLARIS/";
     std::string demo_dir = params->demo_dir;
     sysFSI.SetFsiInfoOutput(false);
     sysFSI.SetFsiOutputDir(params, demo_dir, out_dir, "");
     sysFSI.SetOutputLength(0);
-
-    double output_fps = 100; 
 
     sys.Set_G_acc(ChVector<>(params->gravity.x, params->gravity.y, params->gravity.z));
 
@@ -307,7 +308,7 @@ int main(int argc, char* argv[]) {
         std::cout << "t = " << t << "  pos = " << vehicle->GetVehiclePos() << std::endl;
 
         // Output data
-        if (frame % output_steps == 0) {
+        if (output && frame % output_steps == 0) {
             std::cout << "Output frame = " << output_frame << std::endl;
             sysFSI.PrintParticleToFile(demo_dir);
             std::string vehicle_file = demo_dir + "/vehicle_" + std::to_string(output_frame) + ".csv";
@@ -316,7 +317,7 @@ int main(int argc, char* argv[]) {
         }
 
         // Set current driver inputs
-        ChDriver::Inputs driver_inputs = {0, 0.8, 0};  //// TODO
+        ChDriver::Inputs driver_inputs = {0, 1.0, 0};  //// TODO
         vehicle->Synchronize(t, driver_inputs, terrain);
 
         // Advance system state
