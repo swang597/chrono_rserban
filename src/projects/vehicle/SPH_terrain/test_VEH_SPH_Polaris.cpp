@@ -36,10 +36,15 @@ using namespace chrono::vehicle;
 
 // -----------------------------------------------------------------------------
 
-std::string terrain_dir = "terrain/sph/rms2.0_4.0_0.0";
-////std::string terrain_dir = "terrain/sph/rms4.0_4.0_0.0";
+////std::string terrain_dir = "terrain/sph/rms2.0_4.0_0.0";
+std::string terrain_dir = "terrain/sph/rms4.0_4.0_0.0";
 
 std::string sph_params = "fsi/input_json/test_VEH_SPH_Polaris.json";
+
+bool use_mesh_terrain = false;
+
+bool output = false;
+double output_fps = 100;
 
 // -----------------------------------------------------------------------------
 
@@ -176,7 +181,7 @@ void CreateTerrain(ChSystem& sys, ChSystemFsi& sysFSI, std::shared_ptr<fsi::SimP
 
     // Set computational domain
     ChVector<> aabb_dim = aabb_max - aabb_min;
-    aabb_dim.z() *= 10;
+    aabb_dim.z() *= 50;
     sysFSI.SetBoundaries(aabb_min - 0.1 * aabb_dim, aabb_max + 0.1 * aabb_dim, params);
 
     // Setup sub domains for a faster neighbor particle searching
@@ -198,6 +203,16 @@ void CreateTerrain(ChSystem& sys, ChSystemFsi& sysFSI, std::shared_ptr<fsi::SimP
     trimesh_shape->SetStatic(true);
     body->AddAsset(trimesh_shape);
 
+    if (use_mesh_terrain) {
+        MaterialInfo mat_info;
+        mat_info.mu = 0.9;
+        auto mat = mat_info.CreateMaterial(sys.GetContactMethod());
+        body->GetCollisionModel()->ClearModel();
+        body->GetCollisionModel()->AddTriangleMesh(mat, trimesh, true, false, VNULL, ChMatrix33<>(1), 0.01);
+        body->GetCollisionModel()->BuildModel();
+        body->SetCollide(true);
+    }
+
     sysFSI.AddBceFile(params, body, vehicle::GetDataFile(terrain_dir + "/bce_20mm.txt"), VNULL, QUNIT, 1.0, false);
 }
 
@@ -206,8 +221,9 @@ std::shared_ptr<WheeledVehicle> CreateVehicle(ChSystem& sys,
                                               ChSystemFsi& sysFSI,
                                               std::shared_ptr<fsi::SimParams> params) {
     std::string vehicle_json = "mrzr/vehicle/MRZR.json";
-    std::string powertrain_json = "mrzr/powertrain/MRZR_SimplePowertrain.json";
-    std::string tire_json = "mrzr/tire/MRZR_TMeasyTire.json";
+    ////std::string powertrain_json = "mrzr/powertrain/MRZR_SimplePowertrain.json";
+    std::string powertrain_json = "mrzr/powertrain/MRZR_SimpleMapPowertrain.json";
+    std::string tire_json = "mrzr/tire/MRZR_RigidTire.json";
     std::string tire_coll_obj = "mrzr/meshes_new/Polaris_tire_collision.obj";
 
     // Create and initialize the vehicle
@@ -244,9 +260,6 @@ std::shared_ptr<WheeledVehicle> CreateVehicle(ChSystem& sys,
 }
 
 int main(int argc, char* argv[]) {
-    bool output = false;
-    double output_fps = 100; 
-
     // Create the Chrono systems
     ChSystemNSC sys;
     ChSystemFsi sysFSI(sys);
@@ -274,7 +287,7 @@ int main(int argc, char* argv[]) {
 
     // Create vehicle
     std::cout << "Create vehicle..." << std::endl;
-    ChCoordsys<> init_pos(ChVector<>(4, 0, 0.5), QUNIT);  //// TODO
+    ChCoordsys<> init_pos(ChVector<>(4, 0, 0.25), QUNIT);  //// TODO
     auto vehicle = CreateVehicle(sys, init_pos, sysFSI, params);
 
     // Finalize construction of FSI system
@@ -305,7 +318,9 @@ int main(int argc, char* argv[]) {
             break;
         gl_window.Render();
 #endif
-        std::cout << "t = " << t << "  pos = " << vehicle->GetVehiclePos() << std::endl;
+        std::cout << "t = " << t;
+        std::cout << "  pos = " << vehicle->GetVehiclePos();
+        std::cout << "  spd = " << vehicle->GetVehicleSpeed() << std::endl;
 
         // Output data
         if (output && frame % output_steps == 0) {
