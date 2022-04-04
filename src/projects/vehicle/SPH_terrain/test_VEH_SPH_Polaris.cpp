@@ -18,6 +18,7 @@
 
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/physics/ChSystemSMC.h"
+#include "chrono/utils/ChUtilsInputOutput.h"
 
 #include "chrono_fsi/ChSystemFsi.h"
 
@@ -255,18 +256,20 @@ int main(int argc, char* argv[]) {
     sysFSI.SetDiscreType(false, false);
     sysFSI.SetFluidDynamics(params->fluid_dynamic_type);
 
+    // Set simulation data output and FSI information output
+    std::string out_dir = GetChronoOutputPath() + "FSI_M113/";
+    std::string demo_dir = params->demo_dir;
+    sysFSI.SetFsiInfoOutput(false);
+    sysFSI.SetFsiOutputDir(params, demo_dir, out_dir, "");
+    sysFSI.SetOutputLength(0);
+
+    double output_fps = 100; 
+
     sys.Set_G_acc(ChVector<>(params->gravity.x, params->gravity.y, params->gravity.z));
 
     // Create terrain
     std::cout << "Create terrain..." << std::endl;
     CreateTerrain(sys, sysFSI, params);
-
-    // Set simulation data output and FSI information output
-    std::string out_dir = GetChronoOutputPath() + "FSI_M113/";
-    std::string demo_dir;
-    sysFSI.SetFsiInfoOutput(false);
-    sysFSI.SetFsiOutputDir(params, demo_dir, out_dir, "");
-    sysFSI.SetOutputLength(0);
 
     // Create vehicle
     std::cout << "Create vehicle..." << std::endl;
@@ -287,6 +290,13 @@ int main(int argc, char* argv[]) {
     // Simulation loop
     double t = 0;
     double tend = 10;
+
+    double output_dT = 1 / output_fps;
+    int output_steps = (int)std::ceil(output_dT / params->dT);
+
+    int frame = 0;
+    int output_frame = 0;
+
     ChTerrain terrain;
     while (t < tend) {
 #ifdef CHRONO_OPENGL
@@ -296,6 +306,15 @@ int main(int argc, char* argv[]) {
 #endif
         std::cout << "t = " << t << "  pos = " << vehicle->GetVehiclePos() << std::endl;
 
+        // Output data
+        if (frame % output_steps == 0) {
+            std::cout << "Output frame = " << output_frame << std::endl;
+            sysFSI.PrintParticleToFile(demo_dir);
+            std::string vehicle_file = demo_dir + "/vehicle_" + std::to_string(output_frame) + ".csv";
+            chrono::utils::WriteVisualizationAssets(&sys, vehicle_file);
+            output_frame++;
+        }
+
         // Set current driver inputs
         ChDriver::Inputs driver_inputs = {0, 0.8, 0};  //// TODO
         vehicle->Synchronize(t, driver_inputs, terrain);
@@ -303,6 +322,8 @@ int main(int argc, char* argv[]) {
         // Advance system state
         sysFSI.DoStepDynamics_FSI();
         t += params->dT;
+
+        frame++;
     }
 
     return 0;
