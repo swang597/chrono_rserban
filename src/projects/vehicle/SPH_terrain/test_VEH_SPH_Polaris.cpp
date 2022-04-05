@@ -312,7 +312,9 @@ int main(int argc, char* argv[]) {
 
     // Simulation loop
     double t = 0;
-    double tend = 10;
+    double tend = 30;
+
+    double x_max = path->getPoint(path->getNumPoints() - 1).x() - 4;
 
     double output_dT = 1 / output_fps;
     int output_steps = (int)std::ceil(output_dT / params->dT);
@@ -327,6 +329,11 @@ int main(int argc, char* argv[]) {
             break;
         gl_window.Render();
 #endif
+
+        //// TODO
+        if (vehicle->GetVehiclePos().x() > x_max)
+            break;
+
         std::cout << "t = " << t;
         std::cout << "  pos = " << vehicle->GetVehiclePos();
         std::cout << "  spd = " << vehicle->GetVehicleSpeed() << std::endl;
