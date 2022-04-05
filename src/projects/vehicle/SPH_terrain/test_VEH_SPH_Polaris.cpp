@@ -24,6 +24,7 @@
 
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/utils/ChUtilsJSON.h"
+#include "chrono_vehicle/driver/ChPathFollowerDriver.h"
 #include "chrono_vehicle/wheeled_vehicle/vehicle/WheeledVehicle.h"
 
 #ifdef CHRONO_OPENGL
@@ -36,8 +37,8 @@ using namespace chrono::vehicle;
 
 // -----------------------------------------------------------------------------
 
-////std::string terrain_dir = "terrain/sph/rms2.0_4.0_0.0";
-std::string terrain_dir = "terrain/sph/rms4.0_4.0_0.0";
+std::string terrain_dir = "terrain/sph/rms2.0_4.0_0.0";
+////std::string terrain_dir = "terrain/sph/rms4.0_4.0_0.0";
 
 std::string sph_params = "fsi/input_json/test_VEH_SPH_Polaris.json";
 
@@ -290,6 +291,14 @@ int main(int argc, char* argv[]) {
     ChCoordsys<> init_pos(ChVector<>(4, 0, 0.25), QUNIT);  //// TODO
     auto vehicle = CreateVehicle(sys, init_pos, sysFSI, params);
 
+    // Create driver
+    auto path = ChBezierCurve::read(vehicle::GetDataFile(terrain_dir + "/path.txt"));
+    ChPathFollowerDriver driver(*vehicle, path, "my_path", 0);
+    driver.GetSteeringController().SetLookAheadDistance(5);
+    driver.GetSteeringController().SetGains(0.8, 0, 0);
+    driver.GetSpeedController().SetGains(0.4, 0, 0);
+    driver.Initialize();
+
     // Finalize construction of FSI system
     sysFSI.Finalize();
 
@@ -332,10 +341,19 @@ int main(int argc, char* argv[]) {
         }
 
         // Set current driver inputs
-        ChDriver::Inputs driver_inputs = {0, 1.0, 0};  //// TODO
+        ChDriver::Inputs driver_inputs = driver.GetInputs();
+        if (t < 1)
+            driver_inputs.m_throttle = 0;
+        else if (t < 1.5)
+            driver_inputs.m_throttle = (t - 1) / 0.5;
+        else
+            driver_inputs.m_throttle = 1;
+
+        driver.Synchronize(t);
         vehicle->Synchronize(t, driver_inputs, terrain);
 
         // Advance system state
+        driver.Advance(params->dT);
         sysFSI.DoStepDynamics_FSI();
         t += params->dT;
 
