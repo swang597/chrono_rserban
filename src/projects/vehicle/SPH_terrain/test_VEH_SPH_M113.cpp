@@ -329,11 +329,11 @@ int main(int argc, char* argv[]) {
     int stepEnd = int(paramsH->tFinal / paramsH->dT);
 
     // Create the driver system
-    // ChDataDriver driver1(track->GetVehicle(), vehicle::GetDataFile("M113/driver/Acceleration.txt"));
-    // driver1.Initialize();
+    ChDataDriver driver(track->GetVehicle(), vehicle::GetDataFile("M113/driver/Acceleration.txt"));
+    driver.Initialize();
 
-    // TerrainForces shoe_forces_left(track->GetVehicle().GetNumTrackShoes(LEFT));
-    // TerrainForces shoe_forces_right(track->GetVehicle().GetNumTrackShoes(RIGHT));
+    TerrainForces shoe_forces_left(track->GetVehicle().GetNumTrackShoes(LEFT));
+    TerrainForces shoe_forces_right(track->GetVehicle().GetNumTrackShoes(RIGHT));
 
     /// Print the body name and total number of bodies
     int num_body = mphysicalSystem.Get_bodylist().size();
@@ -363,35 +363,15 @@ int main(int argc, char* argv[]) {
         else
             paramsH->dT_Max = Global_max_dT;
 
-        // ChDriver::Inputs driver_inputs = driver1.GetInputs();
+        ChDriver::Inputs driver_inputs = driver.GetInputs();
 
         // Update modules (process inputs from other modules)
-        // driver1.Synchronize(time);
-        // track->Synchronize(time, driver_inputs, shoe_forces_left, shoe_forces_right);
+        driver.Synchronize(time);
+        track->Synchronize(time, driver_inputs, shoe_forces_left, shoe_forces_right);
 
         // Advance simulation for one timestep for all modules
-        // driver1.Advance(paramsH->dT_Max);
+        // driver.Advance(paramsH->dT_Max);
         // track->Advance(paramsH->dT_Max);
-
-        // Add a force to the chassis to push the vehicle
-        if(time > 1.0){
-            double m113_speed = track->GetVehicle().GetVehicleSpeed();
-            if (m113_speed < 1.0){
-                force_base = sqrt(pow(force_on_chassis.x(),2)+pow(force_on_chassis.y(),2));
-                if (force_base < 50000.0){
-                    force_on_chassis.x() = (force_base + 2000.0)*cos(0.25*CH_C_PI);
-                    force_on_chassis.y() = (force_base + 2000.0)*sin(0.25*CH_C_PI);
-                }
-            }else{
-                force_base = sqrt(pow(force_on_chassis.x(),2)+pow(force_on_chassis.y(),2));
-                if (force_base > 3000.0){
-                    force_on_chassis.x() = (force_base - 2000.0)*cos(0.25*CH_C_PI);
-                    force_on_chassis.y() = (force_base - 2000.0)*sin(0.25*CH_C_PI);
-                }
-            }
-            m113_chassis->Empty_forces_accumulators();
-            m113_chassis->Accumulate_force(force_on_chassis, m113_chassis->GetPos(), false);
-        }
 
         // Do step dynamics
         TIMING_sta = clock();
@@ -407,18 +387,9 @@ int main(int argc, char* argv[]) {
         auto bbody = mphysicalSystem.Get_bodylist()[0];
         auto vbody = mphysicalSystem.Get_bodylist()[1];
         printf("bin=%f,%f,%f\n", bbody->GetPos().x(), bbody->GetPos().y(), bbody->GetPos().z());
-        printf("M113=%f,%f,%f\n", vbody->GetPos().x(), vbody->GetPos().y(), vbody->GetPos().z());
-        printf("M113=%f,%f,%f\n", vbody->GetPos_dt().x(), vbody->GetPos_dt().y(), vbody->GetPos_dt().z());
-        printf("Physical time and computational cost = %f, %f\n", time, sim_cost);
-
-        double mspeed = track->GetVehicle().GetVehicleSpeed();
-        double mmass = track->GetVehicle().GetVehicleMass();
-        ChVector<> tr_pos = track->GetVehicle().GetVehiclePos();
-        std::cout << "-------------------------------------" << std::endl;
-        std::cout << "force_on_chassis = " << force_on_chassis.x() << " " << force_on_chassis.y() << " " << force_on_chassis.z() << std::endl;
-        std::cout << "mass and velocity = " << mmass << " " << mspeed << std::endl;
-        std::cout << "position = " << tr_pos.x() << " " << tr_pos.y() << " " << tr_pos.z() << std::endl;
-        std::cout << "-------------------------------------" << std::endl;
+        printf("M113 pos = %f,%f,%f\n", vbody->GetPos().x(), vbody->GetPos().y(), vbody->GetPos().z());
+        printf("M113 vel = %f,%f,%f\n", vbody->GetPos_dt().x(), vbody->GetPos_dt().y(), vbody->GetPos_dt().z());
+        printf("Computational cost = %f, %f\n", sim_cost);
 
         if (time > paramsH->tFinal)
             break;
