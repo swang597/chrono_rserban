@@ -16,6 +16,12 @@
 //
 // =============================================================================
 
+#include <cstdio>
+#include <string>
+#include <fstream>
+#include <array>
+#include <stdexcept>
+
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/physics/ChSystemSMC.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
@@ -28,8 +34,10 @@
 #include "chrono_vehicle/wheeled_vehicle/vehicle/WheeledVehicle.h"
 
 #ifdef CHRONO_OPENGL
-#include "chrono_opengl/ChOpenGLWindow.h"
+    #include "chrono_opengl/ChOpenGLWindow.h"
 #endif
+
+#include "FindParticles.h"
 
 using namespace chrono;
 using namespace chrono::fsi;
@@ -42,10 +50,132 @@ std::string terrain_dir = "terrain/sph/rms2.0_4.0_0.0";
 
 std::string sph_params = "fsi/input_json/test_VEH_SPH_Polaris.json";
 
-bool use_mesh_terrain = false;
+bool enable_terrain_mesh = false;
 
-bool output = false;
-double output_fps = 100;
+bool output = true;
+bool output_velocities = true;
+double output_major_FPS = 20;
+double output_minor_FPS = 1000;
+int output_frames = 5;
+
+bool vis_output = false;
+double vis_output_fps = 100;
+
+// -----------------------------------------------------------------------------
+
+class DataWriter {
+  public:
+    DataWriter(std::shared_ptr<ChSystemFsi_impl> sysFSI, std::shared_ptr<WheeledVehicle> vehicle)
+        : m_sysFSI(sysFSI), m_out_vel(false) {
+        m_wheels[0] = vehicle->GetWheel(0, LEFT);
+        m_wheels[1] = vehicle->GetWheel(0, RIGHT);
+        m_wheels[2] = vehicle->GetWheel(1, LEFT);
+        m_wheels[3] = vehicle->GetWheel(1, RIGHT);
+
+        // Set size of sampling box
+        double tire_radius = m_wheels[0]->GetTire()->GetRadius();
+        double tire_width = m_wheels[0]->GetTire()->GetWidth();
+        m_box_size.x() = std::sqrt(3.0) * tire_radius;
+        m_box_size.y() = 1.2 * tire_width;
+        m_box_size.z() = 0.3;
+
+        std::cout << "Wheel sampling box size = " << m_box_size << std::endl;
+    }
+
+    void SaveVelocities(bool val) { m_out_vel = val; }
+
+    void Initialize(const std::string& dir, double major_FPS, double minor_FPS, int num_minor, double step_size) {
+        m_dir = dir;
+        m_out_frames = num_minor;
+        m_major_skip = (int)std::ceil((1.0 / major_FPS) / step_size);
+        m_minor_skip = (int)std::ceil((1.0 / minor_FPS) / step_size);
+        m_major_frame = -1;
+        m_minor_frame = 0;
+
+        // Sanity check
+        if (m_minor_skip * m_out_frames > m_major_skip) {
+            std::cout << "Error: Incompatible output frequencies!" << std::endl;
+            throw std::runtime_error("Incompatible output frequencies");
+        }
+    }
+
+    void Process(int sim_frame) {
+        if (sim_frame % m_major_skip == 0) {
+            m_last_major = sim_frame;
+            m_major_frame++;
+            m_minor_frame = 0;
+            std::cout << "Start collection " << m_major_frame << std::endl;
+            Reset();
+        }
+        if ((sim_frame - m_last_major) % m_minor_skip == 0 && m_minor_frame < m_out_frames) {
+            std::cout << "    Output data " << m_major_frame << "/" << m_minor_frame << std::endl;
+            Write();
+            m_minor_frame++;
+        }
+        std::cout << std::flush;
+    }
+
+    void Reset() {
+        for (int i = 0; i < 4; i++) {
+            auto wheel_pos = m_wheels[i]->GetPos();
+            auto wheel_normal = m_wheels[i]->GetSpindle()->GetRot().GetYaxis();
+            auto tire_radius = m_wheels[i]->GetTire()->GetRadius();
+
+            ChVector<> Z_dir(0, 0, 1);
+            ChVector<> X_dir = Vcross(wheel_normal, ChVector<>(0, 0, 1)).GetNormalized();
+            ChVector<> Y_dir = Vcross(Z_dir, X_dir);
+            ChVector<> box_pos(wheel_pos - ChVector<>(0, 0, tire_radius));
+            ChMatrix33<> box_rot(X_dir, Y_dir, Z_dir);
+
+            m_indices[i] = FindParticlesInBox(m_sysFSI, ConvertOBB(ChFrame<>(box_pos, box_rot), m_box_size));
+        }
+    }
+
+    void Write() {
+        for (int i = 0; i < 4; i++) {
+            std::string filename = m_dir + "/soil_" + std::to_string(m_major_frame) + "_" +
+                                   std::to_string(m_minor_frame) + "_w" + std::to_string(i) + +".csv ";
+            if (m_out_vel)
+                WriteParticlePosVel(m_sysFSI, m_indices[i], filename);
+            else
+                WriteParticlePos(m_sysFSI, m_indices[i], filename);
+        }
+    }
+
+  private:
+    static OBBspec ConvertOBB(const ChFrame<>& box_frame, const ChVector<>& box_size) {
+        // Extract OBB position and rotation
+        const ChVector<>& box_pos = box_frame.GetPos();
+        ChVector<> Ax = box_frame.GetA().Get_A_Xaxis();
+        ChVector<> Ay = box_frame.GetA().Get_A_Yaxis();
+        ChVector<> Az = box_frame.GetA().Get_A_Zaxis();
+
+        // Save as OBB spec
+        OBBspec obb;
+        obb.h = 0.5 * mR3(box_size.x(), box_size.y(), box_size.z());
+        obb.p = mR3(box_pos.x(), box_pos.y(), box_pos.z());
+        obb.ax = mR3(Ax.x(), Ax.y(), Ax.z());
+        obb.ay = mR3(Ay.x(), Ay.y(), Ay.z());
+        obb.az = mR3(Az.x(), Az.y(), Az.z());
+
+        return obb;
+    }
+
+    std::shared_ptr<ChSystemFsi_impl> m_sysFSI;
+    std::array<std::shared_ptr<ChWheel>, 4> m_wheels;
+    std::array<thrust::device_vector<int>, 4> m_indices;
+
+    std::string m_dir;
+    bool m_out_vel;
+    int m_major_skip;
+    int m_minor_skip;
+    int m_out_frames;
+    int m_major_frame;
+    int m_minor_frame;
+    int m_last_major;
+
+    ChVector<> m_box_size;
+};
 
 // -----------------------------------------------------------------------------
 
@@ -204,9 +334,9 @@ void CreateTerrain(ChSystem& sys, ChSystemFsi& sysFSI, std::shared_ptr<fsi::SimP
     trimesh_shape->SetStatic(true);
     body->AddAsset(trimesh_shape);
 
-    if (use_mesh_terrain) {
+    if (enable_terrain_mesh) {
         MaterialInfo mat_info;
-        mat_info.mu = 0.9;
+        mat_info.mu = 0.9f;
         auto mat = mat_info.CreateMaterial(sys.GetContactMethod());
         body->GetCollisionModel()->ClearModel();
         body->GetCollisionModel()->AddTriangleMesh(mat, trimesh, true, false, VNULL, ChMatrix33<>(1), 0.01);
@@ -275,9 +405,9 @@ int main(int argc, char* argv[]) {
 
     // Set simulation data output and FSI information output
     std::string out_dir = GetChronoOutputPath() + "FSI_POLARIS/";
-    std::string demo_dir = params->demo_dir;
+    std::string vis_dir = params->demo_dir;
     sysFSI.SetFsiInfoOutput(false);
-    sysFSI.SetFsiOutputDir(params, demo_dir, out_dir, "");
+    sysFSI.SetFsiOutputDir(params, vis_dir, out_dir, "");
     sysFSI.SetOutputLength(0);
 
     sys.Set_G_acc(ChVector<>(params->gravity.x, params->gravity.y, params->gravity.z));
@@ -310,19 +440,22 @@ int main(int argc, char* argv[]) {
     gl_window.EnableHUD(false);
 #endif
 
+    // Enable data output
+    DataWriter data_writer(sysFSI.GetFsiData(), vehicle);
+    data_writer.SaveVelocities(output_velocities);
+    data_writer.Initialize(out_dir, output_major_FPS, output_minor_FPS, output_frames, params->dT);
+
     // Simulation loop
     double t = 0;
     double tend = 30;
 
+    ChTerrain terrain;
     double x_max = path->getPoint(path->getNumPoints() - 1).x() - 4;
 
-    double output_dT = 1 / output_fps;
-    int output_steps = (int)std::ceil(output_dT / params->dT);
+    int vis_output_steps = (int)std::ceil((1.0 / vis_output_fps) / params->dT);
+    int vis_output_frame = 0;
 
     int frame = 0;
-    int output_frame = 0;
-
-    ChTerrain terrain;
     while (t < tend) {
 #ifdef CHRONO_OPENGL
         if (!gl_window.Active())
@@ -338,13 +471,17 @@ int main(int argc, char* argv[]) {
         std::cout << "  pos = " << vehicle->GetVehiclePos();
         std::cout << "  spd = " << vehicle->GetVehicleSpeed() << std::endl;
 
-        // Output data
-        if (output && frame % output_steps == 0) {
-            std::cout << "Output frame = " << output_frame << std::endl;
-            sysFSI.PrintParticleToFile(demo_dir);
-            std::string vehicle_file = demo_dir + "/vehicle_" + std::to_string(output_frame) + ".csv";
+        // Simulation data output
+        if (output)
+            data_writer.Process(frame);
+
+        // Visualization data output
+        if (vis_output && frame % vis_output_steps == 0) {
+            std::cout << "Visualization output frame = " << vis_output_frame << std::endl;
+            sysFSI.PrintParticleToFile(vis_dir);
+            std::string vehicle_file = vis_dir + "/vehicle_" + std::to_string(vis_output_frame) + ".csv";
             chrono::utils::WriteVisualizationAssets(&sys, vehicle_file);
-            output_frame++;
+            vis_output_frame++;
         }
 
         // Set current driver inputs
