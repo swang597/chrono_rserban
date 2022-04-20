@@ -99,7 +99,7 @@ void WriteParticlePos(std::shared_ptr<ChSystemFsi_impl> sysFSI,
 
     // Trim the output vector of particle positions
     size_t num_active = (size_t)(end - pos_D.begin());
-    assert(num_active == indices.size());
+    assert(num_active == indices_D.size());
     pos_D.resize(num_active);
 
     // Copy vector to host
@@ -146,7 +146,7 @@ void WriteParticlePosVel(std::shared_ptr<ChSystemFsi_impl> sysFSI,
 
     // Trim the output vectors of particle positions and velocities
     size_t num_active = (size_t)(end - pos_D.begin());
-    assert(num_active == indices.size());
+    assert(num_active == indices_D.size());
     pos_D.resize(num_active);
     vel_D.resize(num_active);
 
