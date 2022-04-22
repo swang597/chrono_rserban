@@ -9,9 +9,6 @@
 
 #include "FindParticles.h"
 
-using namespace thrust;
-using namespace thrust::placeholders;
-
 using namespace chrono;
 using namespace chrono::fsi;
 

@@ -25,6 +25,7 @@
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/physics/ChSystemSMC.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
+#include "chrono/utils/ChFilters.h"
 
 #include "chrono_fsi/ChSystemFsi.h"
 
@@ -66,7 +67,7 @@ double vis_output_fps = 100;
 class DataWriter {
   public:
     DataWriter(std::shared_ptr<ChSystemFsi_impl> sysFSI, std::shared_ptr<WheeledVehicle> vehicle)
-        : m_sysFSI(sysFSI), m_out_vel(false) {
+        : m_sysFSI(sysFSI), m_vehicle(vehicle), m_out_vel(false), m_filter(true), m_filter_window(0.25) {
         m_wheels[0] = vehicle->GetWheel(0, LEFT);
         m_wheels[1] = vehicle->GetWheel(0, RIGHT);
         m_wheels[2] = vehicle->GetWheel(1, LEFT);
@@ -80,8 +81,18 @@ class DataWriter {
         m_box_size.z() = 0.3;
 
         std::cout << "Wheel sampling box size = " << m_box_size << std::endl;
+
+        // Default filter window
+        double window = 0.25;  // seconds
+
     }
 
+    ~DataWriter() { m_veh_stream.close(); }
+
+    void UseFilteredData(bool val, double window) {
+        m_filter = val;
+        m_filter_window = window;
+    }
     void SaveVelocities(bool val) { m_out_vel = val; }
 
     void Initialize(const std::string& dir, double major_FPS, double minor_FPS, int num_minor, double step_size) {
@@ -97,9 +108,22 @@ class DataWriter {
             std::cout << "Error: Incompatible output frequencies!" << std::endl;
             throw std::runtime_error("Incompatible output frequencies");
         }
+
+        // Create filters
+        if (m_filter) {
+            int steps = (int)std::ceil(m_filter_window / step_size);
+            for (int i = 0; i < m_num_veh_outputs; i++) {
+                m_veh_filters[i] = chrono_types::make_shared<chrono::utils::ChRunningAverage>(steps);
+            }
+        }
+
+        std::string filename = m_dir + "/vehicle.csv";
+        m_veh_stream.open(filename, std::ios_base::trunc);
     }
 
     void Process(int sim_frame) {
+        CollectVehicleData();
+
         if (sim_frame % m_major_skip == 0) {
             m_last_major = sim_frame;
             m_major_frame++;
@@ -115,6 +139,7 @@ class DataWriter {
         std::cout << std::flush;
     }
 
+  private:
     void Reset() {
         for (int i = 0; i < 4; i++) {
             auto wheel_pos = m_wheels[i]->GetPos();
@@ -134,15 +159,78 @@ class DataWriter {
     void Write() {
         for (int i = 0; i < 4; i++) {
             std::string filename = m_dir + "/soil_" + std::to_string(m_major_frame) + "_" +
-                                   std::to_string(m_minor_frame) + "_w" + std::to_string(i) + +".csv ";
+                                   std::to_string(m_minor_frame) + "_w" + std::to_string(i) + ".csv ";
             if (m_out_vel)
                 WriteParticlePosVel(m_sysFSI, m_indices[i], filename);
             else
                 WriteParticlePos(m_sysFSI, m_indices[i], filename);
         }
+
+        {
+            std::string filename = m_dir + "/vehicle_" + std::to_string(m_major_frame) + "_" +
+                                   std::to_string(m_minor_frame) + ".csv ";
+            WriteVehicleData(filename);
+        }
     }
 
-  private:
+    void CollectVehicleData() { 
+        auto v_pos = m_vehicle->GetVehiclePos();
+        m_veh_outputs[0] = v_pos.x();
+        m_veh_outputs[1] = v_pos.y();
+        m_veh_outputs[2] = v_pos.z();
+        
+        auto v_vel = m_vehicle->GetVehiclePointVelocity(ChVector<>(0, 0, 0));
+        m_veh_outputs[3] = v_vel.x();
+        m_veh_outputs[4] = v_vel.y();
+        m_veh_outputs[5] = v_vel.z();
+
+        for (int i = 0; i < 4; i++) {
+            auto w_state = m_wheels[i]->GetState();
+            m_veh_outputs[6 + i * 12 + 0] = w_state.pos.x();
+            m_veh_outputs[6 + i * 12 + 1] = w_state.pos.y();
+            m_veh_outputs[6 + i * 12 + 2] = w_state.pos.z();
+            m_veh_outputs[6 + i * 12 + 3] = w_state.lin_vel.x();
+            m_veh_outputs[6 + i * 12 + 4] = w_state.lin_vel.y();
+            m_veh_outputs[6 + i * 12 + 5] = w_state.lin_vel.z();
+            auto t_force = m_wheels[i]->GetSpindle()->Get_accumulated_force();
+            auto t_torque = m_wheels[i]->GetSpindle()->Get_accumulated_torque();
+            m_veh_outputs[6 + i * 12 + 6] = t_force.x();
+            m_veh_outputs[6 + i * 12 + 7] = t_force.y();
+            m_veh_outputs[6 + i * 12 + 8] = t_force.z();
+            m_veh_outputs[6 + i * 12 + 9] = t_torque.x();
+            m_veh_outputs[6 + i * 12 + 10] = t_torque.y();
+            m_veh_outputs[6 + i * 12 + 11] = t_torque.z();
+        }
+
+        if (m_filter) {
+            for (int i = 0; i < m_num_veh_outputs; i++) {
+                m_veh_outputs[i] = m_veh_filters[i]->Add(m_veh_outputs[i]);
+            }
+        }
+    }
+
+    void WriteVehicleData(const std::string& filename) {
+        const auto& o = m_veh_outputs;
+        std::ofstream stream;
+        stream.open(filename, std::ios_base::trunc);
+        // Vehicle position and speed
+        stream << o[0] << ", " << o[1] << ", " << o[2] << ", ";
+        stream << o[3] << ", " << o[4] << ", " << o[5] << "\n";
+        // Wheel position and speed + tire force and moment
+        for (int i = 0; i < 4; i++) {
+            stream << o[6 + i * 12 + 0] << ", " << o[6 + i * 12 + 1] << ", " << o[6 + i * 12 + 2] << ", ";
+            stream << o[6 + i * 12 + 3] << ", " << o[6 + i * 12 + 4] << ", " << o[6 + i * 12 + 5] << ", ";
+            stream << o[6 + i * 12 + 6] << ", " << o[6 + i * 12 + 7] << ", " << o[6 + i * 12 + 8] << ", ";
+            stream << o[6 + i * 12 + 9] << ", " << o[6 + i * 12 + 10] << ", " << o[6 + i * 12 + 11] << "\n";
+        }
+        stream.close();
+
+        m_veh_stream << m_vehicle->GetChTime() << "    ";
+        for (int i = 0; i < m_num_veh_outputs; i++)
+            m_veh_stream << o[i] << "  ";
+        m_veh_stream << "\n";
+    }
+
     static OBBspec ConvertOBB(const ChFrame<>& box_frame, const ChVector<>& box_size) {
         // Extract OBB position and rotation
         const ChVector<>& box_pos = box_frame.GetPos();
@@ -162,11 +250,11 @@ class DataWriter {
     }
 
     std::shared_ptr<ChSystemFsi_impl> m_sysFSI;
+    std::shared_ptr<WheeledVehicle> m_vehicle;
     std::array<std::shared_ptr<ChWheel>, 4> m_wheels;
     std::array<thrust::device_vector<int>, 4> m_indices;
 
     std::string m_dir;
-    bool m_out_vel;
     int m_major_skip;
     int m_minor_skip;
     int m_out_frames;
@@ -174,7 +262,15 @@ class DataWriter {
     int m_minor_frame;
     int m_last_major;
 
+    bool m_out_vel;
     ChVector<> m_box_size;
+
+    bool m_filter;
+    double m_filter_window;
+    static const int m_num_veh_outputs = 6 + 4 * 12;
+    std::array<double, m_num_veh_outputs> m_veh_outputs;
+    std::array<std::shared_ptr<chrono::utils::ChRunningAverage>, m_num_veh_outputs> m_veh_filters;
+    std::ofstream m_veh_stream;
 };
 
 // -----------------------------------------------------------------------------
