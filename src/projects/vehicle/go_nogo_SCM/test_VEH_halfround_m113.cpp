@@ -271,7 +271,7 @@ int main(int argc, char* argv[]) {
         // Extract chassis CG and driver accelerations
         ChVector<> acc_CG = vehicle.GetChassisBody()->GetPos_dtdt();                 // global frame
         acc_CG = vehicle.GetChassisBody()->TransformDirectionParentToLocal(acc_CG);  // local frame
-        ChVector<> acc_driver = vehicle.GetVehiclePointAcceleration(driver_pos);     // local frame
+        ChVector<> acc_driver = vehicle.GetPointAcceleration(driver_pos);     // local frame
 
         // Filter accelerations
         double acc_CG_x = fwd_acc_GC_filter.Add(acc_CG.x());
@@ -292,7 +292,7 @@ int main(int argc, char* argv[]) {
             csv << vehicle.GetPowertrain()->GetMotorSpeed() << vehicle.GetPowertrain()->GetMotorTorque();
 
             // Chassis CG position and local acceleration (raw and filtered)
-            csv << vehicle.GetVehicleCOMPos() << acc_CG;
+            csv << vehicle.GetCOMFrame().GetPos() << acc_CG;
             csv << acc_CG_x << acc_CG_y << acc_CG_z;
 
             // Driver position and local acceleration (raw and filtered)
@@ -341,7 +341,7 @@ int main(int argc, char* argv[]) {
 #endif
 
         // Adjust step size for obstacle crossing
-        if (vehicle.GetVehiclePos().x() > (obstacle_distance - 2)) {
+        if (vehicle.GetPos().x() > (obstacle_distance - 2)) {
             step_size = step_size_O;
             render_steps = (int)std::ceil(render_step_size / step_size);
             output_steps = (int)std::ceil(output_step_size / step_size);
@@ -359,7 +359,7 @@ int main(int argc, char* argv[]) {
         step_number++;
 
         // End simulation after clearing obstacle
-        if (vehicle.GetVehiclePos().x() > obstacle_distance + 10)
+        if (vehicle.GetPos().x() > obstacle_distance + 10)
             break;
     }
 

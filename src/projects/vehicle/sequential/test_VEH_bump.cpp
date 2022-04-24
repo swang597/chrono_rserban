@@ -243,11 +243,11 @@ int main(int argc, char* argv[]) {
         double time = my_hmmwv.GetSystem()->GetChTime();
 
         ChVector<> drv_pos_abs = my_hmmwv.GetVehicle().GetDriverPos();
-        ChVector<> veh_pos_abs = my_hmmwv.GetVehicle().GetVehiclePos();
+        ChVector<> veh_pos_abs = my_hmmwv.GetVehicle().GetPos();
         ChVector<> com_pos_abs = chassis_body->GetPos();
         ChVector<> flw_pos_abs = wheel_body->GetPos();
 
-        ChVector<> drv_acc_loc = my_hmmwv.GetVehicle().GetVehiclePointAcceleration(drv_pos_loc);
+        ChVector<> drv_acc_loc = my_hmmwv.GetVehicle().GetPointAcceleration(drv_pos_loc);
         ChVector<> drv_acc_abs = chassis_body->GetFrame_REF_to_abs().PointAccelerationLocalToParent(drv_pos_loc);
         ChVector<> com_acc_abs = chassis_body->GetPos_dtdt();
         ChVector<> flw_acc_abs = wheel_body->GetPos_dtdt();
@@ -258,7 +258,7 @@ int main(int argc, char* argv[]) {
 
         // Collect output
         if (state_output) {
-            csv << time << my_hmmwv.GetVehicle().GetVehicleSpeed();
+            csv << time << my_hmmwv.GetVehicle().GetSpeed();
             csv << drv_pos_loc << drv_pos_abs << com_pos_abs << flw_pos_abs;
             csv << drv_acc_loc << drv_acc_abs << com_acc_abs << flw_acc_abs;
             csv << vert_drv_acc_abs << vert_com_acc_abs << vert_flw_acc_abs;
@@ -271,7 +271,7 @@ int main(int argc, char* argv[]) {
         /*
         // Hack for acceleration-braking maneuver
         static bool braking = false;
-        if (my_hmmwv.GetVehicle().GetVehicleSpeed() > target_speed)
+        if (my_hmmwv.GetVehicle().GetSpeed() > target_speed)
             driver_inputs.m_braking = true;
         if (braking) {
             driver_inputs.m_throttle = 0;

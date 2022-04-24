@@ -68,15 +68,11 @@ const std::string out_dir = GetChronoOutputPath() + "TRACK_TEST";
 
 class Chassis : public ChRigidChassis {
   public:
-    Chassis() : ChRigidChassis("Ground"), m_inertia(1), m_COM_loc(0) {}
-    virtual double GetMass() const override { return 1; }
-    virtual const ChMatrix33<>& GetInertia() const override { return m_inertia; }
-    virtual const ChVector<>& GetLocalPosCOM() const override { return m_COM_loc; }
+    Chassis() : ChRigidChassis("Ground") {}
+    virtual double GetBodyMass() const override { return 1; }
+    virtual ChMatrix33<> GetBodyInertia() const override { return ChMatrix33<>(1); }
+    virtual ChFrame<> GetBodyCOMFrame() const override { return ChFrame<>(VNULL, QUNIT); }
     virtual ChCoordsys<> GetLocalDriverCoordsys() const override { return ChCoordsys<>(); }
-
-  private:
-    ChMatrix33<> m_inertia;
-    ChVector<> m_COM_loc;
 };
 
 class Assembly : public ChTrackAssemblySegmented {

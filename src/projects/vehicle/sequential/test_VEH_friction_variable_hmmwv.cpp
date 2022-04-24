@@ -156,11 +156,11 @@ int main(int argc, char* argv[]) {
     while (app.GetDevice()->run()) {
         double time = sys.GetChTime();
 
-        auto veh_pos = hmmwv.GetVehicle().GetVehiclePos();
+        auto veh_pos = hmmwv.GetVehicle().GetPos();
 
         // Extract output
         if (output && sim_frame % out_steps == 0) {
-            double veh_speed = hmmwv.GetVehicle().GetVehicleSpeed();
+            double veh_speed = hmmwv.GetVehicle().GetSpeed();
             hmmwv.GetVehicle().GetAxle(0)->GetWheel(LEFT);
             double fl_omega = hmmwv.GetVehicle().GetSpindleOmega(0, LEFT);
             double fr_omega = hmmwv.GetVehicle().GetSpindleOmega(0, RIGHT);

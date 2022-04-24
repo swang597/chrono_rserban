@@ -145,8 +145,7 @@ int main(int argc, char* argv[]) {
     wvp.SetWheelVisualizationType(wheel_vis_type);
     wvp.SetTireVisualizationType(tire_vis_type);
 
-    std::cout << "Vehicle mass:               " << wvp.GetVehicle().GetVehicleMass() << std::endl;
-    std::cout << "Vehicle mass (with tires):  " << wvp.GetTotalMass() << std::endl;
+    std::cout << "Vehicle mass:               " << wvp.GetVehicle().GetMass() << std::endl;
 
     // ------------------
     // Create the terrain
@@ -325,7 +324,7 @@ int main(int argc, char* argv[]) {
 
             csv << time << driver_inputs.m_throttle;
             csv << wvp.GetVehicle().GetPowertrain()->GetMotorSpeed();
-            csv << wvp.GetVehicle().GetVehicleSpeed();
+            csv << wvp.GetVehicle().GetSpeed();
             csv << wvp.GetVehicle().GetPowertrain()->GetMotorTorque();
 
             for (int axle = 0; axle < 2; axle++) {

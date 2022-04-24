@@ -118,8 +118,7 @@ int main(int argc, char* argv[]) {
         // std::cout << "Shock rest length rear:  " << shockRL->GetSpringRestLength() << std::endl;
     }
 
-    std::cout << "Vehicle mass:               " << feda.GetVehicle().GetVehicleMass() << std::endl;
-    std::cout << "Vehicle mass (with tires):  " << feda.GetTotalMass() << std::endl;
+    std::cout << "Vehicle mass:               " << feda.GetVehicle().GetMass() << std::endl;
 
     // ------------------
     // Create the terrain
@@ -192,7 +191,7 @@ int main(int argc, char* argv[]) {
         app.Advance(step_size);
         // ChQuaternion<> qW1= feda.GetVehicle().GetWheelRot(1);
         // ChQuaternion<> qW0= feda.GetVehicle().GetWheelRot(0);
-        // ChQuaternion<> qV= feda.GetVehicle().GetVehicleRot();
+        // ChQuaternion<> qV= feda.GetVehicle().GetRot();
         // std::cout<<"Wheel0|"<<(qW0.Q_to_NasaAngles().z()*180/CH_C_PI) - (qV.Q_to_NasaAngles().z()*180/CH_C_PI)
         //     <<"\t|Wheel1|"<<(qW1.Q_to_NasaAngles().z()*180/CH_C_PI) -
         //     (qV.Q_to_NasaAngles().z()*180/CH_C_PI)<<std::endl;
@@ -204,28 +203,28 @@ int main(int argc, char* argv[]) {
         ////auto states = (std::static_pointer_cast<FEDA_DoubleWishboneFront>(susp))->GetShock(LEFT)->GetStates();
         ////std::cout << time << "   " << states(0) << "  " << states(1) << std::endl;
 
-        ChCoordsys<> vehCoord = ChCoordsys<>(feda.GetVehicle().GetVehiclePos(), feda.GetVehicle().GetVehicleRot());
-        ChVector<> vehCOM = vehCoord.TransformPointParentToLocal(feda.GetVehicle().GetVehicleCOMPos());
+        ChCoordsys<> vehCoord = ChCoordsys<>(feda.GetVehicle().GetPos(), feda.GetVehicle().GetRot());
+        ChVector<> vehCOM = vehCoord.TransformPointParentToLocal(feda.GetVehicle().GetCOMFrame().GetPos());
         // std::cout << "Vehicle COM: " << vehCOM.x() << "|" << vehCOM.y() << "|" << vehCOM.z() << std::endl;
         /* std::cout<<"Vehicle
-        COM|"<<feda.GetVehicle().GetVehicleCOMPos().x()-feda.GetVehicle().GetVehiclePos().x()<<"|"
-            <<feda.GetVehicle().GetVehicleCOMPos().y()-feda.GetVehicle().GetVehiclePos().y()<<"|"
-            <<(feda.GetVehicle().GetVehicleCOMPos().z()-feda.GetVehicle().GetVehiclePos().z());
+        COM|"<<feda.GetVehicle().GetCOMFrame().GetPos().x()-feda.GetVehicle().GetPos().x()<<"|"
+            <<feda.GetVehicle().GetCOMFrame().GetPos().y()-feda.GetVehicle().GetPos().y()<<"|"
+            <<(feda.GetVehicle().GetCOMFrame().GetPos().z()-feda.GetVehicle().GetPos().z());
         std::cout<<std::endl; */
 
         // Increment frame number
         step_number++;
     }
 
-    GetLog() << "CoG of the FED alpha above ground = " << feda.GetVehicle().GetVehicleCOMPos().z() << " m\n";
+    GetLog() << "CoG of the FED alpha above ground = " << feda.GetVehicle().GetCOMFrame().GetPos().z() << " m\n";
     // Ride height test, originally the tests where made with body reference points, we don't have it
     // Ride height OnRoad is reached when the drive shafts are straight lines
     double refHeightFront =
         (feda.GetVehicle().GetWheel(0, LEFT)->GetPos().z() + feda.GetVehicle().GetWheel(0, RIGHT)->GetPos().z()) / 2.0;
     double refHeightRear =
         (feda.GetVehicle().GetWheel(1, LEFT)->GetPos().z() + feda.GetVehicle().GetWheel(1, RIGHT)->GetPos().z()) / 2.0;
-    double bodyHeightFront = feda.GetVehicle().GetVehiclePointLocation(ChVector<>(0, 0, 0)).z();
-    double bodyHeightRear = feda.GetVehicle().GetVehiclePointLocation(ChVector<>(-3.302, 0, 0)).z();
+    double bodyHeightFront = feda.GetVehicle().GetPointLocation(ChVector<>(0, 0, 0)).z();
+    double bodyHeightRear = feda.GetVehicle().GetPointLocation(ChVector<>(-3.302, 0, 0)).z();
     double rideHeightFront = bodyHeightFront - refHeightFront;
     double rideHeightRear = bodyHeightRear - refHeightRear;
     GetLog() << "Ride Height Front = " << rideHeightFront << " m, Rear = " << rideHeightRear << " m\n";

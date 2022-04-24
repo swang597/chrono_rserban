@@ -141,8 +141,7 @@ int main(int argc, char* argv[]) {
     wvp.SetWheelVisualizationType(wheel_vis_type);
     wvp.SetTireVisualizationType(tire_vis_type);
 
-    std::cout << "Vehicle mass:               " << wvp.GetVehicle().GetVehicleMass() << std::endl;
-    std::cout << "Vehicle mass (with tires):  " << wvp.GetTotalMass() << std::endl;
+    std::cout << "Vehicle mass:               " << wvp.GetVehicle().GetMass() << std::endl;
 
     // ------------------
     // Create the terrain
@@ -305,12 +304,12 @@ int main(int argc, char* argv[]) {
             std::cout << time << "|" << target_speed << std::endl;
 
             csv << time << driver_inputs.m_throttle << target_speed << driver_inputs.m_steering
-                << wvp.GetVehicle().GetVehicleSpeed();
-            ChQuaternion<> q = wvp.GetVehicle().GetVehicleRot();
+                << wvp.GetVehicle().GetSpeed();
+            ChQuaternion<> q = wvp.GetVehicle().GetRot();
 
             csv << q.Q_to_NasaAngles();
 
-            csv << wvp.GetVehicle().GetVehiclePointAcceleration(wvp.GetVehicle().GetChassis()->GetCOMPos()).y();
+            csv << wvp.GetVehicle().GetPointAcceleration(wvp.GetVehicle().GetCOMFrame().GetPos()).y();
 
             for (auto& axle : wvp.GetVehicle().GetAxles()) {
                 for (auto& wheel : axle->GetWheels()) {

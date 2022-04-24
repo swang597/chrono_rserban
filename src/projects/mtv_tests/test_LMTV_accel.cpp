@@ -159,7 +159,7 @@ int main(int argc, char* argv[]) {
     while (app.GetDevice()->run()) {
         time = lmtv.GetSystem()->GetChTime();
 
-        double speed = speed_filter.Add(lmtv.GetVehicle().GetVehicleSpeed());
+        double speed = speed_filter.Add(lmtv.GetVehicle().GetSpeed());
         if (!done) {
             speed_recorder.AddPoint(time, speed);
             if (time > 6 && std::abs((speed - last_speed) / step_size) < 2e-4) {

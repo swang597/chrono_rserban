@@ -250,12 +250,12 @@ int main(int argc, char* argv[]) {
             terrain.Advance(step_size);
             app.Advance(step_size);
 
-            double xpos = gd250.GetVehicle().GetVehiclePos().x();
+            double xpos = gd250.GetVehicle().GetPos().x();
             if (xpos >= xend) {
                 break;
             }
             if (xpos >= xstart) {
-                ChVector<> seat_acc = gd250.GetVehicle().GetVehiclePointAcceleration(
+                ChVector<> seat_acc = gd250.GetVehicle().GetPointAcceleration(
                         gd250.GetVehicle().GetChassis()->GetLocalDriverCoordsys().pos);
                 seat_logger.AddData(seat_acc);
             }
@@ -267,7 +267,7 @@ int main(int argc, char* argv[]) {
         const double ms_to_mph = 2.2369362921;
 
         double v_pos;
-        while ((v_pos = gd250.GetVehicle().GetVehiclePos().x()) < xend) {
+        while ((v_pos = gd250.GetVehicle().GetPos().x()) < xend) {
             // Driver inputs
             ChDriver::Inputs driver_inputs = driver.GetInputs();
 
@@ -283,8 +283,8 @@ int main(int argc, char* argv[]) {
             terrain.Advance(step_size);
 
             if (v_pos >= xstart) {
-                double speed = gd250.GetVehicleSpeed();
-                ChVector<> seat_acc = gd250.GetVehiclePointAcceleration(gd250.GetChassis()->GetLocalDriverCoordsys().pos);
+                double speed = gd250.GetSpeed();
+                ChVector<> seat_acc = gd250.GetPointAcceleration(gd250.GetChassis()->GetLocalDriverCoordsys().pos);
                 seat_logger.AddData(seat_acc);
             }
         }

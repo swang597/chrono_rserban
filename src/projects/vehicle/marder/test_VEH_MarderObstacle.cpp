@@ -222,7 +222,7 @@ int main(int argc, char* argv[]) {
     ChTrackedVehicleIrrApp app(&marder.GetVehicle(), L"Marder Vehicle Ride");
     app.AddTypicalLights();
     app.SetChaseCamera(trackPoint, 10.0, 0.5);
-    // app.SetChaseCameraPosition(marder.GetVehicle().GetVehiclePos() + ChVector<>(-10, 0, 0));
+    // app.SetChaseCameraPosition(marder.GetVehicle().GetPos() + ChVector<>(-10, 0, 0));
     app.SetChaseCameraMultipliers(1e-4, 10);
     app.SetTimestep(step_size);
     app.AssetBindAll();
@@ -338,7 +338,7 @@ int main(int argc, char* argv[]) {
             cout << "Time: " << marder.GetSystem()->GetChTime() << endl;
             cout << "      Num. contacts: " << marder.GetSystem()->GetNcontacts() << endl;
             const ChFrameMoving<>& c_ref = marder.GetChassisBody()->GetFrame_REF_to_abs();
-            const ChVector<>& c_pos = marder.GetVehicle().GetVehiclePos();
+            const ChVector<>& c_pos = marder.GetVehicle().GetPos();
             cout << "      chassis:    " << c_pos.x() << "  " << c_pos.y() << "  " << c_pos.z() << endl;
             {
                 const ChVector<>& i_pos_abs = track_L->GetIdler()->GetWheelBody()->GetPos();
@@ -389,16 +389,16 @@ int main(int argc, char* argv[]) {
 
         double time = marder.GetVehicle().GetChTime();
         sim_time = time;
-        double speed = marder.GetVehicle().GetVehicleSpeed();
-        double xpos = marder.GetVehicle().GetVehiclePos().x();
-        double yerr = marder.GetVehicle().GetVehiclePos().y();
+        double speed = marder.GetVehicle().GetSpeed();
+        double xpos = marder.GetVehicle().GetPos().x();
+        double yerr = marder.GetVehicle().GetPos().y();
         kurs << time << "\t" << xpos << "\t" << yerr << "\t" << speed << "\t" << std::endl;
         if (xpos >= -1.0 && xpos <= xpos_max) {
             double eTorque =
                 avg.Add(std::static_pointer_cast<ChSimpleCVTPowertrain>(marder.GetPowertrain())->GetMotorTorque());
             engineForce.push_back(eTorque * effRadius / gear_ratio);
             for (size_t i = 0; i < bellyPts.size(); i++) {
-                ChVector<> p = marder.GetVehicle().GetVehiclePointLocation(bellyPts[i]);
+                ChVector<> p = marder.GetVehicle().GetPointLocation(bellyPts[i]);
                 double t = terrain.GetHeight(ChVector<>(p.x(), p.y(), 0));
                 clearance[i].AddPoint(xpos, p.z() - t);
             }

@@ -276,7 +276,7 @@ int main(int argc, char* argv[]) {
                 ChWheeledVehicleIrrApp app(&mrole.GetVehicle(), wTitle.c_str());
                 app.AddTypicalLights();
                 app.SetChaseCamera(trackPoint, 10.0, 0.5);
-                // app.SetChaseCameraPosition(mrole.GetVehicle().GetVehiclePos() + ChVector<>(-10, 0, 0));
+                // app.SetChaseCameraPosition(mrole.GetVehicle().GetPos() + ChVector<>(-10, 0, 0));
                 app.SetChaseCameraMultipliers(1e-4, 10);
                 app.SetTimestep(step_size);
                 app.AssetBindAll();
@@ -394,16 +394,16 @@ int main(int argc, char* argv[]) {
 
                     double time = mrole.GetVehicle().GetChTime();
                     sim_time = time;
-                    double speed = mrole.GetVehicle().GetVehicleSpeed();
-                    double xpos = mrole.GetVehicle().GetVehiclePos().x();
-                    double yerr = mrole.GetVehicle().GetVehiclePos().y();
+                    double speed = mrole.GetVehicle().GetSpeed();
+                    double xpos = mrole.GetVehicle().GetPos().x();
+                    double yerr = mrole.GetVehicle().GetPos().y();
                     kurs << time << "\t" << xpos << "\t" << yerr << "\t" << speed << "\t" << std::endl;
                     if (xpos >= -1.0 && xpos <= xpos_max) {
                         double eTorque = avg.Add(
                             std::static_pointer_cast<ChSimpleCVTPowertrain>(mrole.GetPowertrain())->GetMotorTorque());
                         engineForce.push_back(eTorque * effRadius / gear_ratio);
                         for (size_t i = 0; i < bellyPts.size(); i++) {
-                            ChVector<> p = mrole.GetVehicle().GetVehiclePointLocation(bellyPts[i]);
+                            ChVector<> p = mrole.GetVehicle().GetPointLocation(bellyPts[i]);
                             // GetLog() << "BellyZ(" << i << ")" << p.z() << "\n";
                             double t = terrain.GetHeight(ChVector<>(p.x(), p.y(), 0));
                             clearance[i].AddPoint(xpos, p.z() - t);
@@ -433,7 +433,7 @@ int main(int argc, char* argv[]) {
                     terrain.Advance(step_size);
                     app.Advance(step_size);
 
-                    xpos = mrole.GetVehicle().GetVehiclePos().x();
+                    xpos = mrole.GetVehicle().GetPos().x();
                     if (xpos >= xpos_max) {
                         break;
                     }

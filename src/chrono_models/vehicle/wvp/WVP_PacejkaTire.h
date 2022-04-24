@@ -35,8 +35,8 @@ class CH_MODELS_API WVP_PacejkaTire : public ChPacejkaTire {
     WVP_PacejkaTire(const std::string& name);
     ~WVP_PacejkaTire() {}
 
-    virtual double GetMass() const override { return m_mass; }
-    virtual ChVector<> GetInertia() const override { return m_inertia; }
+    virtual double GetTireMass() const override { return m_mass; }
+    virtual ChVector<> GetTireInertia() const override { return m_inertia; }
 
     virtual void AddVisualizationAssets(VisualizationType vis) override;
     virtual void RemoveVisualizationAssets() override final;

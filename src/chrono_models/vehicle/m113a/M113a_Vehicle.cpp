@@ -57,7 +57,7 @@ void M113a_Vehicle::Create(bool fixed, CollisionType chassis_collision_type) {
     m_driveline = chrono_types::make_shared<M113a_SimpleDriveline>();
     ////m_driveline = chrono_types::make_shared<M113a_DrivelineBDS>();
 
-    GetLog() << "M113 vehicle mass = " << GetVehicleMass() << " kg.\n";
+    GetLog() << "M113 vehicle mass = " << GetMass() << " kg.\n";
 }
 
 // -----------------------------------------------------------------------------

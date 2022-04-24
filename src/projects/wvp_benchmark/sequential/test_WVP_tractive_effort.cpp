@@ -144,8 +144,7 @@ int main(int argc, char* argv[]) {
     wvp.SetWheelVisualizationType(wheel_vis_type);
     wvp.SetTireVisualizationType(tire_vis_type);
 
-    std::cout << "Vehicle mass:               " << wvp.GetVehicle().GetVehicleMass() << std::endl;
-    std::cout << "Vehicle mass (with tires):  " << wvp.GetTotalMass() << std::endl;
+    std::cout << "Vehicle mass:               " << wvp.GetVehicle().GetMass() << std::endl;
 
     // ------------------
     // Create the terrain
@@ -198,7 +197,7 @@ int main(int argc, char* argv[]) {
     drawForce->SetMode(ChForce::ForceType::FORCE); // force or torque
     drawForce->SetFrame(ChForce::ReferenceFrame::BODY);
     drawForce->SetAlign(ChForce::AlignmentFrame::WORLD_DIR);
-    drawForce->SetVrelpoint(wvp.GetChassis()->GetLocalPosCOM());
+    drawForce->SetVrelpoint(wvp.GetVehicle().GetCOMFrame().GetPos());
     drawForce->SetF_x(chrono_types::make_shared<ChFunction_Recorder>(forceFunct));
 
     drawForce->SetF_y(chrono_types::make_shared<ChFunction_Const>(0));
@@ -348,7 +347,7 @@ int main(int argc, char* argv[]) {
 
             csv << driver_inputs.m_throttle;
             csv << wvp.GetVehicle().GetPowertrain()->GetMotorSpeed();
-            csv << wvp.GetVehicle().GetVehicleSpeed();
+            csv << wvp.GetVehicle().GetSpeed();
             csv << wvp.GetVehicle().GetPowertrain()->GetMotorTorque();
 
             for (int axle = 0; axle < 2; axle++) {

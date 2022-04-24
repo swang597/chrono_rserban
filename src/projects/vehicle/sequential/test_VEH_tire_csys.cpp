@@ -327,8 +327,8 @@ MechanismYUP::MechanismYUP(ChSystem* sys) : m_sys(sys) {
     // This must be done manually here because the wheel and tire objects append to the spindle's properties (but
     // assuming an ISO frame)
     ChVector<> spindle_Ixx(spindle_I2, spindle_I2, spindle_I1);
-    ChVector<> wheel_Ixx = ConvertInertia_ISO_to_YUP(m_wheel->GetInertia());
-    ChVector<> tire_Ixx = ConvertInertia_ISO_to_YUP(m_tire->GetInertia());
+    ChVector<> wheel_Ixx = ConvertInertia_ISO_to_YUP(m_wheel->GetInertia().diagonal());
+    ChVector<> tire_Ixx = ConvertInertia_ISO_to_YUP(m_tire->GetInertia().diagonal());
     m_spindle->SetMass(spindle_mass + m_wheel->GetMass() + m_tire->GetMass());
     m_spindle->SetInertiaXX(spindle_Ixx + wheel_Ixx + tire_Ixx);
 

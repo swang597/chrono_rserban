@@ -124,8 +124,7 @@ int main(int argc, char* argv[]) {
     feda.SetWheelVisualizationType(wheel_vis_type);
     feda.SetTireVisualizationType(tire_vis_type);
 
-    std::cout << "Vehicle mass:               " << feda.GetVehicle().GetVehicleMass() << std::endl;
-    std::cout << "Vehicle mass (with tires):  " << feda.GetTotalMass() << std::endl;
+    std::cout << "Vehicle mass: " << feda.GetVehicle().GetMass() << std::endl;
 
     // ------------------
     // Create the terrain
@@ -197,17 +196,17 @@ int main(int argc, char* argv[]) {
         auto susp0 = std::static_pointer_cast<ChDoubleWishbone>(feda.GetVehicle().GetSuspension(0));
         auto susp1 = std::static_pointer_cast<ChDoubleWishbone>(feda.GetVehicle().GetSuspension(1));
 
-        ChCoordsys<> vehCoord = ChCoordsys<>(feda.GetVehicle().GetVehiclePos(), feda.GetVehicle().GetVehicleRot());
-        ChVector<> vehCOM = vehCoord.TransformPointParentToLocal(feda.GetVehicle().GetVehicleCOMPos());
+        ChCoordsys<> vehCoord = ChCoordsys<>(feda.GetVehicle().GetPos(), feda.GetVehicle().GetRot());
+        ChVector<> vehCOM = vehCoord.TransformPointParentToLocal(feda.GetVehicle().GetCOMFrame().GetPos());
 
         if (left_turn) {
             // left turn + right corner
-            turn_x.push_back(feda.GetVehicle().GetVehiclePointLocation(FrontRightCornerLoc).x());
-            turn_y.push_back(feda.GetVehicle().GetVehiclePointLocation(FrontRightCornerLoc).y());
+            turn_x.push_back(feda.GetVehicle().GetPointLocation(FrontRightCornerLoc).x());
+            turn_y.push_back(feda.GetVehicle().GetPointLocation(FrontRightCornerLoc).y());
         } else {
             // right turn + left corner
-            turn_x.push_back(feda.GetVehicle().GetVehiclePointLocation(FrontLeftCornerLoc).x());
-            turn_y.push_back(feda.GetVehicle().GetVehiclePointLocation(FrontLeftCornerLoc).y());
+            turn_x.push_back(feda.GetVehicle().GetPointLocation(FrontLeftCornerLoc).x());
+            turn_y.push_back(feda.GetVehicle().GetPointLocation(FrontLeftCornerLoc).y());
         }
         // GetLog() << "y = " << turn_y.back() << "\n";
         // Increment frame number

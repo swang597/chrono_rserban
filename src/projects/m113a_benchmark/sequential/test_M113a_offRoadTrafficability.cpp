@@ -566,7 +566,7 @@ int main(int argc, char* argv[]) {
         ChVector<> vel_CG = vehicle.GetChassisBody()->GetPos_dt();
         ChVector<> acc_CG = vehicle.GetChassisBody()->GetPos_dt();
         acc_CG = vehicle.GetChassisBody()->GetCoord().TransformDirectionParentToLocal(acc_CG);
-        ChVector<> acc_driver = vehicle.GetVehiclePointAcceleration(driver_pos);
+        ChVector<> acc_driver = vehicle.GetPointAcceleration(driver_pos);
         double fwd_acc_CG = fwd_acc_GC_filter.Add(acc_CG.x());
         double lat_acc_CG = lat_acc_GC_filter.Add(acc_CG.y());
         double fwd_acc_driver = fwd_acc_driver_filter.Add(acc_driver.x());
@@ -610,7 +610,7 @@ int main(int argc, char* argv[]) {
                 torque2 = motor2->GetMotorTorque();
             }
             csv << time << driver_inputs.m_steering << driver_inputs.m_throttle << driver_inputs.m_braking;
-            csv << vehicle.GetVehicleSpeed() << ", ";
+            csv << vehicle.GetSpeed() << ", ";
             csv << acc_CG.x() << ", " << fwd_acc_CG << ", " << acc_CG.y() << ", " << lat_acc_CG << ", ";
             csv << acc_driver.x() << ", " << fwd_acc_driver << ", " << acc_driver.y() << ", " << lat_acc_driver << ", ";
             csv << acc_CG.z() << ", ";  // vertical acceleration
@@ -715,7 +715,7 @@ int main(int argc, char* argv[]) {
         ChVector<> vel_CG = vehicle.GetChassisBody()->GetPos_dt();
         ChVector<> acc_CG = vehicle.GetChassisBody()->GetPos_dtdt();
         acc_CG = vehicle.GetChassisBody()->GetCoord().TransformDirectionParentToLocal(acc_CG);
-        ChVector<> acc_driver = vehicle.GetVehiclePointAcceleration(driver_pos);
+        ChVector<> acc_driver = vehicle.GetPointAcceleration(driver_pos);
         double fwd_acc_CG = fwd_acc_GC_filter.Add(acc_CG.x());
         double lat_acc_CG = lat_acc_GC_filter.Add(acc_CG.y());
         double fwd_acc_driver = fwd_acc_driver_filter.Add(acc_driver.x());
@@ -826,7 +826,7 @@ int main(int argc, char* argv[]) {
 
             }
             csv << time << driver_inputs.m_steering << ", " << driver_inputs.m_throttle <<", " << driver_inputs.m_braking << ", ";
-            csv << vehicle.GetVehicleSpeed() << ", ";
+            csv << vehicle.GetSpeed() << ", ";
             csv << acc_CG.x() << ", " << fwd_acc_CG << ", " << acc_CG.y() << ", " << lat_acc_CG << ", ";
             csv << acc_driver.x() << ", " << fwd_acc_driver << ", " << acc_driver.y() << ", " << lat_acc_driver << ", ";
             csv << acc_CG.z() << ", ";  // vertical acceleration

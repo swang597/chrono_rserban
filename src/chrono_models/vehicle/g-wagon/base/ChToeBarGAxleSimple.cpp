@@ -86,7 +86,8 @@ void ChToeBarGAxleSimple::Initialize(std::shared_ptr<ChChassis> chassis,
                                      const ChVector<>& location,
                                      double left_ang_vel,
                                      double right_ang_vel) {
-    m_location = location;
+    m_parent = chassis;
+    m_rel_loc = location;
 
     m_left_knuckle_steers = isLeftKnuckleActuated();
 
@@ -398,36 +399,36 @@ void ChToeBarGAxleSimple::InitializeSide(VehicleSide side,
     chassis->AddJoint(m_slideARB[side]);
 }
 
-// -----------------------------------------------------------------------------
-// Get the total mass of the suspension subsystem.
-// -----------------------------------------------------------------------------
-double ChToeBarGAxleSimple::GetMass() const {
-    return getAxleTubeMass() + getPanhardRodMass() + getTierodMass() + getDraglinkMass() + +2 * getARBMass() +
-           2 * (getSpindleMass() + getKnuckleMass());
+void ChToeBarGAxleSimple::InitializeInertiaProperties() {
+    m_mass = getAxleTubeMass() + getPanhardRodMass() + getTierodMass() + getDraglinkMass()  //
+             + 2 * (getARBMass() + 2 * getSpindleMass() + getKnuckleMass());
 }
 
-// -----------------------------------------------------------------------------
-// Get the current COM location of the suspension subsystem.
-// -----------------------------------------------------------------------------
-ChVector<> ChToeBarGAxleSimple::GetCOMPos() const {
-    ChVector<> com(0, 0, 0);
+void ChToeBarGAxleSimple::UpdateInertiaProperties() {
+    m_parent->GetTransform().TransformLocalToParent(ChFrame<>(m_rel_loc, QUNIT), m_xform);
 
-    com += getAxleTubeMass() * m_axleTube->GetPos();
-    com += getPanhardRodMass() * m_panhardRod->GetPos();
+    // Calculate COM and inertia expressed in global frame
+    utils::CompositeInertia composite;
+    composite.AddComponent(m_axleTube->GetFrame_COG_to_abs(), m_axleTube->GetMass(), m_axleTube->GetInertia());
+    composite.AddComponent(m_panhardRod->GetFrame_COG_to_abs(), m_panhardRod->GetMass(), m_panhardRod->GetInertia());
+    composite.AddComponent(m_tierod->GetFrame_COG_to_abs(), m_tierod->GetMass(), m_tierod->GetInertia());
+    composite.AddComponent(m_draglink->GetFrame_COG_to_abs(), m_draglink->GetMass(), m_draglink->GetInertia());
+    composite.AddComponent(m_spindle[LEFT]->GetFrame_COG_to_abs(), m_spindle[LEFT]->GetMass(),
+                           m_spindle[LEFT]->GetInertia());
+    composite.AddComponent(m_spindle[RIGHT]->GetFrame_COG_to_abs(), m_spindle[RIGHT]->GetMass(),
+                           m_spindle[RIGHT]->GetInertia());
+    composite.AddComponent(m_knuckle[LEFT]->GetFrame_COG_to_abs(), m_knuckle[LEFT]->GetMass(),
+                           m_knuckle[LEFT]->GetInertia());
+    composite.AddComponent(m_knuckle[RIGHT]->GetFrame_COG_to_abs(), m_knuckle[RIGHT]->GetMass(),
+                           m_knuckle[RIGHT]->GetInertia());
+    composite.AddComponent(m_arb[LEFT]->GetFrame_COG_to_abs(), m_arb[LEFT]->GetMass(), m_arb[LEFT]->GetInertia());
+    composite.AddComponent(m_arb[RIGHT]->GetFrame_COG_to_abs(), m_arb[RIGHT]->GetMass(), m_arb[RIGHT]->GetInertia());
 
-    com += getTierodMass() * m_tierod->GetPos();
-    com += getDraglinkMass() * m_draglink->GetPos();
+    // Express COM and inertia in subsystem reference frame
+    m_com.coord.pos = m_xform.TransformPointParentToLocal(composite.GetCOM());
+    m_com.coord.rot = QUNIT;
 
-    com += getARBMass() * m_arb[LEFT]->GetPos();
-    com += getARBMass() * m_arb[RIGHT]->GetPos();
-
-    com += getSpindleMass() * m_spindle[LEFT]->GetPos();
-    com += getSpindleMass() * m_spindle[RIGHT]->GetPos();
-
-    com += getKnuckleMass() * m_knuckle[LEFT]->GetPos();
-    com += getKnuckleMass() * m_knuckle[RIGHT]->GetPos();
-
-    return com / GetMass();
+    m_inertia = m_xform.GetA().transpose() * composite.GetInertia() * m_xform.GetA();
 }
 
 // -----------------------------------------------------------------------------

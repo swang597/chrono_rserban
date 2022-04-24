@@ -176,7 +176,7 @@ int main(int argc, char* argv[]) {
         // Driver inputs
         ChDriver::Inputs driver_inputs = driver.GetInputs();
 
-        if (my_hmmwv.GetVehicle().GetVehiclePos().x() > x_max - 20) {
+        if (my_hmmwv.GetVehicle().GetPos().x() > x_max - 20) {
             driver_inputs.m_throttle = 0;
             driver_inputs.m_steering = 0;
             driver_inputs.m_braking = 1;

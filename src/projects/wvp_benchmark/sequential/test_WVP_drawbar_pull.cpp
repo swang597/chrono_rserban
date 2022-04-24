@@ -157,8 +157,7 @@ int main(int argc, char* argv[]) {
     wvp.SetWheelVisualizationType(VisualizationType::NONE);
     wvp.SetTireVisualizationType(VisualizationType::PRIMITIVES);
 
-    std::cout << "Vehicle mass:               " << wvp.GetVehicle().GetVehicleMass() << std::endl;
-    std::cout << "Vehicle mass (with tires):  " << wvp.GetTotalMass() << std::endl;
+    std::cout << "Vehicle mass:               " << wvp.GetVehicle().GetMass() << std::endl;
     std::cout << "Tire radius:                " << radius << std::endl;
 
     // ---------------
@@ -329,7 +328,7 @@ int main(int argc, char* argv[]) {
     std::vector<double> tractivetorque;
 
     while (time < tend) {
-        if (wvp.GetVehicle().GetVehiclePos().x() > terrainLength / 2 - 1)
+        if (wvp.GetVehicle().GetPos().x() > terrainLength / 2 - 1)
             break;
 
 #ifdef USE_IRRLICHT
@@ -393,7 +392,7 @@ int main(int argc, char* argv[]) {
                                          avg_torque3.Add(torques[2]) + avg_torque4.Add(torques[3]));
 
                 // Record raw data
-                double actual_v = wvp.GetVehicle().GetVehicleSpeed();
+                double actual_v = wvp.GetVehicle().GetSpeed();
                 csv << time;
                 csv << actual_v;
                 for (int i = 0; i < 4; i++) {

@@ -153,8 +153,7 @@ int main(int argc, char* argv[]) {
     wvp.SetWheelVisualizationType(wheel_vis_type);
     wvp.SetTireVisualizationType(tire_vis_type);
 
-    std::cout << "Vehicle mass:               " << wvp.GetVehicle().GetVehicleMass() << std::endl;
-    std::cout << "Vehicle mass (with tires):  " << wvp.GetTotalMass() << std::endl;
+    std::cout << "Vehicle mass:               " << wvp.GetVehicle().GetMass() << std::endl;
 
     // ------------------
     // Create the terrain
@@ -355,10 +354,10 @@ int main(int argc, char* argv[]) {
                 csv << wvp.GetVehicle().GetSpindleAngVel(axle, LEFT);
                 csv << wvp.GetVehicle().GetSpindleAngVel(axle, RIGHT);
             }
-            csv << wvp.GetVehicle().GetVehicleSpeed();
-            csv << wvp.GetVehicle().GetVehiclePointAcceleration(wvp.GetVehicle().GetChassis()->GetLocalDriverCoordsys().pos);
+            csv << wvp.GetVehicle().GetSpeed();
+            csv << wvp.GetVehicle().GetPointAcceleration(wvp.GetVehicle().GetChassis()->GetLocalDriverCoordsys().pos);
 
-            csv << wvp.GetVehicle().GetVehiclePointAcceleration(vehCOM);
+            csv << wvp.GetVehicle().GetPointAcceleration(vehCOM);
 
             for (auto& axle : wvp.GetVehicle().GetAxles()) {
                 for (auto& wheel : axle->GetWheels()) {

@@ -180,7 +180,7 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    std::cout << my_hmmwv.GetVehicle().GetVehiclePos() << std::endl;
+    std::cout << my_hmmwv.GetVehicle().GetPos() << std::endl;
 
     std::string filename1 = out_dir + "/" + filesystem::path(crg_road_file).stem() + ".dat";
     utils::WriteVisualizationAssets(my_hmmwv.GetSystem(), filename1);

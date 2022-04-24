@@ -278,7 +278,7 @@ int main(int argc, char* argv[]) {
     std::vector<double> t, azd, azdf, shvel_exp, shvel_com;
     while (app.GetDevice()->run()) {
         double time = my_feda.GetSystem()->GetChTime();
-        double xpos = my_feda.GetVehicle().GetVehiclePos().x();
+        double xpos = my_feda.GetVehicle().GetPos().x();
         if (xpos > road_length - 10)
             break;
 
@@ -323,10 +323,10 @@ int main(int argc, char* argv[]) {
             std::static_pointer_cast<ChDoubleWishbone>(my_feda.GetVehicle().GetSuspension(1))->GetShockVelocity(LEFT);
         double sv4 =
             std::static_pointer_cast<ChDoubleWishbone>(my_feda.GetVehicle().GetSuspension(1))->GetShockVelocity(RIGHT);
-        xpos = my_feda.GetVehicle().GetVehiclePos().x();
+        xpos = my_feda.GetVehicle().GetPos().x();
         if (xpos >= road_length / 2.0 - 1.0) {
-            double speed = my_feda.GetVehicle().GetVehicleSpeed();
-            ChVector<> seat_acc = my_feda.GetVehicle().GetVehiclePointAcceleration(local_driver_pos);
+            double speed = my_feda.GetVehicle().GetSpeed();
+            ChVector<> seat_acc = my_feda.GetVehicle().GetPointAcceleration(local_driver_pos);
             t.push_back(time);
             azd.push_back(seat_acc.z() / 9.80665);
             azdf.push_back(wesFilter.Filter(seat_acc.z() / 9.80665));

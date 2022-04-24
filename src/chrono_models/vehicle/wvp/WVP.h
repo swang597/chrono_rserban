@@ -68,7 +68,6 @@ class CH_MODELS_API WVP {
     ChWheeledVehicle& GetVehicle() const { return *m_vehicle; }
     std::shared_ptr<ChChassis> GetChassis() const { return m_vehicle->GetChassis(); }
     std::shared_ptr<ChBodyAuxRef> GetChassisBody() const { return m_vehicle->GetChassisBody(); }
-    double GetTotalMass() const;
 
     void Initialize();
 

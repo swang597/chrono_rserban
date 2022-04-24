@@ -123,8 +123,7 @@ int main(int argc, char* argv[]) {
         std::cout << "Shock rest length rear:  " << shockRL->GetRestLength() << std::endl;
     }
 
-    std::cout << "Vehicle mass:               " << lmtv.GetVehicle().GetVehicleMass() << std::endl;
-    std::cout << "Vehicle mass (with tires):  " << lmtv.GetTotalMass() << std::endl;
+    std::cout << "Vehicle mass:               " << lmtv.GetVehicle().GetMass() << std::endl;
 
     // ------------------
     // Create the terrain

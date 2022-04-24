@@ -61,7 +61,7 @@ ChDriver::Inputs DriverInputs(double time) {
 void SaveCheckpoint(const std::string& filename, ChVehicle& vehicle, const ChDriver::Inputs& d) {
     std::cout << "SAVE checkpoint at t = " << vehicle.GetSystem()->GetChTime() << std::endl;
     std::cout << "  Driver inputs = " << d.m_throttle << " " << d.m_braking << " " << d.m_steering << std::endl;
-    std::cout << "  Vehicle speed = " << vehicle.GetVehicleSpeed() << std::endl;
+    std::cout << "  Vehicle speed = " << vehicle.GetSpeed() << std::endl;
 
     double time;
     ChState X;
@@ -83,7 +83,7 @@ void SaveCheckpoint(const std::string& filename, ChVehicle& vehicle, const ChDri
 void LoadCheckpoint(const std::string& filename, ChVehicle& vehicle, ChDriver::Inputs& d) {
     std::cout << "LOAD checkpoint at time = " << vehicle.GetSystem()->GetChTime() << std::endl;
     std::cout << "  Current driver inputs = " << d.m_throttle << " " << d.m_braking << " " << d.m_steering << std::endl;
-    std::cout << "  Current vehicle speed = " << vehicle.GetVehicleSpeed() << std::endl;
+    std::cout << "  Current vehicle speed = " << vehicle.GetSpeed() << std::endl;
 
     double time = 0;
     ChState X;
@@ -115,7 +115,7 @@ void LoadCheckpoint(const std::string& filename, ChVehicle& vehicle, ChDriver::I
 
     std::cout << "  Checkpoint time = " << time << std::endl;
     std::cout << "  New driver inputs = " << d.m_throttle << " " << d.m_braking << " " << d.m_steering << std::endl;
-    std::cout << "  New vehicle speed = " << vehicle.GetVehicleSpeed() << std::endl;
+    std::cout << "  New vehicle speed = " << vehicle.GetSpeed() << std::endl;
 
     vehicle.LogConstraintViolations();
 }

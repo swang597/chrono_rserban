@@ -161,7 +161,7 @@ int main(int argc, char* argv[]) {
 
     utils::CSV_writer csv(" ");
 
-    while (m113.GetVehiclePos().x() < 300) {
+    while (m113.GetPos().x() < 300) {
         if (useIrrlicht) {
             if (!app->GetDevice()->run())
                 break;
@@ -196,7 +196,7 @@ int main(int argc, char* argv[]) {
 
         if (step_number % output_steps == 0) {
             csv << time << step_number;
-            csv << m113.GetVehiclePos().x() << m113.GetVehicleSpeed();
+            csv << m113.GetPos().x() << m113.GetSpeed();
             csv << "    ";
             csv << m113.GetSystem()->GetNcontacts();
             csv << "    ";

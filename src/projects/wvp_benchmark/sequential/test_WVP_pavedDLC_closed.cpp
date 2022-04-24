@@ -144,8 +144,7 @@ int main(int argc, char* argv[]) {
     wvp.SetWheelVisualizationType(wheel_vis_type);
     wvp.SetTireVisualizationType(tire_vis_type);
 
-    std::cout << "Vehicle mass:               " << wvp.GetVehicle().GetVehicleMass() << std::endl;
-    std::cout << "Vehicle mass (with tires):  " << wvp.GetTotalMass() << std::endl;
+    std::cout << "Vehicle mass:               " << wvp.GetVehicle().GetMass() << std::endl;
 
     // ------------------
     // Create the terrain
@@ -301,14 +300,14 @@ int main(int argc, char* argv[]) {
             //output time to check simulation is running
             std::cout << time << std::endl;
 
-            csv << time << steering_input << wvp.GetVehicle().GetVehicleSpeed();
-            ChQuaternion<> q = wvp.GetVehicle().GetVehicleRot();
+            csv << time << steering_input << wvp.GetVehicle().GetSpeed();
+            ChQuaternion<> q = wvp.GetVehicle().GetRot();
             csv << q.Q_to_NasaAngles();
             csv << wvp.GetChassisBody()->GetWvel_loc();
 
             // report lateral acceleration at vehicle COM relative to the vehicle reference point
-            csv << wvp.GetVehicle().GetVehiclePointAcceleration({-2.070, .01, .495}).y();
-            // csv << wvp.GetVehicle().GetVehiclePointAcceleration(wvp.GetVehicle().GetChassis()->GetCOMPos()).y();
+            csv << wvp.GetVehicle().GetPointAcceleration({-2.070, .01, .495}).y();
+            // csv << wvp.GetVehicle().GetPointAcceleration(wvp.GetVehicle().GetChassis()->GetCOMPos()).y();
 
             for (auto& axle : wvp.GetVehicle().GetAxles()) {
                 for (auto& wheel : axle->GetWheels()) {

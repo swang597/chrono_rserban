@@ -283,8 +283,8 @@ int main(int argc, char* argv[]) {
             render_frame++;
         }
 
-        trace_x.push_back(my_gd250.GetVehicle().GetVehiclePos().x());
-        trace_y.push_back(my_gd250.GetVehicle().GetVehiclePos().y());
+        trace_x.push_back(my_gd250.GetVehicle().GetPos().x());
+        trace_y.push_back(my_gd250.GetVehicle().GetPos().y());
 
         // Debug logging
         if (debug_output && step_number % debug_steps == 0) {
@@ -359,7 +359,7 @@ int main(int argc, char* argv[]) {
     std::cout << "Turn Diameter      = " << delta << " m" << std::endl;
     std::cout << "Turn Radius        = " << delta / 2.0 << " m" << std::endl;
     std::cout << "Turn Radius VehCenter = " << (delta - 3.0) / 2.0 << " m" << std::endl;
-    std::cout << "Vehicle Mass       = " << my_gd250.GetVehicle().GetVehicleMass() << " kg" << std::endl;
-    std::cout << "Vehicle CoG height = " << my_gd250.GetVehicle().GetVehicleCOMPos().z() << " m" << std::endl;
+    std::cout << "Vehicle Mass       = " << my_gd250.GetVehicle().GetMass() << " kg" << std::endl;
+    std::cout << "Vehicle CoG height = " << my_gd250.GetVehicle().GetCOMFrame().GetPos().z() << " m" << std::endl;
     return 0;
 }

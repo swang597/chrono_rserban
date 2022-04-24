@@ -175,10 +175,10 @@ int main(int argc, char* argv[]) {
     while (app.GetDevice()->run()) {
         double time = sys.GetChTime();
 
-        double veh_pos_1 = vehicle_1.GetVehiclePos().x();
-        double veh_pos_2 = vehicle_2.GetVehiclePos().x();
-        double veh_speed_1 = vehicle_1.GetVehicleSpeed();
-        double veh_speed_2 = vehicle_2.GetVehicleSpeed();
+        double veh_pos_1 = vehicle_1.GetPos().x();
+        double veh_pos_2 = vehicle_2.GetPos().x();
+        double veh_speed_1 = vehicle_1.GetSpeed();
+        double veh_speed_2 = vehicle_2.GetSpeed();
 
         // Extract output
         if (output && sim_frame % out_steps == 0) {

@@ -74,7 +74,8 @@ void ChGAxleSimple::Initialize(std::shared_ptr<ChChassis> chassis,
                                const ChVector<>& location,
                                double left_ang_vel,
                                double right_ang_vel) {
-    m_location = location;
+    m_parent = chassis;
+    m_rel_loc = location;
 
     // Unit vectors for orientation matrices.
     ChVector<> u;
@@ -267,29 +268,29 @@ void ChGAxleSimple::InitializeSide(VehicleSide side,
     chassis->AddJoint(m_slideARB[side]);
 }
 
-// -----------------------------------------------------------------------------
-// Get the total mass of the suspension subsystem.
-// -----------------------------------------------------------------------------
-double ChGAxleSimple::GetMass() const {
-    return getAxleTubeMass() + getPanhardRodMass() + 2 * getARBMass() + 2 * (getSpindleMass());
+void ChGAxleSimple::InitializeInertiaProperties() {
+    m_mass = getAxleTubeMass() + getPanhardRodMass() + 2 * (getARBMass() + 2 * getSpindleMass());
 }
 
-// -----------------------------------------------------------------------------
-// Get the current COM location of the suspension subsystem.
-// -----------------------------------------------------------------------------
-ChVector<> ChGAxleSimple::GetCOMPos() const {
-    ChVector<> com(0, 0, 0);
+void ChGAxleSimple::UpdateInertiaProperties() {
+    m_parent->GetTransform().TransformLocalToParent(ChFrame<>(m_rel_loc, QUNIT), m_xform);
 
-    com += getAxleTubeMass() * m_axleTube->GetPos();
-    com += getPanhardRodMass() * m_panhardRod->GetPos();
+    // Calculate COM and inertia expressed in global frame
+    utils::CompositeInertia composite;
+    composite.AddComponent(m_axleTube->GetFrame_COG_to_abs(), m_axleTube->GetMass(), m_axleTube->GetInertia());
+    composite.AddComponent(m_panhardRod->GetFrame_COG_to_abs(), m_panhardRod->GetMass(), m_panhardRod->GetInertia());
+    composite.AddComponent(m_spindle[LEFT]->GetFrame_COG_to_abs(), m_spindle[LEFT]->GetMass(),
+                           m_spindle[LEFT]->GetInertia());
+    composite.AddComponent(m_spindle[RIGHT]->GetFrame_COG_to_abs(), m_spindle[RIGHT]->GetMass(),
+                           m_spindle[RIGHT]->GetInertia());
+    composite.AddComponent(m_arb[LEFT]->GetFrame_COG_to_abs(), m_arb[LEFT]->GetMass(), m_arb[LEFT]->GetInertia());
+    composite.AddComponent(m_arb[RIGHT]->GetFrame_COG_to_abs(), m_arb[RIGHT]->GetMass(), m_arb[RIGHT]->GetInertia());
 
-    com += getARBMass() * m_arb[LEFT]->GetPos();
-    com += getARBMass() * m_arb[RIGHT]->GetPos();
+    // Express COM and inertia in subsystem reference frame
+    m_com.coord.pos = m_xform.TransformPointParentToLocal(composite.GetCOM());
+    m_com.coord.rot = QUNIT;
 
-    com += getSpindleMass() * m_spindle[LEFT]->GetPos();
-    com += getSpindleMass() * m_spindle[RIGHT]->GetPos();
-
-    return com / GetMass();
+    m_inertia = m_xform.GetA().transpose() * composite.GetInertia() * m_xform.GetA();
 }
 
 // -----------------------------------------------------------------------------

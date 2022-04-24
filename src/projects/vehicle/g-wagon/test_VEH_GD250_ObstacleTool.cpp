@@ -270,7 +270,7 @@ int main(int argc, char* argv[]) {
                 ChWheeledVehicleIrrApp app(&gd250.GetVehicle(), wTitle.c_str());
                 app.AddTypicalLights();
                 app.SetChaseCamera(trackPoint, 10.0, 0.5);
-                // app.SetChaseCameraPosition(gd250.GetVehicle().GetVehiclePos() + ChVector<>(-10, 0, 0));
+                // app.SetChaseCameraPosition(gd250.GetVehicle().GetPos() + ChVector<>(-10, 0, 0));
                 app.SetChaseCameraMultipliers(1e-4, 10);
                 app.SetTimestep(step_size);
                 app.AssetBindAll();
@@ -388,16 +388,16 @@ int main(int argc, char* argv[]) {
 
                     double time = gd250.GetVehicle().GetChTime();
                     sim_time = time;
-                    double speed = gd250.GetVehicle().GetVehicleSpeed();
-                    double xpos = gd250.GetVehicle().GetVehiclePos().x();
-                    double yerr = gd250.GetVehicle().GetVehiclePos().y();
+                    double speed = gd250.GetVehicle().GetSpeed();
+                    double xpos = gd250.GetVehicle().GetPos().x();
+                    double yerr = gd250.GetVehicle().GetPos().y();
                     kurs << time << "\t" << xpos << "\t" << yerr << "\t" << speed << "\t" << std::endl;
                     if (xpos >= -1.0 && xpos <= xpos_max) {
                         double eTorque = avg.Add(
                             std::static_pointer_cast<ChSimpleCVTPowertrain>(gd250.GetPowertrain())->GetMotorTorque());
                         engineForce.push_back(eTorque * effRadius / gear_ratio);
                         for (size_t i = 0; i < bellyPts.size(); i++) {
-                            ChVector<> p = gd250.GetVehicle().GetVehiclePointLocation(bellyPts[i]);
+                            ChVector<> p = gd250.GetVehicle().GetPointLocation(bellyPts[i]);
                             // GetLog() << "BellyZ(" << i << ")" << p.z() << "\n";
                             double t = terrain.GetHeight(ChVector<>(p.x(), p.y(), 0));
                             clearance[i].AddPoint(xpos, p.z() - t);
@@ -427,7 +427,7 @@ int main(int argc, char* argv[]) {
                     terrain.Advance(step_size);
                     app.Advance(step_size);
 
-                    xpos = gd250.GetVehicle().GetVehiclePos().x();
+                    xpos = gd250.GetVehicle().GetPos().x();
                     if (xpos >= xpos_max) {
                         break;
                     }

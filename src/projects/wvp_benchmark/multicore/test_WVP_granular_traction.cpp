@@ -441,7 +441,7 @@ int main(int argc, char* argv[]) {
 
                 ofile_frc << system->GetChTime() << del;
                 ofile_frc << wvp->GetVehicle().GetPowertrain()->GetMotorSpeed() << del;
-                ofile_frc << wvp->GetVehicle().GetVehicleSpeed() << del;
+                ofile_frc << wvp->GetVehicle().GetSpeed() << del;
                 ofile_frc << wvp->GetVehicle().GetPowertrain()->GetMotorTorque() << del;
 
                 for (int axle = 0; axle < 2; axle++) {
@@ -533,7 +533,7 @@ WVP* CreateVehicle(ChSystem* system, double vertical_offset, std::shared_ptr<ChF
     drawForce->SetMode(ChForce::ForceType::FORCE);
     drawForce->SetFrame(ChForce::ReferenceFrame::BODY);
     drawForce->SetAlign(ChForce::AlignmentFrame::WORLD_DIR);
-    drawForce->SetVrelpoint(wvp->GetChassis()->GetLocalPosCOM());
+    drawForce->SetVrelpoint(wvp->GetVehicle().GetCOMFrame().GetPos());
     drawForce->SetF_x(forceFunct);
     drawForce->SetF_y(chrono_types::make_shared<ChFunction_Const>(0));
     drawForce->SetF_z(chrono_types::make_shared<ChFunction_Const>(0));

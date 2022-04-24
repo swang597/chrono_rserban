@@ -174,12 +174,12 @@ class DataWriter {
     }
 
     void CollectVehicleData() { 
-        auto v_pos = m_vehicle->GetVehiclePos();
+        auto v_pos = m_vehicle->GetPos();
         m_veh_outputs[0] = v_pos.x();
         m_veh_outputs[1] = v_pos.y();
         m_veh_outputs[2] = v_pos.z();
         
-        auto v_vel = m_vehicle->GetVehiclePointVelocity(ChVector<>(0, 0, 0));
+        auto v_vel = m_vehicle->GetPointVelocity(ChVector<>(0, 0, 0));
         m_veh_outputs[3] = v_vel.x();
         m_veh_outputs[4] = v_vel.y();
         m_veh_outputs[5] = v_vel.z();
@@ -560,12 +560,12 @@ int main(int argc, char* argv[]) {
 #endif
 
         //// TODO
-        if (vehicle->GetVehiclePos().x() > x_max)
+        if (vehicle->GetPos().x() > x_max)
             break;
 
         std::cout << "t = " << t;
-        std::cout << "  pos = " << vehicle->GetVehiclePos();
-        std::cout << "  spd = " << vehicle->GetVehicleSpeed() << std::endl;
+        std::cout << "  pos = " << vehicle->GetPos();
+        std::cout << "  spd = " << vehicle->GetSpeed() << std::endl;
 
         // Simulation data output
         if (output)

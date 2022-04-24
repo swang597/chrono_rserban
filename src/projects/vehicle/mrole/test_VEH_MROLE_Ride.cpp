@@ -246,8 +246,7 @@ int main(int argc, char* argv[]) {
     mrole.SetWheelVisualizationType(wheel_vis_type);
     mrole.SetTireVisualizationType(tire_vis_type);
 
-    std::cout << "Vehicle mass:               " << mrole.GetVehicle().GetVehicleMass() << std::endl;
-    std::cout << "Vehicle mass (with tires):  " << mrole.GetTotalMass() << std::endl;
+    std::cout << "Vehicle mass:               " << mrole.GetVehicle().GetMass() << std::endl;
 
     // ------------------
     // Create the terrain
@@ -381,15 +380,15 @@ int main(int argc, char* argv[]) {
     double sensor_start_x = 10.0;
 
 #ifdef USE_IRRLICHT
-    while (app.GetDevice()->run() && (time < tend) && (mrole.GetVehicle().GetVehiclePos().x() < xmax)) {
+    while (app.GetDevice()->run() && (time < tend) && (mrole.GetVehicle().GetPos().x() < xmax)) {
 #else
-    while ((time < tend) && (mrole.GetVehicle().GetVehiclePos().x() < xmax)) {
+    while ((time < tend) && (mrole.GetVehicle().GetPos().x() < xmax)) {
 #endif
         time = mrole.GetSystem()->GetChTime();
-        double xpos = mrole.GetVehicle().GetVehiclePos().x();
+        double xpos = mrole.GetVehicle().GetPos().x();
         if (xpos >= sensor_start_x) {
-            double speed = mrole.GetVehicle().GetVehicleSpeed();
-            ChVector<> seat_acc = mrole.GetVehicle().GetVehiclePointAcceleration(
+            double speed = mrole.GetVehicle().GetSpeed();
+            ChVector<> seat_acc = mrole.GetVehicle().GetPointAcceleration(
                 mrole.GetVehicle().GetChassis()->GetLocalDriverCoordsys().pos);
             seat_logger.AddData(speed, seat_acc);
         }
@@ -458,11 +457,11 @@ int main(int argc, char* argv[]) {
                 csv << mrole.GetVehicle().GetSpindleAngVel(axle, LEFT);
                 csv << mrole.GetVehicle().GetSpindleAngVel(axle, RIGHT);
             }
-            csv << mrole.GetVehicle().GetVehicleSpeed();
-            csv << mrole.GetVehicle().GetVehiclePointAcceleration(
+            csv << mrole.GetVehicle().GetSpeed();
+            csv << mrole.GetVehicle().GetPointAcceleration(
                 mrole.GetVehicle().GetChassis()->GetLocalDriverCoordsys().pos);
 
-            csv << mrole.GetVehicle().GetVehiclePointAcceleration(vehCOM);
+            csv << mrole.GetVehicle().GetPointAcceleration(vehCOM);
 
             for (auto& axle : mrole.GetVehicle().GetAxles()) {
                 for (auto& wheel : axle->GetWheels()) {

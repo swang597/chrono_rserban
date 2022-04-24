@@ -482,19 +482,19 @@ int main(int argc, char* argv[]) {
     double xend = 30.0 + helper.GetXmax();
     while (app.GetDevice()->run()) {
         time = feda.GetSystem()->GetChTime();
-        double speed = speed_filter.Add(feda.GetVehicle().GetVehicleSpeed());
+        double speed = speed_filter.Add(feda.GetVehicle().GetSpeed());
         double accel =
-            accel_filter.Filter(feda.GetVehicle().GetVehiclePointAcceleration(ChVector<>(-wheel_base / 2, 0, 0)).y());
+            accel_filter.Filter(feda.GetVehicle().GetPointAcceleration(ChVector<>(-wheel_base / 2, 0, 0)).y());
 
         speed_recorder.AddPoint(time, speed);
         accel_recorder.AddPoint(time, accel);
-        xpos = feda.GetVehicle().GetVehiclePos().x();
-        double ypos = feda.GetVehicle().GetVehiclePos().y();
-        ChVector<> pFrontLeft = feda.GetVehicle().GetVehiclePointLocation(ChVector<>(0, vehicle_width / 2, 1));
-        ChVector<> pRearLeft = feda.GetVehicle().GetVehiclePointLocation(ChVector<>(-wheel_base, vehicle_width / 2, 1));
-        ChVector<> pFrontRight = feda.GetVehicle().GetVehiclePointLocation(ChVector<>(0, -vehicle_width / 2, 1));
+        xpos = feda.GetVehicle().GetPos().x();
+        double ypos = feda.GetVehicle().GetPos().y();
+        ChVector<> pFrontLeft = feda.GetVehicle().GetPointLocation(ChVector<>(0, vehicle_width / 2, 1));
+        ChVector<> pRearLeft = feda.GetVehicle().GetPointLocation(ChVector<>(-wheel_base, vehicle_width / 2, 1));
+        ChVector<> pFrontRight = feda.GetVehicle().GetPointLocation(ChVector<>(0, -vehicle_width / 2, 1));
         ChVector<> pRearRight =
-            feda.GetVehicle().GetVehiclePointLocation(ChVector<>(-wheel_base, -vehicle_width / 2, 1));
+            feda.GetVehicle().GetPointLocation(ChVector<>(-wheel_base, -vehicle_width / 2, 1));
         if (!helper.GateTestLeft(pFrontLeft)) {
             GetLog() << "Test Failure: vehicle left the course with the front left wheel.\n";
             break;
@@ -527,7 +527,7 @@ int main(int argc, char* argv[]) {
         steer_recorder.AddPoint(time, steer);
         double angspeed = ang_diff.Filter(steer);
         angspeed_recorder.AddPoint(time, angspeed);
-        ChQuaternion<> q = feda.GetVehicle().GetVehicleRot();
+        ChQuaternion<> q = feda.GetVehicle().GetRot();
         double rollangle = q.Q_to_Euler123().x() * CH_C_RAD_TO_DEG;
         double yawrate = feda.GetVehicle().GetChassisBody()->GetWvel_loc().z() * CH_C_RAD_TO_DEG;
         double latacc = accel_recorder.Get_y(time) / 9.81;

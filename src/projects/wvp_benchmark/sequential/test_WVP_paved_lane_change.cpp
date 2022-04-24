@@ -176,8 +176,7 @@ int main(int argc, char* argv[]) {
 	wvp.SetWheelVisualizationType(wheel_vis_type);
 	wvp.SetTireVisualizationType(tire_vis_type);
 
-    std::cout << "Vehicle mass:               " << wvp.GetVehicle().GetVehicleMass() << std::endl;
-    std::cout << "Vehicle mass (with tires):  " << wvp.GetTotalMass() << std::endl;
+    std::cout << "Vehicle mass:               " << wvp.GetVehicle().GetMass() << std::endl;
 
     // ------------------
     // Create the terrain
@@ -414,15 +413,15 @@ int main(int argc, char* argv[]) {
 
             csv << time;    //time
             csv << driver_inputs.m_steering/-.001282; //steering wheel angle in degrees
-            csv << wvp.GetVehicle().GetVehicleSpeed();  //vehicle speed m/s
-            ChQuaternion<> q= wvp.GetVehicle().GetVehicleRot();
+            csv << wvp.GetVehicle().GetSpeed();  //vehicle speed m/s
+            ChQuaternion<> q= wvp.GetVehicle().GetRot();
             csv << q.Q_to_Euler123().x()*180.0/CH_C_PI;   //roll angle in deg
             csv << wvp.GetChassisBody()->GetWvel_loc().x()*180.0/CH_C_PI; //roll rate deg
             csv << q.Q_to_Euler123().y()*180.0/CH_C_PI;   //pitch angle deg
             csv << wvp.GetChassisBody()->GetWvel_loc().y()*180.0/CH_C_PI; //pitch rate deg
             csv << q.Q_to_Euler123().z()*180.0/CH_C_PI;   //yaw angle deg
             csv << wvp.GetChassisBody()->GetWvel_loc().z()*180.0/CH_C_PI; //yaw rate deg
-            csv << wvp.GetVehicle().GetVehiclePointAcceleration({-2.070, .01, .495}).y() / 9.81;  // lateral acc. in g's
+            csv << wvp.GetVehicle().GetPointAcceleration({-2.070, .01, .495}).y() / 9.81;  // lateral acc. in g's
 
             std::vector<ChVector<>> tire_forces;
             for (auto& axle : wvp.GetVehicle().GetAxles()) {

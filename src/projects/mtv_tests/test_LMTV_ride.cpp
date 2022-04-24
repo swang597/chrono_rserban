@@ -161,8 +161,7 @@ int main(int argc, char* argv[]) {
     lmtv.SetWheelVisualizationType(wheel_vis_type);
     lmtv.SetTireVisualizationType(tire_vis_type);
 
-    std::cout << "Vehicle mass:               " << lmtv.GetVehicle().GetVehicleMass() << std::endl;
-    std::cout << "Vehicle mass (with tires):  " << lmtv.GetTotalMass() << std::endl;
+    std::cout << "Vehicle mass:               " << lmtv.GetVehicle().GetMass() << std::endl;
 
     // ------------------
     // Create the terrain
@@ -364,11 +363,11 @@ int main(int argc, char* argv[]) {
                 csv << lmtv.GetVehicle().GetSpindleAngVel(axle, LEFT);
                 csv << lmtv.GetVehicle().GetSpindleAngVel(axle, RIGHT);
             }
-            csv << lmtv.GetVehicle().GetVehicleSpeed();
-            csv << lmtv.GetVehicle().GetVehiclePointAcceleration(
+            csv << lmtv.GetVehicle().GetSpeed();
+            csv << lmtv.GetVehicle().GetPointAcceleration(
                 lmtv.GetVehicle().GetChassis()->GetLocalDriverCoordsys().pos);
 
-            csv << lmtv.GetVehicle().GetVehiclePointAcceleration(vehCOM);
+            csv << lmtv.GetVehicle().GetPointAcceleration(vehCOM);
 
             for (auto& axle : lmtv.GetVehicle().GetAxles()) {
                 for (auto& wheel : axle->GetWheels()) {

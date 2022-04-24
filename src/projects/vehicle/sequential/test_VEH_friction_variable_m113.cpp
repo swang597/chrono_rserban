@@ -141,11 +141,11 @@ int main(int argc, char* argv[]) {
     while (app.GetDevice()->run()) {
         double time = sys.GetChTime();
 
-        auto veh_pos = vehicle.GetVehiclePos();
+        auto veh_pos = vehicle.GetPos();
 
         // Extract output
         if (output && sim_frame % out_steps == 0) {
-            double veh_speed = vehicle.GetVehicleSpeed();
+            double veh_speed = vehicle.GetSpeed();
 
             csv << time << veh_pos.x() << veh_speed << std::endl;
         }

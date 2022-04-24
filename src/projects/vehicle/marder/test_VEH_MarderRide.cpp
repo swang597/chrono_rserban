@@ -245,7 +245,7 @@ int main(int argc, char* argv[]) {
     ChTrackedVehicleIrrApp app(&marder.GetVehicle(), L"Marder Vehicle Ride");
     app.AddTypicalLights();
     app.SetChaseCamera(trackPoint, 10.0, 0.5);
-    // app.SetChaseCameraPosition(marder.GetVehicle().GetVehiclePos() + ChVector<>(-10, 0, 0));
+    // app.SetChaseCameraPosition(marder.GetVehicle().GetPos() + ChVector<>(-10, 0, 0));
     app.SetChaseCameraMultipliers(1e-4, 10);
     app.SetTimestep(step_size);
     app.AssetBindAll();
@@ -358,7 +358,7 @@ int main(int argc, char* argv[]) {
             cout << "Time: " << marder.GetSystem()->GetChTime() << endl;
             cout << "      Num. contacts: " << marder.GetSystem()->GetNcontacts() << endl;
             const ChFrameMoving<>& c_ref = marder.GetChassisBody()->GetFrame_REF_to_abs();
-            const ChVector<>& c_pos = marder.GetVehicle().GetVehiclePos();
+            const ChVector<>& c_pos = marder.GetVehicle().GetPos();
             cout << "      chassis:    " << c_pos.x() << "  " << c_pos.y() << "  " << c_pos.z() << endl;
             {
                 const ChVector<>& i_pos_abs = track_L->GetIdler()->GetWheelBody()->GetPos();
@@ -408,13 +408,13 @@ int main(int argc, char* argv[]) {
         }
 
         double time = marder.GetVehicle().GetChTime();
-        double speed = avg.Add(marder.GetVehicle().GetVehicleSpeed());
-        double xpos = marder.GetVehicle().GetVehiclePos().x();
-        double yerr = marder.GetVehicle().GetVehiclePos().y();
+        double speed = avg.Add(marder.GetVehicle().GetSpeed());
+        double xpos = marder.GetVehicle().GetPos().x();
+        double yerr = marder.GetVehicle().GetPos().y();
         kurs << time << "\t" << xpos << "\t" << yerr << "\t" << speed << "\t" << std::endl;
         if (xpos >= 0.0) {
             ChVector<double> acc =
-                marder.GetVehicle().GetVehiclePointAcceleration(marder.GetChassis()->GetLocalDriverCoordsys().pos);
+                marder.GetVehicle().GetPointAcceleration(marder.GetChassis()->GetLocalDriverCoordsys().pos);
             seat_logger.AddData(speed, acc);
         }
         if (xpos > xpos_max)

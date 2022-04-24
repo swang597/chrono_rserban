@@ -108,8 +108,7 @@ int main(int argc, char* argv[]) {
         std::cout << "Shock rest length rear:  " << shockRL->GetRestLength() << std::endl;
     }
 
-    std::cout << "Vehicle mass:               " << wvp.GetVehicle().GetVehicleMass() << std::endl;
-    std::cout << "Vehicle mass (with tires):  " << wvp.GetTotalMass() << std::endl;
+    std::cout << "Vehicle mass:               " << wvp.GetVehicle().GetMass() << std::endl;
 
     // ------------------
     // Create the terrain
@@ -182,7 +181,7 @@ int main(int argc, char* argv[]) {
         app.Advance(step_size);
         // ChQuaternion<> qW1= wvp.GetVehicle().GetWheelRot(1);
         // ChQuaternion<> qW0= wvp.GetVehicle().GetWheelRot(0);
-        // ChQuaternion<> qV= wvp.GetVehicle().GetVehicleRot();
+        // ChQuaternion<> qV= wvp.GetVehicle().GetRot();
         // std::cout<<"Wheel0|"<<(qW0.Q_to_NasaAngles().z()*180/CH_C_PI) - (qV.Q_to_NasaAngles().z()*180/CH_C_PI)
         //     <<"\t|Wheel1|"<<(qW1.Q_to_NasaAngles().z()*180/CH_C_PI) - (qV.Q_to_NasaAngles().z()*180/CH_C_PI)<<std::endl;
 
@@ -200,7 +199,7 @@ int main(int argc, char* argv[]) {
         // <<"|force3|"<<susp1->GetSpringForce(RIGHT)
         <<std::endl;
 
-        //ChQuaternion<> q= wvp.GetVehicle().GetVehicleRot();
+        //ChQuaternion<> q= wvp.GetVehicle().GetRot();
         //std::cout<<"attitude|"<<q.Q_to_NasaAngles().x()<<"|bank|"<<q.Q_to_NasaAngles().y()<<"|heading|"<<q.Q_to_NasaAngles().z()<<std::endl;
 
 
@@ -208,19 +207,19 @@ int main(int argc, char* argv[]) {
         //     <<wvp.GetVehicle().GetWheelPos(2).x()<<"|"<<wvp.GetVehicle().GetWheelPos(2).y()<<"|"<<wvp.GetVehicle().GetWheelPos(2).z()<<std::endl;
 
         //log suspension locations
-        /* std::cout<<"|wheel pos|"<<wvp.GetVehicle().GetSuspension(0)->GetSpindle(LEFT)->GetPos().x()-wvp.GetVehicle().GetVehiclePos().x()
-          <<"|"<<wvp.GetVehicle().GetSuspension(0)->GetSpindle(LEFT)->GetPos().y()-wvp.GetVehicle().GetVehiclePos().y()
-          <<"|"<<wvp.GetVehicle().GetSuspension(0)->GetSpindle(LEFT)->GetPos().z()-wvp.GetVehicle().GetVehiclePos().z()
+        /* std::cout<<"|wheel pos|"<<wvp.GetVehicle().GetSuspension(0)->GetSpindle(LEFT)->GetPos().x()-wvp.GetVehicle().GetPos().x()
+          <<"|"<<wvp.GetVehicle().GetSuspension(0)->GetSpindle(LEFT)->GetPos().y()-wvp.GetVehicle().GetPos().y()
+          <<"|"<<wvp.GetVehicle().GetSuspension(0)->GetSpindle(LEFT)->GetPos().z()-wvp.GetVehicle().GetPos().z()
           <<std::endl; */
 
 
         /*std::cout<<std::endl;*/
-        ChCoordsys<> vehCoord = ChCoordsys<>(wvp.GetVehicle().GetVehiclePos(),wvp.GetVehicle().GetVehicleRot());
-        ChVector<> vehCOM = vehCoord.TransformPointParentToLocal(wvp.GetVehicle().GetVehicleCOMPos());
+        ChCoordsys<> vehCoord = ChCoordsys<>(wvp.GetVehicle().GetPos(),wvp.GetVehicle().GetRot());
+        ChVector<> vehCOM = vehCoord.TransformPointParentToLocal(wvp.GetVehicle().GetCOMFrame().GetPos());
         std::cout<<"Vehicle COM: "<<vehCOM.x()<<"|"<<vehCOM.y()<<"|"<<vehCOM.z()<<std::endl;
-        /* std::cout<<"Vehicle COM|"<<wvp.GetVehicle().GetVehicleCOMPos().x()-wvp.GetVehicle().GetVehiclePos().x()<<"|"
-            <<wvp.GetVehicle().GetVehicleCOMPos().y()-wvp.GetVehicle().GetVehiclePos().y()<<"|"
-            <<(wvp.GetVehicle().GetVehicleCOMPos().z()-wvp.GetVehicle().GetVehiclePos().z());
+        /* std::cout<<"Vehicle COM|"<<wvp.GetVehicle().GetCOMFrame().GetPos().x()-wvp.GetVehicle().GetPos().x()<<"|"
+            <<wvp.GetVehicle().GetCOMFrame().GetPos().y()-wvp.GetVehicle().GetPos().y()<<"|"
+            <<(wvp.GetVehicle().GetCOMFrame().GetPos().z()-wvp.GetVehicle().GetPos().z());
         std::cout<<std::endl; */
 
         // Increment frame number

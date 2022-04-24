@@ -127,8 +127,7 @@ int main(int argc, char* argv[]) {
     lmtv.SetWheelVisualizationType(wheel_vis_type);
     lmtv.SetTireVisualizationType(tire_vis_type);
 
-    std::cout << "Vehicle mass:               " << lmtv.GetVehicle().GetVehicleMass() << std::endl;
-    std::cout << "Vehicle mass (with tires):  " << lmtv.GetTotalMass() << std::endl;
+    std::cout << "Vehicle mass:               " << lmtv.GetVehicle().GetMass() << std::endl;
 
     // ------------------
     // Create the terrain
@@ -200,17 +199,17 @@ int main(int argc, char* argv[]) {
         auto susp0 = std::static_pointer_cast<ChLeafspringAxle>(lmtv.GetVehicle().GetSuspension(0));
         auto susp1 = std::static_pointer_cast<ChToeBarLeafspringAxle>(lmtv.GetVehicle().GetSuspension(1));
 
-        ChCoordsys<> vehCoord = ChCoordsys<>(lmtv.GetVehicle().GetVehiclePos(), lmtv.GetVehicle().GetVehicleRot());
-        ChVector<> vehCOM = vehCoord.TransformPointParentToLocal(lmtv.GetVehicle().GetVehicleCOMPos());
+        ChCoordsys<> vehCoord = ChCoordsys<>(lmtv.GetVehicle().GetPos(), lmtv.GetVehicle().GetRot());
+        ChVector<> vehCOM = vehCoord.TransformPointParentToLocal(lmtv.GetVehicle().GetCOMFrame().GetPos());
 
         if (left_turn) {
             // left turn + right corner
-            turn_x.push_back(lmtv.GetVehicle().GetVehiclePointLocation(FrontRightCornerLoc).x());
-            turn_y.push_back(lmtv.GetVehicle().GetVehiclePointLocation(FrontRightCornerLoc).y());
+            turn_x.push_back(lmtv.GetVehicle().GetPointLocation(FrontRightCornerLoc).x());
+            turn_y.push_back(lmtv.GetVehicle().GetPointLocation(FrontRightCornerLoc).y());
         } else {
             // right turn + left corner
-            turn_x.push_back(lmtv.GetVehicle().GetVehiclePointLocation(FrontLeftCornerLoc).x());
-            turn_y.push_back(lmtv.GetVehicle().GetVehiclePointLocation(FrontLeftCornerLoc).y());
+            turn_x.push_back(lmtv.GetVehicle().GetPointLocation(FrontLeftCornerLoc).x());
+            turn_y.push_back(lmtv.GetVehicle().GetPointLocation(FrontLeftCornerLoc).y());
         }
         // GetLog() << "y = " << turn_y.back() << "\n";
         // Increment frame number

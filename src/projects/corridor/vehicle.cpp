@@ -52,7 +52,7 @@ Vehicle::~Vehicle() {
 }
 
 ChCoordsys<> Vehicle::GetPosition() const {
-    return ChCoordsys<>(GetVehicle().GetVehiclePos(), GetVehicle().GetVehicleRot());
+    return ChCoordsys<>(GetVehicle().GetPos(), GetVehicle().GetRot());
 }
 
 void Vehicle::SetupDriver(std::shared_ptr<chrono::ChBezierCurve> curve, bool closed, double target_speed) {

@@ -247,7 +247,7 @@ int main(int argc, char* argv[]) {
     app.SetChaseCamera(trackPoint, 3.0, 0.0);
     ////app.SetChaseCamera(ChVector<>(-3.5, 0,0), 3.0, 0.0);
     app.SetChaseCameraAngle(-CH_C_PI_2);
-    ////app.SetChaseCameraPosition(m113.GetVehicle().GetVehiclePos() + ChVector<>(0, 2, 0));
+    ////app.SetChaseCameraPosition(m113.GetVehicle().GetPos() + ChVector<>(0, 2, 0));
     app.SetChaseCameraMultipliers(1e-4, 10);
     app.SetTimestep(step_size);
     app.AssetBindAll();
@@ -318,7 +318,7 @@ int main(int argc, char* argv[]) {
             cout << "Time: " << m113.GetSystem()->GetChTime() << endl;
             cout << "      Num. contacts: " << m113.GetSystem()->GetNcontacts() << endl;
             const ChFrameMoving<>& c_ref = m113.GetChassisBody()->GetFrame_REF_to_abs();
-            const ChVector<>& c_pos = m113.GetVehicle().GetVehiclePos();
+            const ChVector<>& c_pos = m113.GetVehicle().GetPos();
             cout << "      chassis:    " << c_pos.x() << "  " << c_pos.y() << "  " << c_pos.z() << endl;
             {
                 const ChVector<>& i_pos_abs = track_L->GetIdler()->GetWheelBody()->GetPos();
@@ -373,13 +373,13 @@ int main(int argc, char* argv[]) {
                 break;
             }
         } else {
-            ////std::cout << t << "  " << m113.GetVehicle().GetVehicleSpeed() << std::endl;
+            ////std::cout << t << "  " << m113.GetVehicle().GetSpeed() << std::endl;
 
             ////auto xdir = m113.GetChassisBody()->GetRot().GetXaxis();
             ////std::cout << xdir << std::endl;
 
             if (t > 12) {
-                std::cout << "SPEED at t= " << t << "  " << m113.GetVehicle().GetVehicleSpeed() << std::endl;     //// <=== ??????
+                std::cout << "SPEED at t= " << t << "  " << m113.GetVehicle().GetSpeed() << std::endl;     //// <=== ??????
                 break;
             }
         }
@@ -394,7 +394,7 @@ int main(int argc, char* argv[]) {
 
         // Apply resistive torque at sprocket
         if (fix_chassis && !create_track) {
-            double M = m113.GetVehicle().GetVehicleMass();                            // kg
+            double M = m113.GetVehicle().GetMass();                            // kg
             double G = M * 9.81 / 2.0;                                                // N
             double R = 0.23;                                                          // m
             auto track_L = m113.GetVehicle().GetTrackAssembly(LEFT);                  //

@@ -296,7 +296,7 @@ int main(int argc, char* argv[]) {
             cout << "     Throttle input: " << driver_inputs.m_throttle << endl;
             cout << "     Braking input:  " << driver_inputs.m_braking << endl;
             cout << "     Steering input: " << driver_inputs.m_steering << endl;
-            cout << "     Vehicle speed:  " << m113.GetVehicle().GetVehicleSpeed() << endl;
+            cout << "     Vehicle speed:  " << m113.GetVehicle().GetSpeed() << endl;
             cout << "     Execution time: " << exec_time << endl;
 
             out_frame++;
