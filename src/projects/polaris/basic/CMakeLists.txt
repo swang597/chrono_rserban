@@ -10,7 +10,8 @@ endif()
 # List all programs
 
 set(PROGRAMS
-    test_VEH_mrzrJSON
+    test_Polaris
+    test_Polaris_DLC
 )
 
 #--------------------------------------------------------------

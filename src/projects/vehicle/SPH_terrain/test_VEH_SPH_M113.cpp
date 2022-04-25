@@ -389,7 +389,7 @@ int main(int argc, char* argv[]) {
         printf("bin=%f,%f,%f\n", bbody->GetPos().x(), bbody->GetPos().y(), bbody->GetPos().z());
         printf("M113 pos = %f,%f,%f\n", vbody->GetPos().x(), vbody->GetPos().y(), vbody->GetPos().z());
         printf("M113 vel = %f,%f,%f\n", vbody->GetPos_dt().x(), vbody->GetPos_dt().y(), vbody->GetPos_dt().z());
-        printf("Computational cost = %f, %f\n", sim_cost);
+        printf("Computational cost = %f\n", sim_cost);
 
         if (time > paramsH->tFinal)
             break;

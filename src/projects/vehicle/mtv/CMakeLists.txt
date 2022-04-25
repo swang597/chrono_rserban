@@ -1,6 +1,4 @@
-message(STATUS "Projects: MTV tests...")
-
-if(NOT ENABLE_MODULE_VEHICLE OR NOT ENABLE_MODULE_IRRLICHT)
+if(NOT ENABLE_MODULE_IRRLICHT)
   return()
 endif()  
 
@@ -23,10 +21,10 @@ SET(LIBRARIES
 # ------------------------------------------------------------------------------
 
 SET(DEMOS
-    test_LMTV_sequential
-    test_LMTV_ride
-    test_LMTV_accel
-    test_LMTV_wall2wall_turning
+    test_VEH_LMTV_sequential
+    test_VEH_LMTV_ride
+    test_VEH_LMTV_accel
+    test_VEH_LMTV_wall2wall_turning
 )
 
 # ------------------------------------------------------------------------------

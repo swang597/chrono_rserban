@@ -81,10 +81,6 @@ class DataWriter {
         m_box_size.z() = 0.3;
 
         std::cout << "Wheel sampling box size = " << m_box_size << std::endl;
-
-        // Default filter window
-        double window = 0.25;  // seconds
-
     }
 
     ~DataWriter() { m_veh_stream.close(); }

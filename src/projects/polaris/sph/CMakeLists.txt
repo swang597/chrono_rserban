@@ -2,6 +2,10 @@
 # CMake configuration file for tracked vehicle on SPH terrain.
 #=============================================================================
 
+if(NOT ENABLE_MODULE_FSI)
+  return()
+endif()
+
 set(COMPILE_FLAGS "${CH_CXX_FLAGS}")
 set(LINKER_FLAGS "${CH_LINKERFLAG_EXE}")
 set(LIBRARIES ChronoEngine ChronoEngine_fsi ChronoEngine_vehicle ChronoModels_vehicle)
@@ -20,13 +24,13 @@ endif()
 
 #--------------------------------------------------------------
 
-set(PROGRAM test_VEH_SPH_M113)
-
+set(PROGRAM test_Polaris_SPH)
+set(UTILITIES FindParticles.h FindParticles.cu)
 
 message(STATUS "...add ${PROGRAM}")
 
-add_executable(${PROGRAM}  "${PROGRAM}.cpp")
-source_group(""  FILES "${PROGRAM}.cpp")
+cuda_add_executable(${PROGRAM}  "${PROGRAM}.cpp" ${UTILITIES})
+source_group(""  FILES "${PROGRAM}.cpp" ${UTILITIES})
 
 set_target_properties(${PROGRAM} PROPERTIES
         FOLDER demos
