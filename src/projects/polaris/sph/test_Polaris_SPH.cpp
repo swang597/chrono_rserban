@@ -170,32 +170,70 @@ class DataWriter {
     }
 
     void CollectVehicleData() { 
-        auto v_pos = m_vehicle->GetPos();
-        m_veh_outputs[0] = v_pos.x();
-        m_veh_outputs[1] = v_pos.y();
-        m_veh_outputs[2] = v_pos.z();
+        size_t start = 0;
         
+        auto v_pos = m_vehicle->GetPos();
+        m_veh_outputs[start + 0] = v_pos.x();
+        m_veh_outputs[start + 1] = v_pos.y();
+        m_veh_outputs[start + 2] = v_pos.z();
+        start += 3;
+
+        auto v_rot = m_vehicle->GetRot();
+        m_veh_outputs[start + 0] = v_rot.e0();
+        m_veh_outputs[start + 1] = v_rot.e1();
+        m_veh_outputs[start + 2] = v_rot.e2();
+        m_veh_outputs[start + 3] = v_rot.e3();
+        start += 4;
+
         auto v_vel = m_vehicle->GetPointVelocity(ChVector<>(0, 0, 0));
-        m_veh_outputs[3] = v_vel.x();
-        m_veh_outputs[4] = v_vel.y();
-        m_veh_outputs[5] = v_vel.z();
+        m_veh_outputs[start + 0] = v_vel.x();
+        m_veh_outputs[start + 1] = v_vel.y();
+        m_veh_outputs[start + 2] = v_vel.z();
+        start += 3;
+
+        auto v_omg = m_vehicle->GetChassisBody()->GetWvel_par();
+        m_veh_outputs[start + 0] = v_omg.x();
+        m_veh_outputs[start + 1] = v_omg.y();
+        m_veh_outputs[start + 2] = v_omg.z();
+        start += 3;
 
         for (int i = 0; i < 4; i++) {
             auto w_state = m_wheels[i]->GetState();
-            m_veh_outputs[6 + i * 12 + 0] = w_state.pos.x();
-            m_veh_outputs[6 + i * 12 + 1] = w_state.pos.y();
-            m_veh_outputs[6 + i * 12 + 2] = w_state.pos.z();
-            m_veh_outputs[6 + i * 12 + 3] = w_state.lin_vel.x();
-            m_veh_outputs[6 + i * 12 + 4] = w_state.lin_vel.y();
-            m_veh_outputs[6 + i * 12 + 5] = w_state.lin_vel.z();
-            auto t_force = m_wheels[i]->GetSpindle()->Get_accumulated_force();
-            auto t_torque = m_wheels[i]->GetSpindle()->Get_accumulated_torque();
-            m_veh_outputs[6 + i * 12 + 6] = t_force.x();
-            m_veh_outputs[6 + i * 12 + 7] = t_force.y();
-            m_veh_outputs[6 + i * 12 + 8] = t_force.z();
-            m_veh_outputs[6 + i * 12 + 9] = t_torque.x();
-            m_veh_outputs[6 + i * 12 + 10] = t_torque.y();
-            m_veh_outputs[6 + i * 12 + 11] = t_torque.z();
+
+            m_veh_outputs[start + 0] = w_state.pos.x();
+            m_veh_outputs[start + 1] = w_state.pos.y();
+            m_veh_outputs[start + 2] = w_state.pos.z();
+            start += 3;
+
+            m_veh_outputs[start + 0] = w_state.rot.e0();
+            m_veh_outputs[start + 1] = w_state.rot.e1();
+            m_veh_outputs[start + 2] = w_state.rot.e2();
+            m_veh_outputs[start + 3] = w_state.rot.e3();
+            start += 4;
+
+            m_veh_outputs[start + 0] = w_state.lin_vel.x();
+            m_veh_outputs[start + 1] = w_state.lin_vel.y();
+            m_veh_outputs[start + 2] = w_state.lin_vel.z();
+            start += 3;
+
+            m_veh_outputs[start + 0] = w_state.ang_vel.x();
+            m_veh_outputs[start + 1] = w_state.ang_vel.y();
+            m_veh_outputs[start + 2] = w_state.ang_vel.z();
+            start += 3;
+        }
+
+        for (int i = 0; i < 4; i++) {
+            const auto& t_force = m_wheels[i]->GetSpindle()->Get_accumulated_force();
+            m_veh_outputs[start + 0] = t_force.x();
+            m_veh_outputs[start + 1] = t_force.y();
+            m_veh_outputs[start + 2] = t_force.z();
+            start += 3;
+
+            const auto& t_torque = m_wheels[i]->GetSpindle()->Get_accumulated_torque();
+            m_veh_outputs[start + 0] = t_torque.x();
+            m_veh_outputs[start + 1] = t_torque.y();
+            m_veh_outputs[start + 2] = t_torque.z();
+            start += 3;
         }
 
         if (m_filter) {
@@ -209,16 +247,31 @@ class DataWriter {
         const auto& o = m_veh_outputs;
         std::ofstream stream;
         stream.open(filename, std::ios_base::trunc);
-        // Vehicle position and speed
-        stream << o[0] << ", " << o[1] << ", " << o[2] << ", ";
-        stream << o[3] << ", " << o[4] << ", " << o[5] << "\n";
-        // Wheel position and speed + tire force and moment
+
+        size_t start = 0;
+
+        // Vehicle position, orientation, linear and angular velocities
+        for (int j = 0; j < 13; j++)
+            stream << o[start + j] << ", ";
+        stream << "\n";
+        start += 13;
+
+        // Wheel position, orientation, linear and angular velocities
         for (int i = 0; i < 4; i++) {
-            stream << o[6 + i * 12 + 0] << ", " << o[6 + i * 12 + 1] << ", " << o[6 + i * 12 + 2] << ", ";
-            stream << o[6 + i * 12 + 3] << ", " << o[6 + i * 12 + 4] << ", " << o[6 + i * 12 + 5] << ", ";
-            stream << o[6 + i * 12 + 6] << ", " << o[6 + i * 12 + 7] << ", " << o[6 + i * 12 + 8] << ", ";
-            stream << o[6 + i * 12 + 9] << ", " << o[6 + i * 12 + 10] << ", " << o[6 + i * 12 + 11] << "\n";
+            for (int j = 0; j < 13; j++)
+                stream << o[start + j] << ", ";
+            stream << "\n";
+            start += 13;
         }
+
+        // Tire force and moment
+        for (int i = 0; i < 4; i++) {
+            for (int j = 0; j < 6; j++)
+                stream << o[start + j] << ", ";
+            stream << "\n";
+            start += 6;
+        }
+
         stream.close();
 
         m_veh_stream << m_vehicle->GetChTime() << "    ";
@@ -263,7 +316,7 @@ class DataWriter {
 
     bool m_filter;
     double m_filter_window;
-    static const int m_num_veh_outputs = 6 + 4 * 12;
+    static const int m_num_veh_outputs = (7 + 6) + 4 * (7 + 6 + 3 + 3);
     std::array<double, m_num_veh_outputs> m_veh_outputs;
     std::array<std::shared_ptr<chrono::utils::ChRunningAverage>, m_num_veh_outputs> m_veh_filters;
     std::ofstream m_veh_stream;
