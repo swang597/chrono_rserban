@@ -40,10 +40,23 @@ using namespace chrono::vehicle;
 
 // =============================================================================
 
+enum class MRZR_MODEL { ORIGINAL, MODIFIED };
+
+MRZR_MODEL model = MRZR_MODEL::MODIFIED;
+
+// -----------------------------------------------------------------------------
+
 int main(int argc, char* argv[]) {
+    std::string model_dir = (model == MRZR_MODEL::ORIGINAL) ? "mrzr/JSON_orig/" : "mrzr/JSON_new/";
+
+    std::string vehicle_json = model_dir + "vehicle/MRZR.json";
+    ////std::string powertrain_json = model_dir + "powertrain/MRZR_SimplePowertrain.json";
+    std::string powertrain_json = model_dir + "powertrain/MRZR_SimpleMapPowertrain.json";
+    std::string tire_json = model_dir + "tire/MRZR_TMeasyTire.json";
+
     // Create the vehicle system
     auto contact_method = ChContactMethod::SMC;
-    WheeledVehicle vehicle(vehicle::GetDataFile("mrzr/vehicle/MRZR.json"), contact_method);
+    WheeledVehicle vehicle(vehicle::GetDataFile(vehicle_json), contact_method);
     vehicle.Initialize(ChCoordsys<>(ChVector<>(-75, 0, 0.2), QUNIT));
     vehicle.GetChassis()->SetFixed(false);
     vehicle.SetChassisVisualizationType(VisualizationType::MESH);
@@ -52,14 +65,13 @@ int main(int argc, char* argv[]) {
     vehicle.SetWheelVisualizationType(VisualizationType::MESH);
 
     // Create and initialize the powertrain system
-    ////auto powertrain = ReadPowertrainJSON(vehicle::GetDataFile("mrzr/powertrain/MRZR_SimplePowertrain.json"));
-    auto powertrain = ReadPowertrainJSON(vehicle::GetDataFile("mrzr/powertrain/MRZR_SimpleMapPowertrain.json"));
+    auto powertrain = ReadPowertrainJSON(vehicle::GetDataFile(powertrain_json));
     vehicle.InitializePowertrain(powertrain);
 
     // Create and initialize the tires
     for (auto& axle : vehicle.GetAxles()) {
         for (auto& wheel : axle->GetWheels()) {
-            auto tire = ReadTireJSON(vehicle::GetDataFile("mrzr/tire/MRZR_TMeasyTire.json"));
+            auto tire = ReadTireJSON(vehicle::GetDataFile(tire_json));
             vehicle.InitializeTire(tire, wheel, VisualizationType::MESH);
         }
     }

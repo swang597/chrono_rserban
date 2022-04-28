@@ -46,6 +46,12 @@ using namespace chrono::vehicle;
 
 // -----------------------------------------------------------------------------
 
+enum class MRZR_MODEL {ORIGINAL, MODIFIED};
+
+MRZR_MODEL model = MRZR_MODEL::ORIGINAL;
+
+// -----------------------------------------------------------------------------
+
 std::string terrain_dir = "terrain/sph/rms2.0_4.0_0.0";
 ////std::string terrain_dir = "terrain/sph/rms4.0_4.0_0.0";
 
@@ -496,10 +502,13 @@ std::shared_ptr<WheeledVehicle> CreateVehicle(ChSystem& sys,
                                               const ChCoordsys<>& init_pos,
                                               ChSystemFsi& sysFSI,
                                               std::shared_ptr<fsi::SimParams> params) {
-    std::string vehicle_json = "mrzr/vehicle/MRZR.json";
-    ////std::string powertrain_json = "mrzr/powertrain/MRZR_SimplePowertrain.json";
-    std::string powertrain_json = "mrzr/powertrain/MRZR_SimpleMapPowertrain.json";
-    std::string tire_json = "mrzr/tire/MRZR_RigidTire.json";
+    std::string model_dir = (model == MRZR_MODEL::ORIGINAL) ? "mrzr/JSON_orig/" : "mrzr/JSON_new/";
+
+    std::string vehicle_json = model_dir + "vehicle/MRZR.json";
+    ////std::string powertrain_json = model_dir + "powertrain/MRZR_SimplePowertrain.json";
+    std::string powertrain_json = model_dir + "powertrain/MRZR_SimpleMapPowertrain.json";
+    std::string tire_json = model_dir + "tire/MRZR_RigidTire.json";
+
     std::string tire_coll_obj = "mrzr/meshes_new/Polaris_tire_collision.obj";
 
     // Create and initialize the vehicle

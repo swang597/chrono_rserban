@@ -39,6 +39,12 @@ using namespace chrono::vehicle;
 
 // =============================================================================
 
+enum class MRZR_MODEL { ORIGINAL, MODIFIED };
+
+MRZR_MODEL model = MRZR_MODEL::MODIFIED;
+
+// -----------------------------------------------------------------------------
+
 // JSON files for terrain
 std::string rigidterrain_file("terrain/RigidPlane.json");
 ////std::string rigidterrain_file("terrain/RigidMesh.json");
@@ -53,15 +59,18 @@ double initYaw = 20 * CH_C_DEG_TO_RAD;
 // Simulation step size
 double step_size = 2e-3;
 
-// Output directory
-const std::string out_dir = "../POLARIS_MRZR";
-const std::string veh_dir = out_dir + "/JSON";
-
 // =============================================================================
 
 int main(int argc, char* argv[]) {
+    std::string model_dir = (model == MRZR_MODEL::ORIGINAL) ? "mrzr/JSON_orig/" : "mrzr/JSON_new/";
+
+    std::string vehicle_json = model_dir + "vehicle/MRZR.json";
+    ////std::string powertrain_json = model_dir + "powertrain/MRZR_SimplePowertrain.json";
+    std::string powertrain_json = model_dir + "powertrain/MRZR_SimpleMapPowertrain.json";
+    std::string tire_json = model_dir + "tire/MRZR_TMeasyTire.json";
+
     // Create the vehicle system
-    WheeledVehicle vehicle(vehicle::GetDataFile("mrzr/vehicle/MRZR.json"), ChContactMethod::SMC);
+    WheeledVehicle vehicle(vehicle::GetDataFile(vehicle_json), ChContactMethod::SMC);
     vehicle.Initialize(ChCoordsys<>(initLoc, Q_from_AngZ(initYaw)));
     vehicle.GetChassis()->SetFixed(false);
     vehicle.SetChassisVisualizationType(VisualizationType::NONE);
@@ -70,14 +79,13 @@ int main(int argc, char* argv[]) {
     vehicle.SetWheelVisualizationType(VisualizationType::MESH);
 
     // Create and initialize the powertrain system
-    ////auto powertrain = ReadPowertrainJSON(vehicle::GetDataFile("mrzr/powertrain/MRZR_SimplePowertrain.json"));
-    auto powertrain = ReadPowertrainJSON(vehicle::GetDataFile("mrzr/powertrain/MRZR_SimpleMapPowertrain.json"));
+    auto powertrain = ReadPowertrainJSON(vehicle::GetDataFile(powertrain_json));
     vehicle.InitializePowertrain(powertrain);
 
     // Create and initialize the tires
     for (auto& axle : vehicle.GetAxles()) {
         for (auto& wheel : axle->GetWheels()) {
-            auto tire = ReadTireJSON(vehicle::GetDataFile("mrzr/tire/MRZR_TMeasyTire.json"));
+            auto tire = ReadTireJSON(vehicle::GetDataFile(tire_json));
             vehicle.InitializeTire(tire, wheel, VisualizationType::MESH);
         }
     }
@@ -102,27 +110,6 @@ int main(int argc, char* argv[]) {
     driver.SetThrottleDelta(0.02);
     driver.SetBrakingDelta(0.06);
     driver.Initialize();
-
-    // Initialize output directories
-    if (!filesystem::create_directory(filesystem::path(out_dir))) {
-        std::cout << "Error creating directory " << out_dir << std::endl;
-        return 1;
-    }
-    if (!filesystem::create_directory(filesystem::path(veh_dir))) {
-        std::cout << "Error creating directory " << veh_dir << std::endl;
-        return 1;
-    }
-
-    // Generate JSON information with available output channels
-    ////std::string out_json = vehicle.ExportComponentList();
-    ////std::cout << out_json << std::endl;
-    ////vehicle.ExportComponentList(veh_dir + "/component_list.json");
-    ////vehicle.LogSubsystemTypes();
-
-    // Optionally, enable output from selected vehicle subsystems
-    ////vehicle.SetSuspensionOutput(0, true);
-    ////vehicle.SetSuspensionOutput(1, true);
-    ////vehicle.SetOutput(ChVehicleOutput::ASCII, veh_dir, "output", 0.1);
 
     // Modify solver settings if the vehicle model contains bushings
     if (vehicle.HasBushings()) {
