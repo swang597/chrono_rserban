@@ -72,6 +72,8 @@ double vis_output_fps = 100;
 
 class DataWriter {
   public:
+
+    /// Construct an output data writer for the specified FSI system and vehicle.
     DataWriter(std::shared_ptr<ChSystemFsi_impl> sysFSI, std::shared_ptr<WheeledVehicle> vehicle)
         : m_sysFSI(sysFSI), m_vehicle(vehicle), m_out_vel(false), m_filter(true), m_filter_window(0.25) {
         m_wheels[0] = vehicle->GetWheel(0, LEFT);
@@ -79,24 +81,60 @@ class DataWriter {
         m_wheels[2] = vehicle->GetWheel(1, LEFT);
         m_wheels[3] = vehicle->GetWheel(1, RIGHT);
 
-        // Set size of sampling box
+        // Set default size of sampling box
         double tire_radius = m_wheels[0]->GetTire()->GetRadius();
         double tire_width = m_wheels[0]->GetTire()->GetWidth();
         m_box_size.x() = std::sqrt(3.0) * tire_radius;
         m_box_size.y() = 1.2 * tire_width;
         m_box_size.z() = 0.3;
 
-        std::cout << "Wheel sampling box size = " << m_box_size << std::endl;
+        // Set default x location of sampling box
+        m_box_x = 0;
     }
 
     ~DataWriter() { m_veh_stream.close(); }
 
+    /// Enable/disable output data running-average filtering (default: true). 
     void UseFilteredData(bool val, double window) {
         m_filter = val;
         m_filter_window = window;
     }
+
+    /// Enable/disable output of SPH particle velocities (default: true).
     void SaveVelocities(bool val) { m_out_vel = val; }
 
+    /// Set the location (relative to wheel center) and dimension (x and y) of the soil sampling domain.
+    void SetSamplingVolume(double x, const ChVector2<>& size) {
+        m_box_size.x() = size.x();
+        m_box_size.y() = size.y();
+        m_box_x = x;
+    }
+
+    /// Initialize the data writer, specifying the output directory and output frequency parameters.
+    ///
+    /// The data writer is reset with a frequency 'major_FPS'.  At each reset time, new sampling volumes are created
+    /// under each wheel and the particle indices in each sampling volume are cached.  Following a reset, the states of
+    /// all tagged particles are saved at 'num_minor' subsequent frames, separated by 'minor_FPS'.
+    ///
+    /// For example, assuming a step_size of 1 ms, a major and minor frequencies of 20 and 200, respectively, and
+    /// num_minor=5, output will be generated at the following simulation frames: 0,5,10,15,20, 50,55,60,65,70,
+    /// 100,105,110,115,120, etc. The sampling boxes and tracked particles are re-evaluated at frames: 0, 50, 100, etc.
+    ///
+    /// Each output frame is uniquely identified with a index of the "major" frame M and an index of the "minor" frame
+    /// m. At each output frame, the following files are generated:
+    /// - soil_M_m_w0.csv, soil_M_m_w1.csv, soil_M_m_w2.csv, soil_M_m_w3.csv
+    ///   which contain the state (position and optionally velocity) of a particle in the sampling volume below the
+    ///   corresponding wheel.  Wheels are counted front-to-back and left-to-right; i.e., in the order FL, FR, RL, RR.
+    /// - vehicle_M_m.csv
+    ///   each containing 9 lines as follows:
+    ///   line 1: vehicle position, orientation, linear velocity, angular velocity (3+4+3+3 values)
+    ///   line 2-5: wheel position, orientation, linear velocity, angular velocity (3+4+3+3 values per line)
+    ///   line 6-9: tire force and moment (3+3 calues per line)
+    ///
+    /// Positions and orientations are relative to the global frame. 
+    /// Rotations are provided as a quaternion (w,x,y,z).
+    /// Linear and angular velocities are relative to and expressed in the global frame.
+    /// Tire forces and moments are assumed applied at the wheel/tire center and are given in the global frame.
     void Initialize(const std::string& dir, double major_FPS, double minor_FPS, int num_minor, double step_size) {
         m_dir = dir;
         m_out_frames = num_minor;
@@ -121,8 +159,14 @@ class DataWriter {
 
         std::string filename = m_dir + "/vehicle.csv";
         m_veh_stream.open(filename, std::ios_base::trunc);
+
+        std::cout << "Wheel sampling box size:       " << m_box_size << std::endl;
+        std::cout << "Wheel sampling box x location: " << m_box_x << std::endl;
     }
 
+    /// Run the data writer at the current simulation frame.
+    /// This function must be called at each simulation frame; output occurs only at those frames that are consistent
+    /// with the given output frequencies.
     void Process(int sim_frame) {
         CollectVehicleData();
 
@@ -151,7 +195,7 @@ class DataWriter {
             ChVector<> Z_dir(0, 0, 1);
             ChVector<> X_dir = Vcross(wheel_normal, ChVector<>(0, 0, 1)).GetNormalized();
             ChVector<> Y_dir = Vcross(Z_dir, X_dir);
-            ChVector<> box_pos(wheel_pos - ChVector<>(0, 0, tire_radius));
+            ChVector<> box_pos(wheel_pos + ChVector<>(m_box_x, 0, -tire_radius));
             ChMatrix33<> box_rot(X_dir, Y_dir, Z_dir);
 
             m_indices[i] = FindParticlesInBox(m_sysFSI, ConvertOBB(ChFrame<>(box_pos, box_rot), m_box_size));
@@ -319,6 +363,7 @@ class DataWriter {
 
     bool m_out_vel;
     ChVector<> m_box_size;
+    double m_box_x;
 
     bool m_filter;
     double m_filter_window;
