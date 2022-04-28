@@ -1,0 +1,51 @@
+{
+  "Name":     "MRZR orig",
+  "Type":     "Vehicle",
+  "Template": "WheeledVehicle",
+
+  "Chassis":
+  {
+    "Input File":                "mrzr/JSON_orig/chassis/MRZR_Chassis.json"
+  },
+
+  "Axles":
+  [
+    {
+      "Suspension Input File":   "mrzr/JSON_orig/suspension/MRZR_Front_DoubleWishbone.json",
+      ////"Suspension Location":     [0, 0, 0],
+      "Suspension Location":     [0, 0, 0.07],
+      "Steering Index":          0,
+      "Left Wheel Input File":   "mrzr/JSON_orig/wheel/MRZR_Wheel.json",
+      "Right Wheel Input File":  "mrzr/JSON_orig/wheel/MRZR_Wheel.json",
+      "Left Brake Input File":   "mrzr/JSON_orig/brake/MRZR_BrakeSimple.json",
+      "Right Brake Input File":  "mrzr/JSON_orig/brake/MRZR_BrakeSimple.json"
+    },
+
+    {
+      "Suspension Input File":   "mrzr/JSON_orig/suspension/MRZR_Rear_TrailingArm.json",
+      ////"Suspension Location":     [0, 0, 0],
+      "Suspension Location":     [0, 0, 0.07],
+      "Left Wheel Input File":   "mrzr/JSON_orig/wheel/MRZR_Wheel.json",
+      "Right Wheel Input File":  "mrzr/JSON_orig/wheel/MRZR_Wheel.json",
+      "Left Brake Input File":   "mrzr/JSON_orig/brake/MRZR_BrakeSimple.json",
+      "Right Brake Input File":  "mrzr/JSON_orig/brake/MRZR_BrakeSimple.json",
+      "Antirollbar Input File":  "mrzr/JSON_orig/antirollbar/MRZR_Antirollbar.json",
+      "Antirollbar Location":    [-1.999488, 0, 0.4318]
+    }
+  ],
+
+  "Steering Subsystems":
+  [
+    {
+      "Input File":           "mrzr/JSON_orig/steering/MRZR_PitmanArm.json",
+      "Location":             [-0.13716, 0, 0.50292],
+      "Orientation":          [1, 0, 0, 0]
+    }
+  ],
+
+  "Driveline":
+  {
+    "Input File":           "mrzr/JSON_orig/driveline/MRZR_4WD.json",
+    "Suspension Indexes":   [0, 1]
+  }
+}
