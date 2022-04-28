@@ -64,9 +64,6 @@ class CH_MODELS_API M113a_TrackShoeSinglePin : public ChTrackShoeSinglePin {
     /// Create the contact materials.
     void CreateContactMaterials(ChContactMethod contact_method) override;
 
-    /// Add visualization assets for the track shoe subsystem.
-    virtual void AddVisualizationAssets(VisualizationType vis) override;
-
     static const double m_shoe_height;
     static const double m_shoe_pitch;
     static const double m_shoe_mass;

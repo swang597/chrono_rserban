@@ -140,8 +140,8 @@ void WVP_Pac89Tire::AddVisualizationAssets(VisualizationType vis) {
 }
 
 void WVP_Pac89Tire::RemoveVisualizationAssets() {
+    ChPart::RemoveVisualizationAsset(m_wheel->GetSpindle(), m_trimesh_shape);
     ChPac89Tire::RemoveVisualizationAssets();
-    RemoveVisualizationMesh(m_trimesh_shape);
 }
 
 }  // end namespace wvp

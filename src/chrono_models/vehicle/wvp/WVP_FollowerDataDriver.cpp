@@ -67,7 +67,7 @@ void WVP_FollowerDataDriver::Create() {
     path_asset->SetLineGeometry(chrono_types::make_shared<geometry::ChLineBezier>(m_steeringPID.GetPath()));
     path_asset->SetColor(ChColor(0.0f, 0.8f, 0.0f));
     path_asset->SetName(m_pathName);
-    road->AddAsset(path_asset);
+    road->AddVisualShape(path_asset);
 }
 
 void WVP_FollowerDataDriver::Reset() {
