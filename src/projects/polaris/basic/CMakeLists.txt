@@ -11,6 +11,7 @@ endif()
 
 set(PROGRAMS
     test_Polaris
+    test_Polaris_Accel
     test_Polaris_DLC
 )
 

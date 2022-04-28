@@ -1,7 +1,7 @@
 // =============================================================================
 // PROJECT CHRONO - http://projectchrono.org
 //
-// Copyright (c) 2014 projectchrono.org
+// Copyright (c) 2022 projectchrono.org
 // All rights reserved.
 //
 // Use of this source code is governed by a BSD-style license that can be found
@@ -60,19 +60,18 @@ const std::string veh_dir = out_dir + "/JSON";
 // =============================================================================
 
 int main(int argc, char* argv[]) {
-    GetLog() << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
-
     // Create the vehicle system
     WheeledVehicle vehicle(vehicle::GetDataFile("mrzr/vehicle/MRZR.json"), ChContactMethod::SMC);
     vehicle.Initialize(ChCoordsys<>(initLoc, Q_from_AngZ(initYaw)));
     vehicle.GetChassis()->SetFixed(false);
-    vehicle.SetChassisVisualizationType(VisualizationType::MESH);
+    vehicle.SetChassisVisualizationType(VisualizationType::NONE);
     vehicle.SetSuspensionVisualizationType(VisualizationType::PRIMITIVES);
     vehicle.SetSteeringVisualizationType(VisualizationType::PRIMITIVES);
     vehicle.SetWheelVisualizationType(VisualizationType::MESH);
 
     // Create and initialize the powertrain system
-    auto powertrain = ReadPowertrainJSON(vehicle::GetDataFile("mrzr/powertrain/MRZR_SimplePowertrain.json"));
+    ////auto powertrain = ReadPowertrainJSON(vehicle::GetDataFile("mrzr/powertrain/MRZR_SimplePowertrain.json"));
+    auto powertrain = ReadPowertrainJSON(vehicle::GetDataFile("mrzr/powertrain/MRZR_SimpleMapPowertrain.json"));
     vehicle.InitializePowertrain(powertrain);
 
     // Create and initialize the tires
