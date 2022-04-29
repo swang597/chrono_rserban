@@ -22,7 +22,7 @@
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"
 #include "chrono_vehicle/terrain/CRGTerrain.h"
-#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
+#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleVisualSystemIrrlicht.h"
 
 #include "chrono_models/vehicle/hmmwv/HMMWV.h"
 
@@ -111,19 +111,15 @@ int main(int argc, char* argv[]) {
     // ---------------------------------------
     // Create the vehicle Irrlicht application
     // ---------------------------------------
-    ChWheeledVehicleIrrApp app(&my_hmmwv.GetVehicle(), L"OpenCRG Demo SR Steering",
-                               irr::core::dimension2d<irr::u32>(1600, 1200));
-
-    app.SetHUDLocation(500, 20);
-    app.AddLogo();
-    app.AddTypicalLights();
-    app.SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 6.0, 0.5);
-
-    app.SetTimestep(step_size);
-
-    // Finalize construction of visualization assets
-    app.AssetBindAll();
-    app.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<ChWheeledVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle("OpenCRG Demo SR Steering");
+    vis->SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 6.0, 0.5);
+    vis->SetHUDLocation(500, 20);
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    my_hmmwv.GetVehicle().SetVisualSystem(vis);
 
     // Output directory
     if (!filesystem::create_directory(filesystem::path(out_dir))) {
@@ -145,12 +141,12 @@ int main(int argc, char* argv[]) {
     std::cout << "Closed loop?     " << path_is_closed << std::endl;
     std::cout << "Set end time to: " << t_end << std::endl;
 
-    app.SetChaseCameraPosition(ChVector<>(450, 35, 15));
-    app.SetChaseCameraState(utils::ChChaseCamera::State::Free);
-    app.SetChaseCameraAngle(-150.0 * CH_C_DEG_TO_RAD);
-    app.EnableStats(false);
+    vis->SetChaseCameraPosition(ChVector<>(450, 35, 15));
+    vis->SetChaseCameraState(utils::ChChaseCamera::State::Free);
+    vis->SetChaseCameraAngle(-150.0 * CH_C_DEG_TO_RAD);
+    vis->EnableStats(false);
 
-    while (app.GetDevice()->run()) {
+    while (vis->Run()) {
         double time = my_hmmwv.GetSystem()->GetChTime();
         if (time >= t_end)
             break;
@@ -159,21 +155,21 @@ int main(int argc, char* argv[]) {
         ChDriver::Inputs driver_inputs = driver.GetInputs();
 
         // Render scene
-        app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-        app.DrawAll();
-        app.EndScene();
+        vis->BeginScene();
+        vis->DrawAll();
+        vis->EndScene();
 
         // Update modules (process inputs from other modules)
         driver.Synchronize(time);
         terrain.Synchronize(time);
         my_hmmwv.Synchronize(time, driver_inputs, terrain);
-        app.Synchronize("", driver_inputs);
+        vis->Synchronize("", driver_inputs);
 
         // Advance simulation for one timestep for all modules
         driver.Advance(step_size);
         terrain.Advance(step_size);
         my_hmmwv.Advance(step_size);
-        app.Advance(step_size);
+        vis->Advance(step_size);
 
         if (time > 1) {
             break;
@@ -186,7 +182,7 @@ int main(int argc, char* argv[]) {
     utils::WriteVisualizationAssets(my_hmmwv.GetSystem(), filename1);
 
     std::string filename2 = out_dir + "/" + filesystem::path(crg_road_file).stem() + ".jpg";
-    app.WriteImageToFile(filename2);
+    vis->WriteImageToFile(filename2);
 
 
     return 0;

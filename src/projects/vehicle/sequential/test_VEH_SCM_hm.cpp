@@ -18,7 +18,7 @@
 #include "chrono/physics/ChSystemSMC.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
 
-#include "chrono_irrlicht/ChIrrApp.h"
+#include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/terrain/SCMDeformableTerrain.h"
@@ -27,7 +27,6 @@
 
 using namespace chrono;
 using namespace chrono::irrlicht;
-using namespace irr;
 
 int main(int argc, char* argv[]) {
     GetLog() << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
@@ -38,13 +37,6 @@ int main(int argc, char* argv[]) {
 
     ChSystemSMC my_system;
     my_system.Set_G_acc(ChVector<>(0., 0, -9.8));
-
-    // Create the Irrlicht visualization
-    ChIrrApp application(&my_system, L"SCM test", core::dimension2d<u32>(1280, 720), VerticalDir::Z);
-    application.AddLogo();
-    application.AddSkyBox();
-    application.AddTypicalLights();
-    application.AddCamera(core::vector3df(2.0f, 2.0f, 2.5f));
 
     std::shared_ptr<ChBody> mtruss(new ChBody);
     mtruss->SetBodyFixed(true);
@@ -70,11 +62,8 @@ int main(int argc, char* argv[]) {
     cyl_shape->GetCylinderGeometry().rad = radius;
     cyl_shape->GetCylinderGeometry().p1 = ChVector<>(0, +width / 2, 0);
     cyl_shape->GetCylinderGeometry().p2 = ChVector<>(0, -width / 2, 0);
-    mrigidbody->AddAsset(cyl_shape);
-
-    std::shared_ptr<ChColorAsset> mcol(new ChColorAsset);
-    mcol->SetColor(ChColor(0.3f, 0.3f, 0.3f));
-    mrigidbody->AddAsset(mcol);
+    cyl_shape->SetColor(ChColor(0.3f, 0.3f, 0.3f));
+    mrigidbody->AddVisualShape(cyl_shape);
 
     auto motor = chrono_types::make_shared<ChLinkMotorRotationAngle>();
     motor->SetSpindleConstraint(ChLinkMotorRotation::SpindleConstraint::OLDHAM);
@@ -106,17 +95,26 @@ int main(int argc, char* argv[]) {
     ////mterrain.SetPlotType(vehicle::SCMDeformableTerrain::PLOT_SINKAGE, 0, 0.15);
     mterrain.GetMesh()->SetWireframe(true);
 
-    application.AssetBindAll();
-    application.AssetUpdateAll();
-    application.SetTimestep(0.002);
+    // Create the Irrlicht visualization
+    auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
+    my_system.SetVisualSystem(vis);
+    vis->SetCameraVertical(CameraVerticalDir::Z);
+    vis->SetWindowSize(800, 600);
+    vis->SetWindowTitle("SCM test");
+    vis->Initialize();
+    vis->AddLogo();
+    vis->AddSkyBox();
+    vis->AddCamera(ChVector<>(2, 2, 2.5));
+    vis->AddTypicalLights();
 
-    while (application.GetDevice()->run()) {
-        application.BeginScene();
-        application.GetActiveCamera()->setTarget(core::vector3dfCH(mrigidbody->GetPos()));
-        application.GetActiveCamera()->setPosition(core::vector3dfCH(mrigidbody->GetPos() + ChVector<>(0, 2, 0)));
-        application.DrawAll();
-        application.DoStep();
-        application.EndScene();
+
+    while (vis->Run()) {
+        vis->BeginScene();
+        vis->GetActiveCamera()->setTarget(irr::core::vector3dfCH(mrigidbody->GetPos()));
+        vis->GetActiveCamera()->setPosition(irr::core::vector3dfCH(mrigidbody->GetPos() + ChVector<>(0, 2, 0)));
+        vis->DrawAll();
+        vis->EndScene();
+        my_system.DoStepDynamics(2e-3);
     }
 
     return 0;

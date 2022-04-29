@@ -19,7 +19,7 @@
     #include "chrono_mumps/ChSolverMumps.h"
 #endif
 
-#include "chrono_irrlicht/ChIrrApp.h"
+#include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 
 #include "chrono_vehicle/chassis/ChRigidChassis.h"
 #include "chrono_vehicle/tracked_vehicle/ChTrackedVehicle.h"
@@ -287,14 +287,16 @@ int main(int argc, char* argv[]) {
     auto radius = track->GetRadius();
 
     // Create the Irrlicht application
-    ChIrrApp application(&sys, L"Track test", irr::core::dimension2d<irr::u32>(800, 600), VerticalDir::Z);
-    application.AddLogo();
-    application.AddSkyBox();
-    application.AddTypicalLights();
-    application.AddCamera(irr::core::vector3df(0, 1, radius), irr::core::vector3df(0, 0, radius));
-
-    application.AssetBindAll();
-    application.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
+    sys.SetVisualSystem(vis);
+    vis->SetWindowSize(800, 600);
+    vis->SetCameraVertical(CameraVerticalDir::Z);
+    vis->SetWindowTitle("Track test");
+    vis->Initialize();
+    vis->AddLogo();
+    vis->AddSkyBox();
+    vis->AddCamera(ChVector<>(0, 1, radius), ChVector<>(0, 0, radius));
+    vis->AddTypicalLights();
 
     if (!filesystem::create_directory(filesystem::path(out_dir))) {
         std::cout << "Error creating directory " << out_dir << std::endl;
@@ -304,11 +306,11 @@ int main(int argc, char* argv[]) {
 
     // Simulation loop
     int frame = 0;
-    while (application.GetDevice()->run()) {
+    while (vis->Run()) {
         std::cout << sys.GetChTime() << " ========================================" << std::endl;
-        application.BeginScene();
-        application.DrawAll();
-        application.EndScene();
+        vis->BeginScene();
+        vis->DrawAll();
+        vis->EndScene();
 
         sys.DoStepDynamics(step_size);
         frame++;

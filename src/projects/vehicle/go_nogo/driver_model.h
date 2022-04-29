@@ -68,7 +68,7 @@ inline GONOGO_Driver::GONOGO_Driver(chrono::vehicle::ChVehicle& vehicle,
     path_asset->SetLineGeometry(chrono_types::make_shared<chrono::geometry::ChLineBezier>(m_steeringPID.GetPath()));
     path_asset->SetColor(chrono::ChColor(0.0f, 0.8f, 0.0f));
     path_asset->SetName("straight_path");
-    road->AddAsset(path_asset);
+    road->AddVisualShape(path_asset);
 }
 
 inline void GONOGO_Driver::Synchronize(double time) {

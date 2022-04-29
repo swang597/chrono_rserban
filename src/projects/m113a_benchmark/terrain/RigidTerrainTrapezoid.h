@@ -38,7 +38,6 @@
 #include <string>
 
 #include "chrono/assets/ChColor.h"
-#include "chrono/assets/ChColorAsset.h"
 #include "chrono/physics/ChBody.h"
 #include "chrono/physics/ChSystem.h"
 #include "chrono/core/ChVector2.h"
@@ -53,9 +52,6 @@ class RigidTerrainTrapezoid : public ChTerrain {
   public:
     RigidTerrainTrapezoid(ChSystem* system);
     ~RigidTerrainTrapezoid() {}
-
-    /// Set visualization color.
-    void SetColor(ChColor color);
 
     /// Set texture properties.
     void SetTexture(const std::string tex_file,  ///< [in] texture filename
@@ -107,7 +103,6 @@ class RigidTerrainTrapezoid : public ChTerrain {
 
   private:
     std::shared_ptr<ChBody> m_ground;
-    std::shared_ptr<ChColorAsset> m_color;
     double m_height1;
     double m_height2;
     double m_height3;

@@ -47,8 +47,8 @@ const double M113a_Idler::m_tensioner_f = 5e4;//2e4;
 const double M113a_Idler::m_tensioner_k = 1e7;
 const double M113a_Idler::m_tensioner_c = 4e4;
 
-const std::string M113a_IdlerLeft::m_meshFile = "M113/Idler_L.obj";
-const std::string M113a_IdlerRight::m_meshFile = "M113/Idler_R.obj";
+const std::string M113a_IdlerLeft::m_meshFile = "M113/meshes/Idler_L.obj";
+const std::string M113a_IdlerRight::m_meshFile = "M113/meshes/Idler_R.obj";
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------

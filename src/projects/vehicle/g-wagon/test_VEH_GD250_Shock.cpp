@@ -40,7 +40,7 @@
 #include "chrono_models/vehicle/g-wagon/gd250.h"
 
 #ifdef CHRONO_IRRLICHT
-    #include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
+    #include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleVisualSystemIrrlicht.h"
     // specify whether the demo should actually use Irrlicht
     #define USE_IRRLICHT
 #endif
@@ -199,25 +199,23 @@ int main(int argc, char* argv[]) {
 
         ChISO2631_Shock_SeatCushionLogger seat_logger(step_size);
 
-#ifdef USE_IRRLICHT
-        std::wstring windowTitle = L"Mercedes GD250 Shock Test";
-
-        ChWheeledVehicleIrrApp app(&gd250.GetVehicle(), windowTitle);
-
-        app.AddTypicalLights();
-        app.SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 6.0, 0.5);
-
-        app.SetTimestep(step_size);
-
-        app.AssetBindAll();
-        app.AssetUpdateAll();
-#endif
-
         // Create the driver
         auto path = ChBezierCurve::read(vehicle::GetDataFile(path_file));
         ChPathFollowerDriver driver(gd250.GetVehicle(), vehicle::GetDataFile(steering_controller_file),
-                vehicle::GetDataFile(speed_controller_file), path, "my_path", target_speed * mph_to_ms, false);
+                                    vehicle::GetDataFile(speed_controller_file), path, "my_path",
+                                    target_speed * mph_to_ms, false);
         driver.Initialize();
+
+#ifdef USE_IRRLICHT
+        auto vis = chrono_types::make_shared<ChWheeledVehicleVisualSystemIrrlicht>();
+        vis->SetWindowTitle("Mercedes GD250 Shock Test");
+        vis->SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 6.0, 0.5);
+        vis->Initialize();
+        vis->AddTypicalLights();
+        vis->AddSkyBox();
+        vis->AddLogo();
+        gd250.GetVehicle().SetVisualSystem(vis);
+#endif
 
         // ---------------
         // Simulation loop
@@ -229,10 +227,10 @@ int main(int argc, char* argv[]) {
 
 #ifdef USE_IRRLICHT
 
-        while (app.GetDevice()->run()) {
+        while (vis->Run()) {
             // Render scene
-            app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-            app.DrawAll();
+            vis->BeginScene();
+            vis->DrawAll();
 
             // Driver inputs
             ChDriver::Inputs driver_inputs = driver.GetInputs();
@@ -242,13 +240,13 @@ int main(int argc, char* argv[]) {
             driver.Synchronize(time);
             gd250.Synchronize(time, driver_inputs, terrain);
             terrain.Synchronize(time);
-            app.Synchronize("", driver_inputs);
+            vis->Synchronize("", driver_inputs);
 
             // Advance simulation for one timestep for all modules
             driver.Advance(step_size);
             gd250.Advance(step_size);
             terrain.Advance(step_size);
-            app.Advance(step_size);
+            vis->Advance(step_size);
 
             double xpos = gd250.GetVehicle().GetPos().x();
             if (xpos >= xend) {
@@ -260,7 +258,7 @@ int main(int argc, char* argv[]) {
                 seat_logger.AddData(seat_acc);
             }
 
-            app.EndScene();
+            vis->EndScene();
         }
 
 #else

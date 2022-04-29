@@ -48,7 +48,7 @@
 // Uncomment the following line to unconditionally disable Irrlicht support
 //#undef CHRONO_IRRLICHT
 #ifdef CHRONO_IRRLICHT
-#include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleIrrApp.h"
+#include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleVisualSystemIrrlicht.h"
 #endif
 
 #include "../terrain/RigidTerrainTrapezoid.h"
@@ -169,9 +169,8 @@ int main(int argc, char* argv[]) {
     //    Upslopes and downslopes are set to the same angle
     //    so that the middle flat area is at height "height"
     RigidTerrainTrapezoid terrain(vehicle.GetSystem());
-    terrain.SetColor(ChColor(0.4f, 0.2f, 0.0f));
-    terrain.SetTexture(vehicle::GetDataFile("terrain/textures/dirt.jpg"), 12, 12);
     terrain.Initialize(patch_mat, 0, height, 0, angle, angle, 10, width, 100, 400);
+    terrain.SetTexture(vehicle::GetDataFile("terrain/textures/dirt.jpg"), 12, 12);
 
     // -------------------------------------
     // Create the driver system
@@ -186,11 +185,14 @@ int main(int argc, char* argv[]) {
     // Create the vehicle Irrlicht application
     // ---------------------------------------
 
-    ChTrackedVehicleIrrApp app(&vehicle, L"M113 gap crossing, trapezoidal barrier climb, trapezoidal ditch crossing");
-    app.AddTypicalLights();
-    app.SetChaseCamera(trackPoint, 6.0, 0.5);
-    app.AssetBindAll();
-    app.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<ChTrackedVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle("M113 gap crossing, trapezoidal barrier climb, trapezoidal ditch crossing");
+    vis->SetChaseCamera(trackPoint, 6.0, 0.5);
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    vehicle.SetVisualSystem(vis);
 
 #endif
 
@@ -254,7 +256,7 @@ int main(int argc, char* argv[]) {
 
 #ifdef CHRONO_IRRLICHT
 
-    while (app.GetDevice()->run()) {
+    while (vis->Run()) {
         time = vehicle.GetChTime();
 
         // End simulation
@@ -281,9 +283,9 @@ int main(int argc, char* argv[]) {
         // Render scene
         if (step_number % render_steps == 0) {
 #ifdef CHRONO_IRRLICHT
-            app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-            app.DrawAll();
-            app.EndScene();
+            vis->BeginScene();
+            vis->DrawAll();
+            vis->EndScene();
 #endif
 
             if (povray_output) {
@@ -347,7 +349,7 @@ int main(int argc, char* argv[]) {
         vehicle.Synchronize(time, driver_inputs, shoe_forces_left, shoe_forces_right);
         terrain.Synchronize(time);
 #ifdef CHRONO_IRRLICHT
-        app.Synchronize("Follower driver", driver_inputs);
+        vis->Synchronize("Follower driver", driver_inputs);
 #endif
 
         // Advance simulation for one timestep for all modules
@@ -355,7 +357,7 @@ int main(int argc, char* argv[]) {
         terrain.Advance(step_size);
         vehicle.Advance(step_size);
 #ifdef CHRONO_IRRLICHT
-        app.Advance(step_size);
+        vis->Advance(step_size);
 #endif
 
         // Increment frame number

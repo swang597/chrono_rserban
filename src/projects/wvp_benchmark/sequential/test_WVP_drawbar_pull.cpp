@@ -31,7 +31,7 @@
 
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/terrain/SCMDeformableTerrain.h"
-#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
+#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleVisualSystemIrrlicht.h"
 
 #include "chrono_models/vehicle/wvp/WVP.h"
 
@@ -177,9 +177,8 @@ int main(int argc, char* argv[]) {
         cyl->GetCylinderGeometry().rad = 0.02;
         cyl->GetCylinderGeometry().p1 = ChVector<>(-terrainLength / 2, 0, rigLoc.z());
         cyl->GetCylinderGeometry().p2 = ChVector<>(+terrainLength / 2, 0, rigLoc.z());
-        ground->AddAsset(cyl);
-        auto col = chrono_types::make_shared<ChColorAsset>(0.2f, 0.3f, 0.6f);
-        ground->AddAsset(col);
+        cyl->SetColor(ChColor(0.2f, 0.3f, 0.6f));
+        ground->AddVisualShape(cyl);
     }
 
     auto rig = std::shared_ptr<ChBody>(wvp.GetSystem()->NewBody());
@@ -192,7 +191,7 @@ int main(int argc, char* argv[]) {
     {
         auto box = chrono_types::make_shared<ChBoxShape>();
         box->GetBoxGeometry().SetLengths(ChVector<>(1, 0.4, 0.4));
-        rig->AddAsset(box);
+        rig->AddVisualShape(box);
     }
 
     auto prismatic1 = chrono_types::make_shared<ChLinkLockPrismatic>();
@@ -286,11 +285,15 @@ int main(int argc, char* argv[]) {
     // Create the vehicle Irrlicht interface
     // -------------------------------------
 
-    ChWheeledVehicleIrrApp app(&wvp.GetVehicle(), L"WVP sequential test");
-    app.AddTypicalLights();
-    app.SetChaseCamera(ChVector<>(-2.0, 0.0, 1.75), 6.0, 0.5);
-    app.AssetBindAll();
-    app.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<ChWheeledVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle("WVP sequential test");
+    vis->SetChaseCamera(ChVector<>(-2.0, 0.0, 1.75), 6.0, 0.5);
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    wvp.GetVehicle().SetVisualSystem(vis);
+
 #endif
 
     // -------------
@@ -332,13 +335,13 @@ int main(int argc, char* argv[]) {
             break;
 
 #ifdef USE_IRRLICHT
-        if (!app.GetDevice()->run())
+        if (!vis->Run())
             break;
 
         // Render scene
-        app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-        app.DrawAll();
-        app.EndScene();
+        vis->BeginScene();
+        vis->DrawAll();
+        vis->EndScene();
 #endif
 
         time = wvp.GetSystem()->GetChTime();
@@ -353,14 +356,14 @@ int main(int argc, char* argv[]) {
         terrain->Synchronize(time);
         wvp.Synchronize(time, driver_inputs, *terrain);
 #ifdef USE_IRRLICHT
-        app.Synchronize("", driver_inputs);
+        vis->Synchronize("", driver_inputs);
 #endif
 
         // Advance simulation for one timestep for all modules
         terrain->Advance(step_size);
         wvp.Advance(step_size);
 #ifdef USE_IRRLICHT
-        app.Advance(step_size);
+        vis->Advance(step_size);
 #endif
 
         // Extract simulation outputs

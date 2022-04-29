@@ -41,14 +41,12 @@ TrafficLight::TrafficLight(Framework* framework,
     cyl->GetCylinderGeometry().p1 = ChVector<>(0, 0, 0);
     cyl->GetCylinderGeometry().p2 = ChVector<>(0, 0, 3);
     cyl->GetCylinderGeometry().rad = 0.2;
-    m_body->AddAsset(cyl);
+    m_body->AddVisualShape(cyl);
 
     auto sphere = chrono_types::make_shared<ChSphereShape>();
     sphere->GetSphereGeometry().rad = 0.4;
-    sphere->Pos = ChVector<>(0, 0, 3);
-    m_body->AddAsset(sphere);
-
-    m_body->AddAsset(chrono_types::make_shared<ChColorAsset>(ChColor(0.6f, 0, 0)));
+    sphere->SetColor(ChColor(0.6f, 0, 0));
+    m_body->AddVisualShape(sphere, ChFrame<>(ChVector<>(0, 0, 3)));
 
     framework->m_system->AddBody(m_body);
 

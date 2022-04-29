@@ -146,6 +146,9 @@ void GD250_Vehicle::Initialize(const ChCoordsys<>& chassisPos, double chassisFwd
     driven_susp_indexes[0] = 1;
     driven_susp_indexes[1] = 1;
     m_driveline->Initialize(m_chassis, m_axles, driven_susp_indexes);
+
+    // Invoke base class method
+    ChWheeledVehicle::Initialize(chassisPos, chassisFwdVel);
 }
 
 // -----------------------------------------------------------------------------

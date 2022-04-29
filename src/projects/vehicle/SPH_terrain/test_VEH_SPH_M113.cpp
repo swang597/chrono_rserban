@@ -228,7 +228,7 @@ void AddWall(std::shared_ptr<ChBody> body,
     body->GetCollisionModel()->AddBox(mat, dim.x(), dim.y(), dim.z(), loc);
     auto box = chrono_types::make_shared<ChBoxShape>();
     box->GetBoxGeometry().Size = dim;
-    box->GetBoxGeometry().Pos = loc;
+    body->AddVisualShape(box, ChFrame<>(loc));
 }
 
 void CreateSolidPhase(ChSystemNSC& mphysicalSystem, ChSystemFsi& myFsiSystem, std::shared_ptr<fsi::SimParams> paramsH);

@@ -32,7 +32,7 @@
 //#undef CHRONO_IRRLICHT
 #ifdef CHRONO_IRRLICHT
 #include "chrono_vehicle/driver/ChIrrGuiDriver.h"
-#include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleIrrApp.h"
+#include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleVisualSystemIrrlicht.h"
 #endif
 
 #include "../terrain/RigidTerrainSlope.h"      // slope rigid terrain
@@ -134,8 +134,8 @@ int main(int argc, char* argv[]) {
     //    X-Y dimensions of flat areas: 120x40
     ////RigidTerrainStep terrain(vehicle.GetSystem());
     ////terrain.SetColor(ChColor(0.4f, 0.2f, 0.0f));
-    ////terrain.SetTexture(vehicle::GetDataFile("terrain/textures/dirt.jpg"), 12, 12);
     ////terrain.Initialize(patch_mat, 0, 0.2, 120, 40);
+    ////terrain.SetTexture(vehicle::GetDataFile("terrain/textures/dirt.jpg"), 12, 12);
 
     // Slope terrain
     //    height change: 0 -> 15
@@ -143,17 +143,16 @@ int main(int argc, char* argv[]) {
     //    X-Y dimensions of flat areas: 120x40
     ////RigidTerrainSlope terrain(vehicle.GetSystem());
     ////terrain.SetColor(ChColor(0.4f, 0.2f, 0.0f));
-    ////terrain.SetTexture(vehicle::GetDataFile("terrain/textures/dirt.jpg"), 12, 12);
     ////terrain.Initialize(patch_mat, 0, 15, 20, 120, 40);
+    ////terrain.SetTexture(vehicle::GetDataFile("terrain/textures/dirt.jpg"), 12, 12);
 
     // Trapezoid terrain
     //    10cm tall, 50cm top width, 45 deg trapezoid bump at x = -95m
     //    X-Y dimensions of the first flat area: 100x4
     //    X-Y dimensions of the last flat area:  100x4
     RigidTerrainTrapezoid terrain(vehicle.GetSystem());
-    terrain.SetColor(ChColor(0.4f, 0.2f, 0.0f));
-    terrain.SetTexture(vehicle::GetDataFile("terrain/textures/dirt.jpg"), 12, 12);
     terrain.Initialize(patch_mat, 0, 0.1, 0, CH_C_PI_4, CH_C_PI_4, 100, 0.5, 100, 4, -95);
+    terrain.SetTexture(vehicle::GetDataFile("terrain/textures/dirt.jpg"), 12, 12);
 
     // -----------------
     // Initialize output
@@ -186,16 +185,18 @@ int main(int argc, char* argv[]) {
 
 #ifdef CHRONO_IRRLICHT
 
-    ChTrackedVehicleIrrApp app(&vehicle, L"M113 Vehicle Demo");
-    app.AddTypicalLights();
-    app.SetChaseCamera(trackPoint, 6.0, 0.5);
-    app.SetChaseCameraMultipliers(1e-4, 10);
-    app.SetTimestep(step_size);
-    app.AssetBindAll();
-    app.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<ChTrackedVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle("M113 Vehicle Demo");
+    vis->SetChaseCamera(trackPoint, 6.0, 0.5);
+    vis->SetChaseCameraMultipliers(1e-4, 10);
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    vehicle.SetVisualSystem(vis);
 
     // Create the interactive driver system
-    ChIrrGuiDriver driver(app);
+    ChIrrGuiDriver driver(*vis);
 
     // Set the time response for steering and throttle keyboard inputs.
     double steering_time = 1.0;  // time to go from 0 to +1 (or from 0 to -1)
@@ -234,7 +235,7 @@ int main(int argc, char* argv[]) {
 
 #ifdef CHRONO_IRRLICHT
 
-    while (app.GetDevice()->run()) {
+    while (vis->Run()) {
         // Debugging output
         if (dbg_output) {
             cout << "Time: " << vehicle.GetSystem()->GetChTime() << endl;
@@ -261,9 +262,9 @@ int main(int argc, char* argv[]) {
 
         // Render scene
         if (step_number % render_steps == 0) {
-            app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-            app.DrawAll();
-            app.EndScene();
+            vis->BeginScene();
+            vis->DrawAll();
+            vis->EndScene();
 
             if (povray_output) {
                 char filename[100];
@@ -274,7 +275,7 @@ int main(int argc, char* argv[]) {
             if (img_output && step_number > 200) {
                 char filename[100];
                 sprintf(filename, "%s/img_%03d.jpg", img_dir.c_str(), render_frame + 1);
-                app.WriteImageToFile(filename);
+                vis->WriteImageToFile(filename);
             }
 
             render_frame++;
@@ -290,13 +291,13 @@ int main(int argc, char* argv[]) {
         driver.Synchronize(time);
         terrain.Synchronize(time);
         vehicle.Synchronize(time, driver_inputs, shoe_forces_left, shoe_forces_right);
-        app.Synchronize("", driver_inputs);
+        vis->Synchronize("", driver_inputs);
 
         // Advance simulation for one timestep for all modules
         driver.Advance(step_size);
         terrain.Advance(step_size);
         vehicle.Advance(step_size);
-        app.Advance(step_size);
+        vis->Advance(step_size);
 
         // Increment frame number
         step_number++;

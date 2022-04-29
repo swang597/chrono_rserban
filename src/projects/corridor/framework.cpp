@@ -40,7 +40,6 @@ Framework::Framework(const Scene& scene, bool render_coll)
     : m_scene(scene),
       m_render_coll(render_coll),
       m_step(1e-3),
-      m_app(nullptr),
       m_render(true),
       m_verbose(false),
       m_initialized(false) {
@@ -55,7 +54,6 @@ Framework::Framework(const Scene& scene, bool render_coll)
 }
 
 Framework::~Framework() {
-    delete m_app;
     delete m_terrain;
     delete m_system;
 }
@@ -219,12 +217,12 @@ void Framework::Run(double time_end, int fps, bool real_time) {
     timer.start();
     while (time <= time_end) {
         if (m_render) {
-            if (!m_app->GetDevice()->run())
+            if (!m_vis->Run())
                 break;
             if (time >= next_draw) {
-                m_app->BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-                m_app->DrawAll();
-                m_app->EndScene();
+                m_vis->BeginScene();
+                m_vis->DrawAll();
+                m_vis->EndScene();
                 next_draw += delta;
             }
         }
@@ -261,10 +259,7 @@ void Framework::CreateTerrain() {
     std::cout << "  " << bbmax.x() << "  " << bbmax.y() << "  " << bbmax.z() << std::endl;
 
     if (m_render_coll) {
-        auto texture = chrono_types::make_shared<ChTexture>();
-        texture->SetTextureFilename(GetChronoDataFile("concrete.jpg"));
-        texture->SetTextureScale(1, 1);
-        patch->GetGroundBody()->AddAsset(texture);
+        patch->GetGroundBody()->GetVisualShape(0)->SetTexture(GetChronoDataFile("concrete.jpg"), 1, 1);
     }
 
     m_terrain->Initialize();
@@ -285,7 +280,7 @@ void Framework::Initialize() {
         path_asset->SetColor(p.second->m_color);
         path_asset->SetName("path_" + std::to_string(p.first));
         path_asset->SetNumRenderPoints(std::max<unsigned int>(2 * n, 400));
-        road->AddAsset(path_asset);
+        road->AddVisualShape(path_asset);
     }
 
     // Create visualization assets for all traffic lights
@@ -296,7 +291,7 @@ void Framework::Initialize() {
         circle_asset->SetColor(ChColor(1.0f, 0.0f, 0.0f));
         circle_asset->SetName("circle_" + std::to_string(t->GetId()));
         circle_asset->SetLineGeometry(circle_line);
-        road->AddAsset(circle_asset);
+        road->AddVisualShape(circle_asset);
     }
 
     // Create Irrlicht visualization app
@@ -308,16 +303,15 @@ void Framework::Initialize() {
         auto pos1 = pos + ChVector<>(30, -30, 100);
         auto pos2 = pos + ChVector<>(30, +30, 100);
 
-        m_app = new IrrApp(this);
-
-        m_app->AddLogo();
-        m_app->AddTypicalLights();
-        m_app->SetChaseCamera(ChVector<>(0.0, 0.0, .75), 6.0, 0.5);
-        m_app->SetTimestep(m_step);
+        m_vis = chrono_types::make_shared<IrrApp>(this);
+        m_vis->SetChaseCamera(ChVector<>(0.0, 0.0, .75), 6.0, 0.5);
+        m_vis->Initialize();
+        m_vis->AddLogo();
+        m_vis->AddTypicalLights();
 
         // Create scene visualization mesh
         if (!m_render_coll) {
-            auto smanager = m_app->GetSceneManager();
+            auto smanager = m_vis->GetSceneManager();
             auto imesh = smanager->getMesh(GetChronoDataFile(m_scene.m_vis_file).c_str());
 
             {
@@ -349,8 +343,7 @@ void Framework::Initialize() {
         }
 
         // Complete Irrlicht asset construction
-        m_app->AssetBindAll();
-        m_app->AssetUpdateAll();
+        m_system->SetVisualSystem(m_vis);
     }
 
     m_initialized = true;
@@ -376,7 +369,7 @@ void Framework::Advance() {
     }
     if (m_render) {
         std::string msg = m_ego_vehicle->GetTypeName() + std::to_string(m_ego_vehicle->GetId());
-        m_app->Synchronize(msg, m_ego_vehicle->m_driver_inputs);
+        m_vis->Synchronize(msg, m_ego_vehicle->m_driver_inputs);
     }
 
     // advance state of agents and other objects
@@ -385,7 +378,7 @@ void Framework::Advance() {
         a.second->Advance(m_step);
     }
     if (m_render) {
-        m_app->Advance(m_step);
+        m_vis->Advance(m_step);
     }
 
     // advance state of Chrono system

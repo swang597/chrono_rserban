@@ -42,7 +42,7 @@
 // Uncomment the following line to unconditionally disable Irrlicht support
 //#undef CHRONO_IRRLICHT
 #ifdef CHRONO_IRRLICHT
-#include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleIrrApp.h"
+#include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleVisualSystemIrrlicht.h"
 #endif
 
 using namespace chrono;
@@ -226,8 +226,7 @@ int main(int argc, char* argv[]) {
 
     auto box1 = chrono_types::make_shared<ChBoxShape>();
     box1->GetBoxGeometry().Size = ChVector<>(0.5 * rigidLength, 0.5 * terrainWidth, 0.5 * depth);
-    box1->GetBoxGeometry().Pos = ChVector<>(0, 0, -0.5 * depth);
-    ground1->AddAsset(box1);
+    ground1->AddVisualShape(box1, ChFrame<>(ChVector<>(0, 0, -0.5 * depth)));
     ground1->GetCollisionModel()->BuildModel();
 
     auto ground2 = std::shared_ptr<ChBody>(vehicle.GetSystem()->NewBody());
@@ -244,8 +243,7 @@ int main(int argc, char* argv[]) {
 
     auto box2 = chrono_types::make_shared<ChBoxShape>();
     box2->GetBoxGeometry().Size = ChVector<>(0.5 * rigidLength, 0.5 * terrainWidth, 0.5 * depth);
-    box2->GetBoxGeometry().Pos = ChVector<>(0, 0, -0.5 * depth);
-    ground2->AddAsset(box1);
+    ground2->AddVisualShape(box1, ChFrame<>(ChVector<>(0, 0, -0.5 * depth)));
     ground2->GetCollisionModel()->BuildModel();
 
     // -------------------
@@ -264,7 +262,7 @@ int main(int argc, char* argv[]) {
     obstacle->GetCollisionModel()->AddSphere(ground_mat, 3.0);
     auto ball = chrono_types::make_shared<ChSphereShape>();
     ball->GetSphereGeometry().rad = 3.0;
-    obstacle->AddAsset(ball);
+    obstacle->AddVisualShape(ball);
     obstacle->GetCollisionModel()->BuildModel();
 
     // -------------------------------------
@@ -282,15 +280,18 @@ int main(int argc, char* argv[]) {
     // Create the vehicle Irrlicht application
     // ---------------------------------------
 
-    ChTrackedVehicleIrrApp app(&vehicle, L"M113 side slope stability");
-    app.AddTypicalLights();
-    app.SetChaseCamera(trackPoint, 6.0, 0.5);
-    app.AssetBindAll();
-    app.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<ChTrackedVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle("M113 side slope stability");
+    vis->SetChaseCamera(trackPoint, 6.0, 0.5);
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    vehicle.SetVisualSystem(vis);
 
     // Visualization of controller points (sentinel & target)
-    irr::scene::IMeshSceneNode* ballS = app.GetSceneManager()->addSphereSceneNode(0.1f);
-    irr::scene::IMeshSceneNode* ballT = app.GetSceneManager()->addSphereSceneNode(0.1f);
+    irr::scene::IMeshSceneNode* ballS = vis->GetSceneManager()->addSphereSceneNode(0.1f);
+    irr::scene::IMeshSceneNode* ballT = vis->GetSceneManager()->addSphereSceneNode(0.1f);
     ballS->getMaterial(0).EmissiveColor = irr::video::SColor(0, 255, 0, 0);
     ballT->getMaterial(0).EmissiveColor = irr::video::SColor(0, 0, 255, 0);
 
@@ -355,7 +356,7 @@ int main(int argc, char* argv[]) {
 
 #ifdef CHRONO_IRRLICHT
 
-    while (app.GetDevice()->run()) {
+    while (vis->Run()) {
         time = vehicle.GetChTime();
 
         // End simulation
@@ -397,19 +398,19 @@ int main(int argc, char* argv[]) {
         driver.Synchronize(time);
         vehicle.Synchronize(time, driver_inputs, shoe_forces_left, shoe_forces_right);
         terrain->Synchronize(time);
-        app.Synchronize("Follower driver", driver_inputs);
+        vis->Synchronize("Follower driver", driver_inputs);
 
         // Advance simulation for one timestep for all modules
         driver.Advance(step_size);
         terrain->Advance(step_size);
         vehicle.Advance(step_size);
-        app.Advance(step_size);
+        vis->Advance(step_size);
 
         // Render scene
         if (step_number % render_steps == 0) {
-            app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-            app.DrawAll();
-            app.EndScene();
+            vis->BeginScene();
+            vis->DrawAll();
+            vis->EndScene();
 
             if (povray_output) {
                 char filename[100];
@@ -421,7 +422,7 @@ int main(int argc, char* argv[]) {
                         ((SCMDeformableTerrain*)terrain)->GetMesh()->GetMesh()->getCoordsVertices();
                     std::vector<ChVector<int> >& idx_vertices =
                         ((SCMDeformableTerrain*)terrain)->GetMesh()->GetMesh()->getIndicesVertexes();
-                    std::vector<ChVector<float> >& colors =
+                    std::vector<ChColor>& colors =
                         ((SCMDeformableTerrain*)terrain)->GetMesh()->GetMesh()->getCoordsColors();
 
                     std::string delim = ",";
@@ -432,12 +433,11 @@ int main(int argc, char* argv[]) {
                                           vertices[idx_vertices[i].z()]) /
                                          3.0;
                         csv << pos << vertices[idx_vertices[i].x()] << vertices[idx_vertices[i].y()]
-                            << vertices[idx_vertices[i].z()] << (double)colors[idx_vertices[i].x()].x()
-                            << (double)colors[idx_vertices[i].x()].y() << (double)colors[idx_vertices[i].x()].z()
-                            << (double)colors[idx_vertices[i].y()].x() << (double)colors[idx_vertices[i].y()].y()
-                            << (double)colors[idx_vertices[i].y()].z() << (double)colors[idx_vertices[i].z()].x()
-                            << (double)colors[idx_vertices[i].z()].y() << (double)colors[idx_vertices[i].z()].z()
-                            << std::endl;
+                            << vertices[idx_vertices[i].z()] << colors[idx_vertices[i].x()].R
+                            << colors[idx_vertices[i].x()].G << colors[idx_vertices[i].x()].B
+                            << colors[idx_vertices[i].y()].R << colors[idx_vertices[i].y()].G
+                            << colors[idx_vertices[i].y()].B << colors[idx_vertices[i].z()].R
+                            << colors[idx_vertices[i].z()].G << colors[idx_vertices[i].z()].B << std::endl;
                     }
 
                     sprintf(filename, "%s/terrain_%05d.dat", pov_dir.c_str(), render_frame + 1);

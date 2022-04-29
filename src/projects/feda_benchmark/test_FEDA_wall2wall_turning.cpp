@@ -26,7 +26,7 @@
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 #include "chrono_vehicle/driver/ChDataDriver.h"
-#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
+#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleVisualSystemIrrlicht.h"
 
 #include "chrono_models/vehicle/feda/FEDA.h"
 #include "chrono_models/vehicle/feda/FEDA_DoubleWishbone.h"
@@ -143,18 +143,20 @@ int main(int argc, char* argv[]) {
     // Create the vehicle Irrlicht interface
     // Create the driver system
     // -------------------------------------
-    std::wstring wTitle = L"FED Alpha wall2wall turning test";
+    std::string wTitle = "FED Alpha wall2wall turning test";
     if (left_turn)
-        wTitle.append(L" (left)");
+        wTitle.append(" (left)");
     else
-        wTitle.append(L" (right)");
+        wTitle.append(" (right)");
 
-    ChWheeledVehicleIrrApp app(&feda.GetVehicle(), wTitle.c_str());
-    app.AddTypicalLights();
-    app.SetChaseCamera(trackPoint, 8.0, 0.5);
-    app.SetTimestep(step_size);
-    app.AssetBindAll();
-    app.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<ChWheeledVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle(wTitle);
+    vis->SetChaseCamera(trackPoint, 8.0, 0.5);
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    feda.GetVehicle().SetVisualSystem(vis);
 
     ChDataDriver driver(feda.GetVehicle(), vehicle::GetDataFile(driver_file), true);
     driver.Initialize();
@@ -168,14 +170,14 @@ int main(int argc, char* argv[]) {
 
     std::vector<double> turn_x, turn_y;
 
-    while (app.GetDevice()->run()) {
+    while (vis->Run()) {
         double time = feda.GetSystem()->GetChTime();
 
         // Render scene
         if (step_number % render_steps == 0) {
-            app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-            app.DrawAll();
-            app.EndScene();
+            vis->BeginScene();
+            vis->DrawAll();
+            vis->EndScene();
         }
 
         // Driver inputs
@@ -185,13 +187,13 @@ int main(int argc, char* argv[]) {
         driver.Synchronize(time);
         terrain.Synchronize(time);
         feda.Synchronize(time, driver_inputs, terrain);
-        app.Synchronize("Data Driver", driver_inputs);
+        vis->Synchronize("Data Driver", driver_inputs);
 
         // Advance simulation for one timestep for all modules
         driver.Advance(step_size);
         terrain.Advance(step_size);
         feda.Advance(step_size);
-        app.Advance(step_size);
+        vis->Advance(step_size);
 
         auto susp0 = std::static_pointer_cast<ChDoubleWishbone>(feda.GetVehicle().GetSuspension(0));
         auto susp1 = std::static_pointer_cast<ChDoubleWishbone>(feda.GetVehicle().GetSuspension(1));

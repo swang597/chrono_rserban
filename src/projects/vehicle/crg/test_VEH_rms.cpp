@@ -22,7 +22,7 @@
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"
 #include "chrono_vehicle/terrain/CRGTerrain.h"
-#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
+#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleVisualSystemIrrlicht.h"
 
 #include "chrono_models/vehicle/hmmwv/HMMWV.h"
 
@@ -57,7 +57,6 @@ const std::string mitsuba_dir = out_dir + "/MITSUBA";
 
 // POV-Ray output
 bool povray_output = false;
-bool mitsuba_output = false;
 
 // =============================================================================
 void WriteShapesMitsuba(ChSystem* system, const std::string& filename);
@@ -74,12 +73,6 @@ int main(int argc, char* argv[]) {
     if (povray_output) {
         if (!filesystem::create_directory(filesystem::path(pov_dir))) {
             std::cout << "Error creating directory " << pov_dir << std::endl;
-            return 1;
-        }
-    }
-    if (mitsuba_output) {
-        if (!filesystem::create_directory(filesystem::path(mitsuba_dir))) {
-            std::cout << "Error creating directory " << mitsuba_dir << std::endl;
             return 1;
         }
     }
@@ -130,23 +123,21 @@ int main(int argc, char* argv[]) {
     // Create the vehicle Irrlicht application
     // ---------------------------------------
 
-    ChVehicleIrrApp app(&my_hmmwv.GetVehicle(), L"HMMWV RMS", irr::core::dimension2d<irr::u32>(800, 640));
+    auto vis = chrono_types::make_shared<ChVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle("HMMWV RMS");
+    vis->SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 6.0, 0.5);
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    my_hmmwv.GetVehicle().SetVisualSystem(vis);
 
-    app.SetHUDLocation(500, 20);
-    app.AddLogo();
-    app.AddTypicalLights();
-    app.SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 6.0, 0.5);
-    app.SetTimestep(step_size);
 
     // Visualization of controller points (sentinel & target)
-    irr::scene::IMeshSceneNode* ballS = app.GetSceneManager()->addSphereSceneNode(0.1f);
-    irr::scene::IMeshSceneNode* ballT = app.GetSceneManager()->addSphereSceneNode(0.1f);
+    irr::scene::IMeshSceneNode* ballS = vis->GetSceneManager()->addSphereSceneNode(0.1f);
+    irr::scene::IMeshSceneNode* ballT = vis->GetSceneManager()->addSphereSceneNode(0.1f);
     ballS->getMaterial(0).EmissiveColor = irr::video::SColor(0, 255, 0, 0);
     ballT->getMaterial(0).EmissiveColor = irr::video::SColor(0, 0, 255, 0);
-
-    // Finalize construction of visualization assets
-    app.AssetBindAll();
-    app.AssetUpdateAll();
 
     // ---------------
     // Simulation loop
@@ -169,7 +160,7 @@ int main(int argc, char* argv[]) {
     int step_number = 0;
     int render_frame = 0;
 
-    while (app.GetDevice()->run()) {
+    while (vis->Run()) {
         double time = my_hmmwv.GetSystem()->GetChTime();
         if (time >= t_end)
             break;
@@ -185,19 +176,15 @@ int main(int argc, char* argv[]) {
         ballT->setPosition(irr::core::vector3df((irr::f32)pT.x(), (irr::f32)pT.y(), (irr::f32)pT.z()));
 
         // Render scene and output images
-        app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-        app.DrawAll();
+        vis->BeginScene();
+        vis->DrawAll();
+        vis->EndScene();
 
         if (step_number % render_steps == 0) {
             if (povray_output) {
                 char filename[100];
                 sprintf(filename, "%s/data_%04d.dat", pov_dir.c_str(), render_frame + 1);
                 utils::WriteVisualizationAssets(my_hmmwv.GetSystem(), filename);
-            }
-            if (mitsuba_output) {
-                char filename[100];
-                sprintf(filename, "%s/data_%04d.dat", mitsuba_dir.c_str(), render_frame + 1);
-                WriteShapesMitsuba(my_hmmwv.GetSystem(), filename);
             }
             render_frame++;
         }
@@ -206,79 +193,17 @@ int main(int argc, char* argv[]) {
         driver.Synchronize(time);
         terrain.Synchronize(time);
         my_hmmwv.Synchronize(time, driver_inputs, terrain);
-        app.Synchronize("", driver_inputs);
+        vis->Synchronize("", driver_inputs);
 
         // Advance simulation for one timestep for all modules
         driver.Advance(step_size);
         terrain.Advance(step_size);
         my_hmmwv.Advance(step_size);
-        app.Advance(step_size);
+        vis->Advance(step_size);
 
         // Increment simulation frame number
         step_number++;
-
-        app.EndScene();
     }
 
     return 0;
-}
-
-void WriteShapesMitsuba(ChSystem* system, const std::string& filename) {
-    utils::CSV_writer csv;
-
-    // Loop over all bodies and over all their assets.
-    int a_count = 0;
-    for (auto body : system->Get_bodylist()) {
-        const ChVector<>& body_pos = body->GetFrame_REF_to_abs().GetPos();
-        const ChQuaternion<>& body_rot = body->GetFrame_REF_to_abs().GetRot();
-
-        // Loop over assets -- write information for supported types.
-        for (auto asset : body->GetAssets()) {
-            auto visual_asset = std::dynamic_pointer_cast<ChVisualization>(asset);
-            if (!visual_asset)
-                continue;
-
-            const Vector& asset_pos = visual_asset->Pos;
-            Quaternion asset_rot = visual_asset->Rot.Get_A_quaternion();
-
-            Vector pos = body_pos + body_rot.Rotate(asset_pos);
-            Quaternion rot = body_rot % asset_rot;
-            ChVector<> axis;
-            double angle;
-            rot.Q_to_AngAxis(angle, axis);
-
-            bool supported = true;
-            std::string type;
-            std::stringstream gss;
-
-            if (auto sphere = std::dynamic_pointer_cast<ChSphereShape>(visual_asset)) {
-                type = "sphere";
-                gss << sphere->GetSphereGeometry().rad;
-                a_count++;
-            } else if (auto box = std::dynamic_pointer_cast<ChBoxShape>(visual_asset)) {
-                const Vector& size = box->GetBoxGeometry().Size;
-                type = "box";
-                gss << size.x() << "," << size.y() << "," << size.z();
-                a_count++;
-            } else if (auto cylinder = std::dynamic_pointer_cast<ChCylinderShape>(visual_asset)) {
-                const geometry::ChCylinder& geom = cylinder->GetCylinderGeometry();
-                type = "cylinder";
-                gss << geom.p1.x() << "," << geom.p1.y() << "," << geom.p1.z() << "," << geom.p2.x() << ","
-                    << geom.p2.y() << "," << geom.p2.z() << "," << geom.rad;
-                a_count++;
-            } else if (auto mesh = std::dynamic_pointer_cast<ChTriangleMeshShape>(visual_asset)) {
-                type = "obj_mesh";
-                gss << mesh->GetName();
-                a_count++;
-            } else {
-                supported = false;
-            }
-
-            if (supported) {
-                csv << type << pos << angle << axis << gss.str() << std::endl;
-            }
-        }  // end loop over assets
-    }      // end loop over bodies
-
-    csv.write_to_file(filename);
 }

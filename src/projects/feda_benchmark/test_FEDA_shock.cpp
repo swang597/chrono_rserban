@@ -23,7 +23,7 @@
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"
 #include "chrono_vehicle/terrain/CRGTerrain.h"
-#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
+#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleVisualSystemIrrlicht.h"
 #include "chrono_vehicle/utils/ChVehiclePath.h"
 
 #include "chrono_models/vehicle/feda/FEDA.h"
@@ -197,17 +197,17 @@ int main(int argc, char* argv[]) {
     double road_width = terrain.GetWidth();
     auto path = StraightLinePath(ChVector<>(start_pos, 0, 0.5), ChVector<>(road_length + 20.0, 0, 0.5), 1);
 
-    std::wstring wTitle = L"FED Alpha Shock Performance: Obstacle ";
-    wTitle.append(std::to_wstring(obsHeight) + L" inch, V = " + std::to_wstring(int(velmph)) + L" mph");
+    std::string wTitle = "FED Alpha Shock Performance: Obstacle ";
+    wTitle.append(std::to_string(obsHeight) + " inch, V = " + std::to_string(int(velmph)) + " mph");
     switch (theDamperMode) {
         case FEDA::DamperMode::FSD:
-            wTitle.append(L", FSD Dampers");
+            wTitle.append(", FSD Dampers");
             break;
         case FEDA::DamperMode::PASSIVE_LOW:
-            wTitle.append(L", Passive Dampers with low damping");
+            wTitle.append(", Passive Dampers with low damping");
             break;
         case FEDA::DamperMode::PASSIVE_HIGH:
-            wTitle.append(L", Passive Dampers with high damping");
+            wTitle.append(", Passive Dampers with high damping");
             break;
     }
 
@@ -218,28 +218,25 @@ int main(int argc, char* argv[]) {
     driver.GetSpeedController().SetGains(0.4, 0, 0);
     driver.Initialize();
 
-    ChWheeledVehicleIrrApp app(&my_feda.GetVehicle(), wTitle.c_str(), irr::core::dimension2d<irr::u32>(800, 640));
-
     // ---------------------------------------
     // Create the vehicle Irrlicht application
     // ---------------------------------------
 
-    app.SetHUDLocation(500, 20);
-    app.AddLogo();
-    app.AddTypicalLights();
-    app.SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 6.0, 0.5);
-
-    app.SetTimestep(step_size);
+    auto vis = chrono_types::make_shared<ChWheeledVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle(wTitle);
+    vis->SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 6.0, 0.5);
+    vis->SetHUDLocation(500, 20);
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    my_feda.GetVehicle().SetVisualSystem(vis);
 
     // Visualization of controller points (sentinel & target)
-    irr::scene::IMeshSceneNode* ballS = app.GetSceneManager()->addSphereSceneNode(0.1f);
-    irr::scene::IMeshSceneNode* ballT = app.GetSceneManager()->addSphereSceneNode(0.1f);
+    irr::scene::IMeshSceneNode* ballS = vis->GetSceneManager()->addSphereSceneNode(0.1f);
+    irr::scene::IMeshSceneNode* ballT = vis->GetSceneManager()->addSphereSceneNode(0.1f);
     ballS->getMaterial(0).EmissiveColor = irr::video::SColor(0, 255, 0, 0);
     ballT->getMaterial(0).EmissiveColor = irr::video::SColor(0, 0, 255, 0);
-
-    // Finalize construction of visualization assets
-    app.AssetBindAll();
-    app.AssetUpdateAll();
 
     // ----------------
     // Output directory
@@ -276,7 +273,7 @@ int main(int argc, char* argv[]) {
     ChFunction_Recorder seatFkt;
     ChFunction_Recorder shockVelFkt;
     std::vector<double> t, azd, azdf, shvel_exp, shvel_com;
-    while (app.GetDevice()->run()) {
+    while (vis->Run()) {
         double time = my_feda.GetSystem()->GetChTime();
         double xpos = my_feda.GetVehicle().GetPos().x();
         if (xpos > road_length - 10)
@@ -293,13 +290,13 @@ int main(int argc, char* argv[]) {
         ballT->setPosition(irr::core::vector3df((irr::f32)pT.x(), (irr::f32)pT.y(), (irr::f32)pT.z()));
 
         // Render scene and output images
-        app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-        app.DrawAll();
+        vis->BeginScene();
+        vis->DrawAll();
 
         if (output_images && sim_frame % render_steps == 0) {
             char filename[200];
             sprintf(filename, "%s/image_%05d.bmp", out_dir.c_str(), render_frame++);
-            app.WriteImageToFile(filename);
+            vis->WriteImageToFile(filename);
             render_frame++;
         }
 
@@ -307,13 +304,13 @@ int main(int argc, char* argv[]) {
         driver.Synchronize(time);
         terrain.Synchronize(time);
         my_feda.Synchronize(time, driver_inputs, terrain);
-        app.Synchronize("", driver_inputs);
+        vis->Synchronize("", driver_inputs);
 
         // Advance simulation for one timestep for all modules
         driver.Advance(step_size);
         terrain.Advance(step_size);
         my_feda.Advance(step_size);
-        app.Advance(step_size);
+        vis->Advance(step_size);
 
         double sv1 =
             std::static_pointer_cast<ChDoubleWishbone>(my_feda.GetVehicle().GetSuspension(0))->GetShockVelocity(LEFT);
@@ -338,7 +335,7 @@ int main(int argc, char* argv[]) {
         // Increment simulation frame number
         sim_frame++;
 
-        app.EndScene();
+        vis->EndScene();
     }
 
     // filter test

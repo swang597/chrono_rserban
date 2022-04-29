@@ -19,7 +19,7 @@
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 #include "chrono_vehicle/ChDriver.h"
 
-#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
+#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleVisualSystemIrrlicht.h"
 
 #include "chrono_models/vehicle/hmmwv/HMMWV.h"
 #include "chrono_models/vehicle/feda/FEDA.h"
@@ -166,12 +166,15 @@ int main(int argc, char* argv[]) {
     terrain.Initialize();
 
     // Create the vehicle Irrlicht interface
-    ChWheeledVehicleIrrApp app(&veh.GetVehicle(), L"Vehicle reinitialization test",
-                               irr::core::dimension2d<irr::u32>(1000, 800), irrlicht::VerticalDir::Z, irr::ELL_NONE);
-    app.AddTypicalLights();
-    app.SetChaseCamera(ChVector<>(0.0, 0.0, .75), 6.0, 0.5);
-    app.AssetBindAll();
-    app.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<ChWheeledVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle("Vehicle reinitialization test");
+    vis->SetWindowSize(1000, 800);
+    vis->SetChaseCamera(ChVector<>(0.0, 0.0, .75), 6.0, 0.5);
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    veh.GetVehicle().SetVisualSystem(vis);
 
     // Initialize output
     if (!filesystem::create_directory(filesystem::path(out_dir))) {
@@ -196,12 +199,12 @@ int main(int argc, char* argv[]) {
     bool check_saved = false;
     bool check_loaded = false;
 
-    while (app.GetDevice()->run()) {
+    while (vis->Run()) {
         double time = veh.GetSystem()->GetChTime();
 
-        app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-        app.DrawAll();
-        app.EndScene();
+        vis->BeginScene();
+        vis->DrawAll();
+        vis->EndScene();
 
         // Driver inputs (do not change driver inputs after reset)
         if (!check_saved && !check_loaded)
@@ -212,16 +215,16 @@ int main(int argc, char* argv[]) {
         // Update modules (process inputs from other modules)
         terrain.Synchronize(time);
         veh.Synchronize(time, driver_inputs, terrain);
-        app.Synchronize("", driver_inputs);
+        vis->Synchronize("", driver_inputs);
 
         // Advance simulation for one timestep for all modules
         terrain.Advance(step_size);
         veh.Advance(step_size);
-        app.Advance(step_size);
+        vis->Advance(step_size);
 
         if (!check_saved && time > 3.0) {
             SaveCheckpoint(filename, veh.GetVehicle(), driver_inputs);
-            app.SetChaseCameraState(utils::ChChaseCamera::Track);
+            vis->SetChaseCameraState(utils::ChChaseCamera::Track);
             check_saved = true;
         }
 

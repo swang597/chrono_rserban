@@ -41,28 +41,13 @@ RigidTerrainSlope::RigidTerrainSlope(ChSystem* system) : m_friction(0.8f) {
     m_ground->SetBodyFixed(true);
     m_ground->SetCollide(true);
     system->AddBody(m_ground);
-
-    // Create the default color asset
-    m_color = chrono_types::make_shared<ChColorAsset>();
-    m_color->SetColor(ChColor(1, 1, 1));
-    m_ground->AddAsset(m_color);
-}
-
-// -----------------------------------------------------------------------------
-// Set the color of the visualization assets
-// -----------------------------------------------------------------------------
-void RigidTerrainSlope::SetColor(ChColor color) {
-    m_color->SetColor(color);
 }
 
 // -----------------------------------------------------------------------------
 // Set the texture and texture scaling
 // -----------------------------------------------------------------------------
 void RigidTerrainSlope::SetTexture(const std::string tex_file, float tex_scale_x, float tex_scale_y) {
-    auto texture = chrono_types::make_shared<ChTexture>();
-    texture->SetTextureFilename(tex_file);
-    texture->SetTextureScale(tex_scale_x, tex_scale_y);
-    m_ground->AddAsset(texture);
+    m_ground->GetVisualShape(0)->SetTexture(tex_file, tex_scale_x, tex_scale_y);
 }
 
 // -----------------------------------------------------------------------------
@@ -92,8 +77,7 @@ void RigidTerrainSlope::Initialize(std::shared_ptr<ChMaterialSurface> mat,
                                               ChVector<>(-sizeX / 2, 0, height1 - depth / 2));
         auto box = chrono_types::make_shared<ChBoxShape>();
         box->GetBoxGeometry().Size = ChVector<>(sizeX / 2, sizeY / 2, depth / 2);
-        box->GetBoxGeometry().Pos = ChVector<>(-sizeX / 2, 0, height1 - depth / 2);
-        m_ground->AddAsset(box);
+        m_ground->AddVisualShape(box, ChFrame<>(ChVector<>(-sizeX / 2, 0, height1 - depth / 2)));
     }
 
     {
@@ -111,9 +95,7 @@ void RigidTerrainSlope::Initialize(std::shared_ptr<ChMaterialSurface> mat,
 
         auto box = chrono_types::make_shared<ChBoxShape>();
         box->GetBoxGeometry().Size = ChVector<>(hx, hy, hz);
-        box->GetBoxGeometry().Pos = ChVector<>(x, y, z);
-        box->GetBoxGeometry().Rot = rot;
-        m_ground->AddAsset(box);
+        m_ground->AddVisualShape(box, ChFrame<>(ChVector<>(x, y, z), rot));
     }
 
     {
@@ -121,8 +103,7 @@ void RigidTerrainSlope::Initialize(std::shared_ptr<ChMaterialSurface> mat,
                                               ChVector<>(m_run + sizeX / 2, 0, height2 - depth / 2));
         auto box = chrono_types::make_shared<ChBoxShape>();
         box->GetBoxGeometry().Size = ChVector<>(sizeX / 2, sizeY / 2, depth / 2);
-        box->GetBoxGeometry().Pos = ChVector<>(m_run + sizeX / 2, 0, height2 - depth / 2);
-        m_ground->AddAsset(box);
+        m_ground->AddVisualShape(box, ChFrame<>(ChVector<>(m_run + sizeX / 2, 0, height2 - depth / 2)));
     }
 
     m_ground->GetCollisionModel()->BuildModel();

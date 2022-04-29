@@ -20,7 +20,7 @@
 #include "chrono/physics/ChSystem.h"
 
 #include "chrono_vehicle/terrain/RigidTerrain.h"
-#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
+#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleVisualSystemIrrlicht.h"
 
 #include "irrapp.h"
 #include "path.h"
@@ -77,7 +77,7 @@ class Framework {
 
     Scene m_scene;
     chrono::ChSystem* m_system;
-    IrrApp* m_app;
+    std::shared_ptr<IrrApp> m_vis;
     chrono::vehicle::RigidTerrain* m_terrain;
 
     double m_step;

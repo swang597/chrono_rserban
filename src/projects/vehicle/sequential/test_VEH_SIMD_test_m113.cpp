@@ -17,7 +17,7 @@
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 #include "chrono_vehicle/output/ChVehicleOutputASCII.h"
 
-#include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleIrrApp.h"
+#include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleVisualSystemIrrlicht.h"
 
 #include "chrono_models/vehicle/m113/M113.h"
 
@@ -131,15 +131,17 @@ int main(int argc, char* argv[]) {
     // Create the vehicle Irrlicht application
     // ---------------------------------------
 
-    ChTrackedVehicleIrrApp *app;
+    std::shared_ptr<ChTrackedVehicleVisualSystemIrrlicht> vis;
     if (useIrrlicht) {
-        app = new ChTrackedVehicleIrrApp(&m113, L"M113 Vehicle Demo");
-        app->AddTypicalLights();
-        app->SetChaseCamera(trackPoint, 6.0, 1.5);
-        app->SetChaseCameraMultipliers(1e-4, 10);
-        app->SetTimestep(step_size);
-        app->AssetBindAll();
-        app->AssetUpdateAll();
+        vis = chrono_types::make_shared<ChTrackedVehicleVisualSystemIrrlicht>();
+        vis->SetWindowTitle("M113 Vehicle Demo");
+        vis->SetChaseCamera(trackPoint, 6.0, 0.5);
+        vis->SetChaseCameraMultipliers(1e-4, 10);
+        vis->Initialize();
+        vis->AddTypicalLights();
+        vis->AddSkyBox();
+        vis->AddLogo();
+        m113.SetVisualSystem(vis);
     }
 
     // ---------------
@@ -163,12 +165,12 @@ int main(int argc, char* argv[]) {
 
     while (m113.GetPos().x() < 300) {
         if (useIrrlicht) {
-            if (!app->GetDevice()->run())
+            if (!vis->Run())
                 break;
             if (step_number % render_steps == 0) {
-                app->BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-                app->DrawAll();
-                app->EndScene();
+                vis->BeginScene();
+                vis->DrawAll();
+                vis->EndScene();
             }
         }
 
@@ -183,7 +185,7 @@ int main(int argc, char* argv[]) {
         terrain.Synchronize(time);
         m113.Synchronize(time, driver_inputs, shoe_forces_left, shoe_forces_right);
         if (useIrrlicht) {
-            app->Synchronize("", driver_inputs);
+            vis->Synchronize("", driver_inputs);
         }
         
         // Advance simulation for one timestep for all modules
@@ -191,7 +193,7 @@ int main(int argc, char* argv[]) {
         terrain.Advance(step_size);
         m113.Advance(step_size);
         if (useIrrlicht) {
-            app->Advance(step_size);
+            vis->Advance(step_size);
         }
 
         if (step_number % output_steps == 0) {

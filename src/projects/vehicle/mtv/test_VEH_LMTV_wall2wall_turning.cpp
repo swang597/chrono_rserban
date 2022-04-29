@@ -26,7 +26,7 @@
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 #include "chrono_vehicle/driver/ChDataDriver.h"
-#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
+#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleVisualSystemIrrlicht.h"
 
 #include "chrono_models/vehicle/mtv/LMTV.h"
 #include "chrono_models/vehicle/mtv/LMTV_LeafspringAxle.h"
@@ -146,18 +146,20 @@ int main(int argc, char* argv[]) {
     // Create the vehicle Irrlicht interface
     // Create the driver system
     // -------------------------------------
-    std::wstring wTitle = L"LMTV wall2wall turning test";
+    std::string wTitle = "LMTV wall2wall turning test";
     if (left_turn)
-        wTitle.append(L" (left)");
+        wTitle.append(" (left)");
     else
-        wTitle.append(L" (right)");
+        wTitle.append(" (right)");
 
-    ChWheeledVehicleIrrApp app(&lmtv.GetVehicle(), wTitle.c_str());
-    app.AddTypicalLights();
-    app.SetChaseCamera(trackPoint, 8.0, 0.5);
-    app.SetTimestep(step_size);
-    app.AssetBindAll();
-    app.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<ChWheeledVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle(wTitle);
+    vis->SetChaseCamera(trackPoint, 8.0, 0.5);
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    lmtv.GetVehicle().SetVisualSystem(vis);
 
     ChDataDriver driver(lmtv.GetVehicle(), vehicle::GetDataFile(driver_file), true);
     driver.Initialize();
@@ -171,14 +173,14 @@ int main(int argc, char* argv[]) {
 
     std::vector<double> turn_x, turn_y;
 
-    while (app.GetDevice()->run()) {
+    while (vis->Run()) {
         double time = lmtv.GetSystem()->GetChTime();
 
         // Render scene
         if (step_number % render_steps == 0) {
-            app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-            app.DrawAll();
-            app.EndScene();
+            vis->BeginScene();
+            vis->DrawAll();
+            vis->EndScene();
         }
 
         // Driver inputs
@@ -188,13 +190,13 @@ int main(int argc, char* argv[]) {
         driver.Synchronize(time);
         terrain.Synchronize(time);
         lmtv.Synchronize(time, driver_inputs, terrain);
-        app.Synchronize("Data Driver", driver_inputs);
+        vis->Synchronize("Data Driver", driver_inputs);
 
         // Advance simulation for one timestep for all modules
         driver.Advance(step_size);
         terrain.Advance(step_size);
         lmtv.Advance(step_size);
-        app.Advance(step_size);
+        vis->Advance(step_size);
 
         auto susp0 = std::static_pointer_cast<ChLeafspringAxle>(lmtv.GetVehicle().GetSuspension(0));
         auto susp1 = std::static_pointer_cast<ChToeBarLeafspringAxle>(lmtv.GetVehicle().GetSuspension(1));

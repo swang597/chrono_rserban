@@ -43,7 +43,7 @@
 // Uncomment the following line to unconditionally disable Irrlicht support
 //#undef CHRONO_IRRLICHT
 #ifdef CHRONO_IRRLICHT
-#include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleIrrApp.h"
+#include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleVisualSystemIrrlicht.h"
 #endif
 
 using namespace chrono;
@@ -200,8 +200,7 @@ int main(int argc, char* argv[]) {
 
     auto bottomPlate = chrono_types::make_shared<ChBoxShape>();
     bottomPlate->GetBoxGeometry().Size = ChVector<>(0.5 * 4.25, 0.5 * 1.65, 0.05);
-    bottomPlate->GetBoxGeometry().Pos = ChVector<>(-1.925, 0, -.153 + 0.05);
-    vehicle.GetChassisBody()->AddAsset(bottomPlate);
+    vehicle.GetChassisBody()->AddVisualShape(bottomPlate, ChFrame<>(ChVector<>(-1.925, 0, -.153 + 0.05)));
 
     // Add angled bottom plate
     // ChQuaternion<> plateAngleQuat = chrono::Q_from_AngAxis(1.0474, VECT_Y);
@@ -212,9 +211,7 @@ int main(int argc, char* argv[]) {
 
     auto angledPlate = chrono_types::make_shared<ChBoxShape>();
     angledPlate->GetBoxGeometry().Size = ChVector<>(0.5 * .3521, 0.5 * 1.65, 0.05);
-    angledPlate->GetBoxGeometry().Pos = ChVector<>(.2457, 0, 0.0245);
-    angledPlate->GetBoxGeometry().Rot = plateAngle;
-    vehicle.GetChassisBody()->AddAsset(angledPlate);
+    vehicle.GetChassisBody()->AddVisualShape(angledPlate, ChFrame<>(ChVector<>(.2457, 0, 0.0245), plateAngle));
 
     vehicle.GetChassisBody()->GetCollisionModel()->BuildModel();
     */
@@ -334,8 +331,7 @@ int main(int argc, char* argv[]) {
 
     auto box1 = chrono_types::make_shared<ChBoxShape>();
     box1->GetBoxGeometry().Size = ChVector<>(0.5 * terrainLength, 0.5 * terrainWidth, 0.5 * depth);
-    box1->GetBoxGeometry().Pos = ChVector<>(0, 0, -0.5 * depth);
-    ground1->AddAsset(box1);
+    ground1->AddVisualShape(box1, ChFrame<>(ChVector<>(0, 0, -0.5 * depth)));
     ground1->GetCollisionModel()->BuildModel();
 
     auto ground2 = std::shared_ptr<ChBody>(vehicle.GetSystem()->NewBody());
@@ -352,8 +348,7 @@ int main(int argc, char* argv[]) {
 
     auto box2 = chrono_types::make_shared<ChBoxShape>();
     box2->GetBoxGeometry().Size = ChVector<>(0.5 * terrainLength, 0.5 * terrainWidth, 0.5 * depth);
-    box2->GetBoxGeometry().Pos = ChVector<>(0, 0, -0.5 * depth); 
-    ground2->AddAsset(box1);
+    ground2->AddVisualShape(box1, ChFrame<>(ChVector<>(0, 0, -0.5 * depth)));
     ground2->GetCollisionModel()->BuildModel();
 
     // Control the slip of the vehicle
@@ -373,13 +368,13 @@ int main(int argc, char* argv[]) {
 
         auto box = chrono_types::make_shared<ChBoxShape>();
         box->GetBoxGeometry().Size = ChVector<>(.2, .1, .1);
-        slipRig->AddAsset(box);
+        slipRig->AddVisualShape(box);
 
         auto cyl = chrono_types::make_shared<ChCylinderShape>();
         cyl->GetCylinderGeometry().p1 = ChVector<>(0, 0, 0);
         cyl->GetCylinderGeometry().p2 = ChVector<>(0, 0, -.2);
         cyl->GetCylinderGeometry().rad = .05;
-        slipRig->AddAsset(cyl);
+        slipRig->AddVisualShape(cyl);
 
         slipRig->GetCollisionModel()->BuildModel();
 
@@ -443,15 +438,18 @@ int main(int argc, char* argv[]) {
     // Create the vehicle Irrlicht application
     // ---------------------------------------
 
-    ChTrackedVehicleIrrApp app(&vehicle, L"M113 off-road trafficability");
-    app.AddTypicalLights();
-    app.SetChaseCamera(trackPoint, 6.0, 0.5);
-    app.AssetBindAll();
-    app.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<ChTrackedVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle("M113 off-road trafficability");
+    vis->SetChaseCamera(trackPoint, 6.0, 0.5);
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    vehicle.SetVisualSystem(vis);
 
     // Visualization of controller points (sentinel & target)
-    irr::scene::IMeshSceneNode* ballS = app.GetSceneManager()->addSphereSceneNode(0.1f);
-    irr::scene::IMeshSceneNode* ballT = app.GetSceneManager()->addSphereSceneNode(0.1f);
+    irr::scene::IMeshSceneNode* ballS = vis->GetSceneManager()->addSphereSceneNode(0.1f);
+    irr::scene::IMeshSceneNode* ballT = vis->GetSceneManager()->addSphereSceneNode(0.1f);
     ballS->getMaterial(0).EmissiveColor = irr::video::SColor(0, 255, 0, 0);
     ballT->getMaterial(0).EmissiveColor = irr::video::SColor(0, 0, 255, 0);
 
@@ -525,7 +523,7 @@ int main(int argc, char* argv[]) {
     double tractiveEffort = 0;
 
 #ifdef CHRONO_IRRLICHT
-    while (app.GetDevice()->run()) {
+    while (vis->Run()) {
         time = vehicle.GetChTime();
 
         // End simulation
@@ -589,9 +587,9 @@ int main(int argc, char* argv[]) {
 
         // Render scene
         if (step_number % render_steps == 0) {
-            app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-            app.DrawAll();
-            app.EndScene();
+            vis->BeginScene();
+            vis->DrawAll();
+            vis->EndScene();
 
             if (povray_output) {
                 char filename[100];
@@ -665,13 +663,13 @@ int main(int argc, char* argv[]) {
         driver.Synchronize(time);
         vehicle.Synchronize(time, driver_inputs, shoe_forces_left, shoe_forces_right);
         terrain->Synchronize(time);
-        app.Synchronize("Follower driver", driver_inputs);
+        vis->Synchronize("Follower driver", driver_inputs);
 
         // Advance simulation for one timestep for all modules
         driver.Advance(step_size);
         terrain->Advance(step_size);
         vehicle.Advance(step_size);
-        app.Advance(step_size);
+        vis->Advance(step_size);
 
         // Increment frame number
         step_number++;

@@ -25,7 +25,7 @@
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 #include "chrono_vehicle/driver/ChIrrGuiDriver.h"
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"
-#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
+#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleVisualSystemIrrlicht.h"
 
 #include "chrono_models/vehicle/hmmwv/HMMWV.h"
 
@@ -159,30 +159,9 @@ int main(int argc, char* argv[]) {
     utils::AddCylinderGeometry(bump.get(), bump_mat, bump_radius, 4.0);
     bump->GetCollisionModel()->BuildModel();
 
-    auto color = chrono_types::make_shared<ChColorAsset>();
-    color->SetColor(ChColor(0.2f, 0.3f, 0.4f));
-    bump->AddAsset(color);
+    bump->GetVisualShape(0)->SetColor(ChColor(0.2f, 0.3f, 0.4f));
 
     my_hmmwv.GetSystem()->AddBody(bump);
-
-    // ---------------------------------------
-    // Create the vehicle Irrlicht application
-    // ---------------------------------------
-
-    ChVehicleIrrApp app(&my_hmmwv.GetVehicle(), L"Steering Controller Demo",
-                        irr::core::dimension2d<irr::u32>(800, 640));
-
-    app.SetHUDLocation(500, 20);
-    app.AddLogo();
-    app.AddTypicalLights();
-    app.SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 6.0, 0.5);
-    app.SetTimestep(step_size);
-
-    // Visualization of controller points (sentinel & target)
-    irr::scene::IMeshSceneNode* ballS = app.GetSceneManager()->addSphereSceneNode(0.1f);
-    irr::scene::IMeshSceneNode* ballT = app.GetSceneManager()->addSphereSceneNode(0.1f);
-    ballS->getMaterial(0).EmissiveColor = irr::video::SColor(0, 255, 0, 0);
-    ballT->getMaterial(0).EmissiveColor = irr::video::SColor(0, 0, 255, 0);
 
     // ------------------------
     // Create the driver system
@@ -196,9 +175,25 @@ int main(int argc, char* argv[]) {
     driver_follower.GetSpeedController().SetGains(0.4, 0, 0);
     driver_follower.Initialize();
 
-    // Finalize construction of visualization assets
-    app.AssetBindAll();
-    app.AssetUpdateAll();
+    // ---------------------------------------
+    // Create the vehicle Irrlicht application
+    // ---------------------------------------
+
+    auto vis = chrono_types::make_shared<ChVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle("Steering Controller Demo");
+    vis->SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 6.0, 0.5);
+    vis->SetHUDLocation(500, 20);
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    my_hmmwv.GetVehicle().SetVisualSystem(vis);
+
+    // Visualization of controller points (sentinel & target)
+    irr::scene::IMeshSceneNode* ballS = vis->GetSceneManager()->addSphereSceneNode(0.1f);
+    irr::scene::IMeshSceneNode* ballT = vis->GetSceneManager()->addSphereSceneNode(0.1f);
+    ballS->getMaterial(0).EmissiveColor = irr::video::SColor(0, 255, 0, 0);
+    ballT->getMaterial(0).EmissiveColor = irr::video::SColor(0, 0, 255, 0);
 
     // -----------------
     // Initialize output
@@ -238,7 +233,7 @@ int main(int argc, char* argv[]) {
     int sim_frame = 0;
     int render_frame = 0;
 
-    while (app.GetDevice()->run()) {
+    while (vis->Run()) {
         // Extract system state
         double time = my_hmmwv.GetSystem()->GetChTime();
 
@@ -290,10 +285,9 @@ int main(int argc, char* argv[]) {
 
         // Render scene and output POV-Ray data
         if (sim_frame % render_steps == 0) {
-            app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-            app.DrawAll();
-            app.EndScene();
-
+            vis->BeginScene();
+            vis->DrawAll();
+            vis->EndScene();
 
             render_frame++;
         }
@@ -302,13 +296,13 @@ int main(int argc, char* argv[]) {
         driver_follower.Synchronize(time);
         terrain.Synchronize(time);
         my_hmmwv.Synchronize(time, driver_inputs, terrain);
-        app.Synchronize("Test", driver_inputs);
+        vis->Synchronize("Test", driver_inputs);
 
         // Advance simulation for one timestep for all modules
         driver_follower.Advance(step_size);
         terrain.Advance(step_size);
         my_hmmwv.Advance(step_size);
-        app.Advance(step_size);
+        vis->Advance(step_size);
 
         // Increment simulation frame number
         sim_frame++;

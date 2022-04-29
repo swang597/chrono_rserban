@@ -28,7 +28,7 @@
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 #include "chrono_vehicle/output/ChVehicleOutputASCII.h"
 
-#include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleIrrApp.h"
+#include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleVisualSystemIrrlicht.h"
 
 #include "chrono_models/vehicle/marder/Marder.h"
 
@@ -210,41 +210,24 @@ int main(int argc, char* argv[]) {
     ////AddFixedObstacles(vehicle.GetSystem());
     ////AddFallingObjects(vehicle.GetSystem());
 
-    // ---------------------------------------
-    // Create the vehicle Irrlicht application
-    // ---------------------------------------
-
-    ChTrackedVehicleIrrApp app(&marder.GetVehicle(), L"Marder Vehicle Shock");
-    app.AddTypicalLights();
-    app.SetChaseCamera(trackPoint, 10.0, 0.5);
-    // app.SetChaseCameraPosition(marder.GetVehicle().GetPos() + ChVector<>(-10, 0, 0));
-    app.SetChaseCameraMultipliers(1e-4, 10);
-    app.SetTimestep(step_size);
-    app.AssetBindAll();
-    app.AssetUpdateAll();
-
-    // ------------------------
-    // Create the driver system
-    // ------------------------
-    /*
-        ChIrrGuiDriver driver(app);
-
-        // Set the time response for keyboard inputs.
-        double steering_time = 0.5;  // time to go from 0 to +1 (or from 0 to -1)
-        double throttle_time = 1.0;  // time to go from 0 to +1
-        double braking_time = 0.3;   // time to go from 0 to +1
-        driver.SetSteeringDelta(render_step_size / steering_time);
-        driver.SetThrottleDelta(render_step_size / throttle_time);
-        driver.SetBrakingDelta(render_step_size / braking_time);
-        driver.SetGains(2, 5, 5);
-
-        driver.Initialize();
-     */
     // Create the driver
     auto path = ChBezierCurve::read(vehicle::GetDataFile(path_file));
     ChPathFollowerDriver driver(marder.GetVehicle(), vehicle::GetDataFile(steering_controller_file),
                                 vehicle::GetDataFile(speed_controller_file), path, "my_path", 0.0, false);
     driver.Initialize();
+
+    // ---------------------------------------
+    // Create the vehicle Irrlicht application
+    // ---------------------------------------
+
+    auto vis = chrono_types::make_shared<ChTrackedVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle("Marder Vehicle Shock");
+    vis->SetChaseCamera(trackPoint, 10.0, 0.5);
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    marder.GetVehicle().SetVisualSystem(vis);
 
     // -----------------
     // Initialize output
@@ -344,7 +327,7 @@ int main(int argc, char* argv[]) {
     ChFunction_Recorder accLogger;
     utils::ChButterworth_Lowpass lp(4, step_size, 30.0);
     utils::ChRunningAverage avg(50);
-    while (app.GetDevice()->run()) {
+    while (vis->Run()) {
         // Debugging output
         if (dbg_output) {
             auto track_L = marder.GetVehicle().GetTrackAssembly(LEFT);
@@ -384,9 +367,9 @@ int main(int argc, char* argv[]) {
 
         if (step_number % render_steps == 0) {
             // Render scene
-            app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-            app.DrawAll();
-            app.EndScene();
+            vis->BeginScene();
+            vis->DrawAll();
+            vis->EndScene();
 
             if (povray_output) {
                 char filename[100];
@@ -396,7 +379,7 @@ int main(int argc, char* argv[]) {
             if (img_output && step_number > 200) {
                 char filename[100];
                 sprintf(filename, "%s/img_%03d.jpg", img_dir.c_str(), render_frame + 1);
-                app.WriteImageToFile(filename);
+                vis->WriteImageToFile(filename);
             }
             render_frame++;
         }
@@ -428,13 +411,13 @@ int main(int argc, char* argv[]) {
         driver.Synchronize(time);
         terrain.Synchronize(time);
         marder.Synchronize(time, driver_inputs, shoe_forces_left, shoe_forces_right);
-        app.Synchronize("", driver_inputs);
+        vis->Synchronize("", driver_inputs);
 
         // Advance simulation for one timestep for all modules
         driver.Advance(step_size);
         terrain.Advance(step_size);
         marder.Advance(step_size);
-        app.Advance(step_size);
+        vis->Advance(step_size);
 
         // Report if the chassis experienced a collision
         if (marder.GetVehicle().IsPartInContact(TrackedCollisionFlag::CHASSIS)) {
@@ -474,16 +457,11 @@ void AddFixedObstacles(ChSystem* system, double xpos, double radius) {
     shape->GetCylinderGeometry().p1 = ChVector<>(0, -length * 0.5, 0);
     shape->GetCylinderGeometry().p2 = ChVector<>(0, length * 0.5, 0);
     shape->GetCylinderGeometry().rad = radius;
-    obstacle->AddAsset(shape);
-
-    auto color = chrono_types::make_shared<ChColorAsset>();
-    color->SetColor(ChColor(1, 1, 1));
-    obstacle->AddAsset(color);
+    shape->SetColor(ChColor(1, 1, 1));
+    obstacle->AddVisualShape(shape);
 
     auto texture = chrono_types::make_shared<ChTexture>();
-    texture->SetTextureFilename(vehicle::GetDataFile("terrain/textures/tile4.jpg"));
-    texture->SetTextureScale(10, 10);
-    obstacle->AddAsset(texture);
+    obstacle->GetVisualShape(0)->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 10, 10);
 
     // Contact
     MaterialInfo minfo;
@@ -522,11 +500,8 @@ void AddFallingObjects(ChSystem* system) {
 
     auto sphere = chrono_types::make_shared<ChSphereShape>();
     sphere->GetSphereGeometry().rad = radius;
-    ball->AddAsset(sphere);
-
-    auto mtexture = chrono_types::make_shared<ChTexture>();
-    mtexture->SetTextureFilename(GetChronoDataFile("textures/bluewhite.png"));
-    ball->AddAsset(mtexture);
+    sphere->SetTexture(GetChronoDataFile("textures/bluewhite.png"));
+    ball->AddVisualShape(sphere);
 
     system->AddBody(ball);
 }

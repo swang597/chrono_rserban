@@ -54,11 +54,12 @@
 #include "chrono_models/vehicle/hmmwv/HMMWV_Wheel.h"
 #include "chrono_models/vehicle/hmmwv/HMMWV_TMeasyTire.h"
 
-#include "chrono_irrlicht/ChIrrApp.h"
+#include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 
 using namespace chrono;
+using namespace chrono::irrlicht;
 using namespace chrono::vehicle;
 
 // =============================================================================
@@ -110,8 +111,7 @@ MechanismISO::MechanismISO(ChSystem* sys) : m_sys(sys) {
     {
         auto box = chrono_types::make_shared<ChBoxShape>();
         box->GetBoxGeometry().SetLengths(ChVector<>(10, 2, 0.2));
-        box->GetBoxGeometry().Pos = ChVector<>(0, 0, -0.1);
-        ground->AddAsset(box);
+        ground->AddVisualShape(box, ChFrame<>(ChVector<>(0, 0, -0.1)));
     }
 
     // Create the spindle body (the wheel and tire objects will add to its mass and inertia).
@@ -126,7 +126,7 @@ MechanismISO::MechanismISO(ChSystem* sys) : m_sys(sys) {
         cyl->GetCylinderGeometry().rad = 0.1;
         cyl->GetCylinderGeometry().p1 = ChVector<>(0, -0.1, 0);
         cyl->GetCylinderGeometry().p2 = ChVector<>(0, +0.1, 0);
-        m_spindle->AddAsset(cyl);
+        m_spindle->AddVisualShape(cyl);
     }
 
     // Connect spindle to ground.
@@ -282,8 +282,7 @@ MechanismYUP::MechanismYUP(ChSystem* sys) : m_sys(sys) {
     {
         auto box = chrono_types::make_shared<ChBoxShape>();
         box->GetBoxGeometry().SetLengths(ChVector<>(10, 0.2, 2));
-        box->GetBoxGeometry().Pos = ChVector<>(0, -0.1, 0);
-        ground->AddAsset(box);
+        ground->AddVisualShape(box, ChFrame<>(ChVector<>(0, -0.1, 0)));
     }
 
     // Create the spindle body (mass and inertia properly set below).
@@ -296,7 +295,7 @@ MechanismYUP::MechanismYUP(ChSystem* sys) : m_sys(sys) {
         cyl->GetCylinderGeometry().rad = 0.1;
         cyl->GetCylinderGeometry().p1 = ChVector<>(0, 0, -0.1);
         cyl->GetCylinderGeometry().p2 = ChVector<>(0, 0, +0.1);
-        m_spindle->AddAsset(cyl);
+        m_spindle->AddVisualShape(cyl);
     }
 
     // Connect spindle to ground.
@@ -341,10 +340,9 @@ MechanismYUP::MechanismYUP(ChSystem* sys) : m_sys(sys) {
         auto trimesh_shape = chrono_types::make_shared<ChTriangleMeshShape>();
         trimesh_shape->SetMesh(trimesh);
         trimesh_shape->SetName("hmmwv_tire_geom");
-        trimesh_shape->SetStatic(true);
-        m_spindle->AddAsset(trimesh_shape);
-
-        m_spindle->AddAsset(chrono_types::make_shared<ChColorAsset>(1.0f, 0.0f, 0.0f));
+        trimesh_shape->SetMutable(false);
+        trimesh_shape->SetColor(ChColor(1.0f, 0.0f, 0.0f));
+        m_spindle->AddVisualShape(trimesh_shape);
     }
 }
 
@@ -458,32 +456,36 @@ int main(int argc, char* argv[]) {
 
     MechanismYUP mYUP(&sysYUP);
 
-    irrlicht::ChIrrApp appISO(&sysISO, L"Tire ISO csys", irr::core::dimension2d<irr::u32>(800, 600));
-    appISO.AddLogo();
-    appISO.AddSkyBox();
-    appISO.AddTypicalLights();
-    appISO.AddCamera(irr::core::vector3df(1, 1, 3), irr::core::vector3df(0, 0, 0));
-    appISO.AssetBindAll();
-    appISO.AssetUpdateAll();
+    auto visISO = chrono_types::make_shared<ChVisualSystemIrrlicht>();
+    sysISO.SetVisualSystem(visISO);
+    visISO->SetWindowSize(800, 600);
+    visISO->SetWindowTitle("Tire ISO csys");
+    visISO->Initialize();
+    visISO->AddLogo();
+    visISO->AddSkyBox();
+    visISO->AddCamera(ChVector<>(1, 1, 3));
+    visISO->AddTypicalLights();
 
-    irrlicht::ChIrrApp appYUP(&sysYUP, L"Tire YUP csys", irr::core::dimension2d<irr::u32>(800, 600));
-    appYUP.AddLogo();
-    appYUP.AddSkyBox();
-    appYUP.AddTypicalLights();
-    appYUP.AddCamera(irr::core::vector3df(1, 1, 3), irr::core::vector3df(0, 0, 0));
-    appYUP.AssetBindAll();
-    appYUP.AssetUpdateAll();
+    auto visYUP = chrono_types::make_shared<ChVisualSystemIrrlicht>();
+    sysYUP.SetVisualSystem(visYUP);
+    visYUP->SetWindowSize(800, 600);
+    visYUP->SetWindowTitle("Tire YUP csys");
+    visYUP->Initialize();
+    visYUP->AddLogo();
+    visYUP->AddSkyBox();
+    visYUP->AddCamera(ChVector<>(1, 1, 3));
+    visYUP->AddTypicalLights();
 
-    while (appISO.GetDevice()->run()) {
-        appISO.BeginScene();
-        appISO.DrawAll();
-        irrlicht::tools::drawAllCOGs(sysISO, appISO.GetVideoDriver(), 1);
-        appISO.EndScene();
+    while (visISO->Run()) {
+        visISO->BeginScene();
+        visISO->DrawAll();
+        irrlicht::tools::drawAllCOGs(sysISO, visISO->GetVideoDriver(), 1);
+        visISO->EndScene();
 
-        appYUP.BeginScene();
-        appYUP.DrawAll();
-        irrlicht::tools::drawAllCOGs(sysYUP, appYUP.GetVideoDriver(), 1);
-        appYUP.EndScene();
+        visYUP->BeginScene();
+        visYUP->DrawAll();
+        irrlicht::tools::drawAllCOGs(sysYUP, visYUP->GetVideoDriver(), 1);
+        visYUP->EndScene();
 
         mISO.Advance(step_size);
         mYUP.Advance(step_size);

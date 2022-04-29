@@ -38,7 +38,7 @@
 ////#undef CHRONO_IRRLICHT
 
 #ifdef CHRONO_IRRLICHT
-#include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleIrrApp.h"
+#include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleVisualSystemIrrlicht.h"
 #endif
 
 using namespace chrono;
@@ -181,16 +181,18 @@ int main(int argc, char* argv[]) {
     // Create the vehicle Irrlicht application
     // ---------------------------------------
 
-    ChTrackedVehicleIrrApp app(&vehicle, L"M113 half round obstacle");
-    app.AddLogo();
-    app.AddTypicalLights();
-    app.SetChaseCamera(ChVector<>(0.0, 0.0, 0.0), 6.0, 0.5);
-    app.AssetBindAll();
-    app.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<ChTrackedVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle("M113 half round obstacle");
+    vis->SetChaseCamera(ChVector<>(0.0, 0.0, 0.0), 6.0, 0.5);
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    vehicle.SetVisualSystem(vis);
 
     // Visualization of controller points (sentinel & target)
-    irr::scene::IMeshSceneNode* ballS = app.GetSceneManager()->addSphereSceneNode(0.1f);
-    irr::scene::IMeshSceneNode* ballT = app.GetSceneManager()->addSphereSceneNode(0.1f);
+    irr::scene::IMeshSceneNode* ballS = vis->GetSceneManager()->addSphereSceneNode(0.1f);
+    irr::scene::IMeshSceneNode* ballT = vis->GetSceneManager()->addSphereSceneNode(0.1f);
     ballS->getMaterial(0).EmissiveColor = irr::video::SColor(0, 128, 0, 0);
     ballT->getMaterial(0).EmissiveColor = irr::video::SColor(0, 0, 128, 0);
 
@@ -314,13 +316,13 @@ int main(int argc, char* argv[]) {
             ballS->setPosition(irr::core::vector3df((irr::f32)pS.x(), (irr::f32)pS.y(), (irr::f32)pS.z()));
             ballT->setPosition(irr::core::vector3df((irr::f32)pT.x(), (irr::f32)pT.y(), (irr::f32)pT.z()));
 
-            if (!app.GetDevice()->run())
+            if (!vis->Run())
                 break;
 
             // Render scene
-            app.BeginScene();
-            app.DrawAll();
-            app.EndScene();
+            vis->BeginScene();
+            vis->DrawAll();
+            vis->EndScene();
             render_frame++;
         }
 #endif
@@ -337,7 +339,7 @@ int main(int argc, char* argv[]) {
         vehicle.Synchronize(time, driver_inputs, shoe_forces_left, shoe_forces_right);
         terrain.Synchronize(time);
 #ifdef CHRONO_IRRLICHT
-        app.Synchronize("Follower driver", driver_inputs);
+        vis->Synchronize("Follower driver", driver_inputs);
 #endif
 
         // Adjust step size for obstacle crossing
@@ -352,7 +354,7 @@ int main(int argc, char* argv[]) {
         terrain.Advance(step_size);
         vehicle.Advance(step_size);
 #ifdef CHRONO_IRRLICHT
-        app.Advance(step_size);
+        vis->Advance(step_size);
 #endif
 
         // Increment frame number
@@ -390,16 +392,10 @@ void AddHalfround(ChSystem* system, double radius, double obstacle_distance) {
     shape->GetCylinderGeometry().p1 = ChVector<>(obstacle_distance, -length * 0.5, 0);
     shape->GetCylinderGeometry().p2 = ChVector<>(obstacle_distance, length * 0.5, 0);
     shape->GetCylinderGeometry().rad = radius;
-    obstacle->AddAsset(shape);
+    shape->SetColor(ChColor(1, 1, 1));
+    obstacle->AddVisualShape(shape);
 
-    auto color = chrono_types::make_shared<ChColorAsset>();
-    color->SetColor(ChColor(1, 1, 1));
-    obstacle->AddAsset(color);
-
-    auto texture = chrono_types::make_shared<ChTexture>();
-    texture->SetTextureFilename(vehicle::GetDataFile("terrain/textures/tile4.jpg"));
-    texture->SetTextureScale(10, 10);
-    obstacle->AddAsset(texture);
+    obstacle->GetVisualShape(0)->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 10, 10);
 
     // Contact
     auto obst_mat = ChMaterialSurface::DefaultMaterial(system->GetContactMethod());

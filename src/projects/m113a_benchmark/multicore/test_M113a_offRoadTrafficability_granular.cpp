@@ -531,13 +531,13 @@ int main(int argc, char* argv[]) {
 
     auto box = chrono_types::make_shared<ChBoxShape>();
     box->GetBoxGeometry().Size = ChVector<>(.2, .1, .1);
-    slipRig->AddAsset(box);
+    slipRig->AddVisualShape(box);
 
     auto cyl = chrono_types::make_shared<ChCylinderShape>();
     cyl->GetCylinderGeometry().p1 = ChVector<>(0, 0, 0);
     cyl->GetCylinderGeometry().p2 = ChVector<>(0, 0, -.2);
     cyl->GetCylinderGeometry().rad = .05;
-    slipRig->AddAsset(cyl);
+    slipRig->AddVisualShape(cyl);
 
     slipRig->GetCollisionModel()->BuildModel();
 

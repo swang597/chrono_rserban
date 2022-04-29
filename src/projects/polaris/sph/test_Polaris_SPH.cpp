@@ -527,8 +527,8 @@ void CreateTerrain(ChSystem& sys, ChSystemFsi& sysFSI, std::shared_ptr<fsi::SimP
     trimesh->LoadWavefrontMesh(vehicle::GetDataFile(terrain_dir + "/mesh.obj"), true, false);
     auto trimesh_shape = chrono_types::make_shared<ChTriangleMeshShape>();
     trimesh_shape->SetMesh(trimesh);
-    trimesh_shape->SetStatic(true);
-    body->AddAsset(trimesh_shape);
+    trimesh_shape->SetMutable(false);
+    body->AddVisualShape(trimesh_shape);
 
     if (enable_terrain_mesh) {
         MaterialInfo mat_info;

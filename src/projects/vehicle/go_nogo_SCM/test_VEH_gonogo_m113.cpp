@@ -46,7 +46,7 @@
 
 ////#undef CHRONO_IRRLICHT
 #ifdef CHRONO_IRRLICHT
-#include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleIrrApp.h"
+#include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleVisualSystemIrrlicht.h"
 #endif
 
 #include "chrono_thirdparty/cxxopts/ChCLI.h"
@@ -354,16 +354,17 @@ int main(int argc, char* argv[]) {
     // Create the vehicle Irrlicht application
     // ---------------------------------------
 
-    ChTrackedVehicleIrrApp app(&m113, L"M113 go/no-go");
-    app.AddLight(irr::core::vector3df(-100.f, -150.f, 150.f), 150, irr::video::SColorf(0.65f, 0.65f, 0.7f));
-    app.AddLight(irr::core::vector3df(-100.f, +150.f, 150.f), 150, irr::video::SColorf(0.65f, 0.65f, 0.7f));
-    app.AddLogo();
-    app.SetChaseCamera(trackPoint, 5.0, 0.25);
-    app.AssetBindAll();
-    app.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<ChTrackedVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle("M113 go/no-go");
+    vis->SetChaseCamera(trackPoint, 6.0, 0.5);
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    m113.SetVisualSystem(vis);
 
-    ////app.SetChaseCameraAngle(CH_C_PI / 5);
-    ////app.EnableStats(false);
+    ////vis->SetChaseCameraAngle(CH_C_PI / 5);
+    ////vis->EnableStats(false);
 #endif
 
     // Save parameters and problem setup to output file
@@ -432,11 +433,11 @@ int main(int argc, char* argv[]) {
         }
 
 #ifdef CHRONO_IRRLICHT
-        if (!app.GetDevice()->run())
+        if (!vis->Run())
             break;
 
-        app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-        app.DrawAll();
+        vis->BeginScene();
+        vis->DrawAll();
 #endif
 
         // Extract chassis state
@@ -515,7 +516,7 @@ int main(int argc, char* argv[]) {
         driver.Synchronize(time);
         m113.Synchronize(time, driver_inputs, shoe_forces_left, shoe_forces_right);
 #ifdef CHRONO_IRRLICHT
-        app.Synchronize("", driver_inputs);
+        vis->Synchronize("", driver_inputs);
 #endif
 
         // Advance systems
@@ -523,7 +524,7 @@ int main(int argc, char* argv[]) {
         terrain.Advance(time_step);
         m113.Advance(time_step);
 #ifdef CHRONO_IRRLICHT
-        app.Advance(time_step);
+        vis->Advance(time_step);
 #endif
 
         ////terrain.PrintStepStatistics(cout);
@@ -534,7 +535,7 @@ int main(int argc, char* argv[]) {
         exec_time += system->GetTimerStep();
 
 #ifdef CHRONO_IRRLICHT
-        app.EndScene();
+        vis->EndScene();
 #endif
     }
 
@@ -570,7 +571,7 @@ GONOGO_Driver::GONOGO_Driver(chrono::vehicle::ChVehicle& vehicle,
         path_asset->SetLineGeometry(chrono_types::make_shared<chrono::geometry::ChLineBezier>(m_steeringPID.GetPath()));
         path_asset->SetColor(chrono::ChColor(0.0f, 0.8f, 0.0f));
         path_asset->SetName("straight_path");
-        road->AddAsset(path_asset);
+        road->AddVisualShape(path_asset);
     }
 }
 
