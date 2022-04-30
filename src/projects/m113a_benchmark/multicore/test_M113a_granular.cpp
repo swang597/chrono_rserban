@@ -45,7 +45,7 @@
 
 // M113 model header files
 #include "chrono_models/vehicle/m113a/M113a_Vehicle.h"
-#include "chrono_models/vehicle/m113a/M113a_SimplePowertrain.h"
+#include "chrono_models/vehicle/m113a/M113a_SimpleMapPowertrain.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 
@@ -419,7 +419,7 @@ int main(int argc, char* argv[]) {
     ////vehicle.SetCollide(TrackCollide::ALL & (~TrackCollide::SPROCKET_LEFT) & (~TrackCollide::SPROCKET_RIGHT));
 
     // Create the powertrain system
-    auto powertrain = chrono_types::make_shared<M113a_SimplePowertrain>("Powertrain");
+    auto powertrain = chrono_types::make_shared<M113a_SimpleMapPowertrain>("Powertrain");
     vehicle.InitializePowertrain(powertrain);
 
     // Create the driver system

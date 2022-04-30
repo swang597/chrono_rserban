@@ -31,7 +31,7 @@
 #include "chrono_vehicle/driver/ChDataDriver.h"
 
 #include "chrono_models/vehicle/m113a/M113a_Vehicle.h"
-#include "chrono_models/vehicle/m113a/M113a_SimplePowertrain.h"
+#include "chrono_models/vehicle/m113a/M113a_SimpleMapPowertrain.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 
@@ -134,7 +134,7 @@ int main(int argc, char* argv[]) {
     vehicle.GetDriveline()->SetGyrationMode(true);
 
     // Create and initialize the powertrain system
-    auto powertrain = chrono_types::make_shared<M113a_SimplePowertrain>("Powertrain");
+    auto powertrain = chrono_types::make_shared<M113a_SimpleMapPowertrain>("Powertrain");
     vehicle.InitializePowertrain(powertrain);
 
     auto solver = chrono_types::make_shared<ChSolverMINRES>();

@@ -70,6 +70,8 @@ M113a_TrackShoeSinglePin::M113a_TrackShoeSinglePin(const std::string& name) : Ch
     m_geometry.m_coll_boxes.push_back(box_side_outer);
     m_geometry.m_coll_boxes.push_back(box_side_inner);
 
+    m_geometry.m_has_primitives = true;
+
     m_geometry.m_vis_boxes.push_back(box_bottom);
     m_geometry.m_vis_boxes.push_back(box_top);
     m_geometry.m_vis_boxes.push_back(box_guide);

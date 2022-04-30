@@ -41,7 +41,7 @@
 #include "chrono_vehicle/utils/ChVehiclePath.h"
 #include "chrono_vehicle/utils/ChSteeringController.h"
 
-#include "chrono_models/vehicle/m113a/M113a_SimplePowertrain.h"
+#include "chrono_models/vehicle/m113a/M113a_SimpleMapPowertrain.h"
 #include "chrono_models/vehicle/m113a/M113a_Vehicle.h"
 
 ////#undef CHRONO_IRRLICHT
@@ -305,7 +305,7 @@ int main(int argc, char* argv[]) {
     m113.GetDriveline()->SetGyrationMode(true);
 
     // Create and initialize the powertrain system
-    auto powertrain = chrono_types::make_shared<M113a_SimplePowertrain>("Powertrain");
+    auto powertrain = chrono_types::make_shared<M113a_SimpleMapPowertrain>("Powertrain");
     m113.InitializePowertrain(powertrain);
 
     // -------------------------------------

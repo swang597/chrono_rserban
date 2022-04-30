@@ -46,12 +46,12 @@ M113a_Chassis::M113a_Chassis(const std::string& name, bool fixed, CollisionType 
     m_body_inertia(1, 1) = m_body_inertiaXX.y();
     m_body_inertia(2, 2) = m_body_inertiaXX.z();
 
-    m_body_inertia(0, 1) = m_body_inertiaXX.x();
-    m_body_inertia(0, 2) = m_body_inertiaXX.y();
-    m_body_inertia(1, 2) = m_body_inertiaXX.z();
-    m_body_inertia(1, 0) = m_body_inertiaXX.x();
-    m_body_inertia(2, 0) = m_body_inertiaXX.y();
-    m_body_inertia(2, 1) = m_body_inertiaXX.z();
+    m_body_inertia(0, 1) = m_body_inertiaXY.x();
+    m_body_inertia(0, 2) = m_body_inertiaXY.y();
+    m_body_inertia(1, 2) = m_body_inertiaXY.z();
+    m_body_inertia(1, 0) = m_body_inertiaXY.x();
+    m_body_inertia(2, 0) = m_body_inertiaXY.y();
+    m_body_inertia(2, 1) = m_body_inertiaXY.z();
 
     // Belly shape (all dimensions in cm)
     //   width: 170

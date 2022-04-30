@@ -28,6 +28,7 @@ namespace m113 {
 const double M113a_ShaftsPowertrain::m_motorblock_inertia = 10.5;
 const double M113a_ShaftsPowertrain::m_crankshaft_inertia = 1.1;
 const double M113a_ShaftsPowertrain::m_ingear_shaft_inertia = 0.3;
+const double M113a_ShaftsPowertrain::m_power_shaft_inertia = 0.5;
 
 const double M113a_ShaftsPowertrain::m_upshift_RPM = 2500;
 const double M113a_ShaftsPowertrain::m_downshift_RPM = 1500;
