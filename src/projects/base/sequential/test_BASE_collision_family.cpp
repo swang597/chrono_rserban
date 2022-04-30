@@ -18,7 +18,7 @@
 
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/utils/ChUtilsCreators.h"
-#include "chrono_irrlicht/ChIrrApp.h"
+#include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 
 using namespace chrono;
 using namespace chrono::collision;
@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
     ball_lower->SetBodyFixed(false);
     ball_lower->SetCollide(true);
 
-    ball_lower->AddAsset(chrono_types::make_shared<ChColorAsset>(1.0f, 0.0f, 0.0f));
+    ball_lower->GetVisualShape(0)->SetColor(ChColor(1.0f, 0.0f, 0.0f));
 
     ball_lower->GetCollisionModel()->ClearModel();
     ball_lower->GetCollisionModel()->SetFamily(3);
@@ -69,7 +69,7 @@ int main(int argc, char* argv[]) {
     ball_upper->SetBodyFixed(false);
     ball_upper->SetCollide(true);
 
-    ball_upper->AddAsset(chrono_types::make_shared<ChColorAsset>(0.0f, 1.0f, 0.0f));
+    ball_upper->GetVisualShape(0)->SetColor(ChColor(0.0f, 1.0f, 0.0f));
 
     ball_upper->GetCollisionModel()->ClearModel();
     ball_upper->GetCollisionModel()->SetFamily(3);
@@ -88,7 +88,7 @@ int main(int argc, char* argv[]) {
     plate->SetBodyFixed(true);
     plate->SetCollide(true);
 
-    plate->AddAsset(chrono_types::make_shared<ChColorAsset>(0.3f, 0.3f, 0.5f));
+    plate->GetVisualShape(0)->SetColor(ChColor(0.3f, 0.3f, 0.5f));
 
     plate->GetCollisionModel()->ClearModel();
     utils::AddBoxGeometry(plate.get(), contact_mat, ChVector<>(10 * radius, radius, 10 * radius));
@@ -97,13 +97,15 @@ int main(int argc, char* argv[]) {
     sys.AddBody(plate);
 
     // Create the visualization window
-    irrlicht::ChIrrApp application(&sys, L"Collision family", irr::core::dimension2d<irr::u32>(800, 600));
-    application.AddLogo();
-    application.AddSkyBox();
-    application.AddTypicalLights();
-    application.AddCamera(irr::core::vector3df(0, 2, -4));
-    application.AssetBindAll();
-    application.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<irrlicht::ChVisualSystemIrrlicht>();
+    vis->SetWindowSize(800, 600);
+    vis->SetWindowTitle("Collision family");
+    vis->Initialize();
+    vis->AddLogo();
+    vis->AddSkyBox();
+    vis->AddTypicalLights();
+    vis->AddCamera(ChVector<>(0, 2, -4));
+    sys.SetVisualSystem(vis);
 
     for (const auto& body : sys.Get_bodylist()) {
         std::cout << "Body " << body->GetIdentifier() << "  family: " << body->GetCollisionModel()->GetFamily()
@@ -111,10 +113,10 @@ int main(int argc, char* argv[]) {
     }
 
     // Run simulation for specified time
-    while (application.GetDevice()->run()) {
-        application.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-        application.DrawAll();
-        application.EndScene();
+    while (vis->Run()) {
+        vis->BeginScene();
+        vis->DrawAll();
+        vis->EndScene();
         sys.DoStepDynamics(1e-3);
     }
 

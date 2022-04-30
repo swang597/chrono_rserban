@@ -18,7 +18,7 @@
 
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/physics/ChSystemSMC.h"
-#include "chrono_irrlicht/ChIrrApp.h"
+#include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 
 using namespace chrono;
 using namespace chrono::irrlicht;
@@ -159,18 +159,6 @@ int main(int argc, char* argv[]) {
 
     system->Set_G_acc(ChVector<>(0, -9.81, 0));
 
-    // Create the Irrlicht visualization
-    ChIrrApp application(system, L"Collision test", irr::core::dimension2d<irr::u32>(800, 600));
-    application.AddLogo();
-    application.AddSkyBox();
-    application.AddTypicalLights();
-    application.AddCamera(irr::core::vector3df(0.5, 1, -2), irr::core::vector3df(0, 0, 0));
-
-    // Render contact forces or normals
-    application.SetSymbolscale(5e-3);
-    application.SetContactsDrawMode(IrrContactsDrawMode::CONTACT_FORCES);
-    ////application.SetSymbolscale(1);
-    ////application.SetContactsDrawMode(IrrContactsDrawMode::CONTACT_NORMALS);
 
     // Rotation Z->Y (because meshes used here assume Z up)
     ChQuaternion<> z2y = Q_from_AngX(-CH_C_PI_2);
@@ -212,7 +200,8 @@ int main(int argc, char* argv[]) {
             cyl->GetCylinderGeometry().p1 = ChVector<>(0, +hlen, 0);
             cyl->GetCylinderGeometry().p2 = ChVector<>(0, -hlen, 0);
             cyl->GetCylinderGeometry().rad = radius;
-            object->AddAsset(cyl);
+            cyl->SetColor(ChColor(0.3f, 0.3f, 0.3f));
+            object->AddVisualShape(cyl);
 
             break;
         }
@@ -229,15 +218,12 @@ int main(int argc, char* argv[]) {
             auto trimesh_shape = chrono_types::make_shared<ChTriangleMeshShape>();
             trimesh_shape->SetMesh(trimesh);
             trimesh_shape->SetWireframe(true);
-            object->AddAsset(trimesh_shape);
+            trimesh_shape->SetColor(ChColor(0.3f, 0.3f, 0.3f));
+            object->AddVisualShape(trimesh_shape);
 
             break;
         }
     }
-
-    std::shared_ptr<ChColorAsset> mcol(new ChColorAsset);
-    mcol->SetColor(ChColor(0.3f, 0.3f, 0.3f));
-    object->AddAsset(mcol);
 
     // Create ground body
     auto ground = std::shared_ptr<ChBody>(system->NewBody());
@@ -275,13 +261,8 @@ int main(int argc, char* argv[]) {
 
             auto box = chrono_types::make_shared<ChBoxShape>();
             box->GetBoxGeometry().Size = ChVector<>(hx, hy, hz);
-            box->GetBoxGeometry().Pos = ChVector<>(0, 0, -hz);
-            ground->AddAsset(box);
-
-            auto texture = chrono_types::make_shared<ChTexture>();
-            texture->SetTextureFilename(GetChronoDataFile("textures/checker1.png"));
-            texture->SetTextureScale(4, 3);
-            ground->AddAsset(texture);
+            box->SetTexture(GetChronoDataFile("textures/checker1.png"), 4, 3);
+            ground->AddVisualShape(box, ChFrame<>(ChVector<>(0, 0, -hz)));
 
             break;
         }
@@ -295,20 +276,25 @@ int main(int argc, char* argv[]) {
 
             auto trimesh_shape = chrono_types::make_shared<ChTriangleMeshShape>();
             trimesh_shape->SetMesh(trimesh);
-            ground->AddAsset(trimesh_shape);
-
-            auto texture = chrono_types::make_shared<ChTexture>();
-            texture->SetTextureFilename(GetChronoDataFile("textures/checker2.png"));
-            texture->SetTextureScale(1, 1);
-            ground->AddAsset(texture);
+            trimesh_shape->SetTexture(GetChronoDataFile("textures/checker2.png"), 1, 1);
+            ground->AddVisualShape(trimesh_shape);
 
             break;
         }
     }
 
-    // Complete asset construction
-    application.AssetBindAll();
-    application.AssetUpdateAll();
+    // Create the Irrlicht visualization
+    auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
+    vis->SetWindowSize(800, 600);
+    vis->SetWindowTitle("Collision test");
+    vis->Initialize();
+    vis->AddLogo();
+    vis->AddSkyBox();
+    vis->AddTypicalLights();
+    vis->AddCamera(ChVector<>(0.5, 1, -2));
+    vis->SetSymbolScale(5e-3);
+    vis->EnableContactDrawing(IrrContactsDrawMode::CONTACT_FORCES);
+    system->SetVisualSystem(vis);
 
     auto cmanager = chrono_types::make_shared<ContactManager>();
 
@@ -321,10 +307,10 @@ int main(int argc, char* argv[]) {
     // ---------------
     // Simulation loop
     // ---------------
-    while (application.GetDevice()->run()) {
-        application.BeginScene();
-        application.DrawAll();
-        application.EndScene();
+    while (vis->Run()) {
+        vis->BeginScene();
+        vis->DrawAll();
+        vis->EndScene();
 
         system->DoStepDynamics(time_step);
 
@@ -341,7 +327,7 @@ std::shared_ptr<geometry::ChTriangleMeshConnected> GroundMesh(double hx, double 
     auto trimesh = chrono_types::make_shared<geometry::ChTriangleMeshConnected>();
     std::vector<ChVector<>>& v = trimesh->getCoordsVertices();
     std::vector<ChVector<>>& n = trimesh->getCoordsNormals();
-    std::vector<ChVector<>>& uv = trimesh->getCoordsUV();
+    std::vector<ChVector2<>>& uv = trimesh->getCoordsUV();
     std::vector<ChVector<int>>& iv = trimesh->getIndicesVertexes();
     std::vector<ChVector<int>>& in = trimesh->getIndicesNormals();
 
@@ -362,10 +348,10 @@ std::shared_ptr<geometry::ChTriangleMeshConnected> GroundMesh(double hx, double 
     n[2] = ChVector<>(0, 0, 1);
     n[3] = ChVector<>(0, 0, 1);
 
-    uv[0] = ChVector<>(1, 1, 0);
-    uv[1] = ChVector<>(0, 1, 0);
-    uv[2] = ChVector<>(0, 0, 0);
-    uv[3] = ChVector<>(1, 0, 0);
+    uv[0] = ChVector2<>(1, 1);
+    uv[1] = ChVector2<>(0, 1);
+    uv[2] = ChVector2<>(0, 0);
+    uv[3] = ChVector2<>(1, 0);
 
     iv[0] = ChVector<int>(0, 1, 2);
     iv[1] = ChVector<int>(0, 2, 3);

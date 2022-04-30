@@ -22,9 +22,10 @@
 
 #include "chrono/utils/ChUtilsCreators.h"
 #include "chrono/physics/ChSystemNSC.h"
-#include "chrono_irrlicht/ChIrrApp.h"
+#include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 
 using namespace chrono;
+using namespace chrono::irrlicht;
 
 // --------------------------------------------------------------------------
 
@@ -84,7 +85,7 @@ int main(int argc, char* argv[]) {
     }
     container->GetCollisionModel()->BuildModel();
 
-    container->AddAsset(chrono_types::make_shared<ChColorAsset>(ChColor(0.4f, 0.4f, 0.2f)));
+    container->GetVisualShape(0)->SetColor(ChColor(0.4f, 0.4f, 0.2f));
 
     auto ball_material = chrono_types::make_shared<ChMaterialSurfaceNSC>();
     ball_material->SetFriction(1.0);
@@ -105,7 +106,7 @@ int main(int argc, char* argv[]) {
         utils::AddSphereGeometry(ball.get(), ball_material, radius);
         ball->GetCollisionModel()->BuildModel();
 
-        ball->AddAsset(chrono_types::make_shared<ChTexture>(GetChronoDataFile("textures/bluewhite.png")));
+        ball->GetVisualShape(0)->SetTexture(GetChronoDataFile("textures/bluewhite.png"));
 
         system.AddBody(ball);
         balls.push_back(ball);
@@ -115,27 +116,29 @@ int main(int argc, char* argv[]) {
     // Create the visualization window
     // -------------------------------
 
-    irrlicht::ChIrrApp application(&system, L"Rolling test", irr::core::dimension2d<irr::u32>(800, 600));
-    application.AddLogo();
-    application.AddSkyBox();
-    application.AddTypicalLights();
-    application.AddCamera(irr::core::vector3df(10, 10, -20));
-    application.AssetBindAll();
-    application.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
+    vis->SetWindowSize(800, 600);
+    vis->SetWindowTitle("Rolling test");
+    vis->Initialize();
+    vis->AddLogo();
+    vis->AddSkyBox();
+    vis->AddTypicalLights();
+    vis->AddCamera(ChVector<>(10, 10, -20));
+    system.SetVisualSystem(vis);
 
     // ---------------
     // Simulate system
     // ---------------
 
-    while (application.GetDevice()->run()) {
+    while (vis->Run()) {
         std::cout << "time: " << system.GetChTime();
         for (auto ball : balls)
             std::cout << "   " << ball->GetPos().y();
         std::cout << std::endl;
 
-        application.BeginScene();
-        application.DrawAll();
-        application.EndScene();
+        vis->BeginScene();
+        vis->DrawAll();
+        vis->EndScene();
 
         system.DoStepDynamics(time_step);
     }

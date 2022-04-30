@@ -8,7 +8,7 @@
 #include "chrono/physics/ChSystemSMC.h"
 #include "chrono/physics/ChSystemNSC.h"
 
-#include "chrono_irrlicht/ChIrrApp.h"
+#include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 #include "chrono_irrlicht/ChIrrTools.h"
 
 using namespace chrono;
@@ -78,9 +78,7 @@ int main(int argc, char* argv[]) {
     utils::AddSphereGeometry(ball.get(), ball_mat, radius);
     ball->GetCollisionModel()->BuildModel();
 
-    auto texture = chrono_types::make_shared<ChTexture>();
-    texture->SetTextureFilename(GetChronoDataFile("textures/greenwhite.png"));
-    ball->AddAsset(texture);
+    ball->GetVisualShape(0)->SetTexture(GetChronoDataFile("textures/greenwhite.png"));
 
     my_sys.AddBody(ball);
 
@@ -107,12 +105,15 @@ int main(int argc, char* argv[]) {
     }
 
     // Create the visualization window
-    irrlicht::ChIrrApp application(&my_sys, L"Body force test", irr::core::dimension2d<irr::u32>(800, 600));
-    application.AddLogo();
-    application.AddTypicalLights();
-    application.AddCamera(irr::core::vector3df(0, -4, 2));
-    application.AssetBindAll();
-    application.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<irrlicht::ChVisualSystemIrrlicht>();
+    vis->SetWindowSize(800, 600);
+    vis->SetWindowTitle("Body force test");
+    vis->Initialize();
+    vis->AddLogo();
+    vis->AddSkyBox();
+    vis->AddTypicalLights();
+    vis->AddCamera(ChVector<>(0, -4, 2));
+    my_sys.SetVisualSystem(vis);
 
     // Run simulation for specified time
     int out_steps = static_cast<int>(std::ceil((1 / time_step) / out_fps));
@@ -129,11 +130,11 @@ int main(int argc, char* argv[]) {
 
         std::cout << "Vx: " << ball->GetPos_dt().x() << std::endl;
 
-        if (application.GetDevice()->run()) {
-            application.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-            application.DrawAll();
-            irrlicht::tools::drawAllCOGs(my_sys, application.GetVideoDriver(), 1);
-            application.EndScene();
+        if (vis->Run()) {
+            vis->BeginScene();
+            vis->DrawAll();
+            irrlicht::tools::drawAllCOGs(my_sys, vis->GetVideoDriver(), 1);
+            vis->EndScene();
         } else {
             return 1;
         }

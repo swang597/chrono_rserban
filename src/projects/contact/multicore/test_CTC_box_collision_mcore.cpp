@@ -20,7 +20,6 @@
 // =============================================================================
 
 #include "chrono/ChConfig.h"
-#include "chrono/assets/ChColorAsset.h"
 #include "chrono/utils/ChUtilsCreators.h"
 
 #include "chrono_multicore/physics/ChSystemMulticore.h"
@@ -215,7 +214,7 @@ int main(int argc, char** argv) {
     utils::AddBoxGeometry(plate.get(), contact_mat, ChVector<>(10, 10, 1), ChVector<>(0, 0, -5));
     plate->GetCollisionModel()->BuildModel();
 
-    plate->AddAsset(chrono_types::make_shared<ChColorAsset>(ChColor(0.4f, 0.4f, 0.2f)));
+    plate->GetVisualShape(0)->SetColor(ChColor(0.4f, 0.4f, 0.2f));
 
     // -----------------------------------
     // Add boxes (1: bottom fixed, 2: top)
@@ -254,7 +253,7 @@ int main(int argc, char** argv) {
     box1->GetCollisionModel()->ClearModel();
     utils::AddBoxGeometry(box1.get(), contact_mat, hdims1);
     box1->GetCollisionModel()->BuildModel();
-    box1->AddAsset(chrono_types::make_shared<ChColorAsset>(ChColor(0.2f, 0.3f, 0.4f)));
+    box1->GetVisualShape(0)->SetColor(ChColor(0.2f, 0.3f, 0.4f));
     sys->AddBody(box1);
 
     auto box2 = std::shared_ptr<ChBody>(sys->NewBody());
@@ -268,7 +267,7 @@ int main(int argc, char** argv) {
     box2->GetCollisionModel()->ClearModel();
     utils::AddBoxGeometry(box2.get(), contact_mat, hdims2);
     box2->GetCollisionModel()->BuildModel();
-    box2->AddAsset(chrono_types::make_shared<ChColorAsset>(ChColor(0.2f, 0.3f, 0.4f)));
+    box2->GetVisualShape(0)->SetColor(ChColor(0.2f, 0.3f, 0.4f));
     sys->AddBody(box2);
 
 #ifdef CHRONO_OPENGL

@@ -19,7 +19,7 @@
     #include "chrono_mumps/ChSolverMumps.h"
 #endif
 
-#include "chrono_irrlicht/ChIrrApp.h"
+#include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 
 using namespace chrono;
 using namespace chrono::irrlicht;
@@ -178,8 +178,8 @@ int main(int argc, char* argv[]) {
             body->SetBodyFixed(true);
         auto box = chrono_types::make_shared<ChBoxShape>();
         box->GetBoxGeometry().SetLengths(ChVector<>(length, length / 6, length / 6));
-        body->AddAsset(box);
-        body->AddAsset(chrono_types::make_shared<ChColorAsset>(0.0f, 0.0f, (i * 1.0f) / (n - 1)));
+        box->SetColor(ChColor(0.0f, 0.0f, (i * 1.0f) / (n - 1)));
+        body->AddVisualShape(box);
         sys.AddBody(body);
         bodies.push_back(body);
 
@@ -211,25 +211,27 @@ int main(int argc, char* argv[]) {
                          ChCoordsys<>(ChVector<>(-length / 2, 0, 0), z2y));  //
         sys.AddLink(rsda);
 
-        rsda->AddAsset(chrono_types::make_shared<ChRotSpringShape>(length / 4, 100));
+        rsda->AddVisualShape(chrono_types::make_shared<ChRotSpringShape>(length / 4, 100));
     }
 
     // Create the Irrlicht application
-    ChIrrApp application(&sys, L"RSDA test", irr::core::dimension2d<irr::u32>(800, 600), VerticalDir::Z);
-    application.AddLogo();
-    application.AddSkyBox();
-    application.AddTypicalLights();
-    application.AddCamera(irr::core::vector3df(0, 2, radius), irr::core::vector3df(0, 0, radius));
-
-    application.AssetBindAll();
-    application.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
+    vis->SetWindowSize(800, 600);
+    vis->SetCameraVertical(CameraVerticalDir::Z);
+    vis->SetWindowTitle("RSDA test");
+    vis->Initialize();
+    vis->AddLogo();
+    vis->AddSkyBox();
+    vis->AddTypicalLights();
+    vis->AddCamera(ChVector<>(0, 0, 6));
+    sys.SetVisualSystem(vis);
 
     // Simulation loop
-    while (application.GetDevice()->run()) {
-        application.BeginScene();
-        application.DrawAll();
-        tools::drawAllLinkframes(sys, application.GetVideoDriver(), 1.5);
-        application.EndScene();
+    while (vis->Run()) {
+        vis->BeginScene();
+        vis->DrawAll();
+        tools::drawAllLinkframes(sys, vis->GetVideoDriver(), 1.5);
+        vis->EndScene();
 
         sys.DoStepDynamics(step_size);
     }

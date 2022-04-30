@@ -1632,8 +1632,8 @@ void AxialDynamics() {
     double start = std::clock();
     int Iter = 0;
     while (/*vis->Run() && */ (sys.GetChTime() <= 1.0)) {
-        // application.BeginScene();
-        // application.DrawAll();
+        // vis->BeginScene()
+        // vis->DrawAll();
         // application.DoStep();
 
         force = 300 * std::sin(sys.GetChTime() * CH_C_PI) / 4;
@@ -1642,7 +1642,7 @@ void AxialDynamics() {
         nodetip3->SetForce(ChVector<>(force, 0.0, 0.0));
         nodetip4->SetForce(ChVector<>(force, 0.0, 0.0));
         sys.DoStepDynamics(timestep);
-        // application.EndScene();
+        // vis->EndScene()
         Iter += mystepper->GetNumIterations();
         // GetLog() << "t = " << sys.GetChTime() << "\n";
         // GetLog() << "Last it: " << mystepper->GetNumIterations() << "\n\n";

@@ -24,14 +24,13 @@
 
 #include "chrono_multicore/physics/ChSystemMulticore.h"
 #include "chrono/assets/ChTexture.h"
-#include "chrono/assets/ChColorAsset.h"
 #include "chrono/utils/ChUtilsCreators.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
 #include "chrono_thirdparty/filesystem/path.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 
-#include "chrono_irrlicht/ChIrrApp.h"
+#include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 
 using namespace chrono;
 using namespace chrono::collision;
@@ -67,7 +66,7 @@ class ContactReporter : public ChContactContainer::ReportContactCallback {
 };
 
 std::shared_ptr<ChBody> AddBoxBody(int id,
-                                   ChSystemMulticoreSMC* msystem,
+                                   ChSystemMulticoreSMC* sys,
                                    std::shared_ptr<ChMaterialSurfaceSMC> mat,
                                    ChVector<> size,
                                    double mass,
@@ -89,19 +88,15 @@ std::shared_ptr<ChBody> AddBoxBody(int id,
     body->GetCollisionModel()->ClearModel();
     utils::AddBoxGeometry(body.get(), mat, size / 2);
     body->GetCollisionModel()->BuildModel();
-
-    // Attach a color to the visible container
-    auto mvisual = chrono_types::make_shared<ChColorAsset>();
-    mvisual->SetColor(ChColor(0.55f, 0.57f, 0.67f));
-    body->AddAsset(mvisual);
+    body->GetVisualShape(0)->SetColor(ChColor(0.55f, 0.57f, 0.67f));
 
     // Return a pointer to the wall object
-    msystem->AddBody(body);
+    sys->AddBody(body);
     return body;
 }
 
 std::shared_ptr<ChBody> AddSphereBody(int id,
-                                      ChSystemMulticoreSMC* msystem,
+                                      ChSystemMulticoreSMC* sys,
                                       std::shared_ptr<ChMaterialSurfaceSMC> mat,
                                       ChVector<> size,
                                       double mass,
@@ -133,20 +128,16 @@ std::shared_ptr<ChBody> AddSphereBody(int id,
     // visualization
     auto box = chrono_types::make_shared<ChBoxShape>();
     box->GetBoxGeometry().Size = hsize;
-    body->GetAssets().push_back(box);
-
-    // Attach a color to the visible container
-    auto mvisual = chrono_types::make_shared<ChColorAsset>();
-    mvisual->SetColor(ChColor(0.55f, 0.57f, 0.67f));
-    body->AddAsset(mvisual);
+    box->SetColor(ChColor(0.55f, 0.57f, 0.67f));
+    body->AddVisualShape(box);
 
     // Return a pointer to the wall object
-    msystem->AddBody(body);
+    sys->AddBody(body);
     return body;
 }
 
-double CalcKE(ChSystemMulticoreSMC* msystem) {
-    const std::shared_ptr<ChBody> body = msystem->Get_bodylist().at(1);
+double CalcKE(ChSystemMulticoreSMC* sys) {
+    const std::shared_ptr<ChBody> body = sys->Get_bodylist().at(1);
 
     ChVector<> eng_trn = 0.5 * body->GetMass() * body->GetPos_dt() * body->GetPos_dt();
     ChVector<> eng_rot = 0.5 * body->GetInertiaXX() * body->GetWvel_par() * body->GetWvel_par();
@@ -158,13 +149,13 @@ double CalcKE(ChSystemMulticoreSMC* msystem) {
     return KE_tot;
 }
 
-bool CalcAverageKE(ChSystemMulticoreSMC* msystem, const double& threshold) {
+bool CalcAverageKE(ChSystemMulticoreSMC* sys, const double& threshold) {
     // Calculate average KE
     double KE_trn = 0;
     double KE_rot = 0;
 
-    for (int i = 0; i < msystem->Get_bodylist().size(); ++i) {
-        const std::shared_ptr<ChBody> body = msystem->Get_bodylist().at(i);
+    for (int i = 0; i < sys->Get_bodylist().size(); ++i) {
+        const std::shared_ptr<ChBody> body = sys->Get_bodylist().at(i);
 
         ChVector<> eng_trn = 0.5 * body->GetMass() * body->GetPos_dt() * body->GetPos_dt();
         ChVector<> eng_rot = 0.5 * body->GetInertiaXX() * body->GetWvel_par() * body->GetWvel_par();
@@ -173,8 +164,8 @@ bool CalcAverageKE(ChSystemMulticoreSMC* msystem, const double& threshold) {
         KE_rot += eng_rot.x() + eng_rot.y() + eng_rot.z();
     }
 
-    double KE_trn_avg = KE_trn / msystem->Get_bodylist().size();
-    double KE_rot_avg = KE_rot / msystem->Get_bodylist().size();
+    double KE_trn_avg = KE_trn / sys->Get_bodylist().size();
+    double KE_rot_avg = KE_rot / sys->Get_bodylist().size();
     double KE_tot_avg = KE_trn_avg + KE_rot_avg;
 
     // Return true if the calc falls below the given threshold
@@ -225,57 +216,57 @@ int main(int argc, char* argv[]) {
         double time_step = 1.0E-5;
         ChVector<> gravity(0, -9.81, 0);
 
-        ChSystemMulticoreSMC msystem;
-        msystem.Set_G_acc(gravity);
-        msystem.GetSettings()->solver.max_iteration_bilateral = 100;
-        msystem.GetSettings()->solver.tolerance = 1e-3;
-        msystem.GetSettings()->solver.contact_force_model = fmodels[f];
-        msystem.GetSettings()->solver.adhesion_force_model = ChSystemSMC::AdhesionForceModel::Constant;
-        msystem.GetSettings()->solver.tangential_displ_mode = ChSystemSMC::TangentialDisplacementModel::OneStep;
-        msystem.GetSettings()->collision.bins_per_axis = vec3(10, 10, 10);
-        msystem.GetSettings()->collision.narrowphase_algorithm = ChNarrowphase::Algorithm::HYBRID;
-        msystem.SetCollisionSystemType(ChCollisionSystemType::CHRONO);
-        msystem.SetNumThreads(2);
+        ChSystemMulticoreSMC sys;
+        sys.Set_G_acc(gravity);
+        sys.GetSettings()->solver.max_iteration_bilateral = 100;
+        sys.GetSettings()->solver.tolerance = 1e-3;
+        sys.GetSettings()->solver.contact_force_model = fmodels[f];
+        sys.GetSettings()->solver.adhesion_force_model = ChSystemSMC::AdhesionForceModel::Constant;
+        sys.GetSettings()->solver.tangential_displ_mode = ChSystemSMC::TangentialDisplacementModel::OneStep;
+        sys.GetSettings()->collision.bins_per_axis = vec3(10, 10, 10);
+        sys.GetSettings()->collision.narrowphase_algorithm = ChNarrowphase::Algorithm::HYBRID;
+        sys.SetCollisionSystemType(ChCollisionSystemType::CHRONO);
+        sys.SetNumThreads(2);
 
         // Add the wall to the system
         double wmass = 10.0;
         ChVector<> wsize(8, 1, 3);
         ChVector<> wpos(0, -wsize.y() / 2 - 0.5, 0);
-        auto wall = AddBoxBody(-1, &msystem, mat, wsize, wmass, wpos, true);
+        auto wall = AddBoxBody(-1, &sys, mat, wsize, wmass, wpos, true);
 
         // Add the block to the system
         double bmass = 1.0;
         ChVector<> bsize(0.5, 0.5, 0.5);
         ChVector<> bpos(0, bsize.y() / 2 - 0.49, 0);
-        auto body = AddBoxBody(0, &msystem, mat, bsize, bmass, bpos, false);
-        ////auto body = AddSphereBody(0, &msystem, mat, bsize, bmass, bpos, false);
+        auto body = AddBoxBody(0, &sys, mat, bsize, bmass, bpos, false);
+        ////auto body = AddSphereBody(0, &sys, mat, bsize, bmass, bpos, false);
 
         // Create the Irrlicht visualization.
-        ChIrrApp* application = new ChIrrApp(&msystem, L"Sliding box SMC test", core::dimension2d<u32>(800, 600));
-        application->AddLogo();
-        application->AddSkyBox();
-        application->AddTypicalLights();
-        application->AddCamera(core::vector3df(0, 0, -7.5));
-        application->SetStepManage(true);
-        application->SetTimestep(time_step);
-        application->AssetBindAll();
-        application->AssetUpdateAll();
+        auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
+        vis->SetWindowSize(800, 600);
+        vis->SetWindowTitle("Sliding box SMC test");
+        vis->Initialize();
+        vis->AddLogo();
+        vis->AddSkyBox();
+        vis->AddTypicalLights();
+        vis->AddCamera(ChVector<>(0, 0, -7.5));
+        sys.SetVisualSystem(vis);
 
         // Callback for contact reporting
         auto creporter = chrono_types::make_shared<ContactReporter>(body);
 
         // Let the block settle of the plate before giving it a push
         double time_end = 2.0;
-        while (msystem.GetChTime() < time_end) {
-            application->BeginScene();
-            application->DrawAll();
-            application->EndScene();
-            msystem.DoStepDynamics(time_step);
+        while (sys.GetChTime() < time_end) {
+            vis->BeginScene();
+            vis->DrawAll();
+            vis->EndScene();
+            sys.DoStepDynamics(time_step);
 
-            ////msystem.GetContactContainer()->ReportAllContacts(creporter);
+            ////sys.GetContactContainer()->ReportAllContacts(creporter);
 
-            if (CalcKE(&msystem) < 1e-9) {
-                GetLog() << "[settling] KE falls below threshold at t = " << msystem.GetChTime() << "\n";
+            if (CalcKE(&sys) < 1e-9) {
+                GetLog() << "[settling] KE falls below threshold at t = " << sys.GetChTime() << "\n";
                 break;
             }
         }
@@ -285,27 +276,27 @@ int main(int argc, char* argv[]) {
         body->SetPos_dt(init_bv);
 
         // Iterate through simulation. Calculate resultant forces and motion for each timestep
-        time_end = msystem.GetChTime() + 2.0;
-        while (application->GetDevice()->run()) {
-            application->BeginScene();
-            application->DrawAll();
-            application->EndScene();
+        time_end = sys.GetChTime() + 2.0;
+        while (vis->Run()) {
+            vis->BeginScene();
+            vis->DrawAll();
+            vis->EndScene();
 
-            ////std::cout << "============= " << msystem.GetChTime() << std::endl;
-            msystem.DoStepDynamics(time_step);
-            ////msystem.GetContactContainer()->ReportAllContacts(creporter);
+            ////std::cout << "============= " << sys.GetChTime() << std::endl;
+            sys.DoStepDynamics(time_step);
+            ////sys.GetContactContainer()->ReportAllContacts(creporter);
             ////ChVector<> frc = body->GetContactForce();
             ////std::cout << "  ----------- " << std::endl;
             ////std::cout << frc.x() << "  " << frc.y() << "  " << frc.z() << std::endl;
 
-            if (CalcKE(&msystem) < 1e-9) {
-                GetLog() << "[simulation] KE falls below threshold at t = " << msystem.GetChTime() << "\n";
+            if (CalcKE(&sys) < 1e-9) {
+                GetLog() << "[simulation] KE falls below threshold at t = " << sys.GetChTime() << "\n";
                 break;
             }
 
-            if (msystem.GetChTime() > time_end) {
+            if (sys.GetChTime() > time_end) {
                 GetLog() << "[simulation] KE still above threshold!\n";
-                GetLog() << "Kinetic energy: " << CalcKE(&msystem) << "\n";
+                GetLog() << "Kinetic energy: " << CalcKE(&sys) << "\n";
                 break;
             }
         }
@@ -316,7 +307,6 @@ int main(int argc, char* argv[]) {
         double d_err = abs((d_ref - d_act) / d_ref) * 100;
 
         GetLog() << "Error " << d_err << " %\n";
-        delete application;
     }
 
     return 0;

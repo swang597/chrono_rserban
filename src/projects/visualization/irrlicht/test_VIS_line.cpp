@@ -25,7 +25,7 @@
 #include "chrono/assets/ChLineShape.h"
 #include "chrono/assets/ChPathShape.h"
 
-#include "chrono_irrlicht/ChIrrApp.h"
+#include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 
 using namespace chrono;
 using namespace chrono::irrlicht;
@@ -35,13 +35,13 @@ unsigned int num_render_points = 1000;
 
 int main(int argc, char* argv[]) {
     // Create the system (Y up)
-    ChSystemNSC msystem;
+    ChSystemNSC sys;
 
     // Create a ground body
     auto ground = chrono_types::make_shared<ChBody>();
     ground->SetBodyFixed(true);
     ground->SetCollide(false);
-    msystem.AddBody(ground);
+    sys.AddBody(ground);
 
     // Create a set of points
     double angle = CH_C_PI / 12;
@@ -61,7 +61,7 @@ int main(int argc, char* argv[]) {
         path_asset->GetPathGeometry()->AddSubLine(segment, len);
     }
     path_asset->SetNumRenderPoints(num_render_points);
-    ground->AddAsset(path_asset);
+    ground->AddVisualShape(path_asset);
 
     // Shift all points in X direction
     for (auto& p : points)
@@ -73,24 +73,25 @@ int main(int argc, char* argv[]) {
     auto bezier_asset = chrono_types::make_shared<ChLineShape>();
     bezier_asset->SetLineGeometry(bezier_line);
     bezier_asset->SetNumRenderPoints(num_render_points);
-    ground->AddAsset(bezier_asset);
+    ground->AddVisualShape(bezier_asset);
 
     // Create the Irrlicht visualization
-    ChIrrApp application(&msystem, L"Line render test", irr::core::dimension2d<irr::u32>(800, 600));
-    application.AddLogo();
-    application.AddTypicalLights();
-    application.AddCamera(irr::core::vector3df(0, 0, -20));
-
-    // Complete asset construction
-    application.AssetBindAll();
-    application.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
+    vis->SetWindowSize(800, 600);
+    vis->SetWindowTitle("Line render test");
+    vis->Initialize();
+    vis->AddLogo();
+    vis->AddSkyBox();
+    vis->AddTypicalLights();
+    vis->AddCamera(ChVector<>(0, 0, -20));
+    sys.SetVisualSystem(vis);
 
     // Simulation loop
-    while (application.GetDevice()->run()) {
-        application.BeginScene();
-        application.DrawAll();
-        application.EndScene();
-        msystem.DoStepDynamics(0.1);
+    while (vis->Run()) {
+        vis->BeginScene();
+        vis->DrawAll();
+        vis->EndScene();
+        sys.DoStepDynamics(0.1);
     }
 
     return 0;

@@ -18,7 +18,7 @@
 
 #include "chrono/physics/ChSystemSMC.h"
 
-#include "chrono_irrlicht/ChIrrApp.h"
+#include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 
 using namespace chrono;
 using namespace chrono::irrlicht;
@@ -49,13 +49,6 @@ int main(int argc, char* argv[]) {
     ChSystemSMC system;
     system.Set_G_acc(ChVector<>(0, -10, 0));
 
-    // Create the Irrlicht visualization
-    ChIrrApp application(&system, L"DEM demo", core::dimension2d<u32>(800, 600));
-    application.AddLogo();
-    application.AddSkyBox();
-    application.AddTypicalLights();
-    application.AddCamera(core::vector3df(0, 3, -6));
-
     // Shared contact material
     auto material = chrono_types::make_shared<ChMaterialSurfaceSMC>();
 
@@ -74,7 +67,7 @@ int main(int argc, char* argv[]) {
 
     auto sphereS = chrono_types::make_shared<ChSphereShape>();
     sphereS->GetSphereGeometry().rad = 0.2;
-    sentinel->AddAsset(sphereS);
+    sentinel->AddVisualShape(sphereS);
 
     system.AddBody(sentinel);
 
@@ -97,11 +90,8 @@ int main(int argc, char* argv[]) {
 
     auto sphereB = chrono_types::make_shared<ChSphereShape>();
     sphereB->GetSphereGeometry().rad = radius;
-    ball->AddAsset(sphereB);
-
-    auto mtexture = chrono_types::make_shared<ChTexture>();
-    mtexture->SetTextureFilename(GetChronoDataFile("textures/bluewhite.png"));
-    ball->AddAsset(mtexture);
+    sphereB->SetTexture(GetChronoDataFile("textures/bluewhite.png"));
+    ball->AddVisualShape(sphereB);
 
     system.AddBody(ball);
 
@@ -125,14 +115,20 @@ int main(int argc, char* argv[]) {
 
     auto box = chrono_types::make_shared<ChBoxShape>();
     box->GetBoxGeometry().Size = ChVector<>(width, thickness, length);
-    box->GetBoxGeometry().Pos = ChVector<>(0, -thickness, 0);
-    ground->AddAsset(box);
+    ground->AddVisualShape(box, ChFrame<>(ChVector<>(0, -thickness, 0)));
 
     system.AddBody(ground);
 
-    // Complete asset construction
-    application.AssetBindAll();
-    application.AssetUpdateAll();
+    // Create the Irrlicht visualization
+    auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
+    vis->SetWindowSize(800, 600);
+    vis->SetWindowTitle("DEM demo");
+    vis->Initialize();
+    vis->AddLogo();
+    vis->AddSkyBox();
+    vis->AddTypicalLights();
+    vis->AddCamera(ChVector<>(0, 3, -6));
+    system.SetVisualSystem(vis);
 
     // Custom callback
     system.GetCollisionSystem()->RegisterNarrowphaseCallback(chrono_types::make_shared<Monitor>(sentinel));
@@ -140,17 +136,16 @@ int main(int argc, char* argv[]) {
     // Simulation loop
     double time_step = 1e-3;
     double speed = -2;
-    while (application.GetDevice()->run()) {
-        application.BeginScene();
-        application.DrawAll();
+    while (vis->Run()) {
+        vis->BeginScene();
+        vis->DrawAll();
+        vis->EndScene();
 
         auto crt_pos = sentinel->GetPos();
         crt_pos.y() += speed * time_step;
         sentinel->SetPos(crt_pos);
 
         system.DoStepDynamics(time_step);
-
-        application.EndScene();
     }
 
     return 0;

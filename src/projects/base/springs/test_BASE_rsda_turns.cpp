@@ -19,7 +19,7 @@
     #include "chrono_mumps/ChSolverMumps.h"
 #endif
 
-#include "chrono_irrlicht/ChIrrApp.h"
+#include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 
 using namespace chrono;
 using namespace chrono::irrlicht;
@@ -175,8 +175,8 @@ int main(int argc, char* argv[]) {
     body->SetRot(rot);
     auto box = chrono_types::make_shared<ChBoxShape>();
     box->GetBoxGeometry().SetLengths(ChVector<>(length, length / 8, length / 8));
-    body->AddAsset(box);
-    body->AddAsset(chrono_types::make_shared<ChColorAsset>(0.0f, 0.0f, 1.0f));
+    box->SetColor(ChColor(0.0f, 0.0f, 1.0f));
+    body->AddVisualShape(box);
     sys.AddBody(body);
 
     ChQuaternion<> y2z = Q_from_AngX(CH_C_PI_2);
@@ -199,25 +199,27 @@ int main(int argc, char* argv[]) {
                      ChCoordsys<>(ChVector<>(-length / 2, 0, 0), y2z));  //
     sys.AddLink(rsda);
 
-    rsda->AddAsset(chrono_types::make_shared<ChRotSpringShape>(length / 4, 100));
+    rsda->AddVisualShape(chrono_types::make_shared<ChRotSpringShape>(length / 4, 100));
 
     // Create the Irrlicht application
-    ChIrrApp application(&sys, L"Track RSDA test", irr::core::dimension2d<irr::u32>(800, 600), VerticalDir::Z);
-    application.AddLogo();
-    application.AddSkyBox();
-    application.AddTypicalLights();
-    application.AddCamera(irr::core::vector3df(0, 2, 0), irr::core::vector3df(0, 0, 0));
-
-    application.AssetBindAll();
-    application.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
+    vis->SetCameraVertical(CameraVerticalDir::Z);
+    vis->SetWindowSize(800, 600);
+    vis->SetWindowTitle("Track RSDA test");
+    vis->Initialize();
+    vis->AddLogo();
+    vis->AddSkyBox();
+    vis->AddTypicalLights();
+    vis->AddCamera(ChVector<>(0, 2, 0));
+    sys.SetVisualSystem(vis);
 
     // Simulation loop
-    while (application.GetDevice()->run()) {
-        application.BeginScene();
-        application.DrawAll();
+    while (vis->Run()) {
+        vis->BeginScene();
+        vis->DrawAll();
         ////tools::drawAllCOGs(sys, application.GetVideoDriver(), 1.0);
-        tools::drawAllLinkframes(sys, application.GetVideoDriver(), 1.5);
-        application.EndScene();
+        tools::drawAllLinkframes(sys, vis->GetVideoDriver(), 1.5);
+        vis->EndScene();
 
         sys.DoStepDynamics(step_size);
         std::cout << rsda->GetAngle() * CH_C_RAD_TO_DEG << "   " << rsda->GetVelocity() << "   " << rsda->GetTorque()

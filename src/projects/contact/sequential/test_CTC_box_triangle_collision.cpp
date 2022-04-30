@@ -26,7 +26,7 @@
 #include "chrono/collision/chrono/ChCollisionUtils.h"
 #include "chrono/collision/chrono/ChNarrowphase.h"
 
-#include "chrono_irrlicht/ChIrrApp.h"
+#include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 
 using namespace chrono;
 
@@ -100,7 +100,7 @@ class EvRec : public irr::IEventReceiver {
 std::shared_ptr<geometry::ChTriangleMeshConnected> TriangleMesh(std::vector<ChVector<>> vertices) {
     auto trimesh = chrono_types::make_shared<geometry::ChTriangleMeshConnected>();
     std::vector<ChVector<>>& n = trimesh->getCoordsNormals();
-    std::vector<ChVector<>>& uv = trimesh->getCoordsUV();
+    std::vector<ChVector2<>>& uv = trimesh->getCoordsUV();
     std::vector<ChVector<int>>& iv = trimesh->getIndicesVertexes();
     std::vector<ChVector<int>>& in = trimesh->getIndicesNormals();
 
@@ -115,16 +115,15 @@ std::shared_ptr<geometry::ChTriangleMeshConnected> TriangleMesh(std::vector<ChVe
     n[1] = ChVector<>(0, 0, 1);
     n[2] = ChVector<>(0, 0, 1);
 
-    uv[0] = ChVector<>(0, 0, 0);
-    uv[1] = ChVector<>(1, 0, 0);
-    uv[2] = ChVector<>(0, 1, 0);
+    uv[0] = ChVector2<>(0, 0);
+    uv[1] = ChVector2<>(1, 0);
+    uv[2] = ChVector2<>(0, 1);
 
     iv[0] = ChVector<int>(0, 1, 2);
     in[0] = ChVector<int>(0, 1, 2);
 
     return trimesh;
 }
-
 
 // --------------------------------------------------------------------------
 
@@ -166,8 +165,8 @@ int main(int argc, char* argv[]) {
 
     auto trimesh_shape = chrono_types::make_shared<ChTriangleMeshShape>();
     trimesh_shape->SetMesh(trimesh);
-    triangle->AddAsset(trimesh_shape);
-    triangle->AddAsset(chrono_types::make_shared<ChColorAsset>(ChColor(0.6f, 0.6f, 0.6f)));
+    trimesh_shape->SetColor(ChColor(0.6f, 0.6f, 0.6f));
+    triangle->AddVisualShape(trimesh_shape);
 
     auto box = std::shared_ptr<ChBody>(system.NewBody());
     box->SetPos(ChVector<>(0, 0, 0.5));
@@ -177,7 +176,7 @@ int main(int argc, char* argv[]) {
     utils::AddBoxGeometry(box.get(), contact_mat, hdims);
     box->GetCollisionModel()->BuildModel();
 
-    box->AddAsset(chrono_types::make_shared<ChColorAsset>(ChColor(0.2f, 0.3f, 0.4f)));
+    box->GetVisualShape(0)->SetColor(ChColor(0.2f, 0.3f, 0.4f));
 
     system.AddBody(box);
 
@@ -185,16 +184,19 @@ int main(int argc, char* argv[]) {
     // Create the visualization window
     // -------------------------------
 
-    irrlicht::ChIrrApp application(&system, L"Box-triangle test", irr::core::dimension2d<irr::u32>(800, 600),
-                                   irrlicht::VerticalDir::Z);
-    application.AddLogo();
-    application.AddTypicalLights();
-    application.AddCamera(irr::core::vector3df(2, 2, 1));
-    application.AssetBindAll();
-    application.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<irrlicht::ChVisualSystemIrrlicht>();
+    vis->SetCameraVertical(CameraVerticalDir::Z);
+    vis->SetWindowSize(800, 600);
+    vis->SetWindowTitle("Box-triangle test");
+    vis->Initialize();
+    vis->AddLogo();
+    vis->AddSkyBox();
+    vis->AddTypicalLights();
+    vis->AddCamera(ChVector<>(2, 2, 1));
+    system.SetVisualSystem(vis);
 
     EvRec er(box);
-    application.SetUserEventReceiver(&er);
+    vis->AddUserEventReceiver(&er);
 
     // ---------------
     // Simulate system
@@ -210,7 +212,7 @@ int main(int argc, char* argv[]) {
     auto C = FromChVector(vertices[2]);
     collision::ConvexShapeTriangle shape_tri(A, B, C);
 
-    while (application.GetDevice()->run()) {
+    while (vis->Run()) {
         system.DoStepDynamics(1e-3);
 
         // Express triangle vertices in current box frame
@@ -230,18 +232,18 @@ int main(int argc, char* argv[]) {
         collision::ChNarrowphase::PRIMSCollision(&shape_box, &shape_tri, (real)separation, norm, pt1, pt2, depth,
                                                  eff_rad, nC);
 
-        application.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-        application.DrawAll();
-        irrlicht::tools::drawAllCOGs(system, application.GetVideoDriver(), 1.0);
+        vis->BeginScene();
+        vis->DrawAll();
+        irrlicht::tools::drawAllCOGs(system, vis->GetVideoDriver(), 1.0);
         if (nC > 0) {
             assert(nC <= 6);
             for (int i = 0; i < nC; i++) {
                 assert(separation > 0 || depth[i] < 0);
-                irrlicht::tools::drawSegment(application.GetVideoDriver(), ToChVector(pt1[i]), ToChVector(pt2[i]),
+                irrlicht::tools::drawSegment(vis->GetVideoDriver(), ToChVector(pt1[i]), ToChVector(pt2[i]),
                                              irr::video::SColor(255, 255, 0, 255));
             }
         }
-        application.EndScene();
+        vis->EndScene();
     }
 
     return 0;

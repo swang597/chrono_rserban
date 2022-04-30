@@ -22,35 +22,35 @@
 
 #include "chrono/physics/ChSystemNSC.h"
 
-#include "chrono_irrlicht/ChIrrApp.h"
+#include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 #include "chrono_irrlicht/ChIrrTools.h"
 
 using namespace chrono;
 
 int main(int argc, char* argv[]) {
     // Create system
-    ChSystemNSC my_sys;
-    my_sys.Set_G_acc(ChVector<double>(0, 0, 0));
+    ChSystemNSC sys;
+    sys.Set_G_acc(ChVector<double>(0, 0, 0));
 
     // Create the bodies
-    auto body1 = std::shared_ptr<ChBody>(my_sys.NewBody());
+    auto body1 = std::shared_ptr<ChBody>(sys.NewBody());
     body1->SetPos(ChVector<>(-0.5, 0, 0));
     body1->SetBodyFixed(true);
     auto cyl1 = chrono_types::make_shared<ChCylinderShape>();
     cyl1->GetCylinderGeometry().p1 = ChVector<>(-0.5, 0, 0);
     cyl1->GetCylinderGeometry().p2 = ChVector<>(+0.5, 0, 0);
     cyl1->GetCylinderGeometry().rad = 0.1;
-    body1->AddAsset(cyl1);
-    body1->AddAsset(chrono_types::make_shared<ChColorAsset>(1.0f, 0.0f, 0.0f));
-    my_sys.AddBody(body1);
+    cyl1->SetColor(ChColor(1.0f, 0.0f, 0.0f));
+    body1->AddVisualShape(cyl1);
+    sys.AddBody(body1);
 
-    auto body2 = std::shared_ptr<ChBody>(my_sys.NewBody());
+    auto body2 = std::shared_ptr<ChBody>(sys.NewBody());
     body2->SetPos(ChVector<>(+0.5, 0, 0));
     auto box2 = chrono_types::make_shared<ChBoxShape>();
     box2->GetBoxGeometry().SetLengths(ChVector<>(1, 0.2, 0.2));
-    body2->AddAsset(box2);
-    body2->AddAsset(chrono_types::make_shared<ChColorAsset>(0.0f, 1.0f, 0.0f));
-    my_sys.AddBody(body2);
+    box2->SetColor(ChColor(0.0f, 1.0f, 0.0f));
+    body2->AddVisualShape(box2);
+    sys.AddBody(body2);
 
     // Create a sine function
     std::shared_ptr<ChFunction_Sine> fun = chrono_types::make_shared<ChFunction_Sine>(0.0, 0.1, CH_C_PI_4);
@@ -81,14 +81,14 @@ int main(int argc, char* argv[]) {
     switch (test) {
         case TEST0: {
             auto joint = chrono_types::make_shared<ChLinkLockRevolute>();
-            my_sys.AddLink(joint);
+            sys.AddLink(joint);
             joint->Initialize(body1, body2, ChCoordsys<>(ChVector<>(0, 0, 0)));
-            my_sys.Set_G_acc(ChVector<>(0, -10, 0));
+            sys.Set_G_acc(ChVector<>(0, -10, 0));
             break;
         }
         case TEST1: {
             auto joint = chrono_types::make_shared<ChLinkLockLock>();
-            my_sys.AddLink(joint);
+            sys.AddLink(joint);
             joint->Initialize(body1, body2, ChCoordsys<>(ChVector<>(0, 0, 0)));
             joint->SetMotion_axis(ChVector<>(0, 0, 1));
             joint->SetMotion_ang(fun);
@@ -96,14 +96,14 @@ int main(int argc, char* argv[]) {
         }
         case TEST2: {
             auto joint = chrono_types::make_shared<ChLinkLockRevolute>();
-            my_sys.AddLink(joint);
+            sys.AddLink(joint);
             joint->Initialize(body1, body2, ChCoordsys<>(ChVector<>(0, 0, 0)));
             joint->GetMarker1()->SetMotion_ang(fun);
             break;
         }
         case TEST3: {
             auto joint = chrono_types::make_shared<ChLinkLockRevolute>();
-            my_sys.AddLink(joint);
+            sys.AddLink(joint);
             joint->Initialize(body1, body2, ChCoordsys<>(ChVector<>(0, 0, 0)));
             joint->GetMarker1()->SetMotion_axis(ChVector<>(0, 1, 0));
             joint->GetMarker1()->SetMotion_ang(fun);
@@ -114,22 +114,24 @@ int main(int argc, char* argv[]) {
     // ----------------------------------------------
 
     // Create the visualization window
-    irrlicht::ChIrrApp application(&my_sys, L"Rev motion", irr::core::dimension2d<irr::u32>(800, 600));
-    application.AddLogo();
-    application.AddSkyBox();
-    application.AddTypicalLights();
-    application.AddCamera(irr::core::vector3df(0, 1, 2));
-    application.AssetBindAll();
-    application.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<irrlicht::ChVisualSystemIrrlicht>();
+    vis->SetWindowSize(800, 600);
+    vis->SetWindowTitle("Rev motion");
+    vis->Initialize();
+    vis->AddLogo();
+    vis->AddSkyBox();
+    vis->AddTypicalLights();
+    vis->AddCamera(ChVector<>(0, 1, 2));
+    sys.SetVisualSystem(vis);
 
     // Run simulation for specified time
-    while (application.GetDevice()->run()) {
-        application.BeginScene();
-        application.DrawAll();
-        ////irrlicht::tools::drawAllCOGs(my_sys, application.GetVideoDriver(), 0.5);
-        irrlicht::tools::drawAllLinkframes(my_sys, application.GetVideoDriver(), 1);
-        application.EndScene();
-        my_sys.DoStepDynamics(1e-3);
+    while (vis->Run()) {
+        vis->BeginScene();
+        vis->DrawAll();
+        ////irrlicht::tools::drawAllCOGs(sys, application.GetVideoDriver(), 0.5);
+        irrlicht::tools::drawAllLinkframes(sys, vis->GetVideoDriver(), 1);
+        vis->EndScene();
+        sys.DoStepDynamics(1e-3);
     }
 
     return 0;

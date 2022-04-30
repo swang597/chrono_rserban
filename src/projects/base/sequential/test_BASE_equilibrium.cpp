@@ -21,12 +21,12 @@
 
 #include <cstdio>
 
-#include "chrono/assets/ChPointPointDrawing.h"
+#include "chrono/assets/ChPointPointShape.h"
 
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/physics/ChBodyEasy.h"
 
-#include "chrono_irrlicht/ChIrrApp.h"
+#include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 
 using namespace chrono;
 using namespace chrono::irrlicht;
@@ -51,19 +51,19 @@ int main(int argc, char* argv[]) {
     auto body1 = chrono_types::make_shared<ChBodyEasyCylinder>(0.1, 1.0, 1000, false, true);
     body1->SetPos(ChVector<>(0.5, 0, 0));
     body1->SetRot(Q_ROTATE_Y_TO_X);
-    body1->AddAsset(chrono_types::make_shared<ChColorAsset>(1.0f, 0.0f, 0.0f, 0.0f));
+    body1->GetVisualShape(0)->SetColor(ChColor(1.0f, 0.0f, 0.0f));
     system.AddBody(body1);
 
     auto body2 = chrono_types::make_shared<ChBodyEasyCylinder>(0.1, 1.0, 1000, false, true);
     body2->SetPos(ChVector<>(2.5, 0, 0));
     body2->SetRot(Q_ROTATE_Y_TO_X);
-    body2->AddAsset(chrono_types::make_shared<ChColorAsset>(0.0f, 1.0f, 0.0f, 0.0f));
+    body2->GetVisualShape(0)->SetColor(ChColor(0.0f, 1.0f, 0.0f));
     system.AddBody(body2);
 
     auto body3 = chrono_types::make_shared<ChBodyEasyCylinder>(0.1, 2.0, 1000, false, true);
     body3->SetPos(ChVector<>(2.0, 0, 0));
     body3->SetRot(Q_ROTATE_Y_TO_X);
-    body3->AddAsset(chrono_types::make_shared<ChColorAsset>(0.0f, 0.0f, 1.0f, 0.0f));
+    body3->GetVisualShape(0)->SetColor(ChColor(0.0f, 0.0f, 1.0f));
     system.AddBody(body3);
 
     // Add joints.
@@ -92,8 +92,9 @@ int main(int argc, char* argv[]) {
     spring->SetDampingCoefficient(2e2);
     system.AddLink(spring);
 
-    spring->AddAsset(chrono_types::make_shared<ChColorAsset>(0.0f, 0.0f, 0.0f, 0.0f));
-    spring->AddAsset(chrono_types::make_shared<ChPointPointSpring>(0.05, 80, 15));
+    auto spring_shape = chrono_types::make_shared<ChSpringShape>(0.05, 80, 15);
+    spring_shape->SetColor(ChColor(0.0f, 0.0f, 0.0f));
+    spring->AddVisualShape(spring_shape);
 
     // Perform equilibrium analysis.
     std::cout << "Body1 pos: " << body1->GetPos() << std::endl;
@@ -109,22 +110,22 @@ int main(int argc, char* argv[]) {
     std::cout << std::endl;
 
     // Create Irrlicht window.
-    ChIrrApp application(&system, L"Equilibrium demo", core::dimension2d<u32>(800, 600));
-    application.AddLogo();
-    application.AddSkyBox();
-    application.AddTypicalLights();
-    application.AddCamera(core::vector3df(0, 0, 6));
-
-    application.AssetBindAll();
-    application.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
+    vis->SetWindowSize(800, 600);
+    vis->SetWindowTitle("Equilibrium demo");
+    vis->Initialize();
+    vis->AddLogo();
+    vis->AddSkyBox();
+    vis->AddTypicalLights();
+    vis->AddCamera(ChVector<>(0, 0, 6));
+    system.SetVisualSystem(vis);
 
     // Simulation loop
-    application.SetTimestep(0.001);
-    while (application.GetDevice()->run()) {
-        application.BeginScene();
-        application.DrawAll();
-        application.DoStep();
-        application.EndScene();
+    while (vis->Run()) {
+        vis->BeginScene();
+        vis->DrawAll();
+        vis->EndScene();
+        system.DoStepDynamics(1e-3);
     }
 
     std::cout << "\nReaction force rev1: " << rev1->Get_react_force() << "\n" << std::endl;

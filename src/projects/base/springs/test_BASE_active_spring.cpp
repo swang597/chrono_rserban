@@ -22,7 +22,7 @@
 
 #include <cstdio>
 
-#include "chrono/assets/ChPointPointDrawing.h"
+#include "chrono/assets/ChPointPointShape.h"
 #include "chrono/core/ChLog.h"
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/physics/ChBody.h"
@@ -30,7 +30,7 @@
 
 #include "chrono_pardisomkl/ChSolverPardisoMKL.h"
 
-#include "chrono_irrlicht/ChIrrApp.h"
+#include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 
 #include "chrono_postprocess/ChGnuPlot.h"
 
@@ -121,8 +121,7 @@ int main(int argc, char* argv[]) {
 
     auto sph = chrono_types::make_shared<ChSphereShape>();
     sph->GetSphereGeometry().rad = 0.1;
-    sph->Pos = ChVector<>(0, 0, 0);
-    ground->AddAsset(sph);
+    ground->AddVisualShape(sph);
 
     // Create a body suspended through a ChLinkTSDA
     auto body = chrono_types::make_shared<ChBody>();
@@ -135,8 +134,8 @@ int main(int argc, char* argv[]) {
 
     auto box = chrono_types::make_shared<ChBoxShape>();
     box->GetBoxGeometry().SetLengths(ChVector<>(1, 1, 1));
-    body->AddAsset(box);
-    body->AddAsset(chrono_types::make_shared<ChColorAsset>(0.6f, 0, 0));
+    box->SetColor(ChColor(0.6f, 0, 0));
+    body->AddVisualShape(box);
 
     // Create the spring between body and ground. The spring end points are specified in the body relative frames.
     auto force = std::make_shared<MySpringForce>();
@@ -149,17 +148,20 @@ int main(int argc, char* argv[]) {
     spring->RegisterForceFunctor(force);
     spring->RegisterODE(&rhs);
     system.AddLink(spring);
-    spring->AddAsset(chrono_types::make_shared<ChColorAsset>(0.5f, 0.5f, 0.5f));
-    spring->AddAsset(chrono_types::make_shared<ChPointPointSpring>(0.05, 80, 15));
+    auto spring_shape = chrono_types::make_shared<ChSpringShape>(0.05, 80, 15);
+    spring_shape->SetColor(ChColor(0.5f, 0.5f, 0.5f));
+    spring->AddVisualShape(spring_shape);
 
     // Create the Irrlicht application
-    ChIrrApp application(&system, L"Active spring test", core::dimension2d<u32>(800, 600));
-    application.AddLogo();
-    application.AddSkyBox();
-    application.AddTypicalLights();
-    application.AddCamera(core::vector3df(0, 0, 6));
-    application.AssetBindAll();
-    application.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
+    vis->SetWindowSize(800, 600);
+    vis->SetWindowTitle("Active spring test");
+    vis->Initialize();
+    vis->AddLogo();
+    vis->AddSkyBox();
+    vis->AddTypicalLights();
+    vis->AddCamera(ChVector<>(0, 0, 6));
+    system.SetVisualSystem(vis);
 
     // Create output directory and log file
     const std::string out_dir = GetChronoOutputPath() + "DEMO_ACTIVE_SPRING";
@@ -234,12 +236,11 @@ int main(int argc, char* argv[]) {
     btitle += use_jacobians ? " Jac YES" : "Jac NO";
 
     // Simulation loop
-    application.SetTimestep(step_size);
-    while (application.GetDevice()->run()) {
-        application.BeginScene();
-        application.DrawAll();
-        application.DoStep();
-        application.EndScene();
+    while (vis->Run()) {
+        vis->BeginScene();
+        vis->DrawAll();
+        vis->EndScene();
+        system.DoStepDynamics(step_size);
 
         ChVectorDynamic<> state = spring->GetStates();
         log << system.GetChTime() << ", " << state(0) << ", " << state(1) << ", ";
