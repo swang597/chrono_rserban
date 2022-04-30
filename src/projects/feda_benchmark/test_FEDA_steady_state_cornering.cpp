@@ -27,7 +27,7 @@
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"
-#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
+#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleVisualSystemIrrlicht.h"
 #include "chrono_vehicle/utils/ChVehiclePath.h"
 
 #include "chrono_models/vehicle/feda/FEDA.h"
@@ -166,26 +166,27 @@ int main(int argc, char* argv[]) {
     driver.GetSpeedController().SetGains(0.4, 0.04, 0);
     driver.Initialize();
 
-    std::wstring winTitle(L"FED Alpha steady state cornering test");
+    std::string winTitle("FED Alpha steady state cornering test");
     if (turn_left) {
-        winTitle.append(L" (left turn)");
+        winTitle.append(" (left turn)");
     } else {
-        winTitle.append(L" (right turn)");
+        winTitle.append(" (right turn)");
     }
 
-    ChWheeledVehicleIrrApp app(&feda.GetVehicle(), winTitle.c_str());
-    app.AddTypicalLights();
-    app.SetChaseCamera(trackPoint, 8.0, 0.5);
-    app.SetTimestep(step_size);
+    auto vis = chrono_types::make_shared<ChWheeledVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle(winTitle);
+    vis->SetChaseCamera(trackPoint, 8.0, 0.5);
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    feda.GetVehicle().SetVisualSystem(vis);
 
     // Visualization of controller points (sentinel & target)
-    irr::scene::IMeshSceneNode* ballS = app.GetSceneManager()->addSphereSceneNode(0.1f);
-    irr::scene::IMeshSceneNode* ballT = app.GetSceneManager()->addSphereSceneNode(0.1f);
+    irr::scene::IMeshSceneNode* ballS = vis->GetSceneManager()->addSphereSceneNode(0.1f);
+    irr::scene::IMeshSceneNode* ballT = vis->GetSceneManager()->addSphereSceneNode(0.1f);
     ballS->getMaterial(0).EmissiveColor = irr::video::SColor(0, 255, 0, 0);
     ballT->getMaterial(0).EmissiveColor = irr::video::SColor(0, 0, 255, 0);
-
-    app.AssetBindAll();
-    app.AssetUpdateAll();
 
     // Set the time response for steering and throttle keyboard inputs.
     double steering_time = 1.0;  // time to go from 0 to +1 (or from 0 to -1)
@@ -222,7 +223,7 @@ int main(int argc, char* argv[]) {
     double T2 = T1 + 120;
     double target_speed_max = 12.0;  // sqrt(turn_radius * ay_max);
 
-    while (app.GetDevice()->run()) {
+    while (vis->Run()) {
         double time = feda.GetSystem()->GetChTime();
 
         target_speed = ChSineStep(time, T1, 5, T2, target_speed_max);
@@ -230,9 +231,9 @@ int main(int argc, char* argv[]) {
 
         // Render scene
         if (step_number % render_steps == 0) {
-            app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-            app.DrawAll();
-            app.EndScene();
+            vis->BeginScene();
+            vis->DrawAll();
+            vis->EndScene();
         }
 
         // Driver inputs
@@ -242,7 +243,7 @@ int main(int argc, char* argv[]) {
         driver.Synchronize(time);
         terrain.Synchronize(time);
         feda.Synchronize(time, driver_inputs, terrain);
-        app.Synchronize("Path Follower Driver", driver_inputs);
+        vis->Synchronize("Path Follower Driver", driver_inputs);
 
 #ifdef CHRONO_POSTPROCESS
         if ((time >= T1) && (step_number % 5000 == 0)) {
@@ -269,7 +270,7 @@ int main(int argc, char* argv[]) {
         driver.Advance(step_size);
         terrain.Advance(step_size);
         feda.Advance(step_size);
-        app.Advance(step_size);
+        vis->Advance(step_size);
         // ChQuaternion<> qW1= feda.GetVehicle().GetWheelRot(1);
         // ChQuaternion<> qW0= feda.GetVehicle().GetWheelRot(0);
         // ChQuaternion<> qV= feda.GetVehicle().GetRot();

@@ -32,7 +32,7 @@
 #include "chrono_vehicle/wheeled_vehicle/vehicle/WheeledVehicle.h"
 #include "chrono_models/vehicle/mrole/mrole.h"
 
-#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
+#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleVisualSystemIrrlicht.h"
 
 #ifdef CHRONO_PARDISO_MKL
     #include "chrono_pardisomkl/ChSolverPardisoMKL.h"
@@ -220,24 +220,26 @@ int main(int argc, char* argv[]) {
     terrain.Initialize(ObsModTerrain::VisualisationType::MESH);
     xpos_max = terrain.GetXObstacleEnd() + 7.0;
 
-    // ---------------------------------------
-    // Create the vehicle Irrlicht application
-    // ---------------------------------------
-
-    ChWheeledVehicleIrrApp app(&mrole.GetVehicle(), L"Marder Vehicle Ride");
-    app.AddTypicalLights();
-    app.SetChaseCamera(trackPoint, 10.0, 0.5);
-    // app.SetChaseCameraPosition(mrole.GetVehicle().GetPos() + ChVector<>(-10, 0, 0));
-    app.SetChaseCameraMultipliers(1e-4, 10);
-    app.SetTimestep(step_size);
-    app.AssetBindAll();
-    app.AssetUpdateAll();
 
     // Create the driver
     auto path = ChBezierCurve::read(vehicle::GetDataFile(path_file));
     ChPathFollowerDriver driver(mrole.GetVehicle(), vehicle::GetDataFile(steering_controller_file),
                                 vehicle::GetDataFile(speed_controller_file), path, "my_path", 0.0, false);
     driver.Initialize();
+
+    // ---------------------------------------
+    // Create the vehicle Irrlicht application
+    // ---------------------------------------
+
+    auto vis = chrono_types::make_shared<ChWheeledVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle("MROLE");
+    vis->SetChaseCamera(trackPoint, 6.0, 0.5);
+    vis->SetChaseCameraMultipliers(1e-4, 10);
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    mrole.GetVehicle().SetVisualSystem(vis);
 
     // -----------------
     // Initialize output
@@ -324,12 +326,12 @@ int main(int argc, char* argv[]) {
     double effRadius = 0.328414781 + 0.06 / 2.0;  // sprocket pitch radius + track shoe thickness / 2
     double gear_ratio = 0.05;
 
-    while (app.GetDevice()->run()) {
+    while (vis->Run()) {
         if (step_number % render_steps == 0) {
             // Render scene
-            app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-            app.DrawAll();
-            app.EndScene();
+            vis->BeginScene();
+            vis->DrawAll();
+            vis->EndScene();
 
             if (povray_output) {
                 char filename[100];
@@ -339,7 +341,7 @@ int main(int argc, char* argv[]) {
             if (img_output && step_number > 200) {
                 char filename[100];
                 sprintf(filename, "%s/img_%03d.jpg", img_dir.c_str(), render_frame + 1);
-                app.WriteImageToFile(filename);
+                vis->WriteImageToFile(filename);
             }
             render_frame++;
         }
@@ -376,13 +378,13 @@ int main(int argc, char* argv[]) {
         driver.Synchronize(time);
         mrole.Synchronize(time, driver_inputs, terrain);
         terrain.Synchronize(time);
-        app.Synchronize("", driver_inputs);
+        vis->Synchronize("", driver_inputs);
 
         // Advance simulation for one timestep for all modules
         driver.Advance(step_size);
         mrole.Advance(step_size);
         terrain.Advance(step_size);
-        app.Advance(step_size);
+        vis->Advance(step_size);
 
         xpos = mrole.GetVehicle().GetPos().x();
         if (xpos >= xpos_max) {

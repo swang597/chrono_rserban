@@ -41,28 +41,13 @@ RigidTerrainStep::RigidTerrainStep(ChSystem* system) : m_friction(0.8f) {
     m_ground->SetBodyFixed(true);
     m_ground->SetCollide(true);
     system->AddBody(m_ground);
-
-    // Create the default color asset
-    m_color = chrono_types::make_shared<ChColorAsset>();
-    m_color->SetColor(ChColor(1, 1, 1));
-    m_ground->AddAsset(m_color);
-}
-
-// -----------------------------------------------------------------------------
-// Set the color of the visualization assets
-// -----------------------------------------------------------------------------
-void RigidTerrainStep::SetColor(ChColor color) {
-    m_color->SetColor(color);
 }
 
 // -----------------------------------------------------------------------------
 // Set the texture and texture scaling
 // -----------------------------------------------------------------------------
 void RigidTerrainStep::SetTexture(const std::string tex_file, float tex_scale_x, float tex_scale_y) {
-    auto texture = chrono_types::make_shared<ChTexture>();
-    texture->SetTextureFilename(tex_file);
-    texture->SetTextureScale(tex_scale_x, tex_scale_y);
-    m_ground->AddAsset(texture);
+    m_ground->GetVisualShape(0)->SetTexture(tex_file, tex_scale_x, tex_scale_y);
 }
 
 // -----------------------------------------------------------------------------
@@ -113,8 +98,7 @@ void RigidTerrainStep::CreateBox(std::shared_ptr<ChMaterialSurface> mat,
 
     auto box = chrono_types::make_shared<ChBoxShape>();
     box->GetBoxGeometry().Size = hsize;
-    box->GetBoxGeometry().Pos = center;
-    m_ground->AddAsset(box);
+    m_ground->AddVisualShape(box, ChFrame<>(center));
 }
 
 // -----------------------------------------------------------------------------

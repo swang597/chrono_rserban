@@ -41,28 +41,13 @@ RigidTerrainTrapezoid::RigidTerrainTrapezoid(ChSystem* system) : m_widebase(fals
     m_ground->SetBodyFixed(true);
     m_ground->SetCollide(true);
     system->AddBody(m_ground);
-
-    // Create the default color asset
-    m_color = chrono_types::make_shared<ChColorAsset>();
-    m_color->SetColor(ChColor(1, 1, 1));
-    m_ground->AddAsset(m_color);
-}
-
-// -----------------------------------------------------------------------------
-// Set the color of the visualization assets
-// -----------------------------------------------------------------------------
-void RigidTerrainTrapezoid::SetColor(ChColor color) {
-    m_color->SetColor(color);
 }
 
 // -----------------------------------------------------------------------------
 // Set the texture and texture scaling
 // -----------------------------------------------------------------------------
 void RigidTerrainTrapezoid::SetTexture(const std::string tex_file, float tex_scale_x, float tex_scale_y) {
-    auto texture = chrono_types::make_shared<ChTexture>();
-    texture->SetTextureFilename(tex_file);
-    texture->SetTextureScale(tex_scale_x, tex_scale_y);
-    m_ground->AddAsset(texture);
+    m_ground->GetVisualShape(0)->SetTexture(tex_file, tex_scale_x, tex_scale_y);
 }
 
 // -----------------------------------------------------------------------------
@@ -144,8 +129,7 @@ void RigidTerrainTrapezoid::Initialize(std::shared_ptr<ChMaterialSurface> mat,  
                                               ChVector<>(m_offsetX - sizeX1 / 2, 0, height1 - depth / 2));
         auto box = chrono_types::make_shared<ChBoxShape>();
         box->GetBoxGeometry().Size = ChVector<>(sizeX1 / 2, sizeY / 2, depth / 2);
-        box->GetBoxGeometry().Pos = ChVector<>(m_offsetX - sizeX1 / 2, 0, height1 - depth / 2);
-        m_ground->AddAsset(box);
+        m_ground->AddVisualShape(box, ChFrame<>(ChVector<>(m_offsetX - sizeX1 / 2, 0, height1 - depth / 2)));
     }
 
     if (m_run1 > 0)  // There is not a step change in height, so an angled section is needed
@@ -164,9 +148,7 @@ void RigidTerrainTrapezoid::Initialize(std::shared_ptr<ChMaterialSurface> mat,  
 
         auto box = chrono_types::make_shared<ChBoxShape>();
         box->GetBoxGeometry().Size = ChVector<>(hx, hy, hz);
-        box->GetBoxGeometry().Pos = ChVector<>(x, y, z);
-        box->GetBoxGeometry().Rot = rot;
-        m_ground->AddAsset(box);
+        m_ground->AddVisualShape(box, ChFrame<>(ChVector<>(x, y, z), rot));
     }
 
     {
@@ -174,8 +156,7 @@ void RigidTerrainTrapezoid::Initialize(std::shared_ptr<ChMaterialSurface> mat,  
                                               ChVector<>(m_offsetX + m_run1 + sizeX2 / 2, 0, height2 - depth / 2));
         auto box = chrono_types::make_shared<ChBoxShape>();
         box->GetBoxGeometry().Size = ChVector<>(sizeX2 / 2, sizeY / 2, depth / 2);
-        box->GetBoxGeometry().Pos = ChVector<>(m_offsetX + m_run1 + sizeX2 / 2, 0, height2 - depth / 2);
-        m_ground->AddAsset(box);
+        m_ground->AddVisualShape(box, ChFrame<>(ChVector<>(m_offsetX + m_run1 + sizeX2 / 2, 0, height2 - depth / 2)));
     }
 
     if (m_run2 > 0)  // There is not a step change in height, so an angled section is needed
@@ -194,9 +175,7 @@ void RigidTerrainTrapezoid::Initialize(std::shared_ptr<ChMaterialSurface> mat,  
 
         auto box = chrono_types::make_shared<ChBoxShape>();
         box->GetBoxGeometry().Size = ChVector<>(hx, hy, hz);
-        box->GetBoxGeometry().Pos = ChVector<>(x, y, z);
-        box->GetBoxGeometry().Rot = rot;
-        m_ground->AddAsset(box);
+        m_ground->AddVisualShape(box, ChFrame<>(ChVector<>(x, y, z), rot));
     }
 
     {
@@ -205,9 +184,8 @@ void RigidTerrainTrapezoid::Initialize(std::shared_ptr<ChMaterialSurface> mat,  
             ChVector<>(m_offsetX + m_run1 + sizeX2 + m_run2 + sizeX3 / 2, 0, height3 - depth / 2));
         auto box = chrono_types::make_shared<ChBoxShape>();
         box->GetBoxGeometry().Size = ChVector<>(sizeX3 / 2, sizeY / 2, depth / 2);
-        box->GetBoxGeometry().Pos =
-            ChVector<>(m_offsetX + m_run1 + sizeX2 + m_run2 + sizeX3 / 2, 0, height3 - depth / 2);
-        m_ground->AddAsset(box);
+        m_ground->AddVisualShape(
+            box, ChFrame<>(ChVector<>(m_offsetX + m_run1 + sizeX2 + m_run2 + sizeX3 / 2, 0, height3 - depth / 2)));
     }
 
     m_ground->GetCollisionModel()->BuildModel();
@@ -258,9 +236,7 @@ void RigidTerrainTrapezoid::Initialize(std::shared_ptr<ChMaterialSurface> mat,  
 
         auto box = chrono_types::make_shared<ChBoxShape>();
         box->GetBoxGeometry().Size = ChVector<>(hx, hy, hz);
-        box->GetBoxGeometry().Pos = ChVector<>(x, y, z);
-        box->GetBoxGeometry().Rot = rot;
-        m_ground->AddAsset(box);
+        m_ground->AddVisualShape(box, ChFrame<>(ChVector<>(x, y, z), rot));
     }
 
     // Terrain & berm
@@ -272,16 +248,14 @@ void RigidTerrainTrapezoid::Initialize(std::shared_ptr<ChMaterialSurface> mat,  
                                               ChVector<>(x_center, 0, heightT - depthT / 2));
         auto boxT = chrono_types::make_shared<ChBoxShape>();
         boxT->GetBoxGeometry().Size = ChVector<>(sizeT.x() / 2, sizeT.y() / 2, depthT / 2);
-        boxT->GetBoxGeometry().Pos = ChVector<>(x_center, 0, heightT - depthT / 2);
-        m_ground->AddAsset(boxT);
+        m_ground->AddVisualShape(boxT, ChFrame<>(ChVector<>(x_center, 0, heightT - depthT / 2)));
 
         double depthB = 10 + heightB;
         m_ground->GetCollisionModel()->AddBox(mat, sizeB.x() / 2, sizeB.y() / 2, depthB / 2,
                                               ChVector<>(x_center, 0, heightB - depthB / 2));
         auto boxB = chrono_types::make_shared<ChBoxShape>();
         boxB->GetBoxGeometry().Size = ChVector<>(sizeB.x() / 2, sizeB.y() / 2, depthB / 2);
-        boxB->GetBoxGeometry().Pos = ChVector<>(x_center, 0, heightB - depthB / 2);
-        m_ground->AddAsset(boxB);
+        m_ground->AddVisualShape(boxB, ChFrame<>(ChVector<>(x_center, 0, heightB - depthB / 2)));
     }
 
     // Down slope
@@ -300,9 +274,7 @@ void RigidTerrainTrapezoid::Initialize(std::shared_ptr<ChMaterialSurface> mat,  
 
         auto box = chrono_types::make_shared<ChBoxShape>();
         box->GetBoxGeometry().Size = ChVector<>(hx, hy, hz);
-        box->GetBoxGeometry().Pos = ChVector<>(x, y, z);
-        box->GetBoxGeometry().Rot = rot;
-        m_ground->AddAsset(box);
+        m_ground->AddVisualShape(box, ChFrame<>(ChVector<>(x, y, z), rot));
     }
 
     m_ground->GetCollisionModel()->BuildModel();

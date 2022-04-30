@@ -23,7 +23,7 @@
 
 #include <cstdio>
 
-#include "chrono/assets/ChPointPointDrawing.h"
+#include "chrono/assets/ChPointPointShape.h"
 #include "chrono/core/ChLog.h"
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/physics/ChBody.h"
@@ -32,7 +32,7 @@
 
 #include "chrono_pardisomkl/ChSolverPardisoMKL.h"
 
-#include "chrono_irrlicht/ChIrrApp.h"
+#include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 
 #include "chrono_postprocess/ChGnuPlot.h"
 
@@ -280,8 +280,7 @@ int main(int argc, char* argv[]) {
 
     auto sph = chrono_types::make_shared<ChSphereShape>();
     sph->GetSphereGeometry().rad = 0.1;
-    sph->Pos = ChVector<>(0, 0, 0);
-    ground->AddAsset(sph);
+    ground->AddVisualShape(sph);
 
     // Create a body suspended through a ChLinkTSDA
     auto body = chrono_types::make_shared<ChBody>();
@@ -294,8 +293,8 @@ int main(int argc, char* argv[]) {
 
     auto box = chrono_types::make_shared<ChBoxShape>();
     box->GetBoxGeometry().SetLengths(ChVector<>(1, 1, 1));
-    body->AddAsset(box);
-    body->AddAsset(chrono_types::make_shared<ChColorAsset>(0.6f, 0, 0));
+    box->SetColor(ChColor(0.6f, 0, 0));
+    body->AddVisualShape(box);
 
     // Create an actuator to control body speed (along Y direction)
     auto x2y = Q_from_AngZ(-CH_C_PI_2);
@@ -315,17 +314,20 @@ int main(int argc, char* argv[]) {
     spring->RegisterForceFunctor(force);
     spring->RegisterODE(&rhs);
     system.AddLink(spring);
-    spring->AddAsset(chrono_types::make_shared<ChColorAsset>(0.5f, 0.5f, 0.5f));
-    spring->AddAsset(chrono_types::make_shared<ChPointPointSegment>());
+    auto spring_shape = chrono_types::make_shared<ChSegmentShape>();
+    spring_shape->SetColor(ChColor(0.5f, 0.5f, 0.5f));
+    spring->AddVisualShape(spring_shape);
 
     // Create the Irrlicht application
-    ChIrrApp application(&system, L"Active shock test", core::dimension2d<u32>(800, 600));
-    application.AddLogo();
-    application.AddSkyBox();
-    application.AddTypicalLights();
-    application.AddCamera(core::vector3df(0, 0, 6));
-    application.AssetBindAll();
-    application.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
+    vis->SetWindowSize(800, 600);
+    vis->SetWindowTitle("Active shock test");
+    vis->Initialize();
+    vis->AddLogo();
+    vis->AddSkyBox();
+    vis->AddTypicalLights();
+    vis->AddCamera(ChVector<>(0, 0, 6));
+    system.SetVisualSystem(vis);
 
     // Create output directory and log file
     const std::string out_dir = GetChronoOutputPath() + "DEMO_ACTIVE_SHOCK";
@@ -400,8 +402,7 @@ int main(int argc, char* argv[]) {
     title += use_jacobians ? " Jac YES" : "Jac NO";
 
     // Simulation loop
-    application.SetTimestep(step_size);
-    while (application.GetDevice()->run()) {
+    while (vis->Run()) {
         
         double time = system.GetChTime();
 
@@ -409,10 +410,10 @@ int main(int argc, char* argv[]) {
             std::cout << time << " ---------------- " << std::endl;
         }
         
-        application.BeginScene();
-        application.DrawAll();
-        application.DoStep();
-        application.EndScene();
+        vis->BeginScene();
+        vis->DrawAll();
+        vis->EndScene();
+        system.DoStepDynamics(step_size);
 
         double spring_vel = spring->GetVelocity();
         double pos = body->GetPos().y();

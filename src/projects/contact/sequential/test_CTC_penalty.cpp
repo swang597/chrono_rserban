@@ -14,7 +14,7 @@
 #include "chrono/physics/ChContactContainerSMC.h"
 #include "chrono/physics/ChSystemSMC.h"
 
-#include "chrono_irrlicht/ChIrrApp.h"
+#include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 
 #ifdef CHRONO_PARDISO_MKL
 #include "chrono_pardisomkl/ChSolverPardisoMKL.h"
@@ -147,16 +147,6 @@ int main(int argc, char* argv[]) {
 
     system.Set_G_acc(ChVector<>(0, gravity, 0));
 
-    // Create the Irrlicht visualization
-    ChIrrApp application(&system, L"DEM demo", core::dimension2d<u32>(800, 600));
-    application.AddLogo();
-    application.AddSkyBox();
-    application.AddTypicalLights();
-    application.AddCamera(core::vector3df(0, 3, -6));
-
-    // This means that contact forces will be shown in Irrlicht application
-    application.SetSymbolscale(1e-4);
-    application.SetContactsDrawMode(IrrContactsDrawMode::CONTACT_FORCES);
 
     // Create a material (will be used by both objects)
     auto material = chrono_types::make_shared<ChMaterialSurfaceSMC>();
@@ -188,11 +178,8 @@ int main(int argc, char* argv[]) {
 
     auto sphere = chrono_types::make_shared<ChSphereShape>();
     sphere->GetSphereGeometry().rad = radius;
-    ball->AddAsset(sphere);
-
-    auto mtexture = chrono_types::make_shared<ChTexture>();
-    mtexture->SetTextureFilename(GetChronoDataFile("textures/bluewhite.png"));
-    ball->AddAsset(mtexture);
+    sphere->SetTexture(GetChronoDataFile("textures/bluewhite.png"));
+    ball->AddVisualShape(sphere);
 
     system.AddBody(ball);
 
@@ -212,14 +199,22 @@ int main(int argc, char* argv[]) {
 
     auto box = chrono_types::make_shared<ChBoxShape>();
     box->GetBoxGeometry().Size = ChVector<>(width, thickness, length);
-    box->GetBoxGeometry().Pos = ChVector<>(0, -thickness, 0);
-    ground->AddAsset(box);
+    ground->AddVisualShape(box, ChFrame<>(ChVector<>(0, -thickness, 0)));
 
     system.AddBody(ground);
 
-    // Complete asset construction
-    application.AssetBindAll();
-    application.AssetUpdateAll();
+    // Create the Irrlicht visualization
+    auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
+    vis->SetWindowSize(800, 600);
+    vis->SetWindowTitle("DEM demo");
+    vis->Initialize();
+    vis->AddLogo();
+    vis->AddSkyBox();
+    vis->AddTypicalLights();
+    vis->AddCamera(ChVector<>(0, 3, -6));
+    vis->SetSymbolScale(1e-4);
+    vis->EnableContactDrawing(IrrContactsDrawMode::CONTACT_FORCES);
+    system.SetVisualSystem(vis);
 
     // ----------------------------
     // Use custom contact container
@@ -284,9 +279,10 @@ int main(int argc, char* argv[]) {
     // ---------------
     // Simulation loop
     // ---------------
-    while (application.GetDevice()->run()) {
-        application.BeginScene();
-        application.DrawAll();
+    while (vis->Run()) {
+        vis->BeginScene();
+        vis->DrawAll();
+        vis->EndScene();
 
         system.DoStepDynamics(time_step);
         if (ball->GetPos().y() <= radius) {
@@ -294,7 +290,6 @@ int main(int argc, char* argv[]) {
             GetLog() << "t = " << system.GetChTime() << "  NR iters. = " << integrator->GetNumIterations() << "\n";
         }
 
-        application.EndScene();
     }
 
     return 0;

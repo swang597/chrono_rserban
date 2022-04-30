@@ -17,8 +17,8 @@
 // =============================================================================
 
 #include "chrono/utils/ChUtilsCreators.h"
-#include "chrono_irrlicht/ChIrrApp.h"
 #include "chrono_multicore/physics/ChSystemMulticore.h"
+#include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 
 using namespace chrono;
 using namespace chrono::irrlicht;
@@ -101,59 +101,60 @@ int main(int argc, char* argv[]) {
     // Create system
     // -------------
 
-    ChSystemMulticoreNSC msystem;
+    ChSystemMulticoreNSC sys;
 
     // Set number of threads
     int threads = 8;
     int max_threads = omp_get_num_procs();
     if (threads > max_threads)
         threads = max_threads;
-    msystem.SetNumThreads(threads);
+    sys.SetNumThreads(threads);
 
     // Set gravitational acceleration
-    msystem.Set_G_acc(ChVector<>(0, 0, -9.81));
+    sys.Set_G_acc(ChVector<>(0, 0, -9.81));
 
     // Set solver parameters
-    msystem.GetSettings()->solver.solver_mode = SolverMode::SLIDING;
-    msystem.GetSettings()->solver.max_iteration_normal = 0;
-    msystem.GetSettings()->solver.max_iteration_sliding = 100;
-    msystem.GetSettings()->solver.max_iteration_spinning = 0;
-    msystem.GetSettings()->solver.max_iteration_bilateral = 0;
-    msystem.GetSettings()->solver.tolerance = 1e-3;
-    msystem.GetSettings()->solver.alpha = 0;
-    msystem.GetSettings()->solver.contact_recovery_speed = 10000;
-    msystem.ChangeSolverType(SolverType::APGD);
-    msystem.GetSettings()->collision.narrowphase_algorithm = collision::ChNarrowphase::Algorithm::HYBRID;
+    sys.GetSettings()->solver.solver_mode = SolverMode::SLIDING;
+    sys.GetSettings()->solver.max_iteration_normal = 0;
+    sys.GetSettings()->solver.max_iteration_sliding = 100;
+    sys.GetSettings()->solver.max_iteration_spinning = 0;
+    sys.GetSettings()->solver.max_iteration_bilateral = 0;
+    sys.GetSettings()->solver.tolerance = 1e-3;
+    sys.GetSettings()->solver.alpha = 0;
+    sys.GetSettings()->solver.contact_recovery_speed = 10000;
+    sys.ChangeSolverType(SolverType::APGD);
+    sys.GetSettings()->collision.narrowphase_algorithm = collision::ChNarrowphase::Algorithm::HYBRID;
 
-    msystem.GetSettings()->collision.collision_envelope = 0.01;
-    msystem.GetSettings()->collision.bins_per_axis = vec3(10, 10, 10);
+    sys.GetSettings()->collision.collision_envelope = 0.01;
+    sys.GetSettings()->collision.bins_per_axis = vec3(10, 10, 10);
 
     // Create the fixed and moving bodies
     // ----------------------------------
 
-    AddContainer(&msystem);
-    AddFallingBalls(&msystem);
+    AddContainer(&sys);
+    AddFallingBalls(&sys);
 
     // Create Irrlicht application
     // ---------------------------
 
-    ChIrrApp application(&msystem, L"Multicore + Irrlicht", irr::core::dimension2d<irr::u32>(800, 600));
-    application.AddLogo();
-    application.AddTypicalLights();
-    application.AddCamera(irr::core::vector3df(0, -5, 1), irr::core::vector3df(0, 0, 0));
-    application.AssetBindAll();
-    application.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
+    vis->SetWindowSize(800, 600);
+    vis->SetWindowTitle("Multicore + Irrlicht");
+    vis->Initialize();
+    vis->AddLogo();
+    vis->AddSkyBox();
+    vis->AddTypicalLights();
+    vis->AddCamera(ChVector<>(0, -5, 1));
+    sys.SetVisualSystem(vis);
 
     // Perform the simulation
     // ----------------------
 
-    application.SetTimestep(5e-3);
-
-    while (application.GetDevice()->run()) {
-        application.BeginScene();
-        application.DrawAll();
-        application.DoStep();
-        application.EndScene();
+    while (vis->Run()) {
+        vis->BeginScene();
+        vis->DrawAll();
+        vis->EndScene();
+        sys.DoStepDynamics(5e-3);
     }
 
     return 0;

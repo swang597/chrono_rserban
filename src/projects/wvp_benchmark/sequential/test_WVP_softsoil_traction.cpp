@@ -20,7 +20,7 @@
 //
 // =============================================================================
 
-//#define USE_IRRLICHT
+#define USE_IRRLICHT
 
 //#define MAC_PATH_HACK
 
@@ -30,7 +30,7 @@
 
 #ifdef USE_IRRLICHT
 #include "chrono_vehicle/driver/ChIrrGuiDriver.h"
-#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
+#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleVisualSystemIrrlicht.h"
 #endif
 
 #include "chrono/motion_functions/ChFunction.h"
@@ -267,28 +267,31 @@ int main(int argc, char* argv[]) {
     // Create the vehicle Irrlicht interface
     // Create the driver system
     // -------------------------------------
-    std::wstring windowName = L"WVP soft soil test";
+    std::string windowName = "WVP soft soil test";
     if (isoil == 1) {
-        windowName += L"- LETE Sand";
+        windowName += "- LETE Sand";
     } else {
-        windowName += L"- Loose Sand";
+        windowName += "- Loose Sand";
     }
     if (fullForce > 0.0) {
-        windowName += L" - Max. Drawbar Pull = " + std::to_wstring((int)fullForce) += L" N";
+        windowName += " - Max. Drawbar Pull = " + std::to_string((int)fullForce) += " N";
     }
     if (fullSlope > 0.0) {
-        windowName += L" - Max. Slope = " + std::to_wstring((int)fullSlope) += L" %";
+        windowName += " - Max. Slope = " + std::to_string((int)fullSlope) += " %";
     }
-    ChWheeledVehicleIrrApp app(&wvp.GetVehicle(), windowName.c_str());
-    app.AddTypicalLights();
-    app.SetChaseCamera(trackPoint, 6.0, 0.5);
-    /*app.SetTimestep(step_size);*/
-    app.AssetBindAll();
-    app.AssetUpdateAll();
+
+    auto vis = chrono_types::make_shared<ChWheeledVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle(windowName);
+    vis->SetChaseCamera(trackPoint, 6.0, 0.5);
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    wvp.GetVehicle().SetVisualSystem(vis);
 
     // Visualization of controller points (sentinel & target)
-    irr::scene::IMeshSceneNode* ballS = app.GetSceneManager()->addSphereSceneNode(0.1f);
-    irr::scene::IMeshSceneNode* ballT = app.GetSceneManager()->addSphereSceneNode(0.1f);
+    irr::scene::IMeshSceneNode* ballS = vis->GetSceneManager()->addSphereSceneNode(0.1f);
+    irr::scene::IMeshSceneNode* ballT = vis->GetSceneManager()->addSphereSceneNode(0.1f);
     ballS->getMaterial(0).EmissiveColor = irr::video::SColor(0, 255, 0, 0);
     ballT->getMaterial(0).EmissiveColor = irr::video::SColor(0, 0, 255, 0);
 #endif
@@ -352,7 +355,7 @@ int main(int argc, char* argv[]) {
     csv << std::endl;
 
 #ifdef USE_IRRLICHT
-    while (app.GetDevice()->run()) {
+    while (vis->Run()) {
         // path visualization
         const ChVector<>& pS = driver.GetSteeringController().GetSentinelLocation();
         const ChVector<>& pT = driver.GetSteeringController().GetTargetLocation();
@@ -366,9 +369,9 @@ int main(int argc, char* argv[]) {
 
         // Render scene
         if (step_number % render_steps == 0) {
-            app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-            app.DrawAll();
-            app.EndScene();
+            vis->BeginScene();
+            vis->DrawAll();
+            vis->EndScene();
         }
 #else
     while (wvp.GetSystem()->GetChTime() < tend) {
@@ -389,7 +392,7 @@ int main(int argc, char* argv[]) {
         terrain->Synchronize(time);
         wvp.Synchronize(time, driver_inputs, *terrain);
 #ifdef USE_IRRLICHT
-        app.Synchronize("Follower driver", driver_inputs);
+        vis->Synchronize("Follower driver", driver_inputs);
 #endif
 
         // Advance simulation for one timestep for all modules
@@ -398,7 +401,7 @@ int main(int argc, char* argv[]) {
         terrain->Advance(step_size);
         wvp.Advance(step_size);
 #ifdef USE_IRRLICHT
-        app.Advance(step_size);
+        vis->Advance(step_size);
 #endif
 
         if (povray_output && step_number % render_steps == 0) {

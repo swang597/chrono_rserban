@@ -24,7 +24,7 @@
 
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/terrain/RigidTerrain.h"
-#include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleIrrApp.h"
+#include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleVisualSystemIrrlicht.h"
 
 #include "chrono_models/vehicle/m113/M113_SimpleCVTPowertrain.h"
 #include "chrono_models/vehicle/m113/M113_Vehicle.h"
@@ -101,15 +101,14 @@ int main(int argc, char* argv[]) {
     terrain.Initialize();
 
     // Create the vehicle Irrlicht interface
-    ChTrackedVehicleIrrApp app(&vehicle, L"M113 friction test");
-    app.AddLogo();
-    app.AddTypicalLights();
-    app.SetChaseCamera(ChVector<>(0.0, 0.0, 0.0), 6.0, 0.5);
-    app.SetTimestep(step_size);
-
-    // Finalize construction of visualization assets
-    app.AssetBindAll();
-    app.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<ChTrackedVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle("M113 friction test");
+    vis->SetChaseCamera(ChVector<>(0.0, 0.0, 0.0), 6.0, 0.5);
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    vehicle.SetVisualSystem(vis);
 
     // Initialize output
     if (output) {
@@ -138,7 +137,7 @@ int main(int argc, char* argv[]) {
     int out_steps = (int)std::ceil(out_step_size / step_size);
     int sim_frame = 0;
 
-    while (app.GetDevice()->run()) {
+    while (vis->Run()) {
         double time = sys.GetChTime();
 
         auto veh_pos = vehicle.GetPos();
@@ -157,9 +156,9 @@ int main(int argc, char* argv[]) {
         }
 
         // Render scene
-        app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-        app.DrawAll();
-        app.EndScene();
+        vis->BeginScene();
+        vis->DrawAll();
+        vis->EndScene();
 
         // Driver inputs
         ChDriver::Inputs driver_inputs;
@@ -178,12 +177,12 @@ int main(int argc, char* argv[]) {
         // Update modules (process inputs from other modules)
         vehicle.Synchronize(time, driver_inputs, shoe_forces_left, shoe_forces_right);
         terrain.Synchronize(time);
-        app.Synchronize("", driver_inputs);
+        vis->Synchronize("", driver_inputs);
 
         // Advance simulation for one timestep for all modules.
         terrain.Advance(step_size);
         vehicle.Advance(step_size);
-        app.Advance(step_size);
+        vis->Advance(step_size);
 
         // Advance state of entire system
         sys.DoStepDynamics(step_size);

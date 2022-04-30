@@ -16,7 +16,6 @@
 //
 // =============================================================================
 
-#include "chrono/assets/ChColorAsset.h"
 #include "chrono/assets/ChCylinderShape.h"
 #include "chrono/assets/ChTriangleMeshShape.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
@@ -45,7 +44,7 @@ const double M113a_TrackShoeSinglePin::m_rear_cyl_loc = -0.061;
 
 const ChVector<> M113a_TrackShoeSinglePin::m_pin_center(0.045, 0, 0.0375);
 
-const std::string M113a_TrackShoeSinglePin::m_meshFile = "M113/TrackShoe.obj";
+const std::string M113a_TrackShoeSinglePin::m_meshFile = "M113/meshes/TrackShoe.obj";
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
@@ -71,6 +70,8 @@ M113a_TrackShoeSinglePin::M113a_TrackShoeSinglePin(const std::string& name) : Ch
     m_geometry.m_coll_boxes.push_back(box_side_outer);
     m_geometry.m_coll_boxes.push_back(box_side_inner);
 
+    m_geometry.m_has_primitives = true;
+
     m_geometry.m_vis_boxes.push_back(box_bottom);
     m_geometry.m_vis_boxes.push_back(box_top);
     m_geometry.m_vis_boxes.push_back(box_guide);
@@ -86,6 +87,9 @@ M113a_TrackShoeSinglePin::M113a_TrackShoeSinglePin(const std::string& name) : Ch
     m_geometry.m_vis_cylinders.push_back(ChVehicleGeometry::CylinderShape(ChVector<>(0.0535, +0.095, 0), QUNIT, 0.015, 0.095, -1));
     m_geometry.m_vis_cylinders.push_back(ChVehicleGeometry::CylinderShape(ChVector<>(-0.061, -0.095, 0), QUNIT, 0.015, 0.095, -1));
     m_geometry.m_vis_cylinders.push_back(ChVehicleGeometry::CylinderShape(ChVector<>(-0.061, +0.095, 0), QUNIT, 0.015, 0.095, -1));
+
+    m_geometry.m_has_mesh = true;
+    m_geometry.m_vis_mesh_file = "M113/meshes/TrackShoe.obj";
 }
 
 void M113a_TrackShoeSinglePin::CreateContactMaterials(ChContactMethod contact_method) {
@@ -123,22 +127,6 @@ void M113a_TrackShoeSinglePin::CreateContactMaterials(ChContactMethod contact_me
         minfo.cr = 0.1f;
         minfo.Y = 1e7f;
         m_geometry.m_materials.push_back(minfo.CreateMaterial(contact_method));
-    }
-}
-
-// -----------------------------------------------------------------------------
-// -----------------------------------------------------------------------------
-void M113a_TrackShoeSinglePin::AddVisualizationAssets(VisualizationType vis) {
-    if (vis == VisualizationType::MESH) {
-        auto trimesh = chrono_types::make_shared<geometry::ChTriangleMeshConnected>();
-        trimesh->LoadWavefrontMesh(vehicle::GetDataFile(m_meshFile), false, false);
-        auto trimesh_shape = chrono_types::make_shared<ChTriangleMeshShape>();
-        trimesh_shape->SetMesh(trimesh);
-        trimesh_shape->SetName(filesystem::path(m_meshFile).stem());
-        trimesh_shape->SetStatic(true);
-        m_shoe->AddAsset(trimesh_shape);
-    } else {
-        ChTrackShoeSinglePin::AddVisualizationAssets(vis);
     }
 }
 

@@ -17,7 +17,7 @@
 #ifndef AV_IRRAPP_H
 #define AV_IRRAPP_H
 
-#include "chrono_vehicle/utils/ChVehicleIrrApp.h"
+#include "chrono_vehicle/utils/ChVehicleVisualSystemIrrlicht.h"
 #include "vehicle.h"
 
 namespace av {
@@ -25,9 +25,9 @@ namespace av {
 class Framework;
 class EventReceiver;
 
-class IrrApp : public chrono::vehicle::ChVehicleIrrApp {
+class IrrApp : public chrono::vehicle::ChVehicleVisualSystemIrrlicht {
   public:
-    IrrApp(Framework* framework, irr::core::dimension2d<irr::u32> dims = irr::core::dimension2d<irr::u32>(1000, 800));
+    IrrApp(Framework* framework, unsigned int width = 1000, unsigned int height = 800);
 
   private:
     void ChangeVehicle(int index);

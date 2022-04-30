@@ -46,12 +46,12 @@ M113a_Chassis::M113a_Chassis(const std::string& name, bool fixed, CollisionType 
     m_body_inertia(1, 1) = m_body_inertiaXX.y();
     m_body_inertia(2, 2) = m_body_inertiaXX.z();
 
-    m_body_inertia(0, 1) = m_body_inertiaXX.x();
-    m_body_inertia(0, 2) = m_body_inertiaXX.y();
-    m_body_inertia(1, 2) = m_body_inertiaXX.z();
-    m_body_inertia(1, 0) = m_body_inertiaXX.x();
-    m_body_inertia(2, 0) = m_body_inertiaXX.y();
-    m_body_inertia(2, 1) = m_body_inertiaXX.z();
+    m_body_inertia(0, 1) = m_body_inertiaXY.x();
+    m_body_inertia(0, 2) = m_body_inertiaXY.y();
+    m_body_inertia(1, 2) = m_body_inertiaXY.z();
+    m_body_inertia(1, 0) = m_body_inertiaXY.x();
+    m_body_inertia(2, 0) = m_body_inertiaXY.y();
+    m_body_inertia(2, 1) = m_body_inertiaXY.z();
 
     // Belly shape (all dimensions in cm)
     //   width: 170
@@ -84,7 +84,7 @@ M113a_Chassis::M113a_Chassis(const std::string& name, bool fixed, CollisionType 
     m_geometry.m_vis_boxes.push_back(box2);
 
     m_geometry.m_has_mesh = true;
-    m_geometry.m_vis_mesh_file = "M113/Chassis.obj";
+    m_geometry.m_vis_mesh_file = "M113/meshes/Chassis.obj";
 
     m_geometry.m_has_collision = (chassis_collision_type != CollisionType::NONE);
     switch (chassis_collision_type) {
@@ -95,7 +95,7 @@ M113a_Chassis::M113a_Chassis(const std::string& name, bool fixed, CollisionType 
             m_geometry.m_coll_boxes.push_back(box2);
             break;
         case CollisionType::MESH: {
-            ChVehicleGeometry::ConvexHullsShape hull("M113/Chassis_Hulls.obj", 0);
+            ChVehicleGeometry::ConvexHullsShape hull("M113/meshes/Chassis_Hulls.obj", 0);
             m_geometry.m_coll_hulls.push_back(hull);
             break;
         }

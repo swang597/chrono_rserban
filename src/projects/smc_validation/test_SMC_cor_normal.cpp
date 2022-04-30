@@ -90,8 +90,7 @@ int main(int argc, char* argv[]) {
 
             // Create the Irrlicht visualization.
 #ifdef CHRONO_IRRLICHT
-            bool vis = true;
-            auto application = SetSimVis(&msystem, time_step, vis);
+            auto vis = SetSimVis(&msystem, time_step);
 #endif
 
             // Calculate motion parameters prior to collision
@@ -123,10 +122,8 @@ int main(int argc, char* argv[]) {
             // Iterate through simulation. Calculate resultant forces and motion for each timestep
             while (time < time_sim) {
 #ifdef CHRONO_IRRLICHT
-                if (application != NULL) {
-                    application->BeginScene(true, true, SColor(255, 255, 255, 255));
-                    application->DrawAll();
-                }
+                vis->BeginScene();
+                vis->DrawAll();
 #endif
 
                 while (time == 0 || time < out_time) {
@@ -137,16 +134,9 @@ int main(int argc, char* argv[]) {
                 out_time = time - time_step + out_step;
 
 #ifdef CHRONO_IRRLICHT
-                if (application != NULL)
-                    application->EndScene();
+                vis->EndScene();
 #endif
             }
-
-            // Delete Visualization
-#ifdef CHRONO_IRRLICHT
-            if (application != NULL)
-                delete application;
-#endif
 
             // Check results. Should fail test if abs(cor_dif) >= 1.0e-3
             ChVector<> rel_v_out = body2->GetPos_dt() - body1->GetPos_dt();

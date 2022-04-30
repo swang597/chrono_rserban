@@ -23,7 +23,7 @@
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"
 #include "chrono_vehicle/utils/ChVehiclePath.h"
-#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
+#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleVisualSystemIrrlicht.h"
 
 #include "chrono_models/vehicle/hmmwv/HMMWV.h"
 #include "chrono_vehicle/wheeled_vehicle/tire/ChTMeasyTire.h"
@@ -120,21 +120,6 @@ int main(int argc, char* argv[]) {
     // Parameterized NATO double lane change (to right)
     ////auto path = DoubleLaneChangePath(ChVector<>(-125, 0, 0.1), 28.93, 3.6105, 25.0, 50.0, false);
 
-    // Create the vehicle Irrlicht application
-    ChVehicleIrrApp app(&my_hmmwv.GetVehicle(), L"DLC test");
-    app.SetHUDLocation(500, 20);
-    app.AddLogo();
-    app.AddTypicalLights();
-    app.SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 6.0, 0.5);
-
-    app.SetTimestep(step_size);
-
-    // Visualization of controller points (sentinel & target)
-    irr::scene::IMeshSceneNode* ballS = app.GetSceneManager()->addSphereSceneNode(0.1f);
-    irr::scene::IMeshSceneNode* ballT = app.GetSceneManager()->addSphereSceneNode(0.1f);
-    ballS->getMaterial(0).EmissiveColor = irr::video::SColor(0, 255, 0, 0);
-    ballT->getMaterial(0).EmissiveColor = irr::video::SColor(0, 0, 255, 0);
-
     // Create the driver system
     ChPathFollowerDriver driver(my_hmmwv.GetVehicle(), path, "my_path", 10.0);
     driver.GetSteeringController().SetLookAheadDistance(5);
@@ -142,9 +127,21 @@ int main(int argc, char* argv[]) {
     driver.GetSpeedController().SetGains(0.4, 0, 0);
     driver.Initialize();
 
-    // Finalize construction of visualization assets
-    app.AssetBindAll();
-    app.AssetUpdateAll();
+    // Create the vehicle Irrlicht application
+    auto vis = chrono_types::make_shared<ChVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle("Suspension Test Rig");
+    vis->SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 6.0, 0.5);
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    my_hmmwv.GetVehicle().SetVisualSystem(vis);
+
+    // Visualization of controller points (sentinel & target)
+    irr::scene::IMeshSceneNode* ballS = vis->GetSceneManager()->addSphereSceneNode(0.1f);
+    irr::scene::IMeshSceneNode* ballT = vis->GetSceneManager()->addSphereSceneNode(0.1f);
+    ballS->getMaterial(0).EmissiveColor = irr::video::SColor(0, 255, 0, 0);
+    ballT->getMaterial(0).EmissiveColor = irr::video::SColor(0, 0, 255, 0);
 
     // -----------------
     // Initialize output
@@ -169,7 +166,7 @@ int main(int argc, char* argv[]) {
     // Initialize simulation frame counter and simulation time
     int sim_frame = 0;
 
-    while (app.GetDevice()->run()) {
+    while (vis->Run()) {
         // Extract system state
         double time = my_hmmwv.GetSystem()->GetChTime();
 
@@ -189,8 +186,9 @@ int main(int argc, char* argv[]) {
         ballS->setPosition(irr::core::vector3df((irr::f32)pS.x(), (irr::f32)pS.y(), (irr::f32)pS.z()));
         ballT->setPosition(irr::core::vector3df((irr::f32)pT.x(), (irr::f32)pT.y(), (irr::f32)pT.z()));
 
-        app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-        app.DrawAll();
+        vis->BeginScene();
+        vis->DrawAll();
+        vis->EndScene();
 
         // Debug logging
         if (sim_frame % debug_steps == 0) {
@@ -221,18 +219,17 @@ int main(int argc, char* argv[]) {
         driver.Synchronize(time);
         terrain.Synchronize(time);
         my_hmmwv.Synchronize(time, driver_inputs, terrain);
-        app.Synchronize(outfile, driver_inputs);
+        vis->Synchronize(outfile, driver_inputs);
 
         // Advance simulation for one timestep for all modules
         driver.Advance(step_size);
         terrain.Advance(step_size);
         my_hmmwv.Advance(step_size);
-        app.Advance(step_size);
+        vis->Advance(step_size);
 
         // Increment simulation frame number
         sim_frame++;
 
-        app.EndScene();
     }
 
     csv.write_to_file(out_dir + "/" + outfile);

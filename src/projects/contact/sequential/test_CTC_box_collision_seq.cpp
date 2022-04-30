@@ -27,7 +27,7 @@
 #include "chrono/physics/ChSystemNSC.h"
 
 #ifdef CHRONO_IRRLICHT
-#include "chrono_irrlicht/ChIrrApp.h"
+#include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 #endif
 
 using namespace chrono;
@@ -108,7 +108,7 @@ int main(int argc, char* argv[]) {
     utils::AddBoxGeometry(container.get(), contact_mat, ChVector<>(4, .5, 4), ChVector<>(0, -.5, 0));
     container->GetCollisionModel()->BuildModel();
 
-    container->AddAsset(chrono_types::make_shared<ChColorAsset>(ChColor(0.4f, 0.4f, 0.2f)));
+    container->GetVisualShape(0)->SetColor(ChColor(0.4f, 0.4f, 0.2f));
 
     auto box = std::shared_ptr<ChBody>(system.NewBody());
     box->SetMass(10);
@@ -121,7 +121,7 @@ int main(int argc, char* argv[]) {
     utils::AddBoxGeometry(box.get(), contact_mat, ChVector<>(0.4, 0.2, 0.1));
     box->GetCollisionModel()->BuildModel();
 
-    box->AddAsset(chrono_types::make_shared<ChColorAsset>(ChColor(0.2f, 0.3f, 0.4f)));
+    box->GetVisualShape(0)->SetColor(ChColor(0.2f, 0.3f, 0.4f));
 
     system.AddBody(box);
 
@@ -130,13 +130,16 @@ int main(int argc, char* argv[]) {
     // Create the visualization window
     // -------------------------------
 
-    irrlicht::ChIrrApp application(&system, L"Rolling test", irr::core::dimension2d<irr::u32>(800, 600));
-    application.AddLogo();
-    application.AddSkyBox();
-    application.AddTypicalLights();
-    application.AddCamera(irr::core::vector3df(6, 6, -10));
-    application.AssetBindAll();
-    application.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<irrlicht::ChVisualSystemIrrlicht>();
+    vis->SetWindowSize(800, 600);
+    vis->SetWindowTitle("Rolling test");
+    vis->Initialize();
+    vis->AddLogo();
+    vis->AddSkyBox();
+    vis->AddTypicalLights();
+    vis->AddCamera(ChVector<>(6, 6, -10));
+    system.SetVisualSystem(vis);
+
 #endif
 
     // ---------------
@@ -155,10 +158,10 @@ int main(int argc, char* argv[]) {
 
 #ifdef CHRONO_IRRLICHT
         // Render scene
-        if (application.GetDevice()->run()) {
-            application.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-            application.DrawAll();
-            application.EndScene();
+        if (vis->Run()) {
+            vis->BeginScene();
+            vis->DrawAll();
+            vis->EndScene();
         } else {
             return 1;
         }

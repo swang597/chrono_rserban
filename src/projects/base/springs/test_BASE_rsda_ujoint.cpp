@@ -21,7 +21,7 @@
 
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/physics/ChSystemSMC.h"
-#include "chrono_irrlicht/ChIrrApp.h"
+#include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 
 using namespace chrono;
 using namespace chrono::irrlicht;
@@ -63,11 +63,8 @@ int main(int argc, char* argv[]) {
         cyl->GetCylinderGeometry().p1 = ChVector<>(-0.2, 0, 0);
         cyl->GetCylinderGeometry().p2 = ChVector<>(+0.2, 0, 0);
         cyl->GetCylinderGeometry().rad = 0.05;
-        ground->AddAsset(cyl);
-
-        auto col = chrono_types::make_shared<ChColorAsset>();
-        col->SetColor(ChColor(0.6f, 0, 0));
-        ground->AddAsset(col);
+        cyl->SetColor(ChColor(0.6f, 0, 0));
+        ground->AddVisualShape(cyl);
     }
 
     // Create the articulated body
@@ -87,17 +84,14 @@ int main(int argc, char* argv[]) {
     {
         auto box = chrono_types::make_shared<ChBoxShape>();
         box->GetBoxGeometry().Size = ChVector<>(0.15, 0.9 * 2, 0.15);
-        body->AddAsset(box);
+        body->AddVisualShape(box);
 
         auto cyl = chrono_types::make_shared<ChCylinderShape>();
         cyl->GetCylinderGeometry().p1 = ChVector<>(0, 2, -0.2);
         cyl->GetCylinderGeometry().p2 = ChVector<>(0, 2, +0.2);
         cyl->GetCylinderGeometry().rad = 0.05;
-        body->AddAsset(cyl);
-
-        auto col = chrono_types::make_shared<ChColorAsset>();
-        col->SetColor(ChColor(0, 0, 0.6f));
-        body->AddAsset(col);
+        cyl->SetColor(ChColor(0, 0, 0.6f));
+        body->AddVisualShape(cyl);
     }
 
     // Connect the body to the ground through a universal joint (located at the origin).
@@ -114,23 +108,22 @@ int main(int argc, char* argv[]) {
     system.AddLink(rsda);
 
     // Create the Irrlicht application
-    ChIrrApp application(&system, L"U-joint with rotational damper", irr::core::dimension2d<irr::u32>(800, 600));
-    application.AddLogo();
-    application.AddSkyBox();
-    application.AddTypicalLights();
-    application.AddCamera(irr::core::vector3df(0, 2, 0));
-
-    application.AssetBindAll();
-    application.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
+    vis->SetWindowSize(800, 600);
+    vis->SetWindowTitle("U-joint with rotational damper");
+    vis->Initialize();
+    vis->AddLogo();
+    vis->AddSkyBox();
+    vis->AddTypicalLights();
+    vis->AddCamera(ChVector<>(0, 2, 0));
+    system.SetVisualSystem(vis);
 
     // Simulation loop
-    application.SetTimestep(5e-4);
-
-    while (application.GetDevice()->run()) {
-        application.BeginScene();
-        application.DrawAll();
-        application.DoStep();
-        application.EndScene();
+    while (vis->Run()) {
+        vis->BeginScene();
+        vis->DrawAll();
+        vis->EndScene();
+        system.DoStepDynamics(5e-4);
     }
 
     return 0;

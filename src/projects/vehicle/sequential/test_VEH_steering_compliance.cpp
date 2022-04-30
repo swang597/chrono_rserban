@@ -27,13 +27,12 @@
 #include "chrono/physics/ChShaftsTorsionSpring.h"
 #include "chrono/physics/ChSystemNSC.h"
 
-#include "chrono/assets/ChColorAsset.h"
 #include "chrono/assets/ChCylinderShape.h"
-#include "chrono/assets/ChPointPointDrawing.h"
+#include "chrono/assets/ChPointPointShape.h"
 
 #include "chrono/utils/ChUtilsInputOutput.h"
 
-#include "chrono_irrlicht/ChIrrApp.h"
+#include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 #include "chrono_thirdparty/filesystem/resolver.h"
@@ -97,20 +96,18 @@ int main(int argc, char* argv[]) {
         cyl->GetCylinderGeometry().p1 = pP;
         cyl->GetCylinderGeometry().p2 = pI;
         cyl->GetCylinderGeometry().rad = link_radius;
-        link->AddAsset(cyl);
+        link->AddVisualShape(cyl);
         auto cyl_P = chrono_types::make_shared<ChCylinderShape>();
         cyl_P->GetCylinderGeometry().p1 = pP;
         cyl_P->GetCylinderGeometry().p2 = pTP;
         cyl_P->GetCylinderGeometry().rad = link_radius;
-        link->AddAsset(cyl_P);
+        link->AddVisualShape(cyl_P);
         auto cyl_I = chrono_types::make_shared<ChCylinderShape>();
         cyl_I->GetCylinderGeometry().p1 = pI;
         cyl_I->GetCylinderGeometry().p2 = pTI;
         cyl_I->GetCylinderGeometry().rad = link_radius;
-        link->AddAsset(cyl_I);
-        auto col = chrono_types::make_shared<ChColorAsset>();
-        col->SetColor(ChColor(0.2f, 0.7f, 0.7f));
-        link->AddAsset(col);
+        cyl_I->SetColor(ChColor(0.2f, 0.7f, 0.7f));
+        link->AddVisualShape(cyl_I);
     }
 
     // Markers on steering link (at tie-rod connections)
@@ -140,10 +137,8 @@ int main(int argc, char* argv[]) {
         cyl->GetCylinderGeometry().p1 = pC;
         cyl->GetCylinderGeometry().p2 = pL;
         cyl->GetCylinderGeometry().rad = arm_radius;
-        arm->AddAsset(cyl);
-        auto col = chrono_types::make_shared<ChColorAsset>();
-        col->SetColor(ChColor(0.7f, 0.7f, 0.2f));
-        arm->AddAsset(col);
+        cyl->SetColor(ChColor(0.7f, 0.7f, 0.2f));
+        arm->AddVisualShape(cyl);
     }
 
     // -------------
@@ -166,7 +161,7 @@ int main(int argc, char* argv[]) {
     double distance = (ChVector<>(0.129, -0.325, 0) - ChVector<>(0, -0.325, 0)).Length();
     auto revsph = chrono_types::make_shared<ChLinkRevoluteSpherical>();
     revsph->Initialize(chassis, link, ChCoordsys<>(ChVector<>(0, -0.325, 0), QUNIT), distance);
-    revsph->AddAsset(chrono_types::make_shared<ChPointPointSegment>());
+    revsph->AddVisualShape(chrono_types::make_shared<ChSegmentShape>());
     sys.AddLink(revsph);
 
     // ---------------------
@@ -242,13 +237,15 @@ int main(int argc, char* argv[]) {
     // Create Irrlicht application
     // ---------------------------
 
-    ChIrrApp application(&sys, L"Compliant steering", irr::core::dimension2d<irr::u32>(800, 600));
-    application.AddLogo();
-    application.AddSkyBox();
-    application.AddTypicalLights();
-    application.AddCamera(irr::core::vector3df(0, 0, -2), irr::core::vector3df(0, 0, 0));
-    application.AssetBindAll();
-    application.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
+    sys.SetVisualSystem(vis);
+    vis->SetWindowSize(800, 600);
+    vis->SetWindowTitle("Compliant steering");
+    vis->Initialize();
+    vis->AddLogo();
+    vis->AddSkyBox();
+    vis->AddCamera(ChVector<>(0, 0, -2));
+    vis->AddTypicalLights();
 
     // -------------
     // Set up output
@@ -275,11 +272,11 @@ int main(int argc, char* argv[]) {
     // Simulation loop
     // ---------------
 
-    while (application.GetDevice()->run()) {
+    while (vis->Run()) {
         // Render scene
-        application.BeginScene();
-        application.DrawAll();
-        application.EndScene();
+        vis->BeginScene();
+        vis->DrawAll();
+        vis->EndScene();
 
         // Update steering input
         double time = sys.GetChTime();

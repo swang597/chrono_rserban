@@ -17,7 +17,6 @@
 // =============================================================================
 
 #include "chrono/ChConfig.h"
-#include "chrono/assets/ChColorAsset.h"
 #include "chrono/assets/ChBoxShape.h"
 #include "chrono/assets/ChSphereShape.h"
 
@@ -186,11 +185,8 @@ int main(int argc, char* argv[]) {
             auto trimesh_shape = chrono_types::make_shared<ChTriangleMeshShape>();
             trimesh_shape->SetMesh(trimesh);
             trimesh_shape->SetName("tire");
-            object->AddAsset(trimesh_shape);
-
-            std::shared_ptr<ChColorAsset> mcol(new ChColorAsset);
-            mcol->SetColor(ChColor(0.3f, 0.3f, 0.3f));
-            object->AddAsset(mcol);
+            trimesh_shape->SetColor(ChColor(0.3f, 0.3f, 0.3f));
+            object->AddVisualShape(trimesh_shape);
 
             break;
         }
@@ -201,7 +197,7 @@ int main(int argc, char* argv[]) {
 
             auto sphere = chrono_types::make_shared<ChSphereShape>();
             sphere->GetSphereGeometry().rad = 0.2;
-            object->AddAsset(sphere);
+            object->AddVisualShape(sphere);
 
             break;
         }
@@ -238,9 +234,7 @@ int main(int argc, char* argv[]) {
 
             auto box = chrono_types::make_shared<ChBoxShape>();
             box->GetBoxGeometry().Size = ChVector<>(width, length, thickness);
-            ////box->GetBoxGeometry().Pos = ChVector<>(0, 0, -thickness); // not interpreted in multicore collision sys
-            box->Pos = ChVector<>(0, 0, -thickness);
-            ground->AddAsset(box);
+            ground->AddVisualShape(box, ChFrame<>(ChVector<>(0, 0, -thickness)));
 
             break;
         }
@@ -256,7 +250,7 @@ int main(int argc, char* argv[]) {
             auto trimesh_ground_shape = chrono_types::make_shared<ChTriangleMeshShape>();
             trimesh_ground_shape->SetMesh(trimesh_ground);
             trimesh_ground_shape->SetName("ground");
-            ground->AddAsset(trimesh_ground_shape);
+            ground->AddVisualShape(trimesh_ground_shape);
 
             break;
         }

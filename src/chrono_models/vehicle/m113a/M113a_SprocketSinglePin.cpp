@@ -47,8 +47,8 @@ const double M113a_SprocketSinglePin::m_gear_RA = 0.245;
 
 const double M113a_SprocketSinglePin::m_lateral_backlash = 0.02;
 
-const std::string M113a_SprocketSinglePinLeft::m_meshFile = "M113/Sprocket_L.obj";
-const std::string M113a_SprocketSinglePinRight::m_meshFile = "M113/Sprocket_R.obj";
+const std::string M113a_SprocketSinglePinLeft::m_meshFile = "M113/meshes/Sprocket_L.obj";
+const std::string M113a_SprocketSinglePinRight::m_meshFile = "M113/meshes/Sprocket_R.obj";
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
@@ -71,8 +71,8 @@ void M113a_SprocketSinglePin::AddVisualizationAssets(VisualizationType vis) {
         auto trimesh_shape = chrono_types::make_shared<ChTriangleMeshShape>();
         trimesh_shape->SetMesh(trimesh);
         trimesh_shape->SetName(filesystem::path(GetMeshFile()).stem());
-        trimesh_shape->SetStatic(true);
-        m_gear->AddAsset(trimesh_shape);
+        trimesh_shape->SetMutable(false);
+        m_gear->AddVisualShape(trimesh_shape);
     } else {
         ChSprocket::AddVisualizationAssets(vis);
     }

@@ -20,7 +20,6 @@
 // =============================================================================
 
 #include "chrono/ChConfig.h"
-#include "chrono/assets/ChColorAsset.h"
 #include "chrono/utils/ChUtilsCreators.h"
 
 #include "chrono_multicore/physics/ChSystemMulticore.h"
@@ -106,7 +105,7 @@ int main(int argc, char** argv) {
 	utils::AddBoxGeometry(container.get(), material, ChVector<>(20, .5, 20), ChVector<>(0, -.5, 0));
 	container->GetCollisionModel()->BuildModel();
 
-    container->AddAsset(chrono_types::make_shared<ChColorAsset>(ChColor(0.4f, 0.4f, 0.2f)));
+    container->GetVisualShape(0)->SetColor(ChColor(0.4f, 0.4f, 0.2f));
 
     auto ball = std::shared_ptr<ChBody>(system.NewBody());
 	ChVector<> pos = ChVector<>(0, radius, 0);
@@ -123,7 +122,7 @@ int main(int argc, char** argv) {
 	utils::AddSphereGeometry(ball.get(), material, radius);
 	ball->GetCollisionModel()->BuildModel();
 
-    ball->AddAsset(chrono_types::make_shared<ChColorAsset>(ChColor(0.2f, 0.3f, 0.4f)));
+    ball->GetVisualShape(0)->SetColor(ChColor(0.2f, 0.3f, 0.4f));
 
 	system.AddBody(ball);
 

@@ -82,8 +82,8 @@ void GD250_TMeasyTireFront::AddVisualizationAssets(VisualizationType vis) {
 }
 
 void GD250_TMeasyTireFront::RemoveVisualizationAssets() {
+    ChPart::RemoveVisualizationAsset(m_wheel->GetSpindle(), m_trimesh_shape);
     ChTMeasyTire::RemoveVisualizationAssets();
-    RemoveVisualizationMesh(m_trimesh_shape);
 }
 
 // -----------------------------------------------------------------------------
@@ -130,8 +130,8 @@ void GD250_TMeasyTireRear::AddVisualizationAssets(VisualizationType vis) {
 }
 
 void GD250_TMeasyTireRear::RemoveVisualizationAssets() {
+    ChPart::RemoveVisualizationAsset(m_wheel->GetSpindle(), m_trimesh_shape);
     ChTMeasyTire::RemoveVisualizationAssets();
-    RemoveVisualizationMesh(m_trimesh_shape);
 }
 
 }  // namespace gwagon

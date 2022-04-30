@@ -38,8 +38,8 @@ const double M113a_RoadWheel::m_wheel_radius = 0.305;
 const double M113a_RoadWheel::m_wheel_width = 0.18542;
 const double M113a_RoadWheel::m_wheel_gap = 0.033;
 
-const std::string M113a_RoadWheelLeft::m_meshFile = "M113/Roller_L.obj";
-const std::string M113a_RoadWheelRight::m_meshFile = "M113/Roller_R.obj";
+const std::string M113a_RoadWheelLeft::m_meshFile = "M113/meshes/Roller_L.obj";
+const std::string M113a_RoadWheelRight::m_meshFile = "M113/meshes/Roller_R.obj";
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
@@ -62,8 +62,8 @@ void M113a_RoadWheel::AddVisualizationAssets(VisualizationType vis) {
         auto trimesh_shape = chrono_types::make_shared<ChTriangleMeshShape>();
         trimesh_shape->SetMesh(trimesh);
         trimesh_shape->SetName(filesystem::path(GetMeshFile()).stem());
-        trimesh_shape->SetStatic(true);
-        m_wheel->AddAsset(trimesh_shape);
+        trimesh_shape->SetMutable(false);
+        m_wheel->AddVisualShape(trimesh_shape);
     } else {
         ChDoubleRoadWheel::AddVisualizationAssets(vis);
     }

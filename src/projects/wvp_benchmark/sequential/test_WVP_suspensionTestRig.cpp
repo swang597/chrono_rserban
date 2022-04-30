@@ -47,7 +47,7 @@
 #include "chrono_vehicle/wheeled_vehicle/test_rig/ChSuspensionTestRig.h"
 #include "chrono_vehicle/wheeled_vehicle/test_rig/ChIrrGuiDriverSTR.h"
 #include "chrono_vehicle/wheeled_vehicle/test_rig/ChDataDriverSTR.h"
-#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
+#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleVisualSystemIrrlicht.h"
 
 #include "chrono_models/vehicle/wvp/WVP_Vehicle.h"
 #include "chrono_models/vehicle/wvp/WVP_RigidTire.h"
@@ -110,10 +110,9 @@ int main(int argc, char* argv[]) {
     rig.SetTireVisualizationType(VisualizationType::PRIMITIVES);
 
     // Create the vehicle Irrlicht application.
-    ChVehicleIrrApp app(vehicle.get(), L"WVP Suspension Test Rig");
-    app.AddTypicalLights();
-    app.SetChaseCamera(0.5 * (rig.GetSpindlePos(0, LEFT) + rig.GetSpindlePos(0, RIGHT)), 2.0, 1.0);
-    app.SetTimestep(step_size);
+    auto vis = chrono_types::make_shared<ChVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle("WVP Suspension Test Rig");
+    vis->SetChaseCamera(0.5 * (rig.GetSpindlePos(0, LEFT) + rig.GetSpindlePos(0, RIGHT)), 2.0, 1.0);
 
     // Create and initialize the driver system.
     if (use_data_driver) {
@@ -122,7 +121,7 @@ int main(int argc, char* argv[]) {
         rig.SetDriver(driver);
     } else {
         // Interactive driver
-        auto driver = chrono_types::make_shared<ChIrrGuiDriverSTR>(app);
+        auto driver = chrono_types::make_shared<ChIrrGuiDriverSTR>(*vis);
         driver->SetSteeringDelta(1.0 / 50);
         driver->SetDisplacementDelta(1.0 / 250);
         rig.SetDriver(driver);
@@ -131,8 +130,11 @@ int main(int argc, char* argv[]) {
     // Initialize suspension test rig.
     rig.Initialize();
 
-    app.AssetBindAll();
-    app.AssetUpdateAll();
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    rig.GetVehicle().SetVisualSystem(vis);
 
     // Initialize output
     if (!filesystem::create_directory(filesystem::path(out_dir))) {
@@ -152,11 +154,11 @@ int main(int argc, char* argv[]) {
     // Initialize simulation frame counter
     int step_number = 0;
 
-    while (app.GetDevice()->run()) {
+    while (vis->Run()) {
         // Render scene
-        app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-        app.DrawAll();
-        app.EndScene();
+        vis->BeginScene();
+        vis->DrawAll();
+        vis->EndScene();
 
         // Write output data
         if (collect_output && step_number % out_steps == 0) {
@@ -169,8 +171,8 @@ int main(int argc, char* argv[]) {
         rig.Advance(step_size);
 
         // Update visualization app
-        app.Synchronize(rig.GetDriverMessage(), {rig.GetSteeringInput(), 0, 0});
-        app.Advance(step_size);
+        vis->Synchronize(rig.GetDriverMessage(), {rig.GetSteeringInput(), 0, 0});
+        vis->Advance(step_size);
 
         // Increment frame number
         step_number++;

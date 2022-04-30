@@ -21,11 +21,10 @@
 
 #include "chrono_multicore/physics/ChSystemMulticore.h"
 #include "chrono/assets/ChTexture.h"
-#include "chrono/assets/ChColorAsset.h"
 #include "chrono/utils/ChUtilsCreators.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
 #include "chrono/collision/ChCollisionShapeChrono.h"
-#include "chrono_thirdparty/filesystem/path.h"
+#include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 
@@ -93,9 +92,7 @@ std::shared_ptr<ChBody> AddSphere(int id,
     body->GetCollisionModel()->BuildModel();
 
     // Attach a texture to the sphere
-    auto mtexture = chrono_types::make_shared<ChTexture>();
-    mtexture->SetTextureFilename(GetChronoDataFile("textures/redwhite.png"));
-    body->AddAsset(mtexture);
+    body->GetVisualShape(0)->SetTexture(GetChronoDataFile("textures/redwhite.png"));
 
     // Return a pointer to the sphere object
     msystem->AddBody(body);
@@ -132,9 +129,7 @@ std::shared_ptr<ChBody> AddWall(int id,
     body->GetCollisionModel()->BuildModel();
 
     // Attach a color to the visible container
-    auto mvisual = chrono_types::make_shared<ChColorAsset>();
-    mvisual->SetColor(ChColor(0.55f, 0.57f, 0.67f));
-    body->AddAsset(mvisual);
+    body->GetVisualShape(0)->SetColor(ChColor(0.55f, 0.57f, 0.67f));
 
     // Return a pointer to the wall object
     msystem->AddBody(body);
@@ -200,31 +195,21 @@ bool CalcAverageKE(ChSystemMulticoreSMC* msystem, const double& threshold) {
 }
 
 #ifdef CHRONO_IRRLICHT
-#include "chrono_irrlicht/ChIrrApp.h"
+    #include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 
 using namespace chrono::irrlicht;
-using namespace irr;
-using namespace irr::video;
 
-ChIrrApp* SetSimVis(ChSystemMulticoreSMC* msystem, double time_step, bool vis) {
-    if (vis) {
-        ChIrrApp* application = new ChIrrApp(msystem, L"Two sphere SMC test", core::dimension2d<u32>(800, 600));
+std::shared_ptr<ChVisualSystemIrrlicht> SetSimVis(ChSystemMulticoreSMC* sys, double time_step) {
+    auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
+    vis->SetWindowSize(800, 600);
+    vis->SetWindowTitle("SMC benchmark");
+    vis->Initialize();
+    vis->AddLogo();
+    vis->AddSkyBox();
+    vis->AddTypicalLights();
+    vis->AddCamera(ChVector<>(0, 0, -7.5));
+    sys->SetVisualSystem(vis);
 
-        // Add camera, lights, logo and sky in Irrlicht scene
-        application->AddLogo();
-        application->AddSkyBox();
-        application->AddTypicalLights();
-        application->AddCamera(core::vector3df(0, 0, -7.5));
-
-        // Complete asset construction: convert all assets to Irrlicht
-        application->SetStepManage(true);
-        application->SetTimestep(time_step);
-        application->AssetBindAll();
-        application->AssetUpdateAll();
-
-        return application;
-    } else {
-        return NULL;
-    }
+    return vis;
 }
 #endif

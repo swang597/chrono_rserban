@@ -65,8 +65,8 @@ void WVP_RigidTire::AddVisualizationAssets(VisualizationType vis) {
 }
 
 void WVP_RigidTire::RemoveVisualizationAssets() {
+    ChPart::RemoveVisualizationAsset(m_wheel->GetSpindle(), m_trimesh_shape);
     ChRigidTire::RemoveVisualizationAssets();
-    RemoveVisualizationMesh(m_trimesh_shape);
 }
 
 }  // end namespace wvp

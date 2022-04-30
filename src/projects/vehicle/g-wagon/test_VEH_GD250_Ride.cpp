@@ -28,13 +28,11 @@
 #include "chrono_vehicle/terrain/RandomSurfaceTerrain.h"
 #ifdef USE_IRRLICHT
     #include "chrono_vehicle/driver/ChIrrGuiDriver.h"
-    #include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
+    #include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleVisualSystemIrrlicht.h"
 #endif
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
 
-#include "chrono_models/vehicle/mtv/LMTV.h"
-#include "chrono_models/vehicle/mrole/mrole.h"
 #include "chrono_models/vehicle/g-wagon/gd250.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
@@ -223,34 +221,34 @@ int main(int argc, char* argv[]) {
     // --------------
 
     // Create the vehicle, set parameters, and initialize
-    GD250 mrole;
-    mrole.SetContactMethod(ChContactMethod::NSC);
-    mrole.SetChassisFixed(false);
-    mrole.SetInitPosition(ChCoordsys<>(initLoc, initRot));
-    mrole.SetTireType(tire_model);
-    mrole.SetTireStepSize(tire_step_size);
-    mrole.SetInitFwdVel(target_speed);
-    mrole.Initialize();
+    GD250 gd250;
+    gd250.SetContactMethod(ChContactMethod::NSC);
+    gd250.SetChassisFixed(false);
+    gd250.SetInitPosition(ChCoordsys<>(initLoc, initRot));
+    gd250.SetTireType(tire_model);
+    gd250.SetTireStepSize(tire_step_size);
+    gd250.SetInitFwdVel(target_speed);
+    gd250.Initialize();
 
-    mrole.SetChassisVisualizationType(chassis_vis_type);
-    mrole.SetSuspensionVisualizationType(suspension_vis_type);
-    mrole.SetSteeringVisualizationType(steering_vis_type);
-    mrole.SetWheelVisualizationType(wheel_vis_type);
-    mrole.SetTireVisualizationType(tire_vis_type);
+    gd250.SetChassisVisualizationType(chassis_vis_type);
+    gd250.SetSuspensionVisualizationType(suspension_vis_type);
+    gd250.SetSteeringVisualizationType(steering_vis_type);
+    gd250.SetWheelVisualizationType(wheel_vis_type);
+    gd250.SetTireVisualizationType(tire_vis_type);
 
-    std::cout << "Vehicle mass:               " << mrole.GetVehicle().GetMass() << std::endl;
+    std::cout << "Vehicle mass:               " << gd250.GetVehicle().GetMass() << std::endl;
 
     // ------------------
     // Create the terrain
     // ------------------
-    RandomSurfaceTerrain terrain(mrole.GetSystem(), xmax);
+    RandomSurfaceTerrain terrain(gd250.GetSystem(), xmax);
     terrain.Initialize(surface, 2, visType);
     GetLog() << "RMS = " << (1000.0 * terrain.GetRMS()) << " mm\n";
     GetLog() << "IRI = " << terrain.GetIRI() << " mm/m\n";
 
     // create the driver
     auto path = ChBezierCurve::read(vehicle::GetDataFile(path_file));
-    ChPathFollowerDriver driver(mrole.GetVehicle(), vehicle::GetDataFile(steering_controller_file),
+    ChPathFollowerDriver driver(gd250.GetVehicle(), vehicle::GetDataFile(steering_controller_file),
                                 vehicle::GetDataFile(speed_controller_file), path, "my_path", target_speed, false);
     driver.Initialize();
 
@@ -264,17 +262,18 @@ int main(int argc, char* argv[]) {
     // -------------------------------------
 
 #ifdef USE_IRRLICHT
-    ChWheeledVehicleIrrApp app(&mrole.GetVehicle(), L"MROLE ride & twist test");
-    app.AddTypicalLights();
-    app.GetSceneManager()->setAmbientLight(irr::video::SColorf(0.1f, 0.1f, 0.1f, 1.0f));
-    app.SetChaseCamera(trackPoint, 9.0, 0.5);
-    /*app.SetTimestep(step_size);*/
-    app.AssetBindAll();
-    app.AssetUpdateAll();
+        auto vis = chrono_types::make_shared<ChWheeledVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle("Mercedes GD250 Ride Test");
+        vis->SetChaseCamera(trackPoint, 9.0, 0.5);
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    gd250.GetVehicle().SetVisualSystem(vis);
 
     // Visualization of controller points (sentinel & target)
-    irr::scene::IMeshSceneNode* ballS = app.GetSceneManager()->addSphereSceneNode(0.1f);
-    irr::scene::IMeshSceneNode* ballT = app.GetSceneManager()->addSphereSceneNode(0.1f);
+    irr::scene::IMeshSceneNode* ballS = vis->GetSceneManager()->addSphereSceneNode(0.1f);
+    irr::scene::IMeshSceneNode* ballT = vis->GetSceneManager()->addSphereSceneNode(0.1f);
     ballS->getMaterial(0).EmissiveColor = irr::video::SColor(0, 255, 0, 0);
     ballT->getMaterial(0).EmissiveColor = irr::video::SColor(0, 0, 255, 0);
 
@@ -347,7 +346,7 @@ int main(int argc, char* argv[]) {
         << "W3 Pos Y"
         << "W3 Pos Z";
 
-    for (auto& axle : mrole.GetVehicle().GetAxles()) {
+    for (auto& axle : gd250.GetVehicle().GetAxles()) {
         for (auto& wheel : axle->GetWheels()) {
             csv << wheel->GetPos();
         }
@@ -359,7 +358,7 @@ int main(int argc, char* argv[]) {
     // Simulation loop
     // ---------------
 
-    mrole.GetVehicle().LogSubsystemTypes();
+    gd250.GetVehicle().LogSubsystemTypes();
 
     std::cout << "data at: " << vehicle::GetDataFile(steering_controller_file) << std::endl;
     std::cout << "data at: " << vehicle::GetDataFile(speed_controller_file) << std::endl;
@@ -372,16 +371,16 @@ int main(int argc, char* argv[]) {
     double sensor_start_x = 10.0;
 
 #ifdef USE_IRRLICHT
-    while (app.GetDevice()->run() && (time < tend) && (mrole.GetVehicle().GetPos().x() < xmax)) {
+    while (vis->Run() && (time < tend) && (gd250.GetVehicle().GetPos().x() < xmax)) {
 #else
-    while ((time < tend) && (mrole.GetVehicle().GetPos().x() < xmax)) {
+    while ((time < tend) && (gd250.GetVehicle().GetPos().x() < xmax)) {
 #endif
-        time = mrole.GetSystem()->GetChTime();
-        double xpos = mrole.GetVehicle().GetPos().x();
+        time = gd250.GetSystem()->GetChTime();
+        double xpos = gd250.GetVehicle().GetPos().x();
         if (xpos >= sensor_start_x) {
-            double speed = mrole.GetVehicle().GetSpeed();
-            ChVector<> seat_acc = mrole.GetVehicle().GetPointAcceleration(
-                mrole.GetVehicle().GetChassis()->GetLocalDriverCoordsys().pos);
+            double speed = gd250.GetVehicle().GetSpeed();
+            ChVector<> seat_acc = gd250.GetVehicle().GetPointAcceleration(
+                gd250.GetVehicle().GetChassis()->GetLocalDriverCoordsys().pos);
             seat_logger.AddData(speed, seat_acc);
         }
 
@@ -393,15 +392,15 @@ int main(int argc, char* argv[]) {
         ballT->setPosition(irr::core::vector3df((irr::f32)pT.x(), (irr::f32)pT.y(), (irr::f32)pT.z()));
 
         // std::cout<<"Target:\t"<<(irr::f32)pT.x()<<",\t "<<(irr::f32)pT.y()<<",\t "<<(irr::f32)pT.z()<<std::endl;
-        // std::cout<<"Vehicle:\t"<<mrole.GetVehicle().GetChassisBody()->GetPos().x()
-        //   <<",\t "<<mrole.GetVehicle().GetChassisBody()->GetPos().y()<<",\t "
-        //   <<mrole.GetVehicle().GetChassisBody()->GetPos().z()<<std::endl;
+        // std::cout<<"Vehicle:\t"<<gd250.GetVehicle().GetChassisBody()->GetPos().x()
+        //   <<",\t "<<gd250.GetVehicle().GetChassisBody()->GetPos().y()<<",\t "
+        //   <<gd250.GetVehicle().GetChassisBody()->GetPos().z()<<std::endl;
 
         // Render scene
         if (step_number % render_steps == 0) {
-            app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-            app.DrawAll();
-            app.EndScene();
+            vis->BeginScene();
+            vis->DrawAll();
+            vis->EndScene();
         }
 
 #endif
@@ -409,7 +408,7 @@ int main(int argc, char* argv[]) {
         if (povray_output && step_number % render_steps == 0) {
             char filename[100];
             sprintf(filename, "%s/data_%03d.dat", pov_dir.c_str(), render_frame + 1);
-            utils::WriteVisualizationAssets(mrole.GetSystem(), filename);
+            utils::WriteVisualizationAssets(gd250.GetSystem(), filename);
             render_frame++;
         }
 
@@ -419,49 +418,49 @@ int main(int argc, char* argv[]) {
         // Update modules (process inputs from other modules)
         driver.Synchronize(time);
         terrain.Synchronize(time);
-        mrole.Synchronize(time, driver_inputs, terrain);
+        gd250.Synchronize(time, driver_inputs, terrain);
 
 #ifdef USE_IRRLICHT
-        app.Synchronize("Follower driver", driver_inputs);
+        vis->Synchronize("Follower driver", driver_inputs);
 #endif
 
         // Advance simulation for one timestep for all modules
 
         driver.Advance(step_size);
         terrain.Advance(step_size);
-        mrole.Advance(step_size);
+        gd250.Advance(step_size);
 
 #ifdef USE_IRRLICHT
-        app.Advance(step_size);
+        vis->Advance(step_size);
 #endif
 
         if (data_output && step_number % output_steps == 0) {
             // std::cout << time << std::endl;
             csv << time;
             csv << driver_inputs.m_throttle;
-            csv << mrole.GetVehicle().GetPowertrain()->GetMotorSpeed();
-            csv << mrole.GetVehicle().GetPowertrain()->GetCurrentTransmissionGear();
+            csv << gd250.GetVehicle().GetPowertrain()->GetMotorSpeed();
+            csv << gd250.GetVehicle().GetPowertrain()->GetCurrentTransmissionGear();
             for (int axle = 0; axle < 2; axle++) {
-                csv << mrole.GetVehicle().GetDriveline()->GetSpindleTorque(axle, LEFT);
-                csv << mrole.GetVehicle().GetDriveline()->GetSpindleTorque(axle, RIGHT);
+                csv << gd250.GetVehicle().GetDriveline()->GetSpindleTorque(axle, LEFT);
+                csv << gd250.GetVehicle().GetDriveline()->GetSpindleTorque(axle, RIGHT);
             }
             for (int axle = 0; axle < 2; axle++) {
-                csv << mrole.GetVehicle().GetSpindleAngVel(axle, LEFT);
-                csv << mrole.GetVehicle().GetSpindleAngVel(axle, RIGHT);
+                csv << gd250.GetVehicle().GetSpindleAngVel(axle, LEFT);
+                csv << gd250.GetVehicle().GetSpindleAngVel(axle, RIGHT);
             }
-            csv << mrole.GetVehicle().GetSpeed();
-            csv << mrole.GetVehicle().GetPointAcceleration(
-                mrole.GetVehicle().GetChassis()->GetLocalDriverCoordsys().pos);
+            csv << gd250.GetVehicle().GetSpeed();
+            csv << gd250.GetVehicle().GetPointAcceleration(
+                gd250.GetVehicle().GetChassis()->GetLocalDriverCoordsys().pos);
 
-            csv << mrole.GetVehicle().GetPointAcceleration(vehCOM);
+            csv << gd250.GetVehicle().GetPointAcceleration(vehCOM);
 
-            for (auto& axle : mrole.GetVehicle().GetAxles()) {
+            for (auto& axle : gd250.GetVehicle().GetAxles()) {
                 for (auto& wheel : axle->GetWheels()) {
                     csv << wheel->GetTire()->ReportTireForce(&terrain).force;
                 }
             }
 
-            csv << mrole.GetVehicle().GetPowertrain()->GetMotorTorque();
+            csv << gd250.GetVehicle().GetPowertrain()->GetMotorTorque();
 
             csv << std::endl;
         }

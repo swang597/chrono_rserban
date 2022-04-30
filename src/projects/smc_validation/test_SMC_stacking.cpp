@@ -91,8 +91,7 @@ int main(int argc, char* argv[]) {
 
         // Create the Irrlicht visualization.
 #ifdef CHRONO_IRRLICHT
-        bool vis = true;
-        auto application = SetSimVis(&msystem, time_step, vis);
+        auto vis = SetSimVis(&msystem, time_step);
 #endif
 
         // Print the sim set - up parameters to userlog once
@@ -117,10 +116,8 @@ int main(int argc, char* argv[]) {
         // Iterate through simulation. Calculate resultant forces and motion for each timestep
         while (time < time_sim) {
 #ifdef CHRONO_IRRLICHT
-            if (application != NULL) {
-                application->BeginScene(true, true, SColor(255, 255, 255, 255));
-                application->DrawAll();
-            }
+            vis->BeginScene();
+            vis->DrawAll();
 #endif
 
             while (time == 0 || time < out_time) {
@@ -131,8 +128,7 @@ int main(int argc, char* argv[]) {
             out_time = time - time_step + out_step;
 
 #ifdef CHRONO_IRRLICHT
-            if (application != NULL)
-                application->EndScene();
+            vis->EndScene();
 #endif
 
             // Calculate the average velocity of all particles and exit the loop if KE < threshold
@@ -142,12 +138,6 @@ int main(int argc, char* argv[]) {
                 break;
             }
         }
-
-// Delete Visualization and check the results
-#ifdef CHRONO_IRRLICHT
-        if (application != NULL)
-            delete application;
-#endif
 
         // Check results. The spheres should be in a stack with their (x,y) positions at (0,0).
         // The rotation quaternions should be (1, 0, 0, 0)

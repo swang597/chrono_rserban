@@ -18,11 +18,9 @@
 
 #include "chrono/physics/ChSystemNSC.h"
 
-#include "chrono/assets/ChAssetLevel.h"
-#include "chrono/assets/ChColorAsset.h"
 #include "chrono/assets/ChObjShapeFile.h"
 
-#include "chrono_irrlicht/ChIrrApp.h"
+#include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 
 using namespace chrono;
 using namespace chrono::irrlicht;
@@ -32,40 +30,38 @@ unsigned int num_render_points = 1000;
 
 int main(int argc, char* argv[]) {
     // Create the system (Y up)
-    ChSystemNSC msystem;
+    ChSystemNSC sys;
 
     // Create a ground body
     auto ground = chrono_types::make_shared<ChBody>();
     ground->SetBodyFixed(true);
     ground->SetCollide(false);
-    msystem.AddBody(ground);
+    sys.AddBody(ground);
 
     // Visualization
-    auto vis_level = chrono_types::make_shared<ChAssetLevel>();
-    ground->AddAsset(vis_level);
-
     auto vis_mesh = chrono_types::make_shared<ChObjShapeFile>();
     vis_mesh->SetFilename(GetChronoDataFile("models/tractor_wheel/tractor_wheel.obj"));
-    vis_level->AddAsset(vis_mesh);
-
-    vis_level->AddAsset(chrono_types::make_shared<ChColorAsset>(0.5f, 0.0f, 0.0f));
+    vis_mesh->SetColor(ChColor(0.5f, 0.0f, 0.0f));
+    ground->AddVisualShape(vis_mesh);
 
     // Create the Irrlicht visualization
-    ChIrrApp application(&msystem, L"Mesh color", irr::core::dimension2d<irr::u32>(800, 600));
-    application.AddLogo();
-    application.AddTypicalLights();
-    application.AddCamera(irr::core::vector3df(2, 0, 0));
 
-    // Complete asset construction
-    application.AssetBindAll();
-    application.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
+    vis->SetWindowSize(800, 600);
+    vis->SetWindowTitle("Mesh color");
+    vis->Initialize();
+    vis->AddLogo();
+    vis->AddSkyBox();
+    vis->AddTypicalLights();
+    vis->AddCamera(ChVector<>(2, 0, 0));
+    sys.SetVisualSystem(vis);
 
     // Simulation loop
-    while (application.GetDevice()->run()) {
-        application.BeginScene();
-        application.DrawAll();
-        application.EndScene();
-        msystem.DoStepDynamics(0.1);
+    while (vis->Run()) {
+        vis->BeginScene();
+        vis->DrawAll();
+        vis->EndScene();
+        sys.DoStepDynamics(0.1);
     }
 
     return 0;

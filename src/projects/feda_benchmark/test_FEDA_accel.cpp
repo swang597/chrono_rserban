@@ -31,7 +31,7 @@
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 #include "chrono_vehicle/utils/ChVehiclePath.h"
-#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
+#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleVisualSystemIrrlicht.h"
 
 #include "chrono_models/vehicle/feda/FEDA.h"
 
@@ -64,7 +64,7 @@ DrivelineTypeWV drive_type = DrivelineTypeWV::AWD;
 TireModelType tire_model = TireModelType::PAC02;
 
 // Terrain length (X direction)
-double terrainLength = 800.0;
+double terrainLength = 500.0;
 
 // Simulation step sizes
 double step_size = 2e-4;
@@ -117,11 +117,6 @@ int main(int argc, char* argv[]) {
     patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 5);
     terrain.Initialize();
 
-    // Create the vehicle Irrlicht interface
-    ChWheeledVehicleIrrApp app(&my_feda.GetVehicle(), L"HMMWV acceleration test");
-    app.AddTypicalLights();
-    app.SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 6.0, 0.5);
-    app.SetTimestep(step_size);
 
     // ----------------------------------------------
     // Create the straight path and the driver system
@@ -134,12 +129,15 @@ int main(int argc, char* argv[]) {
     driver.GetSpeedController().SetGains(0.4, 0, 0);
     driver.Initialize();
 
-    // ---------------------------------------------
-    // Finalize construction of visualization assets
-    // ---------------------------------------------
-
-    app.AssetBindAll();
-    app.AssetUpdateAll();
+    // Create the vehicle Irrlicht interface
+    auto vis = chrono_types::make_shared<ChWheeledVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle("FEDA acceleration test");
+    vis->SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 6.0, 0.5);
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    my_feda.GetVehicle().SetVisualSystem(vis);
 
     // -------------
     // Prepare output
@@ -181,7 +179,7 @@ int main(int argc, char* argv[]) {
 
     ChTimer<> timer;
     timer.start();
-    while (app.GetDevice()->run()) {
+    while (vis->Run()) {
         time = my_feda.GetSystem()->GetChTime();
 
         double speed = speed_filter.Add(my_feda.GetVehicle().GetSpeed());
@@ -215,8 +213,8 @@ int main(int argc, char* argv[]) {
         if (time >= 100)
             break;
 
-        app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-        app.DrawAll();
+        vis->BeginScene();
+        vis->DrawAll();
 
         // Driver inputs
         ChDriver::Inputs driver_inputs = driver.GetInputs();
@@ -236,18 +234,18 @@ int main(int argc, char* argv[]) {
         driver.Synchronize(time);
         terrain.Synchronize(time);
         my_feda.Synchronize(time, driver_inputs, terrain);
-        app.Synchronize("Acceleration test", driver_inputs);
+        vis->Synchronize("Acceleration test", driver_inputs);
 
         // Advance simulation for one timestep for all modules
         driver.Advance(step_size);
         terrain.Advance(step_size);
         my_feda.Advance(step_size);
-        app.Advance(step_size);
+        vis->Advance(step_size);
 
         // Increment frame number
         step_number++;
 
-        app.EndScene();
+        vis->EndScene();
     }
 
     if (data_output) {

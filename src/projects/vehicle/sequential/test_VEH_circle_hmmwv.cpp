@@ -24,7 +24,7 @@
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 #include "chrono_vehicle/utils/ChVehiclePath.h"
 #include "chrono_vehicle/utils/ChSteeringController.h"
-#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
+#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleVisualSystemIrrlicht.h"
 
 #include "chrono/geometry/ChLineBezier.h"
 
@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
     path_asset->SetLineGeometry(chrono_types::make_shared<geometry::ChLineBezier>(path));
     path_asset->SetName("test path");
     path_asset->SetNumRenderPoints(std::max<unsigned int>(2 * npoints, 400));
-    patch->GetGroundBody()->AddAsset(path_asset);
+    patch->GetGroundBody()->AddVisualShape(path_asset);
 
     // Create the PID lateral controller
     ChPathSteeringController steeringPID(path, false);
@@ -90,21 +90,21 @@ int main(int argc, char* argv[]) {
     steeringPID.Reset(my_hmmwv.GetVehicle());
 
     // Create the vehicle Irrlicht application
-    ChVehicleIrrApp app(&my_hmmwv.GetVehicle(), L"Constant radius test");
-    app.SetHUDLocation(500, 20);
-    app.AddLogo();
-    app.AddTypicalLights();
-    app.SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 6.0, 0.5);
+    auto vis = chrono_types::make_shared<ChVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle("Constant radius test");
+    vis->SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 6.0, 0.5);
+    vis->SetHUDLocation(500, 20);
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    my_hmmwv.GetVehicle().SetVisualSystem(vis);
 
     // Visualization of controller points (sentinel & target)
-    irr::scene::IMeshSceneNode* ballS = app.GetSceneManager()->addSphereSceneNode(0.1f);
-    irr::scene::IMeshSceneNode* ballT = app.GetSceneManager()->addSphereSceneNode(0.1f);
+    irr::scene::IMeshSceneNode* ballS = vis->GetSceneManager()->addSphereSceneNode(0.1f);
+    irr::scene::IMeshSceneNode* ballT = vis->GetSceneManager()->addSphereSceneNode(0.1f);
     ballS->getMaterial(0).EmissiveColor = irr::video::SColor(0, 255, 0, 0);
     ballT->getMaterial(0).EmissiveColor = irr::video::SColor(0, 0, 255, 0);
-
-    // Finalize construction of visualization assets
-    app.AssetBindAll();
-    app.AssetUpdateAll();
 
     // ---------------
     // Simulation loop
@@ -112,7 +112,7 @@ int main(int argc, char* argv[]) {
 
     double steeringPID_output = 0;
 
-    while (app.GetDevice()->run()) {
+    while (vis->Run()) {
         double time = my_hmmwv.GetSystem()->GetChTime();
 
         // Driver inputs
@@ -127,20 +127,20 @@ int main(int argc, char* argv[]) {
         ballS->setPosition(irr::core::vector3df((irr::f32)pS.x(), (irr::f32)pS.y(), (irr::f32)pS.z()));
         ballT->setPosition(irr::core::vector3df((irr::f32)pT.x(), (irr::f32)pT.y(), (irr::f32)pT.z()));
 
-        app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-        app.DrawAll();
-        app.EndScene();
+        vis->BeginScene();
+        vis->DrawAll();
+        vis->EndScene();
 
         // Update modules (process inputs from other modules)
         terrain.Synchronize(time);
         my_hmmwv.Synchronize(time, driver_inputs, terrain);
-        app.Synchronize("", driver_inputs);
+        vis->Synchronize("", driver_inputs);
 
         // Advance simulation for one timestep for all modules
         steeringPID_output = steeringPID.Advance(my_hmmwv.GetVehicle(), step_size);
         terrain.Advance(step_size);
         my_hmmwv.Advance(step_size);
-        app.Advance(step_size);
+        vis->Advance(step_size);
     }
 
     return 0;

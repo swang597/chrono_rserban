@@ -28,7 +28,7 @@
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 #include "chrono_vehicle/output/ChVehicleOutputASCII.h"
 
-#include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleIrrApp.h"
+#include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleVisualSystemIrrlicht.h"
 
 #include "chrono_models/vehicle/m113/M113.h"
 
@@ -189,16 +189,18 @@ int main(int argc, char* argv[]) {
     // Create the vehicle Irrlicht application
     // ---------------------------------------
 
-    ChTrackedVehicleIrrApp app(&m113.GetVehicle(), L"M113 Vehicle Demo");
-    app.AddTypicalLights();
-    app.SetChaseCamera(trackPoint, 3.0, 0.0);
-    ////app.SetChaseCamera(ChVector<>(-3.5, 0,0), 3.0, 0.0);
-    app.SetChaseCameraAngle(-CH_C_PI_2);
-    ////app.SetChaseCameraPosition(m113.GetVehicle().GetPos() + ChVector<>(0, 2, 0));
-    app.SetChaseCameraMultipliers(1e-4, 10);
-    app.SetTimestep(step_size);
-    app.AssetBindAll();
-    app.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<ChTrackedVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle("M113 Vehicle Demo");
+    vis->SetChaseCamera(trackPoint, 3.0, 0.0);
+    ////vis->SetChaseCamera(ChVector<>(-3.5, 0,0), 3.0, 0.0);
+    vis->SetChaseCameraAngle(-CH_C_PI_2);
+    ////vis->SetChaseCameraPosition(m113.GetVehicle().GetPos() + ChVector<>(0, 2, 0));
+    vis->SetChaseCameraMultipliers(1e-4, 10);
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    m113.GetVehicle().SetVisualSystem(vis);
 
     // ------------------------
     // Create the driver system
@@ -265,7 +267,7 @@ int main(int argc, char* argv[]) {
     int step_number = 0;
 
     ChRealtimeStepTimer realtime_timer;
-    while (app.GetDevice()->run()) {
+    while (vis->Run()) {
         // Debugging output
         if (dbg_output) {
             auto track_L = m113.GetVehicle().GetTrackAssembly(LEFT);
@@ -309,9 +311,9 @@ int main(int argc, char* argv[]) {
 
         if (step_number % render_steps == 0) {
             // Render scene
-            app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-            app.DrawAll();
-            app.EndScene();
+            vis->BeginScene();
+            vis->DrawAll();
+            vis->EndScene();
         }
 
         // Collect output data from modules
@@ -345,7 +347,7 @@ int main(int argc, char* argv[]) {
         driver.Synchronize(time);
         terrain.Synchronize(time);
         m113.Synchronize(time, driver_inputs, shoe_forces_left, shoe_forces_right);
-        app.Synchronize("", driver_inputs);
+        vis->Synchronize("", driver_inputs);
 
         // Apply resistive torque at sprocket
         if (fix_chassis && !create_track) {
@@ -374,7 +376,7 @@ int main(int argc, char* argv[]) {
         driver.Advance(step_size);
         terrain.Advance(step_size);
         m113.Advance(step_size);
-        app.Advance(step_size);
+        vis->Advance(step_size);
 
         ////std::cout << m113.GetVehicle().GetSprocketResistiveTorque(LEFT) << std::endl;
 

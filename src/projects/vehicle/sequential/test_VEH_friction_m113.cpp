@@ -25,7 +25,7 @@
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"
 #include "chrono_vehicle/terrain/RigidTerrain.h"
-#include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleIrrApp.h"
+#include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleVisualSystemIrrlicht.h"
 #include "chrono_vehicle/utils/ChVehiclePath.h"
 
 #include "chrono_models/vehicle/m113/M113_SimpleCVTPowertrain.h"
@@ -128,17 +128,16 @@ int main(int argc, char* argv[]) {
     terrain.Initialize();
 
     // Create the vehicle Irrlicht interface (associated with 2nd vehicle)
-    ChTrackedVehicleIrrApp app(&vehicle_2, L"Terrain friction test");
-    app.AddLogo();
-    app.AddTypicalLights();
-    app.SetChaseCamera(ChVector<>(0.0, 0.0, .75), 6.0, 0.5);
-    app.SetChaseCameraState(utils::ChChaseCamera::Track);
-    app.SetChaseCameraPosition(ChVector<>(-50, -10, 2.0));
-    app.SetTimestep(step_size);
-
-    // Finalize construction of visualization assets
-    app.AssetBindAll();
-    app.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<ChTrackedVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle("Terrain friction test");
+    vis->SetChaseCamera(ChVector<>(0.0, 0.0, .75), 6.0, 0.5);
+    vis->SetChaseCameraState(utils::ChChaseCamera::Track);
+    vis->SetChaseCameraPosition(ChVector<>(-50, -10, 2.0));
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    vehicle_2.SetVisualSystem(vis);
 
     // Initialize output
     if (output) {
@@ -172,7 +171,7 @@ int main(int argc, char* argv[]) {
     int out_steps = (int)std::ceil(out_step_size / step_size);
     int sim_frame = 0;
 
-    while (app.GetDevice()->run()) {
+    while (vis->Run()) {
         double time = sys.GetChTime();
 
         double veh_pos_1 = vehicle_1.GetPos().x();
@@ -196,9 +195,9 @@ int main(int argc, char* argv[]) {
         }
 
         // Render scene
-        app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-        app.DrawAll();
-        app.EndScene();
+        vis->BeginScene();
+        vis->DrawAll();
+        vis->EndScene();
 
         double throttle_input = 0;
         if (time > 1 && time < 2)
@@ -226,7 +225,7 @@ int main(int argc, char* argv[]) {
         vehicle_1.Synchronize(time, driver_inputs_1, shoe_forces_left_1, shoe_forces_right_1);
         vehicle_2.Synchronize(time, driver_inputs_2, shoe_forces_left_2, shoe_forces_right_2);
         terrain.Synchronize(time);
-        app.Synchronize("", driver_inputs_2);
+        vis->Synchronize("", driver_inputs_2);
 
         // Advance simulation for one timestep for all modules.
         driver_1.Advance(step_size);
@@ -234,7 +233,7 @@ int main(int argc, char* argv[]) {
         vehicle_1.Advance(step_size);
         vehicle_2.Advance(step_size);
         terrain.Advance(step_size);
-        app.Advance(step_size);
+        vis->Advance(step_size);
 
         // Advance state of entire system (containing both vehicles)
         sys.DoStepDynamics(step_size);

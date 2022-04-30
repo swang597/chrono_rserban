@@ -21,7 +21,7 @@
 #include "chrono/collision/ChCollisionUtilsBullet.h"
 #include "chrono/physics/ChSystemSMC.h"
 
-#include "chrono_irrlicht/ChIrrApp.h"
+#include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 
 using namespace chrono;
 using namespace chrono::irrlicht;
@@ -31,10 +31,8 @@ void AddWallBox(std::shared_ptr<ChBody> body, std::shared_ptr<ChMaterialSurface>
 
     auto box = chrono_types::make_shared<ChBoxShape>();
     box->GetBoxGeometry().Size = dim;
-    box->GetBoxGeometry().Pos = loc;
-    body->AddAsset(box);
-
-    body->AddAsset(chrono_types::make_shared<ChColorAsset>(0.5f, 0.5f, 0.0f));
+    box->SetColor(ChColor(0.5f, 0.5f, 0.0f));
+    body->AddVisualShape(box, ChFrame<>(loc));
 }
 
 void AddWallMesh(std::shared_ptr<ChBody> body,
@@ -80,7 +78,7 @@ void AddWallMesh(std::shared_ptr<ChBody> body,
     normals[7] = ChVector<>(+1, -1, +1).GetNormalized();
 
     for (int i = 0; i < num_vert; i++) {
-        trimesh->getCoordsColors()[i] = ChVector<float>(0, 0, 1);
+        trimesh->getCoordsColors()[i] = ChColor(0, 0, 1);
     }
 
     idx_vertices[0] = ChVector<int>(0, 1, 3);
@@ -105,9 +103,8 @@ void AddWallMesh(std::shared_ptr<ChBody> body,
 
     auto trimesh_shape = chrono_types::make_shared<ChTriangleMeshShape>();
     trimesh_shape->SetMesh(trimesh);
-    body->AddAsset(trimesh_shape);
-
-    body->AddAsset(chrono_types::make_shared<ChColorAsset>(0.0f, 0.0f, 0.5f));
+    trimesh_shape->SetColor(ChColor(0.0f, 0.0f, 0.5f));
+    body->AddVisualShape(trimesh_shape);
 }
 
 void AddWallHull(std::shared_ptr<ChBody> body,
@@ -130,9 +127,8 @@ void AddWallHull(std::shared_ptr<ChBody> body,
     auto shape = chrono_types::make_shared<ChTriangleMeshShape>();
     collision::bt_utils::ChConvexHullLibraryWrapper lh;
     lh.ComputeHull(points, *shape->GetMesh());
-    body->AddAsset(shape);
-
-    body->AddAsset(chrono_types::make_shared<ChColorAsset>(0.5f, 0.0f, 0.0f));
+    shape->SetColor(ChColor(0.5f, 0.0f, 0.0f));
+    body->AddVisualShape(shape);
 }
 
 void BuildContainerBoxes(std::shared_ptr<ChBody> body,
@@ -213,11 +209,11 @@ int main(int argc, char* argv[]) {
     double hthick = 0.2;
 
     // Create the system (Y up)
-    ChSystemSMC msystem;
-    msystem.Set_G_acc(ChVector<>(0, gravity, 0));
+    ChSystemSMC sys;
+    sys.Set_G_acc(ChVector<>(0, gravity, 0));
 
-    msystem.SetContactForceModel(ChSystemSMC::ContactForceModel::Hertz);
-    msystem.SetAdhesionForceModel(ChSystemSMC::AdhesionForceModel::Constant);
+    sys.SetContactForceModel(ChSystemSMC::ContactForceModel::Hertz);
+    sys.SetAdhesionForceModel(ChSystemSMC::AdhesionForceModel::Constant);
 
     // Create a material (will be used by both objects)
     auto material = chrono_types::make_shared<ChMaterialSurfaceSMC>();
@@ -244,13 +240,10 @@ int main(int argc, char* argv[]) {
 
     auto sphere = chrono_types::make_shared<ChSphereShape>();
     sphere->GetSphereGeometry().rad = radius;
-    ball->AddAsset(sphere);
+    sphere->SetTexture(GetChronoDataFile("textures/bluewhite.png"));
+    ball->AddVisualShape(sphere);
 
-    auto mtexture = chrono_types::make_shared<ChTexture>();
-    mtexture->SetTextureFilename(GetChronoDataFile("textures/bluewhite.png"));
-    ball->AddAsset(mtexture);
-
-    msystem.AddBody(ball);
+    sys.AddBody(ball);
 
     // Create container
     auto bin = chrono_types::make_shared<ChBody>();
@@ -266,31 +259,26 @@ int main(int argc, char* argv[]) {
     BuildContainerMeshes(bin, material, hdimX, hdimY, hdimZ, hthick);
     ////BuildContainerHulls(bin, material, hdimX, hdimY, hdimZ, hthick);
 
-    msystem.AddBody(bin);
+    sys.AddBody(bin);
 
     // Create the Irrlicht visualization
-    ChIrrApp application(&msystem, L"Collision test", irr::core::dimension2d<irr::u32>(800, 600));
-
-    application.AddLogo();
-    application.AddSkyBox();
-    application.AddTypicalLights();
-    application.AddCamera(irr::core::vector3df(0, 3, -6));
-
-    // Enable contact forces visualization in Irrlicht application
-    application.SetSymbolscale(1e-4);
-    application.SetContactsDrawMode(IrrContactsDrawMode::CONTACT_FORCES);
-
-    // Complete asset construction
-    application.AssetBindAll();
-    application.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
+    vis->SetWindowSize(800, 600);
+    vis->SetWindowTitle("Collision test");
+    vis->Initialize();
+    vis->AddLogo();
+    vis->AddSkyBox();
+    vis->AddTypicalLights();
+    vis->AddCamera(ChVector<>(0, 3, -6));
+    sys.SetVisualSystem(vis);
 
     // Simulation loop
-    while (application.GetDevice()->run()) {
-        application.BeginScene();
-        application.DrawAll();
-        application.EndScene();
+    while (vis->Run()) {
+        vis->BeginScene();
+        vis->DrawAll();
+        vis->EndScene();
 
-        msystem.DoStepDynamics(time_step);
+        sys.DoStepDynamics(time_step);
     }
 
     return 0;

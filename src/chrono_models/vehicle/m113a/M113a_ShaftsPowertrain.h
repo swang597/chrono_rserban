@@ -39,6 +39,7 @@ class CH_MODELS_API M113a_ShaftsPowertrain : public ChShaftsPowertrain {
     virtual double GetMotorBlockInertia() const override { return m_motorblock_inertia; }
     virtual double GetCrankshaftInertia() const override { return m_crankshaft_inertia; }
     virtual double GetIngearShaftInertia() const override { return m_ingear_shaft_inertia; }
+    virtual double GetPowershaftInertia() const override { return m_power_shaft_inertia; }
 
     virtual double GetUpshiftRPM() const override { return m_upshift_RPM; }
     virtual double GetDownshiftRPM() const override { return m_downshift_RPM; }
@@ -53,6 +54,7 @@ class CH_MODELS_API M113a_ShaftsPowertrain : public ChShaftsPowertrain {
     static const double m_motorblock_inertia;
     static const double m_crankshaft_inertia;
     static const double m_ingear_shaft_inertia;
+    static const double m_power_shaft_inertia;
 
     // Gear shifting characteristics
     static const double m_upshift_RPM;

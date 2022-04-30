@@ -141,8 +141,7 @@ int main(int argc, char* argv[]) {
 
             // Create the Irrlicht visualization.
 #ifdef CHRONO_IRRLICHT
-            bool vis = true;
-            auto application = SetSimVis(&msystem, time_step, vis);
+            auto vis = SetSimVis(&msystem, time_step);
 #endif
 
             // Print the sim set - up parameters to userlog once
@@ -195,10 +194,8 @@ int main(int argc, char* argv[]) {
 
             while (time < time_sim) {
 #ifdef CHRONO_IRRLICHT
-                if (application != NULL) {
-                    application->BeginScene(true, true, SColor(255, 255, 255, 255));
-                    application->DrawAll();
-                }
+                vis->BeginScene();
+                vis->DrawAll();
 #endif
 
                 while (time == 0 || time < out_time) {
@@ -209,18 +206,11 @@ int main(int argc, char* argv[]) {
                 out_time = time - time_step + out_step;
 
 #ifdef CHRONO_IRRLICHT
-                if (application != NULL)
-                    application->EndScene();
+                vis->EndScene();
 #endif
 
                 WriteData(dat, &msystem, fmodels[f].c_str(), g);
             }
-
-            // Delete Visualization and check the results
-#ifdef CHRONO_IRRLICHT
-            if (application != NULL)
-                delete application;
-#endif
         }
 
         // Check results. The spheres should remain together when F_gravity < F_adhesion

@@ -75,9 +75,7 @@ int main(int argc, char* argv[]) {
 
     auto box_shape = chrono_types::make_shared<ChBoxShape>();
     box_shape->GetBoxGeometry().SetLengths(ChVector<>(1, 1, 0.2));
-    box_shape->Pos = ChVector<>(0, 0, 0);
-    box_shape->Rot = QUNIT;
-    body->AddAsset(box_shape);
+    body->AddVisualShape(box_shape);
 
     // Create rotational motor
 #ifdef MOTOR_SPEED

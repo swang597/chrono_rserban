@@ -28,7 +28,7 @@
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 #include "chrono_vehicle/output/ChVehicleOutputASCII.h"
 
-#include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleIrrApp.h"
+#include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleVisualSystemIrrlicht.h"
 
 #include "chrono_models/vehicle/marder/Marder.h"
 
@@ -219,20 +219,20 @@ int main(int argc, char* argv[]) {
     // Create the vehicle Irrlicht application
     // ---------------------------------------
 
-    ChTrackedVehicleIrrApp app(&marder.GetVehicle(), L"Marder Vehicle Demo");
-    app.AddTypicalLights();
-    app.SetChaseCamera(trackPoint, 6.0, 0.5);
-    ////app.SetChaseCameraPosition(vehicle.GetPos() + ChVector<>(0, 2, 0));
-    app.SetChaseCameraMultipliers(1e-4, 10);
-    app.SetTimestep(step_size);
-    app.AssetBindAll();
-    app.AssetUpdateAll();
+    auto vis = chrono_types::make_shared<ChTrackedVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle("Marder Vehicle Demo");
+    vis->SetChaseCamera(trackPoint, 10.0, 0.5);
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    marder.GetVehicle().SetVisualSystem(vis);
 
     // ------------------------
     // Create the driver system
     // ------------------------
 
-    ChIrrGuiDriver driver(app);
+    ChIrrGuiDriver driver(*vis);
 
     // Set the time response for keyboard inputs.
     double steering_time = 0.5;  // time to go from 0 to +1 (or from 0 to -1)
@@ -279,7 +279,7 @@ int main(int argc, char* argv[]) {
     int step_number = 0;
 
     ChRealtimeStepTimer realtime_timer;
-    while (app.GetDevice()->run()) {
+    while (vis->Run()) {
         // Debugging output
         if (dbg_output) {
             auto track_L = marder.GetVehicle().GetTrackAssembly(LEFT);
@@ -319,9 +319,9 @@ int main(int argc, char* argv[]) {
 
         if (step_number % render_steps == 0) {
             // Render scene
-            app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-            app.DrawAll();
-            app.EndScene();
+            vis->BeginScene();
+            vis->DrawAll();
+            vis->EndScene();
         }
 
         // Collect output data from modules
@@ -334,14 +334,14 @@ int main(int argc, char* argv[]) {
         driver.Synchronize(time);
         terrain.Synchronize(time);
         marder.Synchronize(time, driver_inputs, shoe_forces_left, shoe_forces_right);
-        app.Synchronize("", driver_inputs);
+        vis->Synchronize("", driver_inputs);
 
         // Advance simulation for one timestep for all modules
         driver.Advance(step_size);
         terrain.Advance(step_size);
         marder.Advance(step_size);
         system->DoStepDynamics(step_size);
-        app.Advance(step_size);
+        vis->Advance(step_size);
 
         // Report if the chassis experienced a collision
         if (marder.GetVehicle().IsPartInContact(TrackedCollisionFlag::CHASSIS)) {

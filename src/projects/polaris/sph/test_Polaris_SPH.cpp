@@ -38,11 +38,18 @@
     #include "chrono_opengl/ChOpenGLWindow.h"
 #endif
 
+#include "chrono_thirdparty/cxxopts/ChCLI.h"
+#include "chrono_thirdparty/filesystem/path.h"
+
 #include "FindParticles.h"
 
 using namespace chrono;
 using namespace chrono::fsi;
 using namespace chrono::vehicle;
+
+using std::cout;
+using std::cin;
+using std::endl;
 
 // -----------------------------------------------------------------------------
 
@@ -52,21 +59,61 @@ MRZR_MODEL model = MRZR_MODEL::ORIGINAL;
 
 // -----------------------------------------------------------------------------
 
-std::string terrain_dir = "terrain/sph/rms2.0_4.0_0.0";
-////std::string terrain_dir = "terrain/sph/rms4.0_4.0_0.0";
+bool GetProblemSpecs(int argc,
+                     char** argv,
+                     std::string& terrain_dir,
+                     double& output_major_fps,
+                     double& output_minor_fps,
+                     int& output_frames,
+                     bool& output_velocities,
+                     double& filter_window,
+                     double& vis_output_fps,
+                     bool& run_time_vis,
+                     bool& verbose) {
+    ChCLI cli(argv[0], "Polaris SPH terrain simulation");
 
-std::string sph_params = "fsi/input_json/test_VEH_SPH_Polaris.json";
+    cli.AddOption<std::string>("Required", "terrain_dir", "Directory with terrain specification data");
 
-bool enable_terrain_mesh = false;
+    cli.AddOption<double>("Simulation output", "output_major_fps", "Simulation output major frequency [fps]",
+                          std::to_string(output_major_fps));
+    cli.AddOption<double>("Simulation output", "output_minor_fps", "Simulation output major frequency [fps]",
+                          std::to_string(output_minor_fps));
+    cli.AddOption<int>("Simulation output", "output_frames", "Number of successive output frames", std::to_string(output_frames));
+    cli.AddOption<bool>("Simulation output", "no_particle_vel", "Do not output particle velocities");
+    cli.AddOption<double>("Simulation output", "filter_window", "Running average filter window [s]",
+                          std::to_string(filter_window));
 
-bool output = true;
-bool output_velocities = true;
-double output_major_FPS = 20;
-double output_minor_FPS = 1000;
-int output_frames = 5;
+    cli.AddOption<bool>("", "quiet", "Disable all messages during simulation");
 
-bool vis_output = false;
-double vis_output_fps = 100;
+    cli.AddOption<double>("Visualization", "vis_output_fps", "Visualization output frequency [fps]",
+                          std::to_string(vis_output_fps));
+    cli.AddOption<bool>("Visualization", "run_time_vis", "Enable run-time visualization");
+
+    if (!cli.Parse(argc, argv)) {
+        cli.Help();
+        return false;
+    }
+
+    try {
+        terrain_dir = cli.Get("terrain_dir").as<std::string>();
+    } catch (std::domain_error&) {
+        cout << "\nERROR: Missing terrain specification directory!\n\n" << endl;
+        cli.Help();
+        return false;
+    }
+
+    output_major_fps = cli.GetAsType<double>("output_major_fps");
+    output_minor_fps = cli.GetAsType<double>("output_minor_fps");
+    output_frames = cli.GetAsType<int>("output_frames");
+    output_velocities = !cli.GetAsType<bool>("no_particle_vel");
+
+    filter_window = cli.GetAsType<double>("filter_window");
+
+    vis_output_fps = cli.GetAsType<double>("vis_output_fps");
+    run_time_vis = cli.GetAsType<bool>("run_time_vis");
+
+    verbose = !cli.GetAsType<bool>("quiet");
+}
 
 // -----------------------------------------------------------------------------
 
@@ -75,7 +122,7 @@ class DataWriter {
 
     /// Construct an output data writer for the specified FSI system and vehicle.
     DataWriter(std::shared_ptr<ChSystemFsi_impl> sysFSI, std::shared_ptr<WheeledVehicle> vehicle)
-        : m_sysFSI(sysFSI), m_vehicle(vehicle), m_out_vel(false), m_filter(true), m_filter_window(0.25) {
+        : m_sysFSI(sysFSI), m_vehicle(vehicle), m_out_vel(false), m_filter(true), m_filter_window(0.05), m_verbose(true) {
         m_wheels[0] = vehicle->GetWheel(0, LEFT);
         m_wheels[1] = vehicle->GetWheel(0, RIGHT);
         m_wheels[2] = vehicle->GetWheel(1, LEFT);
@@ -99,6 +146,9 @@ class DataWriter {
         m_filter = val;
         m_filter_window = window;
     }
+
+    /// Enable/disable terminal messages (default: true).
+    void SetVerbose(bool verbose) { m_verbose = verbose; }
 
     /// Enable/disable output of SPH particle velocities (default: true).
     void SaveVelocities(bool val) { m_out_vel = val; }
@@ -145,7 +195,7 @@ class DataWriter {
 
         // Sanity check
         if (m_minor_skip * m_out_frames > m_major_skip) {
-            std::cout << "Error: Incompatible output frequencies!" << std::endl;
+            cout << "Error: Incompatible output frequencies!" << endl;
             throw std::runtime_error("Incompatible output frequencies");
         }
 
@@ -160,8 +210,8 @@ class DataWriter {
         std::string filename = m_dir + "/vehicle.csv";
         m_veh_stream.open(filename, std::ios_base::trunc);
 
-        std::cout << "Wheel sampling box size:       " << m_box_size << std::endl;
-        std::cout << "Wheel sampling box x location: " << m_box_x << std::endl;
+        cout << "Wheel sampling box size:       " << m_box_size << endl;
+        cout << "Wheel sampling box x location: " << m_box_x << endl;
     }
 
     /// Run the data writer at the current simulation frame.
@@ -174,15 +224,18 @@ class DataWriter {
             m_last_major = sim_frame;
             m_major_frame++;
             m_minor_frame = 0;
-            std::cout << "Start collection " << m_major_frame << std::endl;
+            if (m_verbose)
+                cout << "Start collection " << m_major_frame << endl;
             Reset();
         }
         if ((sim_frame - m_last_major) % m_minor_skip == 0 && m_minor_frame < m_out_frames) {
-            std::cout << "    Output data " << m_major_frame << "/" << m_minor_frame << std::endl;
+            if (m_verbose)
+                cout << "    Output data " << m_major_frame << "/" << m_minor_frame << endl;
             Write();
             m_minor_frame++;
         }
-        std::cout << std::flush;
+        if (m_verbose)
+            cout << std::flush;
     }
 
   private:
@@ -371,6 +424,8 @@ class DataWriter {
     std::array<double, m_num_veh_outputs> m_veh_outputs;
     std::array<std::shared_ptr<chrono::utils::ChRunningAverage>, m_num_veh_outputs> m_veh_filters;
     std::ofstream m_veh_stream;
+
+    bool m_verbose;
 };
 
 // -----------------------------------------------------------------------------
@@ -479,7 +534,7 @@ void CreateMeshMarkers(const geometry::ChTriangleMeshConnected& mesh,
     }
 }
 
-void CreateTerrain(ChSystem& sys, ChSystemFsi& sysFSI, std::shared_ptr<fsi::SimParams> params) {
+void CreateTerrain(ChSystem& sys, ChSystemFsi& sysFSI, std::shared_ptr<fsi::SimParams> params, const std::string& terrain_dir, bool enable_terrain_mesh) {
     // Create SPH markers with initial locations from file
     int num_particles = 0;
     ChVector<> aabb_min(std::numeric_limits<double>::max());
@@ -527,8 +582,8 @@ void CreateTerrain(ChSystem& sys, ChSystemFsi& sysFSI, std::shared_ptr<fsi::SimP
     trimesh->LoadWavefrontMesh(vehicle::GetDataFile(terrain_dir + "/mesh.obj"), true, false);
     auto trimesh_shape = chrono_types::make_shared<ChTriangleMeshShape>();
     trimesh_shape->SetMesh(trimesh);
-    trimesh_shape->SetStatic(true);
-    body->AddAsset(trimesh_shape);
+    trimesh_shape->SetMutable(false);
+    body->AddVisualShape(trimesh_shape);
 
     if (enable_terrain_mesh) {
         MaterialInfo mat_info;
@@ -590,14 +645,36 @@ std::shared_ptr<WheeledVehicle> CreateVehicle(ChSystem& sys,
 }
 
 int main(int argc, char* argv[]) {
+    // Parse command line arguments
+    std::string terrain_dir;
+    double output_major_fps = 20;
+    double output_minor_fps = 1000;
+    int output_frames = 5;
+    bool output_velocities = true;  // output particle velocities
+    double filter_window = 0;       // do not filter data
+    double vis_output_fps = 0;      // no post-processing visualization output
+    bool run_time_vis = false;      // no run-time visualization
+    bool verbose = true;
+
+    if (!GetProblemSpecs(argc, argv, terrain_dir, output_major_fps, output_minor_fps, output_frames, output_velocities,
+                         filter_window, vis_output_fps, run_time_vis, verbose)) {
+        return 1;
+    }
+
+    bool sim_output = (output_major_fps > 0);
+    bool use_filter = (filter_window > 0);
+    bool vis_output = (vis_output_fps > 0);
+
+    bool enable_terrain_mesh = false;
+
     // Create the Chrono systems
     ChSystemNSC sys;
     ChSystemFsi sysFSI(sys);
 
     // Load SPH parameter file
-    std::cout << "Load SPH parameter file..." << std::endl;
+    cout << "Load SPH parameter file..." << endl;
     std::shared_ptr<fsi::SimParams> params = sysFSI.GetSimParams();
-    sysFSI.SetSimParameter(GetChronoDataFile(sph_params), params, ChVector<>(1));
+    sysFSI.SetSimParameter(vehicle::GetDataFile(terrain_dir + "/sph_params.json"), params, ChVector<>(1));
     sysFSI.SetDiscreType(false, false);
     sysFSI.SetWallBC(BceVersion::ORIGINAL);
     sysFSI.SetFluidDynamics(params->fluid_dynamic_type);
@@ -612,11 +689,11 @@ int main(int argc, char* argv[]) {
     sys.Set_G_acc(ChVector<>(params->gravity.x, params->gravity.y, params->gravity.z));
 
     // Create terrain
-    std::cout << "Create terrain..." << std::endl;
-    CreateTerrain(sys, sysFSI, params);
+    cout << "Create terrain..." << endl;
+    CreateTerrain(sys, sysFSI, params, terrain_dir, enable_terrain_mesh);
 
     // Create vehicle
-    std::cout << "Create vehicle..." << std::endl;
+    cout << "Create vehicle..." << endl;
     ChCoordsys<> init_pos(ChVector<>(4, 0, 0.25), QUNIT);  //// TODO
     auto vehicle = CreateVehicle(sys, init_pos, sysFSI, params);
 
@@ -633,16 +710,28 @@ int main(int argc, char* argv[]) {
 
 #ifdef CHRONO_OPENGL
     opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-    gl_window.Initialize(1280, 720, "JSON visualization", &sys);
-    gl_window.SetCamera(ChVector<>(0, -4, 2), ChVector<>(5, 0, 0.5), ChVector<>(0, 0, 1));
-    gl_window.SetRenderMode(opengl::SOLID);
-    gl_window.EnableHUD(false);
+    if (run_time_vis) {
+        gl_window.Initialize(1280, 720, "JSON visualization", &sys);
+        gl_window.SetCamera(ChVector<>(0, -4, 2), ChVector<>(5, 0, 0.5), ChVector<>(0, 0, 1));
+        gl_window.SetRenderMode(opengl::SOLID);
+        gl_window.EnableHUD(false);
+    }
 #endif
 
     // Enable data output
+    cout << "===============================================================================" << endl;
+    auto sim_dir = out_dir + filesystem::path(terrain_dir).filename() + "/";
+    if (!filesystem::create_directory(filesystem::path(sim_dir))) {
+        cout << "Error creating directory " << sim_dir << endl;
+        return 1;
+    }
     DataWriter data_writer(sysFSI.GetFsiData(), vehicle);
+    data_writer.SetVerbose(verbose);
     data_writer.SaveVelocities(output_velocities);
-    data_writer.Initialize(out_dir, output_major_FPS, output_minor_FPS, output_frames, params->dT);
+    data_writer.UseFilteredData(use_filter, filter_window);
+    data_writer.Initialize(sim_dir, output_major_fps, output_minor_fps, output_frames, params->dT);
+    cout << "Simulation output data saved in: " << sim_dir << endl;
+    cout << "===============================================================================" << endl;
 
     // Simulation loop
     double t = 0;
@@ -657,29 +746,32 @@ int main(int argc, char* argv[]) {
     int frame = 0;
     while (t < tend) {
 #ifdef CHRONO_OPENGL
-        if (!gl_window.Active())
-            break;
-        gl_window.Render();
+        if (run_time_vis) {
+            if (!gl_window.Active())
+                break;
+            gl_window.Render();
+        }
 #endif
 
         //// TODO
         if (vehicle->GetPos().x() > x_max)
             break;
 
-        std::cout << "t = " << t;
-        std::cout << "  pos = " << vehicle->GetPos();
-        std::cout << "  spd = " << vehicle->GetSpeed() << std::endl;
+        if (verbose)
+            cout << "t = " << t << "  pos = " << vehicle->GetPos() << "  spd = " << vehicle->GetSpeed() << endl;
 
         // Simulation data output
-        if (output)
+        if (sim_output)
             data_writer.Process(frame);
 
         // Visualization data output
         if (vis_output && frame % vis_output_steps == 0) {
-            std::cout << "Visualization output frame = " << vis_output_frame << std::endl;
+            if (verbose)
+                cout << "Visualization output frame = " << vis_output_frame << endl;
             sysFSI.PrintParticleToFile(vis_dir);
             std::string vehicle_file = vis_dir + "/vehicle_" + std::to_string(vis_output_frame) + ".csv";
             chrono::utils::WriteVisualizationAssets(&sys, vehicle_file);
+
             vis_output_frame++;
         }
 

@@ -56,9 +56,10 @@ bool EventReceiver::OnEvent(const irr::SEvent& event) {
 
 // -----------------------------------------------------------------------------
 
-IrrApp::IrrApp(Framework* framework, irr::core::dimension2d<irr::u32> dims)
-    : ChVehicleIrrApp(&framework->m_ego_vehicle->GetVehicle(), L"Corridor Demo", dims),
-      m_framework(framework) {
+IrrApp::IrrApp(Framework* framework, unsigned int width, unsigned int height)
+    : m_framework(framework) {
+    SetWindowTitle("Corridor Demo");
+    SetWindowSize(width, height);
     // Find index of current ego vehicle (ugly!)
     auto index = -1;
     for (auto v : Vehicle::GetList()) {
@@ -69,7 +70,7 @@ IrrApp::IrrApp(Framework* framework, irr::core::dimension2d<irr::u32> dims)
 
     // Create the event receiver for changing ego vehicle
     m_evrec = new EventReceiver(this, index);
-    SetUserEventReceiver(m_evrec);
+    AddUserEventReceiver(m_evrec);
 }
 
 void IrrApp::ChangeVehicle(int index) {
@@ -77,8 +78,8 @@ void IrrApp::ChangeVehicle(int index) {
     m_framework->m_ego_vehicle = Vehicle::GetList()[index];
 
     // Update the embedded chase cam
-    m_camera.SetChassis(m_framework->m_ego_vehicle->GetVehicle().GetChassisBody());
-    m_camera.Initialize(
+    m_camera->SetChassis(m_framework->m_ego_vehicle->GetVehicle().GetChassisBody());
+    m_camera->Initialize(
         ChVector<>(0.0, 0.0, .75),                                                        // point on chassis
         m_framework->m_ego_vehicle->GetVehicle().GetChassis()->GetLocalDriverCoordsys(),  // driver position
         6.0,                                                                              // chase distance

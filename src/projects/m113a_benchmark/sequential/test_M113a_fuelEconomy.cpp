@@ -31,14 +31,14 @@
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"
 
 #include "chrono_models/vehicle/m113a/M113a_Vehicle.h"
-#include "chrono_models/vehicle/m113a/M113a_SimplePowertrain.h"
+#include "chrono_models/vehicle/m113a/M113a_SimpleMapPowertrain.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 
 // Uncomment the following line to unconditionally disable Irrlicht support
 //#undef CHRONO_IRRLICHT
 #ifdef CHRONO_IRRLICHT
-#include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleIrrApp.h"
+#include "chrono_vehicle/tracked_vehicle/utils/ChTrackedVehicleVisualSystemIrrlicht.h"
 #endif
 
 #include "../terrain/RigidTerrainTrapezoid.h"
@@ -129,7 +129,7 @@ int main(int argc, char* argv[]) {
     vehicle.GetDriveline()->SetGyrationMode(true);
 
     // Create and initialize the powertrain system
-    auto powertrain = chrono_types::make_shared<M113a_SimplePowertrain>("Powertrain");
+    auto powertrain = chrono_types::make_shared<M113a_SimpleMapPowertrain>("Powertrain");
     vehicle.InitializePowertrain(powertrain);
 
     auto solver = chrono_types::make_shared<ChSolverMINRES>();
@@ -148,9 +148,8 @@ int main(int argc, char* argv[]) {
     patch_mat->SetPoissonRatio(0.3f);
 
     RigidTerrainTrapezoid terrain(vehicle.GetSystem());
-    terrain.SetColor(ChColor(0.8f, 0.8f, 0.8f));
-    terrain.SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 1000, 1000);
     terrain.Initialize(patch_mat, 0, ChVector2<>(1800, 3200), 40, ChVector2<>(200, 1200), std::atan(0.2), 0);
+    terrain.SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 1000, 1000);
 
     // -------------------------------------
     // Create the path and the driver system
@@ -167,21 +166,25 @@ int main(int argc, char* argv[]) {
     // Create the vehicle Irrlicht application
     // ---------------------------------------
 
-    ChTrackedVehicleIrrApp app(&vehicle, L"M113 fuel economy");
+    auto vis = chrono_types::make_shared<ChTrackedVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle("M113 fuel economy");
+    vis->SetChaseCamera(trackPoint, 6.0, 0.5);
+    vis->Initialize();
     for (int ix = 0; ix < 3; ix++) {
         for (int iy = 0; iy < 5; iy++) {
-            app.GetDevice()->getSceneManager()->addLightSceneNode(
+            vis->GetDevice()->getSceneManager()->addLightSceneNode(
                 0, irr::core::vector3df(-200.0f + ix * 500.0f, -500.0f + iy * 500.0f, 500.f),
                 irr::video::SColorf(0.7f, 0.7f, 0.7f, 0.0f), 300.0f);
         }
     }
-    app.SetChaseCamera(trackPoint, 6.0, 0.5);
-    app.AssetBindAll();
-    app.AssetUpdateAll();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    vehicle.SetVisualSystem(vis);
 
     // Visualization of controller points (sentinel & target)
-    irr::scene::IMeshSceneNode* ballS = app.GetSceneManager()->addSphereSceneNode(0.1f);
-    irr::scene::IMeshSceneNode* ballT = app.GetSceneManager()->addSphereSceneNode(0.1f);
+    irr::scene::IMeshSceneNode* ballS = vis->GetSceneManager()->addSphereSceneNode(0.1f);
+    irr::scene::IMeshSceneNode* ballT = vis->GetSceneManager()->addSphereSceneNode(0.1f);
     ballS->getMaterial(0).EmissiveColor = irr::video::SColor(0, 255, 0, 0);
     ballT->getMaterial(0).EmissiveColor = irr::video::SColor(0, 0, 255, 0);
 
@@ -251,7 +254,7 @@ int main(int argc, char* argv[]) {
 
 #ifdef CHRONO_IRRLICHT
 
-    while (app.GetDevice()->run()) {
+    while (vis->Run()) {
         time = vehicle.GetChTime();
 
         // End simulation
@@ -289,9 +292,9 @@ int main(int argc, char* argv[]) {
         // Render scene
         if (step_number % render_steps == 0) {
 #ifdef CHRONO_IRRLICHT
-            app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-            app.DrawAll();
-            app.EndScene();
+            vis->BeginScene();
+            vis->DrawAll();
+            vis->EndScene();
 #endif
 
             if (povray_output) {
@@ -367,7 +370,7 @@ int main(int argc, char* argv[]) {
         vehicle.Synchronize(time, driver_inputs, shoe_forces_left, shoe_forces_right);
         terrain.Synchronize(time);
 #ifdef CHRONO_IRRLICHT
-        app.Synchronize("Follower driver", driver_inputs);
+        vis->Synchronize("Follower driver", driver_inputs);
 #endif
 
         // Advance simulation for one timestep for all modules
@@ -375,7 +378,7 @@ int main(int argc, char* argv[]) {
         terrain.Advance(step_size);
         vehicle.Advance(step_size);
 #ifdef CHRONO_IRRLICHT
-        app.Advance(step_size);
+        vis->Advance(step_size);
 #endif
 
         // Increment frame number

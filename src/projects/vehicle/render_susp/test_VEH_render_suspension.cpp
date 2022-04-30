@@ -37,7 +37,7 @@
 #include "chrono/core/ChStream.h"
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/utils/ChUtilsJSON.h"
-#include "chrono_vehicle/utils/ChVehicleIrrApp.h"
+#include "chrono_vehicle/utils/ChVehicleVisualSystemIrrlicht.h"
 #include "chrono_vehicle/wheeled_vehicle/vehicle/WheeledVehicle.h"
 #include "chrono_vehicle/wheeled_vehicle/test_rig/ChSuspensionTestRig.h"
 #include "chrono_vehicle/wheeled_vehicle/test_rig/ChDataDriverSTR.h"
@@ -102,9 +102,9 @@ int main(int argc, char* argv[]) {
     rig.SetTireVisualizationType(VisualizationType::NONE);
 
     // Create the vehicle Irrlicht application.
-    ChVehicleIrrApp app(vehicle.get(), L"Suspension Test Rig");
-    app.AddTypicalLights();
-    app.SetChaseCamera(0.5 * (rig.GetSpindlePos(0, LEFT) + rig.GetSpindlePos(0, RIGHT)), 2.0, 0.5);
+    auto vis = chrono_types::make_shared<ChVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle("Suspension Test Rig");
+    vis->SetChaseCamera(0.5 * (rig.GetSpindlePos(0, LEFT) + rig.GetSpindlePos(0, RIGHT)), 2.0, 0.5);
 
     // Create and attach the driver system.
     std::string driver_file("hmmwv/suspensionTest/ST_inputs.dat");
@@ -114,8 +114,11 @@ int main(int argc, char* argv[]) {
     // Initialize suspension test rig.
     rig.Initialize();
 
-    app.AssetBindAll();
-    app.AssetUpdateAll();
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    rig.GetVehicle().SetVisualSystem(vis);
 
     // Output
     if (!filesystem::create_directory(filesystem::path(out_dir))) {
@@ -128,18 +131,18 @@ int main(int argc, char* argv[]) {
 
     // Simulation loop
     double step_size = 1e-3;
-    while (app.GetDevice()->run()) {
+    while (vis->Run()) {
         // Render scene
-        app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-        app.DrawAll();
-        app.EndScene();
+        vis->BeginScene();
+        vis->DrawAll();
+        vis->EndScene();
 
         // Advance simulation of the rig
         rig.Advance(step_size);
 
         // Update visualization app
-        app.Synchronize("", {rig.GetSteeringInput(), 0, 0});
-        app.Advance(step_size);
+        vis->Synchronize("", {rig.GetSteeringInput(), 0, 0});
+        vis->Advance(step_size);
 
         // Save POV-Ray file once the rig is at specified ride height
         if (ride_height < 0 || driver->Started()) {

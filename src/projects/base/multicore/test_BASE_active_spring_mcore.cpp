@@ -20,10 +20,9 @@
 
 #include <cstdio>
 
-#include "chrono/assets/ChPointPointDrawing.h"
+#include "chrono/assets/ChPointPointShape.h"
 #include "chrono/assets/ChSphereShape.h"
 #include "chrono/assets/ChBoxShape.h"
-#include "chrono/assets/ChColorAsset.h"
 #include "chrono/core/ChLog.h"
 #include "chrono/physics/ChBody.h"
 
@@ -99,8 +98,7 @@ int main(int argc, char* argv[]) {
 
     auto sph = chrono_types::make_shared<ChSphereShape>();
     sph->GetSphereGeometry().rad = 0.1;
-    sph->Pos = ChVector<>(0, 0, 0);
-    ground->AddAsset(sph);
+    ground->AddVisualShape(sph, ChFrame<>(ChVector<>(0, 0, 0)));
 
     // Create a body suspended through a ChLinkTSDA
     auto body = chrono_types::make_shared<ChBody>();
@@ -113,8 +111,8 @@ int main(int argc, char* argv[]) {
 
     auto box = chrono_types::make_shared<ChBoxShape>();
     box->GetBoxGeometry().SetLengths(ChVector<>(1, 1, 1));
-    body->AddAsset(box);
-    body->AddAsset(chrono_types::make_shared<ChColorAsset>(0.6f, 0, 0));
+    box->SetColor(ChColor(0.6f, 0, 0));
+    body->AddVisualShape(box);
 
     // Create the spring between body and ground. The spring end points are specified in the body relative frames.
     auto force = chrono_types::make_shared<MySpringForce>();
@@ -126,8 +124,9 @@ int main(int argc, char* argv[]) {
     spring->RegisterForceFunctor(force);
     spring->RegisterODE(&rhs);
     system.AddLink(spring);
-    spring->AddAsset(chrono_types::make_shared<ChColorAsset>(0.5f, 0.5f, 0.5f));
-	spring->AddAsset(chrono_types::make_shared<ChPointPointSpring>(0.05, 80, 15));
+    auto spring_shape = chrono_types::make_shared<ChSpringShape>(0.05, 80, 15);
+    spring_shape->SetColor(ChColor(0.5f, 0.5f, 0.5f));
+    spring->AddVisualShape(spring_shape);
 
     // Create the visualization window
     opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();

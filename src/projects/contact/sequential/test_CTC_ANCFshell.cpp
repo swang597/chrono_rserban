@@ -25,9 +25,8 @@
 #include "chrono/fea/ChElementShellANCF_3423.h"
 #include "chrono/fea/ChLoadContactSurfaceMesh.h"
 #include "chrono/fea/ChMeshFileLoader.h"
-#include "chrono/fea/ChVisualizationFEAmesh.h"
 
-#include "chrono_irrlicht/ChIrrApp.h"
+#include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 
 using namespace chrono;
 using namespace chrono::fea;
@@ -38,8 +37,8 @@ double sphere_swept_thickness = 0.01;
 int main(int argc, char* argv[]) {
     GetLog() << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
 
-    ChSystemSMC my_system;
-    my_system.Set_G_acc(ChVector<>(0, 0, -9.8));
+    ChSystemSMC sys;
+    sys.Set_G_acc(ChVector<>(0, 0, -9.8));
 
     // max inside penetration (Bullet specific setting)
     collision::ChCollisionModel::SetDefaultSuggestedMargin(0.001);
@@ -56,13 +55,13 @@ int main(int argc, char* argv[]) {
     cyl1->SetBodyFixed(true);
     cyl1->SetPos(ChVector<>(0, 0, -0.25));
     cyl1->SetRot(Q_from_AngZ(CH_C_PI_2));
-    my_system.Add(cyl1);
+    sys.Add(cyl1);
 
     auto cyl2 = chrono_types::make_shared<ChBodyEasyCylinder>(0.1, 0.4, 1000, true, true, contact_mat);
     cyl2->SetBodyFixed(true);
     cyl2->SetPos(ChVector<>(0, 0, 0.25));
     cyl2->SetRot(Q_from_AngZ(CH_C_PI_2));
-    my_system.Add(cyl2);
+    sys.Add(cyl2);
 
     // Create a mesh and import from file
     auto my_mesh = chrono_types::make_shared<ChMesh>();
@@ -97,33 +96,31 @@ int main(int argc, char* argv[]) {
     contact_surface->AddFacesFromBoundary(sphere_swept_thickness);
 
     // Mesh visualization
-    auto vis_mesh1 = chrono_types::make_shared<ChVisualizationFEAmesh>(*(my_mesh.get()));
-    vis_mesh1->SetFEMdataType(ChVisualizationFEAmesh::E_PLOT_NODE_SPEED_NORM);
+    auto vis_mesh1 = chrono_types::make_shared<ChVisualShapeFEA>(my_mesh);
+    vis_mesh1->SetFEMdataType(ChVisualShapeFEA::DataType::NODE_SPEED_NORM);
     vis_mesh1->SetColorscaleMinMax(0.0, 0.50);
     vis_mesh1->SetSmoothFaces(true);
-    my_mesh->AddAsset(vis_mesh1);
+    my_mesh->AddVisualShapeFEA(vis_mesh1);
 
-    auto vis_mesh2 = chrono_types::make_shared<ChVisualizationFEAmesh>(*(my_mesh.get()));
-    vis_mesh2->SetFEMdataType(ChVisualizationFEAmesh::E_PLOT_CONTACTSURFACES);
+    auto vis_mesh2 = chrono_types::make_shared<ChVisualShapeFEA>(my_mesh);
+    vis_mesh2->SetFEMdataType(ChVisualShapeFEA::DataType::CONTACTSURFACES);
     vis_mesh2->SetWireframe(true);
     vis_mesh2->SetDefaultMeshColor(ChColor(1, 0.5, 0));
-    my_mesh->AddAsset(vis_mesh2);
+    my_mesh->AddVisualShapeFEA(vis_mesh2);
 
     // Add the mesh to the system
-    my_system.Add(my_mesh);
+    sys.Add(my_mesh);
 
-    // Bind visualization assets
-    ChIrrApp application(&my_system, L"ANCF Collision Test", irr::core::dimension2d<irr::u32>(800, 600));
-    application.AddLogo();
-    application.AddSkyBox();
-    application.AddTypicalLights();
-    application.AddCamera(irr::core::vector3df(1.0f, 0.0f, 0.0f),  // camera location
-                                 irr::core::vector3df(0.0f, 0.0f, 0.f));  // "look at" location
-    application.SetContactsDrawMode(IrrContactsDrawMode::CONTACT_DISTANCES);
-
-    application.AssetBindAll();
-    application.AssetUpdateAll();
-    application.AddShadowAll();
+    auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
+    vis->SetWindowSize(800, 600);
+    vis->SetWindowTitle("ANCF Collision Test");
+    vis->Initialize();
+    vis->AddLogo();
+    vis->AddSkyBox();
+    vis->AddTypicalLights();
+    vis->AddCamera(ChVector<>(1.0, 0.0, 0.0));
+    vis->EnableContactDrawing(IrrContactsDrawMode::CONTACT_DISTANCES);
+    sys.SetVisualSystem(vis);
 
     // ---------------
     // Simulation loop
@@ -136,11 +133,11 @@ int main(int argc, char* argv[]) {
     solver->EnableDiagonalPreconditioner(true);
     solver->EnableWarmStart(true);
     solver->SetVerbose(false);
-    my_system.SetSolver(solver);
+    sys.SetSolver(solver);
 
     // Setup timestepper
-    my_system.SetTimestepperType(ChTimestepper::Type::HHT);
-    auto stepper = std::static_pointer_cast<ChTimestepperHHT>(my_system.GetTimestepper());
+    sys.SetTimestepperType(ChTimestepper::Type::HHT);
+    auto stepper = std::static_pointer_cast<ChTimestepperHHT>(sys.GetTimestepper());
     stepper->SetAlpha(-0.2);
     stepper->SetMaxiters(200);
     stepper->SetAbsTolerances(1e-06);
@@ -150,17 +147,16 @@ int main(int argc, char* argv[]) {
 
     // Simulate, flipping the direction of gravity every 0.5 seconds
     double time_step = 5e-4;
-    application.SetTimestep(time_step);
 
     int flip_frames = 1000;
     int frame = 0;
-    while (application.GetDevice()->run()) {
-        application.BeginScene();
-        application.DrawAll();
+    while (vis->Run()) {
+        vis->BeginScene();
+        vis->DrawAll();
         if (frame % flip_frames == 0)
-            my_system.Set_G_acc(-my_system.Get_G_acc());
-        application.DoStep();
-        application.EndScene();
+            sys.Set_G_acc(-sys.Get_G_acc());
+        vis->EndScene();
+        sys.DoStepDynamics(time_step);
         frame++;
     }
 

@@ -32,7 +32,7 @@
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 #include "chrono_vehicle/utils/ChVehiclePath.h"
-#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleIrrApp.h"
+#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleVisualSystemIrrlicht.h"
 
 #include "chrono_models/vehicle/feda/FEDA.h"
 
@@ -324,7 +324,7 @@ const double mph2kmh = 1.609344;
 int main(int argc, char* argv[]) {
     GetLog() << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
 
-    std::wstring wtitle;
+    std::string wtitle;
     DLC_Variant dlc_mode = NATO;
     int velkmh = 32;
     int velmph = 20;
@@ -334,10 +334,10 @@ int main(int argc, char* argv[]) {
         default:
             // no parameters given
             if (left_turn) {
-                wtitle = L"NATO Double Lane Change Test v = " + std::to_wstring(velmph) + L" mph - Left Turn";
+                wtitle = "NATO Double Lane Change Test v = " + std::to_string(velmph) + " mph - Left Turn";
 
             } else {
-                wtitle = L"NATO Double Lane Change Test v = " + std::to_wstring(velmph) + L" mph - Right Turn";
+                wtitle = "NATO Double Lane Change Test v = " + std::to_string(velmph) + " mph - Right Turn ";
             }
             break;
         case 2:
@@ -345,9 +345,9 @@ int main(int argc, char* argv[]) {
             velkmh = ChClamp(atoi(argv[1]), 5, 40) * mph2kmh;
             velmph = ChClamp(atoi(argv[1]), 5, 40);
             if (left_turn) {
-                wtitle = L"NATO Double Lane Change Test v = " + std::to_wstring(velmph) + L" mph - Left Turn";
+                wtitle = "NATO Double Lane Change Test v = " + std::to_string(velmph) + " mph - Left Turn";
             } else {
-                wtitle = L"NATO Double Lane Change Test v = " + std::to_wstring(velmph) + L" mph - Right Turn";
+                wtitle = "NATO Double Lane Change Test v = " + std::to_string(velmph) + " mph - Right Turn";
             }
             break;
     }
@@ -396,12 +396,6 @@ int main(int argc, char* argv[]) {
     patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), (float)terrainLength, (float)terrainWidth);
     terrain.Initialize();
 
-    // Create the vehicle Irrlicht interface
-    ChWheeledVehicleIrrApp app(&feda.GetVehicle(), wtitle.c_str());
-    app.AddTypicalLights();
-    app.SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 6.0, 0.5);
-    app.SetTimestep(step_size);
-
     // ---------------------------------------------------
     // Create the lane change path and the driver system
     // ---------------------------------------------------
@@ -413,6 +407,17 @@ int main(int argc, char* argv[]) {
     driver.GetSpeedController().SetGains(0.4, 0, 0);
     driver.Initialize();
 
+    // Create the vehicle Irrlicht interface
+    auto vis = chrono_types::make_shared<ChWheeledVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle(wtitle);
+    vis->SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 6.0, 0.5);
+    vis->SetHUDLocation(500, 20);
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    feda.GetVehicle().SetVisualSystem(vis);
+
     std::string pltName("../FEDA_LaneChange_" + std::to_string(velmph) + "mph.plt");
     std::ofstream plt(pltName);
     plt << "$limits << EOD" << std::endl;
@@ -422,27 +427,22 @@ int main(int argc, char* argv[]) {
     for (size_t i = 0; i < helper.GetConePositions(); i++) {
         ChVector<> pL = helper.GetConePosition(i, true) + ChVector<>(0, coneBaseWidth / 2, 0);
         irr::scene::IAnimatedMesh* mesh_coneL =
-            app.GetSceneManager()->getMesh(GetChronoDataFile("models/traffic_cone/trafficCone750mm.obj").c_str());
-        irr::scene::IAnimatedMeshSceneNode* node_coneL = app.GetSceneManager()->addAnimatedMeshSceneNode(mesh_coneL);
+           vis->GetSceneManager()->getMesh(GetChronoDataFile("models/traffic_cone/trafficCone750mm.obj").c_str());
+        irr::scene::IAnimatedMeshSceneNode* node_coneL = vis->GetSceneManager()->addAnimatedMeshSceneNode(mesh_coneL);
         node_coneL->getMaterial(0).EmissiveColor = irr::video::SColor(0, 100, 0, 0);
         node_coneL->setPosition(irr::core::vector3dfCH(pL));
         plt << pL.x() << "\t" << pL.y();
+
         ChVector<> pR = helper.GetConePosition(i, false) + ChVector<>(0, -coneBaseWidth / 2, 0);
         irr::scene::IAnimatedMesh* mesh_coneR =
-            app.GetSceneManager()->getMesh(GetChronoDataFile("models/traffic_cone/trafficCone750mm.obj").c_str());
-        irr::scene::IAnimatedMeshSceneNode* node_coneR = app.GetSceneManager()->addAnimatedMeshSceneNode(mesh_coneR);
+            vis->GetSceneManager()->getMesh(GetChronoDataFile("models/traffic_cone/trafficCone750mm.obj").c_str());
+        irr::scene::IAnimatedMeshSceneNode* node_coneR = vis->GetSceneManager()->addAnimatedMeshSceneNode(mesh_coneR);
         node_coneR->getMaterial(0).EmissiveColor = irr::video::SColor(0, 0, 100, 0);
         node_coneR->setPosition(irr::core::vector3dfCH(pR));
         plt << "\t" << pR.y() << std::endl;
     }
 
     plt << "EOD" << std::endl;
-    // ---------------------------------------------
-    // Finalize construction of visualization assets
-    // ---------------------------------------------
-
-    app.AssetBindAll();
-    app.AssetUpdateAll();
 
     // ---------------
     // Simulation loop
@@ -480,7 +480,7 @@ int main(int argc, char* argv[]) {
     bool done = false;
     double xpos = 0;
     double xend = 30.0 + helper.GetXmax();
-    while (app.GetDevice()->run()) {
+    while (vis->Run()) {
         time = feda.GetSystem()->GetChTime();
         double speed = speed_filter.Add(feda.GetVehicle().GetSpeed());
         double accel =
@@ -517,8 +517,8 @@ int main(int argc, char* argv[]) {
             break;
         }
 
-        app.BeginScene(true, true, irr::video::SColor(255, 140, 161, 192));
-        app.DrawAll();
+        vis->BeginScene();
+        vis->DrawAll();
 
         // Driver inputs
         ChDriver::Inputs driver_inputs = driver.GetInputs();
@@ -540,18 +540,18 @@ int main(int argc, char* argv[]) {
         driver.Synchronize(time);
         terrain.Synchronize(time);
         feda.Synchronize(time, driver_inputs, terrain);
-        app.Synchronize("Double lane change test", driver_inputs);
+        vis->Synchronize("Double lane change test", driver_inputs);
 
         // Advance simulation for one timestep for all modules
         driver.Advance(step_size);
         terrain.Advance(step_size);
         feda.Advance(step_size);
-        app.Advance(step_size);
+        vis->Advance(step_size);
 
         // Increment frame number
         step_number++;
 
-        app.EndScene();
+        vis->EndScene();
     }
     plt << "EOD" << std::endl;
     plt << "set title 'FEDA Double Lane Change V = " << velmph << " mph'" << std::endl;
