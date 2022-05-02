@@ -113,6 +113,8 @@ bool GetProblemSpecs(int argc,
     run_time_vis = cli.GetAsType<bool>("run_time_vis");
 
     verbose = !cli.GetAsType<bool>("quiet");
+
+    return true;
 }
 
 // -----------------------------------------------------------------------------
