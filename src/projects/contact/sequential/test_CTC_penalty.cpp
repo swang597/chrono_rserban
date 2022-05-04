@@ -213,7 +213,7 @@ int main(int argc, char* argv[]) {
     vis->AddTypicalLights();
     vis->AddCamera(ChVector<>(0, 3, -6));
     vis->SetSymbolScale(1e-4);
-    vis->EnableContactDrawing(IrrContactsDrawMode::CONTACT_FORCES);
+    vis->EnableContactDrawing(ContactsDrawMode::CONTACT_FORCES);
     system.SetVisualSystem(vis);
 
     // ----------------------------

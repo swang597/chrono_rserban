@@ -217,8 +217,8 @@ int main(int argc, char* argv[]) {
     while (vis->Run()) {
         vis->BeginScene();
         vis->DrawAll();
-        ////tools::drawAllCOGs(sys, application.GetVideoDriver(), 1.0);
-        tools::drawAllLinkframes(sys, vis->GetVideoDriver(), 1.5);
+        ////tools::drawAllCOGs(vis.get(), 1.0);
+        tools::drawAllLinkframes(vis.get(), 1.5);
         vis->EndScene();
 
         sys.DoStepDynamics(step_size);

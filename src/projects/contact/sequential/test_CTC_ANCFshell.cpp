@@ -119,7 +119,7 @@ int main(int argc, char* argv[]) {
     vis->AddSkyBox();
     vis->AddTypicalLights();
     vis->AddCamera(ChVector<>(1.0, 0.0, 0.0));
-    vis->EnableContactDrawing(IrrContactsDrawMode::CONTACT_DISTANCES);
+    vis->EnableContactDrawing(ContactsDrawMode::CONTACT_DISTANCES);
     sys.SetVisualSystem(vis);
 
     // ---------------

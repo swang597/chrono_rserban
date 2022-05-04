@@ -128,8 +128,8 @@ int main(int argc, char* argv[]) {
     while (vis->Run()) {
         vis->BeginScene();
         vis->DrawAll();
-        ////irrlicht::tools::drawAllCOGs(sys, application.GetVideoDriver(), 0.5);
-        irrlicht::tools::drawAllLinkframes(sys, vis->GetVideoDriver(), 1);
+        ////irrlicht::tools::drawAllCOGs(vis.get(), 0.5);
+        irrlicht::tools::drawAllLinkframes(vis.get(), 1);
         vis->EndScene();
         sys.DoStepDynamics(1e-3);
     }

@@ -230,7 +230,7 @@ int main(int argc, char* argv[]) {
     while (vis->Run()) {
         vis->BeginScene();
         vis->DrawAll();
-        tools::drawAllLinkframes(sys, vis->GetVideoDriver(), 1.5);
+        tools::drawAllLinkframes(vis.get(), 1.5);
         vis->EndScene();
 
         sys.DoStepDynamics(step_size);

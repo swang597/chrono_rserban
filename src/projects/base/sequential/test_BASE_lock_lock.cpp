@@ -94,7 +94,7 @@ int main(int argc, char* argv[]) {
     while (vis->Run()) {
         vis->BeginScene();
         vis->DrawAll();
-        irrlicht::tools::drawAllCOGs(*sys, vis->GetVideoDriver(), 0.5);
+        irrlicht::tools::drawAllCOGs(vis.get(), 0.5);
         vis->EndScene();
 
         GetLog() << "Time: " << sys->GetChTime();

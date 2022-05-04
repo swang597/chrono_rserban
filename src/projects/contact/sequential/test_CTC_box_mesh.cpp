@@ -213,7 +213,7 @@ int main(int argc, char* argv[]) {
     vis->AddTypicalLights();
     vis->AddCamera(ChVector<>(0.5, 1, -2));
     vis->SetSymbolScale(5e-3);
-    vis->EnableContactDrawing(IrrContactsDrawMode::CONTACT_FORCES);
+    vis->EnableContactDrawing(ContactsDrawMode::CONTACT_FORCES);
     system->SetVisualSystem(vis);
 
     auto cmanager = chrono_types::make_shared<ContactManager>();

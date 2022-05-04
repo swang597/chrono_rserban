@@ -133,7 +133,7 @@ int main(int argc, char* argv[]) {
         if (vis->Run()) {
             vis->BeginScene();
             vis->DrawAll();
-            irrlicht::tools::drawAllCOGs(my_sys, vis->GetVideoDriver(), 1);
+            irrlicht::tools::drawAllCOGs(vis.get(), 1);
             vis->EndScene();
         } else {
             return 1;

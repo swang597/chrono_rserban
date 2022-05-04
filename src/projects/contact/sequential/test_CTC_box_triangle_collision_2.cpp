@@ -226,13 +226,13 @@ int main(int argc, char* argv[]) {
 
         vis->BeginScene();
         vis->DrawAll();
-        irrlicht::tools::drawAllCOGs(system, vis->GetVideoDriver(), 1.0);
+        irrlicht::tools::drawAllCOGs(vis.get(), 1.0);
         if (nC > 0) {
             assert(nC <= 6);
             for (int i = 0; i < nC; i++) {
                 assert(separation > 0 || depth[i] < 0);
-                irrlicht::tools::drawSegment(vis->GetVideoDriver(), ToChVector(pt1[i]), ToChVector(pt2[i]),
-                                             irr::video::SColor(255, 255, 0, 255));
+                irrlicht::tools::drawSegment(vis.get(), ToChVector(pt1[i]), ToChVector(pt2[i]),
+                                             ChColor(1, 0, 1));
             }
         }
         vis->EndScene();

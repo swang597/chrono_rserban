@@ -479,12 +479,12 @@ int main(int argc, char* argv[]) {
     while (visISO->Run()) {
         visISO->BeginScene();
         visISO->DrawAll();
-        irrlicht::tools::drawAllCOGs(sysISO, visISO->GetVideoDriver(), 1);
+        irrlicht::tools::drawAllCOGs(visISO.get(), 1);
         visISO->EndScene();
 
         visYUP->BeginScene();
         visYUP->DrawAll();
-        irrlicht::tools::drawAllCOGs(sysYUP, visYUP->GetVideoDriver(), 1);
+        irrlicht::tools::drawAllCOGs(visYUP.get(), 1);
         visYUP->EndScene();
 
         mISO.Advance(step_size);
