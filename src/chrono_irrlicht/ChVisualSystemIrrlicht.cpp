@@ -16,6 +16,7 @@
 #include <locale>
 
 #include "chrono/utils/ChProfiler.h"
+#include "chrono/core/ChMathematics.h"
 
 #include "chrono/assets/ChTriangleMeshShape.h"
 #include "chrono/assets/ChSurfaceShape.h"
@@ -172,7 +173,7 @@ void ChVisualSystemIrrlicht::Initialize() {
     if (m_system) {
         // Create an Irrlicht GUI
         assert(!m_gui->initialized);
-        m_gui->Initialize(m_device, m_system);
+        m_gui->Initialize(this);
 
         // Parse the mechanical assembly and create a ChIrrNodeModel for each physics item with a visual model.
         // This is a recursive call to accomodate any existing sub-assemblies.
@@ -191,7 +192,7 @@ void ChVisualSystemIrrlicht::OnAttach() {
     // If the visualization system is already initialized
     if (m_device) {
         assert(!m_gui->initialized);
-        m_gui->Initialize(m_device, m_system);
+        m_gui->Initialize(this);
 
         // Parse the mechanical assembly and create a ChIrrNodeModel for each physics item with a visual model.
         // This is a recursive call to accomodate any existing sub-assemblies.
@@ -298,13 +299,36 @@ void ChVisualSystemIrrlicht::AddSkyBox(const std::string& texture_dir) {
         skybox->setRotation(irr::core::vector3df(90, 0, 0));
 }
 
+irr::scene::ILightSceneNode* ChVisualSystemIrrlicht::AddLightDirectional(double elevation,
+                                                                         double azimuth,
+                                                                         ChColor ambient,
+                                                                         ChColor specular,
+                                                                         ChColor diffuse) {
+    if (!m_device)
+        return nullptr;
+
+    ILightSceneNode* light = GetSceneManager()->addLightSceneNode();
+    light->setPosition(core::vector3df(0, 0, 0));
+    light->setRotation(core::vector3df(0, 90 + ChClamp(elevation, 0.0, 90.0), ChClamp(azimuth, 0.0, 360.0)));
+
+    irr::video::SLight& l = light->getLightData();
+    l.Type = irr::video::ELT_DIRECTIONAL;
+    l.Direction = core::vector3df(0, 0, 0);
+    l.AmbientColor = tools::ToIrrlichtSColorf(ambient);
+    l.SpecularColor = tools::ToIrrlichtSColorf(specular);
+    l.DiffuseColor = tools::ToIrrlichtSColorf(diffuse);
+    l.CastShadows = false;
+
+    return light;
+}
+
 irr::scene::ILightSceneNode* ChVisualSystemIrrlicht::AddLight(const ChVector<>& pos, double radius, ChColor color) {
     if (!m_device)
         return nullptr;
 
-    irr::scene::ILightSceneNode* mlight = GetSceneManager()->addLightSceneNode(
+    irr::scene::ILightSceneNode* light = GetSceneManager()->addLightSceneNode(
         0, irr::core::vector3dfCH(pos), tools::ToIrrlichtSColorf(color), (irr::f32)radius);
-    return mlight;
+    return light;
 }
 
 irr::scene::ILightSceneNode* ChVisualSystemIrrlicht::AddLightWithShadow(const ChVector<>& pos,
@@ -320,7 +344,7 @@ irr::scene::ILightSceneNode* ChVisualSystemIrrlicht::AddLightWithShadow(const Ch
     if (!m_device)
         return nullptr;
 
-    irr::scene::ILightSceneNode* mlight = GetSceneManager()->addLightSceneNode(
+    irr::scene::ILightSceneNode* light = GetSceneManager()->addLightSceneNode(
         0, irr::core::vector3dfCH(pos), tools::ToIrrlichtSColorf(color), (irr::f32)radius);
 
     m_effect_handler->addShadowLight(SShadowLight(
@@ -331,7 +355,7 @@ irr::scene::ILightSceneNode* ChVisualSystemIrrlicht::AddLightWithShadow(const Ch
         m_effect_handler->getShadowLight(m_effect_handler->getShadowLightCount() - 1).setClipBorder(false);
 
     m_use_effects = true;
-    return mlight;
+    return light;
 }
 
 void ChVisualSystemIrrlicht::AddUserEventReceiver(irr::IEventReceiver* receiver) {
@@ -410,12 +434,12 @@ void ChVisualSystemIrrlicht::AddShadowToIrrNode(scene::ISceneNode* node) {
 
 // -----------------------------------------------------------------------------
 
-void ChVisualSystemIrrlicht::EnableContactDrawing(IrrContactsDrawMode mode) {
+void ChVisualSystemIrrlicht::EnableContactDrawing(ContactsDrawMode mode) {
     if (m_gui->initialized)
         m_gui->SetContactsDrawMode(mode);
 }
 
-void ChVisualSystemIrrlicht::EnableLinkDrawing(IrrLinkDrawMode mode) {
+void ChVisualSystemIrrlicht::EnableLinkDrawing(LinkDrawMode mode) {
     if (m_gui->initialized)
         m_gui->SetLinksDrawMode(mode);
 }
