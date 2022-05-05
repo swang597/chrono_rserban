@@ -219,7 +219,9 @@ class DataWriter {
     /// Run the data writer at the current simulation frame.
     /// This function must be called at each simulation frame; output occurs only at those frames that are consistent
     /// with the given output frequencies.
-    void Process(int sim_frame) {
+    void Process(int sim_frame, const ChDriver::Inputs& driver_inputs) {
+        m_drv_inp = driver_inputs;
+
         CollectVehicleData();
 
         if (sim_frame % m_major_skip == 0) {
@@ -355,6 +357,9 @@ class DataWriter {
 
         size_t start = 0;
 
+        // Driver inputs
+        stream << m_drv_inp.m_steering << ", " << m_drv_inp.m_throttle << ", " << m_drv_inp.m_braking << "\n";
+
         // Vehicle position, orientation, linear and angular velocities
         for (int j = 0; j < 13; j++)
             stream << o[start + j] << ", ";
@@ -407,6 +412,8 @@ class DataWriter {
     std::shared_ptr<WheeledVehicle> m_vehicle;
     std::array<std::shared_ptr<ChWheel>, 4> m_wheels;
     std::array<thrust::device_vector<int>, 4> m_indices;
+
+    ChDriver::Inputs m_drv_inp;
 
     std::string m_dir;
     int m_major_skip;
@@ -739,6 +746,7 @@ int main(int argc, char* argv[]) {
     double t = 0;
     double tend = 30;
 
+    ChDriver::Inputs driver_inputs = {0, 0, 0};
     ChTerrain terrain;
     double x_max = path->getPoint(path->getNumPoints() - 1).x() - 4;
 
@@ -764,7 +772,7 @@ int main(int argc, char* argv[]) {
 
         // Simulation data output
         if (sim_output)
-            data_writer.Process(frame);
+            data_writer.Process(frame, driver_inputs);
 
         // Visualization data output
         if (vis_output && frame % vis_output_steps == 0) {
@@ -778,7 +786,8 @@ int main(int argc, char* argv[]) {
         }
 
         // Set current driver inputs
-        ChDriver::Inputs driver_inputs = driver.GetInputs();
+        driver_inputs = driver.GetInputs();
+        driver_inputs.m_braking = 0;
         if (t < 1)
             driver_inputs.m_throttle = 0;
         else if (t < 1.5)
