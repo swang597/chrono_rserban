@@ -62,6 +62,7 @@ MRZR_MODEL model = MRZR_MODEL::ORIGINAL;
 bool GetProblemSpecs(int argc,
                      char** argv,
                      std::string& terrain_dir,
+                     double& tend,
                      double& output_major_fps,
                      double& output_minor_fps,
                      int& output_frames,
@@ -72,7 +73,8 @@ bool GetProblemSpecs(int argc,
                      bool& verbose) {
     ChCLI cli(argv[0], "Polaris SPH terrain simulation");
 
-    cli.AddOption<std::string>("Required", "terrain_dir", "Directory with terrain specification data");
+    cli.AddOption<std::string>("Simulation", "terrain_dir", "Directory with terrain specification data");
+    cli.AddOption<double>("Simulation", "tend", "Simulation end time [s]", std::to_string(tend));
 
     cli.AddOption<double>("Simulation output", "output_major_fps", "Simulation output major frequency [fps]",
                           std::to_string(output_major_fps));
@@ -112,6 +114,8 @@ bool GetProblemSpecs(int argc,
     vis_output_fps = cli.GetAsType<double>("vis_output_fps");
     run_time_vis = cli.GetAsType<bool>("run_time_vis");
 
+    tend = cli.GetAsType<double>("tend");
+
     verbose = !cli.GetAsType<bool>("quiet");
 
     return true;
@@ -133,12 +137,13 @@ class DataWriter {
         // Set default size of sampling box
         double tire_radius = m_wheels[0]->GetTire()->GetRadius();
         double tire_width = m_wheels[0]->GetTire()->GetWidth();
-        m_box_size.x() = std::sqrt(3.0) * tire_radius;
-        m_box_size.y() = 1.2 * tire_width;
-        m_box_size.z() = 0.3;
+        m_box_size.x() = 2.0 * std::sqrt(3.0) * tire_radius;
+        m_box_size.y() = 1.5 * tire_width;
+        m_box_size.z() = 0.15;
 
-        // Set default x location of sampling box
-        m_box_x = 0;
+        // Set default x and z offsets of sampling box
+        m_box_x = 0.15;
+        m_box_z = 0.00;
     }
 
     ~DataWriter() { m_veh_stream.close(); }
@@ -155,11 +160,12 @@ class DataWriter {
     /// Enable/disable output of SPH particle velocities (default: true).
     void SaveVelocities(bool val) { m_out_vel = val; }
 
-    /// Set the location (relative to wheel center) and dimension (x and y) of the soil sampling domain.
-    void SetSamplingVolume(double x, const ChVector2<>& size) {
+    /// Set the location (relative to tire bottom point) and dimension (x and y) of the soil sampling domain.
+    void SetSamplingVolume(double x, double z, const ChVector2<>& size) {
         m_box_size.x() = size.x();
         m_box_size.y() = size.y();
         m_box_x = x;
+        m_box_z = z;
     }
 
     /// Initialize the data writer, specifying the output directory and output frequency parameters.
@@ -214,6 +220,7 @@ class DataWriter {
 
         cout << "Wheel sampling box size:       " << m_box_size << endl;
         cout << "Wheel sampling box x location: " << m_box_x << endl;
+        cout << "Wheel sampling box z location: " << m_box_z << endl;
     }
 
     /// Run the data writer at the current simulation frame.
@@ -252,7 +259,7 @@ class DataWriter {
             ChVector<> Z_dir(0, 0, 1);
             ChVector<> X_dir = Vcross(wheel_normal, ChVector<>(0, 0, 1)).GetNormalized();
             ChVector<> Y_dir = Vcross(Z_dir, X_dir);
-            ChVector<> box_pos(wheel_pos + ChVector<>(m_box_x, 0, -tire_radius));
+            ChVector<> box_pos(wheel_pos + ChVector<>(m_box_x, 0, m_box_z - tire_radius));
             ChMatrix33<> box_rot(X_dir, Y_dir, Z_dir);
 
             m_indices[i] = FindParticlesInBox(m_sysFSI, ConvertOBB(ChFrame<>(box_pos, box_rot), m_box_size));
@@ -426,6 +433,7 @@ class DataWriter {
     bool m_out_vel;
     ChVector<> m_box_size;
     double m_box_x;
+    double m_box_z;
 
     bool m_filter;
     double m_filter_window;
@@ -656,6 +664,7 @@ std::shared_ptr<WheeledVehicle> CreateVehicle(ChSystem& sys,
 int main(int argc, char* argv[]) {
     // Parse command line arguments
     std::string terrain_dir;
+    double tend = 30;
     double output_major_fps = 20;
     double output_minor_fps = 1000;
     int output_frames = 5;
@@ -665,7 +674,7 @@ int main(int argc, char* argv[]) {
     bool run_time_vis = false;      // no run-time visualization
     bool verbose = true;
 
-    if (!GetProblemSpecs(argc, argv, terrain_dir, output_major_fps, output_minor_fps, output_frames, output_velocities,
+    if (!GetProblemSpecs(argc, argv, terrain_dir, tend, output_major_fps, output_minor_fps, output_frames, output_velocities,
                          filter_window, vis_output_fps, run_time_vis, verbose)) {
         return 1;
     }
@@ -743,9 +752,6 @@ int main(int argc, char* argv[]) {
     cout << "===============================================================================" << endl;
 
     // Simulation loop
-    double t = 0;
-    double tend = 30;
-
     ChDriver::Inputs driver_inputs = {0, 0, 0};
     ChTerrain terrain;
     double x_max = path->getPoint(path->getNumPoints() - 1).x() - 4;
@@ -753,6 +759,7 @@ int main(int argc, char* argv[]) {
     int vis_output_steps = (int)std::ceil((1.0 / vis_output_fps) / params->dT);
     int vis_output_frame = 0;
 
+    double t = 0;
     int frame = 0;
     while (t < tend) {
 #ifdef CHRONO_OPENGL
@@ -787,7 +794,7 @@ int main(int argc, char* argv[]) {
 
         // Set current driver inputs
         driver_inputs = driver.GetInputs();
-        driver_inputs.m_braking = 0;
+        //////driver_inputs.m_braking = 0;    //// RADU TODO Remove this!!!
         if (t < 1)
             driver_inputs.m_throttle = 0;
         else if (t < 1.5)
