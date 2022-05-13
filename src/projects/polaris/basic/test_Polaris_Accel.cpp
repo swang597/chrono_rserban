@@ -54,14 +54,17 @@ MRZR_MODEL model = MRZR_MODEL::MODIFIED;
 // -----------------------------------------------------------------------------
 
 int main(int argc, char* argv[]) {
-    double length = 400;
+    double length = 800;
 
     std::string model_dir = (model == MRZR_MODEL::ORIGINAL) ? "mrzr/JSON_orig/" : "mrzr/JSON_new/";
 
     std::string vehicle_json = model_dir + "vehicle/MRZR.json";
+
     ////std::string powertrain_json = model_dir + "powertrain/MRZR_SimplePowertrain.json";
     std::string powertrain_json = model_dir + "powertrain/MRZR_SimpleMapPowertrain.json";
-    std::string tire_json = model_dir + "tire/MRZR_TMeasyTire.json";
+    
+    ////std::string tire_json = model_dir + "tire/MRZR_TMeasyTire.json";
+    std::string tire_json = model_dir + "tire/MRZR_Pac02Tire.json";
 
     // Create the vehicle system
     auto contact_method = ChContactMethod::SMC;
@@ -110,9 +113,14 @@ int main(int argc, char* argv[]) {
     vis->SetWindowTitle("Polaris acceleration test");
     vis->SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 5.0, 0.5);
     vis->Initialize();
-    vis->AddTypicalLights();
     vis->AddSkyBox();
     vis->AddLogo();
+    vis->AddLight(ChVector<>(0, -30, 100), 250, ChColor(0.7f, 0.7f, 0.7f));
+    vis->AddLight(ChVector<>(0, 50, 100), 130, ChColor(0.7f, 0.7f, 0.7f));
+    vis->AddLight(ChVector<>(-300, -30, 100), 250, ChColor(0.7f, 0.7f, 0.7f));
+    vis->AddLight(ChVector<>(-300, 50, 100), 130, ChColor(0.7f, 0.7f, 0.7f));
+    vis->AddLight(ChVector<>(+300, -30, 100), 250, ChColor(0.7f, 0.7f, 0.7f));
+    vis->AddLight(ChVector<>(+300, 50, 100), 130, ChColor(0.7f, 0.7f, 0.7f));
     vehicle.SetVisualSystem(vis);
 
     // Running average of vehicle speed
@@ -155,6 +163,9 @@ int main(int argc, char* argv[]) {
 
         // End simulation
         if (time >= 100)
+            break;
+
+        if (vehicle.GetPos().x() > length / 2 - 10)
             break;
 
         vis->BeginScene();

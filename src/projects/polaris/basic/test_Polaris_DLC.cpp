@@ -122,6 +122,7 @@ int main(int argc, char* argv[]) {
 
         // Get driver inputs
         ChDriver::Inputs driver_inputs = driver.GetInputs();
+        ChClampValue(driver_inputs.m_steering, -0.75, +0.75);
 
         // Update modules (process inputs from other modules)
         double time = vehicle.GetSystem()->GetChTime();

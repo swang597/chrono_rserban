@@ -161,7 +161,8 @@ class AssemblyDP : public Assembly {
 
     virtual void CreateShoes() override {
         for (int i = 0; i < m_nshoes; i++) {
-            m_shoes.push_back(chrono_types::make_shared<M113_TrackShoeDoublePin>("shoe_" + std::to_string(i)));
+            m_shoes.push_back(chrono_types::make_shared<M113_TrackShoeDoublePin>(
+                "shoe_" + std::to_string(i), DoublePinTrackShoeType::ONE_CONNECTOR));
         }
     }
 };
