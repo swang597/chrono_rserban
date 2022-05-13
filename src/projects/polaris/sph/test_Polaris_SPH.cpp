@@ -63,6 +63,7 @@ bool GetProblemSpecs(int argc,
                      char** argv,
                      std::string& terrain_dir,
                      double& tend,
+                     double& active_box_dim,
                      double& output_major_fps,
                      double& output_minor_fps,
                      int& output_frames,
@@ -75,6 +76,7 @@ bool GetProblemSpecs(int argc,
 
     cli.AddOption<std::string>("Simulation", "terrain_dir", "Directory with terrain specification data");
     cli.AddOption<double>("Simulation", "tend", "Simulation end time [s]", std::to_string(tend));
+    cli.AddOption<double>("Simulation", "active_box_dim", "Half-dimension of active box [m]", std::to_string(active_box_dim));
 
     cli.AddOption<double>("Simulation output", "output_major_fps", "Simulation output major frequency [fps]",
                           std::to_string(output_major_fps));
@@ -115,6 +117,7 @@ bool GetProblemSpecs(int argc,
     run_time_vis = cli.GetAsType<bool>("run_time_vis");
 
     tend = cli.GetAsType<double>("tend");
+    active_box_dim = cli.GetAsType<double>("active_box_dim");
 
     verbose = !cli.GetAsType<bool>("quiet");
 
@@ -665,6 +668,7 @@ int main(int argc, char* argv[]) {
     // Parse command line arguments
     std::string terrain_dir;
     double tend = 30;
+    double active_box_dim = 0.5;
     double output_major_fps = 20;
     double output_minor_fps = 1000;
     int output_frames = 5;
@@ -674,8 +678,8 @@ int main(int argc, char* argv[]) {
     bool run_time_vis = false;      // no run-time visualization
     bool verbose = true;
 
-    if (!GetProblemSpecs(argc, argv, terrain_dir, tend, output_major_fps, output_minor_fps, output_frames, output_velocities,
-                         filter_window, vis_output_fps, run_time_vis, verbose)) {
+    if (!GetProblemSpecs(argc, argv, terrain_dir, tend, active_box_dim, output_major_fps, output_minor_fps,
+                         output_frames, output_velocities, filter_window, vis_output_fps, run_time_vis, verbose)) {
         return 1;
     }
 
@@ -693,6 +697,7 @@ int main(int argc, char* argv[]) {
     cout << "Load SPH parameter file..." << endl;
     std::shared_ptr<fsi::SimParams> params = sysFSI.GetSimParams();
     sysFSI.SetSimParameter(vehicle::GetDataFile(terrain_dir + "/sph_params.json"), params, ChVector<>(1));
+    params->bodyActiveDomain = mR3(active_box_dim, active_box_dim, 1.0);
     sysFSI.SetDiscreType(false, false);
     sysFSI.SetWallBC(BceVersion::ORIGINAL);
     sysFSI.SetFluidDynamics(params->fluid_dynamic_type);
