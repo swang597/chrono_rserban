@@ -142,7 +142,7 @@ class DataWriter {
         double tire_width = m_wheels[0]->GetTire()->GetWidth();
         m_box_size.x() = 2.0 * std::sqrt(3.0) * tire_radius;
         m_box_size.y() = 1.5 * tire_width;
-        m_box_size.z() = 0.15;
+        m_box_size.z() = 0.2;
 
         // Set default x and z offsets of sampling box
         m_box_x = 0.15;
