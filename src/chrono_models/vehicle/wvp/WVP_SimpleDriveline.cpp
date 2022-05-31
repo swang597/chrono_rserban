@@ -88,8 +88,7 @@ void differentialSplit(double torque,
 }
 
 // -----------------------------------------------------------------------------
-// -----------------------------------------------------------------------------
-void WVP_SimpleDriveline::Synchronize(double torque) {
+void WVP_SimpleDriveline::Synchronize(double time, const DriverInputs& driver_inputs, double torque) {
     // Enforce driveshaft speed
     double driveshaft_speed = 0;
     if (!m_diffLockCenter) {
@@ -127,7 +126,6 @@ void WVP_SimpleDriveline::Synchronize(double torque) {
     m_rear_right->SetAppliedTorque(-torque_right);
 }
 
-// -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 double WVP_SimpleDriveline::GetSpindleTorque(int axle, VehicleSide side) const {
     if (axle == m_driven_axles[0]) {

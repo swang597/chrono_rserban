@@ -328,7 +328,7 @@ int main(int argc, char* argv[]) {
 #endif
 
         // Collect output data from sub-systems
-        ChDriver::Inputs driver_inputs = driver.GetInputs();
+        DriverInputs driver_inputs = driver.GetInputs();
         powertrain_torque = vehicle.GetPowertrain()->GetOutputTorque();
         driveshaft_speed = vehicle.GetDriveline()->GetDriveshaftSpeed();
         vehicle.GetTrackShoeStates(LEFT, shoe_states_left);

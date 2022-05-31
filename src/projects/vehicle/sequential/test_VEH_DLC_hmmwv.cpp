@@ -171,7 +171,7 @@ int main(int argc, char* argv[]) {
         double time = my_hmmwv.GetSystem()->GetChTime();
 
         // Driver inputs
-        ChDriver::Inputs driver_inputs = driver.GetInputs();
+        DriverInputs driver_inputs = driver.GetInputs();
 
         if (my_hmmwv.GetVehicle().GetPos().x() > x_max - 20) {
             driver_inputs.m_throttle = 0;

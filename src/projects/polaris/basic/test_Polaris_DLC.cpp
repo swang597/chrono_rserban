@@ -121,7 +121,7 @@ int main(int argc, char* argv[]) {
         vis->EndScene();
 
         // Get driver inputs
-        ChDriver::Inputs driver_inputs = driver.GetInputs();
+        DriverInputs driver_inputs = driver.GetInputs();
         ChClampValue(driver_inputs.m_steering, -0.75, +0.75);
 
         // Update modules (process inputs from other modules)

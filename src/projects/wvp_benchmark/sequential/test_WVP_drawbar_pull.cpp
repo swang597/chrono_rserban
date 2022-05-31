@@ -347,7 +347,7 @@ int main(int argc, char* argv[]) {
         time = wvp.GetSystem()->GetChTime();
 
         // Driver inputs
-        ChDriver::Inputs driver_inputs;
+        DriverInputs driver_inputs;
         driver_inputs.m_throttle = 0;
         driver_inputs.m_steering = 0;
         driver_inputs.m_braking = 0;

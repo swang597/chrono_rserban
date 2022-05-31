@@ -488,7 +488,7 @@ int main(int argc, char* argv[]) {
         }
 
         // Collect output data from modules (for inter-module communication)
-        ChDriver::Inputs driver_inputs = driver.GetInputs();
+        DriverInputs driver_inputs = driver.GetInputs();
         m113.GetTrackShoeStates(LEFT, shoe_states_left);
         m113.GetTrackShoeStates(RIGHT, shoe_states_right);
 

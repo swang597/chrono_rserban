@@ -422,7 +422,7 @@ int main(int argc, char* argv[]) {
             break;
         driver.SetDesiredSpeed(ChSineStep(time, 1.0, 0.0, 2.0, target_speed));
         // Collect output data from modules
-        ChDriver::Inputs driver_inputs = driver.GetInputs();
+        DriverInputs driver_inputs = driver.GetInputs();
         marder.GetVehicle().GetTrackShoeStates(LEFT, shoe_states_left);
         marder.GetVehicle().GetTrackShoeStates(RIGHT, shoe_states_right);
 

@@ -299,7 +299,7 @@ int main(int argc, char* argv[]) {
     BodyStates shoe_states_right(vehicle.GetNumTrackShoes(RIGHT));
     TerrainForces shoe_forces_left(vehicle.GetNumTrackShoes(LEFT));
     TerrainForces shoe_forces_right(vehicle.GetNumTrackShoes(RIGHT));
-    ChDriver::Inputs driver_inputs = {0, 0, 0};
+    DriverInputs driver_inputs = {0, 0, 0};
 
     bool ChassisContact = false;
     bool reset_arm_angle = true;

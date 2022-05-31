@@ -385,7 +385,7 @@ int main(int argc, char* argv[]) {
         wvp.GetSystem()->Set_G_acc(slopegravity);
 
         // Driver inputs
-        ChDriver::Inputs driver_inputs = driver.GetInputs();
+        DriverInputs driver_inputs = driver.GetInputs();
 
         // Update modules (process inputs from other modules)
         driver.Synchronize(time);

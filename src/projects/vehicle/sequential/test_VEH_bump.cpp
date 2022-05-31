@@ -261,7 +261,7 @@ int main(int argc, char* argv[]) {
         }
 
         // Driver inputs
-        ChDriver::Inputs driver_inputs = driver_follower.GetInputs();
+        DriverInputs driver_inputs = driver_follower.GetInputs();
 
         /*
         // Hack for acceleration-braking maneuver

@@ -233,7 +233,7 @@ int main(int argc, char* argv[]) {
             vis->DrawAll();
 
             // Driver inputs
-            ChDriver::Inputs driver_inputs = driver.GetInputs();
+            DriverInputs driver_inputs = driver.GetInputs();
 
             // Update modules (process inputs from other modules)
             double time = gd250.GetSystem()->GetChTime();
@@ -267,7 +267,7 @@ int main(int argc, char* argv[]) {
         double v_pos;
         while ((v_pos = gd250.GetVehicle().GetPos().x()) < xend) {
             // Driver inputs
-            ChDriver::Inputs driver_inputs = driver.GetInputs();
+            DriverInputs driver_inputs = driver.GetInputs();
 
             // Update modules (process inputs from other modules)
             double time = gd250.GetSystem()->GetChTime();

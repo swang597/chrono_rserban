@@ -36,8 +36,8 @@ const std::string out_dir = "../TEST_REINIT";
 
 // =============================================================================
 
-ChDriver::Inputs DriverInputs(double time) {
-    ChDriver::Inputs d = {0, 0, 0};
+DriverInputs GetDriverInputs(double time) {
+    DriverInputs d = {0, 0, 0};
     if (time < 0.5)
         return d;
     time = time - 0.5;
@@ -58,7 +58,7 @@ ChDriver::Inputs DriverInputs(double time) {
 
 // =============================================================================
 
-void SaveCheckpoint(const std::string& filename, ChVehicle& vehicle, const ChDriver::Inputs& d) {
+void SaveCheckpoint(const std::string& filename, ChVehicle& vehicle, const DriverInputs& d) {
     std::cout << "SAVE checkpoint at t = " << vehicle.GetSystem()->GetChTime() << std::endl;
     std::cout << "  Driver inputs = " << d.m_throttle << " " << d.m_braking << " " << d.m_steering << std::endl;
     std::cout << "  Vehicle speed = " << vehicle.GetSpeed() << std::endl;
@@ -80,7 +80,7 @@ void SaveCheckpoint(const std::string& filename, ChVehicle& vehicle, const ChDri
     stream.close();
 }
 
-void LoadCheckpoint(const std::string& filename, ChVehicle& vehicle, ChDriver::Inputs& d) {
+void LoadCheckpoint(const std::string& filename, ChVehicle& vehicle, DriverInputs& d) {
     std::cout << "LOAD checkpoint at time = " << vehicle.GetSystem()->GetChTime() << std::endl;
     std::cout << "  Current driver inputs = " << d.m_throttle << " " << d.m_braking << " " << d.m_steering << std::endl;
     std::cout << "  Current vehicle speed = " << vehicle.GetSpeed() << std::endl;
@@ -186,7 +186,7 @@ int main(int argc, char* argv[]) {
     // --------------------------------------
     // Simulatin loop
     // --------------------------------------
-    ChDriver::Inputs driver_inputs;
+    DriverInputs driver_inputs;
 
     /*
     // Start simulation from checkpoint
@@ -208,7 +208,7 @@ int main(int argc, char* argv[]) {
 
         // Driver inputs (do not change driver inputs after reset)
         if (!check_saved && !check_loaded)
-            driver_inputs = DriverInputs(time);
+            driver_inputs = GetDriverInputs(time);
         else if (!check_loaded)
             driver_inputs = {0, 0, 0.5};
 

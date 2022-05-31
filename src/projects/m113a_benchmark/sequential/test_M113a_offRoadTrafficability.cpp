@@ -500,7 +500,7 @@ int main(int argc, char* argv[]) {
     BodyStates shoe_states_right(vehicle.GetNumTrackShoes(RIGHT));
     TerrainForces shoe_forces_left(vehicle.GetNumTrackShoes(LEFT));
     TerrainForces shoe_forces_right(vehicle.GetNumTrackShoes(RIGHT));
-    ChDriver::Inputs driver_inputs = {0, 0, 0};
+    DriverInputs driver_inputs = {0, 0, 0};
 
     // Number of simulation steps between two 3D view render frames
     int render_steps = (int)std::ceil(render_step_size / step_size);

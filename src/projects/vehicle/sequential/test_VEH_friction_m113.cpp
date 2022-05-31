@@ -206,8 +206,8 @@ int main(int argc, char* argv[]) {
             throttle_input = 0.75;
 
         // Collect output data from modules (for inter-module communication)
-        ChDriver::Inputs driver_inputs_1 = driver_1.GetInputs();
-        ChDriver::Inputs driver_inputs_2 = driver_2.GetInputs();
+        DriverInputs driver_inputs_1 = driver_1.GetInputs();
+        DriverInputs driver_inputs_2 = driver_2.GetInputs();
         driver_inputs_1.m_throttle = throttle_input;
         driver_inputs_2.m_throttle = throttle_input;
         driver_inputs_1.m_braking = 0;

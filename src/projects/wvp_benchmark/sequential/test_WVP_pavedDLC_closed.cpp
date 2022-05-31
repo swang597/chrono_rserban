@@ -274,7 +274,7 @@ int main(int argc, char* argv[]) {
         double braking_input = driver.GetBraking();
 
         // Driver inputs
-        ChDriver::Inputs driver_inputs = driver.GetInputs();
+        DriverInputs driver_inputs = driver.GetInputs();
 
         wvp.Synchronize(time, driver_inputs, terrain);
 #ifdef USE_IRRLICHT

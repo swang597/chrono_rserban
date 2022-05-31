@@ -87,7 +87,7 @@ class CH_MODELS_API GD250 {
     void SetTireVisualizationType(VisualizationType vis) { m_vehicle->SetWheelVisualizationType(vis); }
     void SetKinematicMode(bool mode) { m_kinematic_mode = mode; }
     void SetLowRangeDriveline(bool mode) { m_low_range = mode; }
-    void Synchronize(double time, const ChDriver::Inputs& driver_inputs, const ChTerrain& terrain);
+    void Synchronize(double time, const DriverInputs& driver_inputs, const ChTerrain& terrain);
     void Advance(double step);
 
     void LogHardpointLocations() { m_vehicle->LogHardpointLocations(); }

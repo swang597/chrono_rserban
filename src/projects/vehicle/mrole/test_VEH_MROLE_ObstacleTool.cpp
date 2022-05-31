@@ -422,7 +422,7 @@ int main(int argc, char* argv[]) {
                     driver.SetDesiredSpeed(ChSineStep(time, 1.0, 0.0, 2.0, target_speed));
 
                     // Collect output data from modules
-                    ChDriver::Inputs driver_inputs = driver.GetInputs();
+                    DriverInputs driver_inputs = driver.GetInputs();
 
                     // Update modules (process inputs from other modules)
                     driver.Synchronize(time);

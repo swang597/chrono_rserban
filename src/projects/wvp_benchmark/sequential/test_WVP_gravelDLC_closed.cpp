@@ -269,7 +269,7 @@ int main(int argc, char* argv[]) {
         time = wvp.GetSystem()->GetChTime();
 
         // Driver inputs
-        ChDriver::Inputs driver_inputs = driver.GetInputs();
+        DriverInputs driver_inputs = driver.GetInputs();
 
         // Update modules (process inputs from other modules)
         driver.Synchronize(time);

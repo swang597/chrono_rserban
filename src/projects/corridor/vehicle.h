@@ -71,7 +71,7 @@ class Vehicle : public Agent {
 
     void SetupLidar();
 
-    chrono::vehicle::ChDriver::Inputs m_driver_inputs;
+    chrono::vehicle::DriverInputs m_driver_inputs;
 
   private:
     Type m_vehicle_type;

@@ -116,7 +116,7 @@ int main(int argc, char* argv[]) {
         double time = my_hmmwv.GetSystem()->GetChTime();
 
         // Driver inputs
-        ChDriver::Inputs driver_inputs;
+        DriverInputs driver_inputs;
         driver_inputs.m_steering = ChClamp(steeringPID_output, -1.0, +1.0);
         driver_inputs.m_throttle = throttle_value;
         driver_inputs.m_braking = 0.0;

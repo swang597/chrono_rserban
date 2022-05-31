@@ -302,7 +302,7 @@ int main(int argc, char* argv[]) {
 
     while (time < time_end) {
         // Driver inputs
-        ChDriver::Inputs driver_inputs = driver.GetInputs();
+        DriverInputs driver_inputs = driver.GetInputs();
 
         // Synchronize vehicle systems
         driver.Synchronize(time);

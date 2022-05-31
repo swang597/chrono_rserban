@@ -229,7 +229,7 @@ class DataWriter {
     /// Run the data writer at the current simulation frame.
     /// This function must be called at each simulation frame; output occurs only at those frames that are consistent
     /// with the given output frequencies.
-    void Process(int sim_frame, const ChDriver::Inputs& driver_inputs) {
+    void Process(int sim_frame, const DriverInputs& driver_inputs) {
         m_drv_inp = driver_inputs;
 
         CollectVehicleData();
@@ -423,7 +423,7 @@ class DataWriter {
     std::array<std::shared_ptr<ChWheel>, 4> m_wheels;
     std::array<thrust::device_vector<int>, 4> m_indices;
 
-    ChDriver::Inputs m_drv_inp;
+    DriverInputs m_drv_inp;
 
     std::string m_dir;
     int m_major_skip;
@@ -757,7 +757,7 @@ int main(int argc, char* argv[]) {
     cout << "===============================================================================" << endl;
 
     // Simulation loop
-    ChDriver::Inputs driver_inputs = {0, 0, 0};
+    DriverInputs driver_inputs = {0, 0, 0};
     ChTerrain terrain;
     double x_max = path->getPoint(path->getNumPoints() - 1).x() - 4;
 

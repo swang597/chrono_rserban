@@ -461,7 +461,7 @@ int main(int argc, char* argv[]) {
 
         if (wvp) {
             // Extract current driver inputs
-            ChDriver::Inputs driver_inputs = driver->GetInputs();
+            DriverInputs driver_inputs = driver->GetInputs();
 
             // Extract chassis state
             ChVector<> pv = wvp->GetChassisBody()->GetFrame_REF_to_abs().GetPos();
