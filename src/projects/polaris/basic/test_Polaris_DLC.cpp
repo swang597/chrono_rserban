@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
 
     double target_speed = 10;
     ChPathFollowerDriver driver(vehicle, path, "my_path", target_speed);
-    driver.GetSteeringController().SetLookAheadDistance(5);
+    driver.GetSteeringController().SetLookAheadDistance(2.5);
     driver.GetSteeringController().SetGains(0.8, 0, 0);
     driver.GetSpeedController().SetGains(0.4, 0, 0);
     driver.Initialize();
@@ -111,10 +111,22 @@ int main(int argc, char* argv[]) {
     vis->AddLogo();
     vehicle.SetVisualSystem(vis);
 
+    // Visualization of controller points (sentinel & target)
+    irr::scene::IMeshSceneNode* ballS = vis->GetSceneManager()->addSphereSceneNode(0.1f);
+    irr::scene::IMeshSceneNode* ballT = vis->GetSceneManager()->addSphereSceneNode(0.1f);
+    ballS->getMaterial(0).EmissiveColor = irr::video::SColor(0, 255, 0, 0);
+    ballT->getMaterial(0).EmissiveColor = irr::video::SColor(0, 0, 255, 0);
+
     // Simulation loop
     double step_size = 2e-3;
     ChRealtimeStepTimer realtime_timer;
     while (vis->Run()) {
+        // Update sentinel and target location markers for the path-follower controller.
+        const ChVector<>& pS = driver.GetSteeringController().GetSentinelLocation();
+        const ChVector<>& pT = driver.GetSteeringController().GetTargetLocation();
+        ballS->setPosition(irr::core::vector3df((irr::f32)pS.x(), (irr::f32)pS.y(), (irr::f32)pS.z()));
+        ballT->setPosition(irr::core::vector3df((irr::f32)pT.x(), (irr::f32)pT.y(), (irr::f32)pT.z()));
+
         // Render scene
         vis->BeginScene();
         vis->DrawAll();

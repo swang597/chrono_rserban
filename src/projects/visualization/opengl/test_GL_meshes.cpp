@@ -1,5 +1,6 @@
 ﻿#include "chrono/physics/ChBodyEasy.h"
 #include "chrono/physics/ChSystemNSC.h"
+#include "chrono/geometry/ChLineBezier.h"
 #include "chrono_opengl/ChOpenGLWindow.h"
 
 using namespace chrono;
@@ -21,9 +22,20 @@ int main(int argc, char* argv[]) {
     auto body2 = chrono_types::make_shared<ChBodyEasyMesh>(GetChronoDataFile("models/pallet.obj"), 1000, true, true);
     body2->SetFrame_REF_to_abs(ChFrame<>(ChVector<>(+3.0, 0.0, 0.0), QUNIT));
 
+    auto body3 = chrono_types::make_shared<ChBody>();
+    body3->SetBodyFixed(true);
+    std::vector<ChVector<>> points = {ChVector<>(0,0,0), ChVector<>(10, 0, 0), ChVector<>(20, 5, 0), ChVector<>(30, 5, 0)};
+    auto path = chrono_types::make_shared<ChBezierCurve>(points);
+    auto num_points = static_cast<unsigned int>(path->getNumPoints());
+    auto path_asset = chrono_types::make_shared<ChLineShape>();
+    path_asset->SetLineGeometry(chrono_types::make_shared<geometry::ChLineBezier>(path));
+    path_asset->SetColor(ChColor(0.8f, 0.8f, 0.0f));
+    path_asset->SetNumRenderPoints(std::max<unsigned int>(2 * num_points, 400));
+    body3->AddVisualShape(path_asset);
+
     system.AddBody(body1);
     system.AddBody(body2);
-
+    system.AddBody(body3);
     ////auto body1 = chrono_types::make_shared<ChBody>();
     ////body1->SetPos(ChVector<>(-3.0, 0.0, 0.0));
     ////system.AddBody(body1);
@@ -48,7 +60,7 @@ int main(int argc, char* argv[]) {
 
     auto& gl_window = opengl::ChOpenGLWindow::getInstance();
     gl_window.Initialize(1600, 900, "OpenGL meshes", &system);
-    gl_window.SetCamera(ChVector<>(0.0, 10.0, 0.0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1));
+    gl_window.SetCamera(ChVector<>(0.0, -10.0, 5.0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1));
     gl_window.SetRenderMode(opengl::SOLID);
 
     double step = 0.01;

@@ -128,10 +128,14 @@ bool GetProblemSpecs(int argc,
 
 class DataWriter {
   public:
-
     /// Construct an output data writer for the specified FSI system and vehicle.
     DataWriter(std::shared_ptr<ChSystemFsi_impl> sysFSI, std::shared_ptr<WheeledVehicle> vehicle)
-        : m_sysFSI(sysFSI), m_vehicle(vehicle), m_out_vel(false), m_filter(true), m_filter_window(0.05), m_verbose(true) {
+        : m_sysFSI(sysFSI),
+          m_vehicle(vehicle),
+          m_out_vel(false),
+          m_filter(true),
+          m_filter_window(0.05),
+          m_verbose(true) {
         m_wheels[0] = vehicle->GetWheel(0, LEFT);
         m_wheels[1] = vehicle->GetWheel(0, RIGHT);
         m_wheels[2] = vehicle->GetWheel(1, LEFT);
@@ -144,9 +148,8 @@ class DataWriter {
         m_box_size.y() = 1.5 * tire_width;
         m_box_size.z() = 0.2;
 
-        // Set default x and z offsets of sampling box
-        m_box_x = 0.15;
-        m_box_z = 0.00;
+        // Set default offset of sampling box
+        m_box_offset = ChVector<>(0.15, 0.0, 0.0);
     }
 
     ~DataWriter() { m_veh_stream.close(); }
@@ -164,11 +167,10 @@ class DataWriter {
     void SaveVelocities(bool val) { m_out_vel = val; }
 
     /// Set the location (relative to tire bottom point) and dimension (x and y) of the soil sampling domain.
-    void SetSamplingVolume(double x, double z, const ChVector2<>& size) {
+    void SetSamplingVolume(const ChVector<>& offset, const ChVector2<>& size) {
         m_box_size.x() = size.x();
         m_box_size.y() = size.y();
-        m_box_x = x;
-        m_box_z = z;
+        m_box_offset = offset;
     }
 
     /// Initialize the data writer, specifying the output directory and output frequency parameters.
@@ -221,9 +223,8 @@ class DataWriter {
         std::string filename = m_dir + "/vehicle.csv";
         m_veh_stream.open(filename, std::ios_base::trunc);
 
-        cout << "Wheel sampling box size:       " << m_box_size << endl;
-        cout << "Wheel sampling box x location: " << m_box_x << endl;
-        cout << "Wheel sampling box z location: " << m_box_z << endl;
+        cout << "Wheel sampling box size:   " << m_box_size << endl;
+        cout << "Wheel sampling box offset: " << m_box_offset << endl;
     }
 
     /// Run the data writer at the current simulation frame.
@@ -262,8 +263,8 @@ class DataWriter {
             ChVector<> Z_dir(0, 0, 1);
             ChVector<> X_dir = Vcross(wheel_normal, ChVector<>(0, 0, 1)).GetNormalized();
             ChVector<> Y_dir = Vcross(Z_dir, X_dir);
-            ChVector<> box_pos(wheel_pos + ChVector<>(m_box_x, 0, m_box_z - tire_radius));
             ChMatrix33<> box_rot(X_dir, Y_dir, Z_dir);
+            ChVector<> box_pos = wheel_pos + box_rot * (m_box_offset - ChVector<>(0, 0, tire_radius));
 
             m_indices[i] = FindParticlesInBox(m_sysFSI, ConvertOBB(ChFrame<>(box_pos, box_rot), m_box_size));
         }
@@ -394,7 +395,9 @@ class DataWriter {
 
         stream.close();
 
+        // Write line to global vehicle output file
         m_veh_stream << m_vehicle->GetChTime() << "    ";
+        m_veh_stream << m_drv_inp.m_steering << " " << m_drv_inp.m_throttle << " " << m_drv_inp.m_braking << "    ";
         for (int i = 0; i < m_num_veh_outputs; i++)
             m_veh_stream << o[i] << "  ";
         m_veh_stream << "\n";
@@ -435,6 +438,7 @@ class DataWriter {
 
     bool m_out_vel;
     ChVector<> m_box_size;
+    ChVector<> m_box_offset;
     double m_box_x;
     double m_box_z;
 
@@ -689,6 +693,24 @@ int main(int argc, char* argv[]) {
 
     bool enable_terrain_mesh = false;
 
+    // Check input files exist
+    if (!filesystem::path(vehicle::GetDataFile(terrain_dir + "/sph_params.json")).exists()) {
+        std::cout << "Input file sph_params.json not found in directory " << terrain_dir << std::endl;
+        return 1;
+    }
+    if (!filesystem::path(vehicle::GetDataFile(terrain_dir + "/path.txt")).exists()) {
+        std::cout << "Input file path.txt not found in directory " << terrain_dir << std::endl;
+        return 1;
+    }
+    if (!filesystem::path(vehicle::GetDataFile(terrain_dir + "/particles_20mm.txt")).exists()) {
+        std::cout << "Input file particles_20mm.txt not found in directory " << terrain_dir << std::endl;
+        return 1;
+    }
+    if (!filesystem::path(vehicle::GetDataFile(terrain_dir + "/bce_20mm.txt")).exists()) {
+        std::cout << "Input file bce_20mm.txt not found in directory " << terrain_dir << std::endl;
+        return 1;
+    }
+
     // Create the Chrono systems
     ChSystemNSC sys;
     ChSystemFsi sysFSI(sys);
@@ -717,13 +739,21 @@ int main(int argc, char* argv[]) {
 
     // Create vehicle
     cout << "Create vehicle..." << endl;
-    ChCoordsys<> init_pos(ChVector<>(4, 0, 0.25), QUNIT);  //// TODO
+    double slope = 0;
+    double banking = 0;
+    if (filesystem::path(vehicle::GetDataFile(terrain_dir + "/slope.txt")).exists()) {
+        std::ifstream is(vehicle::GetDataFile(terrain_dir + "/slope.txt"));
+        is >> slope >> banking;
+        is.close();
+    }
+    ChCoordsys<> init_pos(ChVector<>(4, 0, 0.25 + 4 * std::sin(slope)), Q_from_AngX(banking) * Q_from_AngY(-slope));
     auto vehicle = CreateVehicle(sys, init_pos, sysFSI, params);
 
     // Create driver
     auto path = ChBezierCurve::read(vehicle::GetDataFile(terrain_dir + "/path.txt"));
-    ChPathFollowerDriver driver(*vehicle, path, "my_path", 0);
-    driver.GetSteeringController().SetLookAheadDistance(5);
+    double x_max = path->getPoint(path->getNumPoints() - 1).x() - 3.0;
+    ChPathFollowerDriver driver(*vehicle, path, "my_path", 0.0);
+    driver.GetSteeringController().SetLookAheadDistance(2.0);
     driver.GetSteeringController().SetGains(0.8, 0, 0);
     driver.GetSpeedController().SetGains(0.4, 0, 0);
     driver.Initialize();
@@ -735,7 +765,8 @@ int main(int argc, char* argv[]) {
     opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
     if (run_time_vis) {
         gl_window.Initialize(1280, 720, "JSON visualization", &sys);
-        gl_window.SetCamera(ChVector<>(0, -4, 2), ChVector<>(5, 0, 0.5), ChVector<>(0, 0, 1));
+        ////gl_window.SetCamera(ChVector<>(0, -4, 2), ChVector<>(5, 0, 0.5), ChVector<>(0, 0, 1));
+        gl_window.SetCamera(ChVector<>(-3, 0, 6), ChVector<>(5, 0, 0.5), ChVector<>(0, 0, 1));
         gl_window.SetRenderMode(opengl::SOLID);
         gl_window.EnableHUD(false);
     }
@@ -759,7 +790,6 @@ int main(int argc, char* argv[]) {
     // Simulation loop
     DriverInputs driver_inputs = {0, 0, 0};
     ChTerrain terrain;
-    double x_max = path->getPoint(path->getNumPoints() - 1).x() - 4;
 
     int vis_output_steps = (int)std::ceil((1.0 / vis_output_fps) / params->dT);
     int vis_output_frame = 0;
@@ -799,7 +829,7 @@ int main(int argc, char* argv[]) {
 
         // Set current driver inputs
         driver_inputs = driver.GetInputs();
-        //////driver_inputs.m_braking = 0;    //// RADU TODO Remove this!!!
+        driver_inputs.m_braking = 0;
         if (t < 1)
             driver_inputs.m_throttle = 0;
         else if (t < 1.5)
