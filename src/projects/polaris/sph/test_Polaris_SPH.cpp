@@ -21,6 +21,7 @@
 #include <fstream>
 #include <array>
 #include <stdexcept>
+#include <iomanip>
 
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/physics/ChSystemSMC.h"
@@ -55,7 +56,10 @@ using std::endl;
 
 enum class MRZR_MODEL {ORIGINAL, MODIFIED};
 
-MRZR_MODEL model = MRZR_MODEL::ORIGINAL;
+MRZR_MODEL model = MRZR_MODEL::MODIFIED;
+
+// Speed controller target speed (in m/s)
+double target_speed = 7;
 
 // -----------------------------------------------------------------------------
 
@@ -752,10 +756,10 @@ int main(int argc, char* argv[]) {
     // Create driver
     auto path = ChBezierCurve::read(vehicle::GetDataFile(terrain_dir + "/path.txt"));
     double x_max = path->getPoint(path->getNumPoints() - 1).x() - 3.0;
-    ChPathFollowerDriver driver(*vehicle, path, "my_path", 0.0);
+    ChPathFollowerDriver driver(*vehicle, path, "my_path", target_speed);
     driver.GetSteeringController().SetLookAheadDistance(2.0);
-    driver.GetSteeringController().SetGains(0.8, 0, 0);
-    driver.GetSpeedController().SetGains(0.4, 0, 0);
+    driver.GetSteeringController().SetGains(1.0, 0, 0);
+    driver.GetSpeedController().SetGains(0.6, 0.05, 0);
     driver.Initialize();
 
     // Finalize construction of FSI system
@@ -805,12 +809,9 @@ int main(int argc, char* argv[]) {
         }
 #endif
 
-        //// TODO
+        // Stop before end of patch
         if (vehicle->GetPos().x() > x_max)
             break;
-
-        if (verbose)
-            cout << "t = " << t << "  pos = " << vehicle->GetPos() << "  spd = " << vehicle->GetSpeed() << endl;
 
         // Simulation data output
         if (sim_output)
@@ -829,13 +830,18 @@ int main(int argc, char* argv[]) {
 
         // Set current driver inputs
         driver_inputs = driver.GetInputs();
-        driver_inputs.m_braking = 0;
-        if (t < 1)
+
+        if (t < 1) {
             driver_inputs.m_throttle = 0;
-        else if (t < 1.5)
-            driver_inputs.m_throttle = (t - 1) / 0.5;
-        else
-            driver_inputs.m_throttle = 1;
+            driver_inputs.m_braking = 1;
+        } else {
+            ChClampValue(driver_inputs.m_throttle, driver_inputs.m_throttle, (t - 1) / 0.5);
+        }
+
+        if (verbose)
+            cout << std::fixed << std::setprecision(3) << "t = " << t << "  STB = " << driver_inputs.m_steering << " "
+                 << driver_inputs.m_throttle << " " << driver_inputs.m_braking << "  spd = " << vehicle->GetSpeed()
+                 << endl;
 
         driver.Synchronize(t);
         vehicle->Synchronize(t, driver_inputs, terrain);
