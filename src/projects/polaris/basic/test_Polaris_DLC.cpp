@@ -52,7 +52,10 @@ int main(int argc, char* argv[]) {
     std::string vehicle_json = model_dir + "vehicle/MRZR.json";
     ////std::string powertrain_json = model_dir + "powertrain/MRZR_SimplePowertrain.json";
     std::string powertrain_json = model_dir + "powertrain/MRZR_SimpleMapPowertrain.json";
+
+    ////std::string tire_json = model_dir + "tire/MRZR_RigidTire.json";
     std::string tire_json = model_dir + "tire/MRZR_TMeasyTire.json";
+    ////std::string tire_json = model_dir + "tire/MRZR_Pac02Tire.json";
 
     // Create the vehicle system
     auto contact_method = ChContactMethod::SMC;

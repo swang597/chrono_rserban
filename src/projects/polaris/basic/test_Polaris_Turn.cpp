@@ -1,7 +1,7 @@
 // =============================================================================
 // PROJECT CHRONO - http://projectchrono.org
 //
-// Copyright (c) 2022 projectchrono.org
+// Copyright (c) 2014 projectchrono.org
 // All rights reserved.
 //
 // Use of this source code is governed by a BSD-style license that can be found
@@ -12,14 +12,9 @@
 // Authors: Radu Serban
 // =============================================================================
 //
-// Polaris acceleration test.
-//
-// The vehicle reference frame has Z up, X towards the front of the vehicle, and
-// Y pointing to the left.
-//
+// Polaris turning radius test
+// 
 // =============================================================================
-
-#include <cmath>
 
 #include "chrono/core/ChRealtimeStep.h"
 #include "chrono/utils/ChFilters.h"
@@ -51,18 +46,24 @@ enum class MRZR_MODEL { ORIGINAL, MODIFIED };
 
 MRZR_MODEL model = MRZR_MODEL::MODIFIED;
 
-// -----------------------------------------------------------------------------
+// =============================================================================
+
+// Initial vehicle location and orientation
+ChVector<> initLoc(0, 1, 10);
+double initYaw = 0;
+////double initYaw = CH_C_PI / 4;  // 45 deg towards vehicle's left
+
+
+// =============================================================================
 
 int main(int argc, char* argv[]) {
-    double length = 800;
-
     std::string model_dir = (model == MRZR_MODEL::ORIGINAL) ? "mrzr/JSON_orig/" : "mrzr/JSON_new/";
 
     std::string vehicle_json = model_dir + "vehicle/MRZR.json";
 
     ////std::string powertrain_json = model_dir + "powertrain/MRZR_SimplePowertrain.json";
     std::string powertrain_json = model_dir + "powertrain/MRZR_SimpleMapPowertrain.json";
-    
+
     ////std::string tire_json = model_dir + "tire/MRZR_RigidTire.json";
     ////std::string tire_json = model_dir + "tire/MRZR_TMeasyTire.json";
     std::string tire_json = model_dir + "tire/MRZR_Pac02Tire.json";
@@ -70,7 +71,7 @@ int main(int argc, char* argv[]) {
     // Create the vehicle system
     auto contact_method = ChContactMethod::SMC;
     WheeledVehicle vehicle(vehicle::GetDataFile(vehicle_json), contact_method);
-    vehicle.Initialize(ChCoordsys<>(ChVector<>(-length / 2 + 5, 0, 0.2), QUNIT));
+    vehicle.Initialize(ChCoordsys<>(ChVector<>(0, 0, 0.2), QUNIT));
     vehicle.GetChassis()->SetFixed(false);
     vehicle.SetChassisVisualizationType(VisualizationType::MESH);
     vehicle.SetSuspensionVisualizationType(VisualizationType::PRIMITIVES);
@@ -96,17 +97,18 @@ int main(int argc, char* argv[]) {
     patch_mat->SetRestitution(0.01f);
     patch_mat->SetYoungModulus(2e7f);
     patch_mat->SetPoissonRatio(0.3f);
-    auto patch = terrain.AddPatch(patch_mat, ChVector<>(0, 0, 0), ChVector<>(0, 0, 1), length, 5);
+    auto patch = terrain.AddPatch(patch_mat, ChVector<>(0, 0, 0), ChVector<>(0, 0, 1), 200, 200);
     patch->SetColor(ChColor(0.8f, 0.8f, 0.5f));
-    patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 5);
+    patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 200);
     terrain.Initialize();
 
-    // Create the straight path and the driver system
-    auto path = StraightLinePath(ChVector<>(-length / 2, 0, 0.5), ChVector<>(length / 2, 0, 0.5), 1);
-    ChPathFollowerDriver driver(vehicle, path, "my_path", 1000.0);
-    driver.GetSteeringController().SetLookAheadDistance(5.0);
+    // Path follower driver
+    auto path = CirclePath(ChVector<>(0,0,0.5), 6, 20, true, 5);
+
+    ChPathFollowerDriver driver(vehicle, path, "my_path", 3);
+    driver.GetSteeringController().SetLookAheadDistance(2.0);
     driver.GetSteeringController().SetGains(0.5, 0, 0);
-    driver.GetSpeedController().SetGains(0.4, 0, 0);
+    driver.GetSpeedController().SetGains(0.8, 0, 0);
     driver.Initialize();
 
     // Create the vehicle Irrlicht interface
@@ -116,69 +118,36 @@ int main(int argc, char* argv[]) {
     vis->Initialize();
     vis->AddSkyBox();
     vis->AddLogo();
-    vis->AddLight(ChVector<>(0, -30, 100), 250, ChColor(0.7f, 0.7f, 0.7f));
-    vis->AddLight(ChVector<>(0, 50, 100), 130, ChColor(0.7f, 0.7f, 0.7f));
-    vis->AddLight(ChVector<>(-300, -30, 100), 250, ChColor(0.7f, 0.7f, 0.7f));
-    vis->AddLight(ChVector<>(-300, 50, 100), 130, ChColor(0.7f, 0.7f, 0.7f));
-    vis->AddLight(ChVector<>(+300, -30, 100), 250, ChColor(0.7f, 0.7f, 0.7f));
-    vis->AddLight(ChVector<>(+300, 50, 100), 130, ChColor(0.7f, 0.7f, 0.7f));
+    vis->AddTypicalLights();
     vehicle.SetVisualSystem(vis);
 
-    // Running average of vehicle speed
-    utils::ChRunningAverage speed_filter(500);
-    double last_speed = -1;
+    // Visualization of controller points (sentinel & target)
+    irr::scene::IMeshSceneNode* ballS = vis->GetSceneManager()->addSphereSceneNode(0.1f);
+    irr::scene::IMeshSceneNode* ballT = vis->GetSceneManager()->addSphereSceneNode(0.1f);
+    ballS->getMaterial(0).EmissiveColor = irr::video::SColor(0, 255, 0, 0);
+    ballT->getMaterial(0).EmissiveColor = irr::video::SColor(0, 0, 255, 0);
 
-    // Record vehicle speed
-    ChFunction_Recorder speed_recorder;
-
-    // Initialize simulation frame counter and simulation time
-    double step_size = 1e-3;
-    int step_number = 0;
-    double time = 0;
-    bool done = false;
-
+    // ---------------
     // Simulation loop
-    ChTimer<> timer;
-    timer.start();
+    // ---------------
+    double step_size = 1e-3;
+    ChRealtimeStepTimer realtime_timer;
+    utils::ChRunningAverage RTF_filter(50);
+
     while (vis->Run()) {
-        time = vehicle.GetSystem()->GetChTime();
+        double time = vehicle.GetChTime();
 
-        double speed = speed_filter.Add(vehicle.GetSpeed());
-        if (!done) {
-            speed_recorder.AddPoint(time, speed);
-            if (time > 6 && std::abs((speed - last_speed) / step_size) < 2e-4) {
-                done = true;
-                timer.stop();
-                std::cout << "Simulation time: " << timer() << std::endl;
-                std::cout << "Maximum speed: " << speed << std::endl;
-#ifdef CHRONO_POSTPROCESS
-                postprocess::ChGnuPlot gplot;
-                gplot.SetGrid();
-                gplot.SetLabelX("time (s)");
-                gplot.SetLabelY("speed (m/s)");
-                gplot.Plot(speed_recorder, "", " with lines lt -1 lc rgb'#00AAEE' ");
-#endif
-            }
-        }
-        last_speed = speed;
-
-        // End simulation
-        if (time >= 100)
-            break;
-
-        if (vehicle.GetPos().x() > length / 2 - 10)
-            break;
+        const ChVector<>& pS = driver.GetSteeringController().GetSentinelLocation();
+        const ChVector<>& pT = driver.GetSteeringController().GetTargetLocation();
+        ballS->setPosition(irr::core::vector3df((irr::f32)pS.x(), (irr::f32)pS.y(), (irr::f32)pS.z()));
+        ballT->setPosition(irr::core::vector3df((irr::f32)pT.x(), (irr::f32)pT.y(), (irr::f32)pT.z()));
 
         vis->BeginScene();
         vis->DrawAll();
+        vis->EndScene();
 
         // Driver inputs
         DriverInputs driver_inputs = driver.GetInputs();
-
-        if (done) {
-            driver_inputs.m_throttle = 0.1;
-            driver_inputs.m_braking = 0.8;
-        }
 
         // Update modules (process inputs from other modules)
         driver.Synchronize(time);
@@ -192,10 +161,9 @@ int main(int argc, char* argv[]) {
         vehicle.Advance(step_size);
         vis->Advance(step_size);
 
-        // Increment frame number
-        step_number++;
-
-        vis->EndScene();
+        // Spin in place for real time to catch up
+        realtime_timer.Spin(step_size);
+        ////std::cout << RTF_filter.Add(realtime_timer.RTF) << std::endl;
     }
 
     return 0;
