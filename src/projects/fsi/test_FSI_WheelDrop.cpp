@@ -82,6 +82,9 @@ double wheel_slip;
 auto actuator = chrono_types::make_shared<ChLinkLinActuator>();
 auto motor = chrono_types::make_shared<ChLinkMotorRotationAngle>();
 
+// Wheel OBJ file
+auto wheel_obj = GetChronoDataFile("vehicle/hmmwv/hmmwv_tire_coarse_closed.obj");
+
 //------------------------------------------------------------------
 // Function to save wheel to Paraview VTK files
 //------------------------------------------------------------------
@@ -94,9 +97,8 @@ void WritewheelVTK(ChSystemSMC& mphysicalSystem,
     ChQuaternion<> body_rot = body_ref_frame.GetRot();//body->GetRot(); 
 
     auto mmesh = chrono_types::make_shared<ChTriangleMeshConnected>();
-    std::string obj_path = "./hmmwv_tire_coarse_closed_small.obj";
     double scale_ratio = 1.0;
-    mmesh->LoadWavefrontMesh(obj_path, false, true);
+    mmesh->LoadWavefrontMesh(wheel_obj, false, true);
     mmesh->Transform(ChVector<>(0, 0, 0), ChMatrix33<>(scale_ratio));     // scale to a different size
     mmesh->RepairDuplicateVertexes(1e-9);                                 // if meshes are not watertight                 
 
@@ -338,9 +340,8 @@ void CreateSolidPhase(ChSystemSMC& mphysicalSystem,
     // -----------------------------------------------------
     // load mesh from obj file
     auto mmesh = chrono_types::make_shared<ChTriangleMeshConnected>();
-    std::string obj_path = GetChronoDataFile ("vehicle/hmmwv/hmmwv_tire_coarse_closed.obj");
     double scale_ratio = 1.0;
-    mmesh->LoadWavefrontMesh(obj_path, false, true);
+    mmesh->LoadWavefrontMesh(wheel_obj, false, true);
     // mmesh->Transform(ChVector<>(0, 0, 0), ChMatrix33<>(body_rot));       // rotate the mesh if needed
     mmesh->Transform(ChVector<>(0, 0, 0), ChMatrix33<>(scale_ratio));     // scale to a different size
     mmesh->RepairDuplicateVertexes(1e-9);                                 // if meshes are not watertight                 
