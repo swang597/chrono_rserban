@@ -205,8 +205,8 @@ class DataWriter {
     void Initialize(const std::string& dir, double major_FPS, double minor_FPS, int num_minor, double step_size) {
         m_dir = dir;
         m_out_frames = num_minor;
-        m_major_skip = (int)std::ceil((1.0 / major_FPS) / step_size);
-        m_minor_skip = (int)std::ceil((1.0 / minor_FPS) / step_size);
+        m_major_skip = (int)std::round((1.0 / major_FPS) / step_size);
+        m_minor_skip = (int)std::round((1.0 / minor_FPS) / step_size);
         m_major_frame = -1;
         m_minor_frame = 0;
 
@@ -218,7 +218,7 @@ class DataWriter {
 
         // Create filters
         if (m_filter) {
-            int steps = (int)std::ceil(m_filter_window / step_size);
+            int steps = (int)std::round(m_filter_window / step_size);
             for (int i = 0; i < m_num_veh_outputs; i++) {
                 m_veh_filters[i] = chrono_types::make_shared<chrono::utils::ChRunningAverage>(steps);
             }
@@ -795,7 +795,7 @@ int main(int argc, char* argv[]) {
     DriverInputs driver_inputs = {0, 0, 0};
     ChTerrain terrain;
 
-    int vis_output_steps = (int)std::ceil((1.0 / vis_output_fps) / params->dT);
+    int vis_output_steps = (int)std::round((1.0 / vis_output_fps) / params->dT);
     int vis_output_frame = 0;
 
     double t = 0;
