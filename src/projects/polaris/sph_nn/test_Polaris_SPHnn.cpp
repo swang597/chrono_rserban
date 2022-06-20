@@ -43,7 +43,10 @@
 #include "chrono_thirdparty/cxxopts/ChCLI.h"
 #include "chrono_thirdparty/filesystem/path.h"
 
+#include <torch/torch.h>
 #include <torch/script.h>
+#include <torchscatter/scatter.h>
+#include <torchcluster/cluster.h>
 
 using namespace chrono;
 using namespace chrono::vehicle;
@@ -135,7 +138,6 @@ NNterrain::NNterrain(ChSystem& sys, std::shared_ptr<WheeledVehicle> vehicle) : m
 }
 
 bool NNterrain::Load(const std::string& pt_file) {
-    cout << "PT file: " << pt_file << endl;
     std::ifstream is(pt_file, std::ios_base::binary);
     try {
         // Deserialize the ScriptModule from a file using torch::jit::load().

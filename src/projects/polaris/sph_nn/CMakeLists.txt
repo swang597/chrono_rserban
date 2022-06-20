@@ -21,7 +21,11 @@ endif()
 #--------------------------------------------------------------
 
 find_package(Torch REQUIRED)
+find_package(TorchCluster REQUIRED)
 find_package(TorchScatter REQUIRED)
+
+message("TorchScatter_INCLUDE_DIR ${TorchScatter_INCLUDE_DIR}")
+message("TorchCluster_INCLUDE_DIR ${TorchCluster_INCLUDE_DIR}")
 
 #--------------------------------------------------------------
 
@@ -30,7 +34,7 @@ set(PROGRAM test_Polaris_SPHnn)
 
 message(STATUS "...add ${PROGRAM}")
 
-cuda_add_executable(${PROGRAM}  "${PROGRAM}.cpp")
+add_executable(${PROGRAM}  "${PROGRAM}.cpp")
 source_group(""  FILES "${PROGRAM}.cpp")
 
 set_target_properties(${PROGRAM} PROPERTIES
@@ -40,6 +44,11 @@ set_target_properties(${PROGRAM} PROPERTIES
 )
 set_property(TARGET ${PROGRAM} PROPERTY CXX_STANDARD 14)
 set_property(TARGET ${PROGRAM} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROGRAM}>")
+
+target_include_directories(${PROGRAM} PRIVATE ${TorchScatter_INCLUDE_DIR})
+target_include_directories(${PROGRAM} PRIVATE ${TorchCluster_INCLUDE_DIR})
+
 target_link_libraries(${PROGRAM} ${LIBRARIES})
-target_link_libraries(${PROGRAM} "${TORCH_LIBRARIES}")
+target_link_libraries(${PROGRAM} ${TORCH_LIBRARIES})
 target_link_libraries(${PROGRAM} TorchScatter::TorchScatter)
+target_link_libraries(${PROGRAM} TorchCluster::TorchCluster)

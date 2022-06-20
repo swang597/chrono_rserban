@@ -1,3 +1,7 @@
+if(NOT ENABLE_MODULE_VEHICLE)
+    return()
+endif()
+
 message(STATUS "Projects: Polaris...")
 
 add_subdirectory(basic)
