@@ -24,8 +24,21 @@ find_package(Torch REQUIRED)
 find_package(TorchCluster REQUIRED)
 find_package(TorchScatter REQUIRED)
 
-message("TorchScatter_INCLUDE_DIR ${TorchScatter_INCLUDE_DIR}")
-message("TorchCluster_INCLUDE_DIR ${TorchCluster_INCLUDE_DIR}")
+if(NOT Torch_FOUND)
+  message(STATUS "Torch package not found - disabling Polaris NN test")
+  return()
+endif()
+if(NOT TorchCluster_FOUND)
+  message(STATUS "TorchCluster package not found - disabling Polaris NN test")
+  return()
+endif()
+if(NOT TorchScatter_FOUND)
+  message(STATUS "TorchScatter package not found - disabling Polaris NN test")
+  return()
+endif()
+
+message(STATUS "TorchScatter_INCLUDE_DIR ${TorchScatter_INCLUDE_DIR}")
+message(STATUS "TorchCluster_INCLUDE_DIR ${TorchCluster_INCLUDE_DIR}")
 
 #--------------------------------------------------------------
 
