@@ -23,6 +23,7 @@
 #include <stdexcept>
 #include <iomanip>
 #include <algorithm>
+#include <numeric>
 
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/physics/ChSystemSMC.h"
@@ -35,6 +36,7 @@
 #include "chrono_vehicle/utils/ChUtilsJSON.h"
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"
 #include "chrono_vehicle/wheeled_vehicle/vehicle/WheeledVehicle.h"
+#include "chrono_vehicle/wheeled_vehicle/tire/RigidTire.h"
 
 #ifdef CHRONO_OPENGL
     #include "chrono_opengl/ChOpenGLWindow.h"
@@ -102,6 +104,16 @@ bool GetProblemSpecs(int argc,
 
 // -----------------------------------------------------------------------------
 
+class ProxyTire : public RigidTire {
+  public:
+    ProxyTire(const rapidjson::Document& d) : RigidTire(d) {}
+    virtual TerrainForce ReportTireForce(ChTerrain* terrain) const override { return m_force; }
+    virtual TerrainForce GetTireForce() const { return m_force; }
+    TerrainForce m_force;
+};
+
+// -----------------------------------------------------------------------------
+
 class NNterrain : public ChTerrain {
   public:
     NNterrain(ChSystem& sys, std::shared_ptr<WheeledVehicle> vehicle);
@@ -119,6 +131,7 @@ class NNterrain : public ChTerrain {
     ChVector<> m_box_size;
     ChVector<> m_box_offset;
     std::array<std::vector<ChAparticle*>,4> m_wheel_particles;
+    std::array<size_t, 4> m_num_particles;
 
     torch::jit::script::Module module;
     std::array<std::vector<ChVector<>>, 4> m_particle_forces;
@@ -244,9 +257,15 @@ void NNterrain::Synchronize(double time, const DriverInputs& driver_inputs) {
         ChVector<> box_pos = w_pos + box_rot * (m_box_offset - ChVector<>(0, 0, tire_radius));
 
         // Find particles in sampling OBB
+        m_wheel_particles[i].resize(p_all.size());
         auto end = std::copy_if(p_all.begin(), p_all.end(), m_wheel_particles[i].begin(), in_box(box_pos, box_rot, m_box_size));
-        size_t num_active = (size_t)(end - m_wheel_particles[i].begin());
-        m_wheel_particles[i].resize(num_active);
+        m_num_particles[i] = (size_t)(end - m_wheel_particles[i].begin());
+        m_wheel_particles[i].resize(m_num_particles[i]);
+
+        // Do nothing if no particles under a wheel
+        if (m_num_particles[i] == 0) {
+            return;
+        }
 
         // Load particle positions and velocities
         auto part_pos = torch::empty(m_wheel_particles[i].size() * 3, torch::kFloat32);
@@ -299,8 +318,7 @@ void NNterrain::Synchronize(double time, const DriverInputs& driver_inputs) {
         auto tire_frc = outputs.toTuple()->elements()[i + 4].toTensor();
 
         // Extract particle forces
-        size_t num_active = m_wheel_particles[i].size();
-        m_particle_forces[i].resize(num_active);
+        m_particle_forces[i].resize(m_num_particles[i]);
         float* part_frc_data = part_frc.data<float>();
         for (auto& frc : m_particle_forces[i]) {
             frc = ChVector<>(*part_frc_data++, *part_frc_data++, *part_frc_data++);
@@ -311,19 +329,22 @@ void NNterrain::Synchronize(double time, const DriverInputs& driver_inputs) {
         m_tire_forces[i].force = ChVector<>(*tire_frc_data++, *tire_frc_data++, *tire_frc_data++);
         m_tire_forces[i].moment = ChVector<>(*tire_frc_data++, *tire_frc_data++, *tire_frc_data++);
         m_tire_forces[i].point = ChVector<>(0, 0, 0);
-    }
 
-    //// TODO - sync with vehicle
+        std::static_pointer_cast<ProxyTire>(m_wheels[i]->GetTire())->m_force = m_tire_forces[i];
+    }
 }
 
 void NNterrain::Advance(double step) {
+    // Do nothing if there is at least one sampling box with no particles
+    auto product = std::accumulate(m_num_particles.begin(), m_num_particles.end(), 1, std::multiplies<int>());
+    if (product == 0)
+        return;
+
     // Update state of particles in sampling boxes.
     // Assume mass=1 for all particles.
     double step2 = step * step / 2;
     for (int i = 0; i < 4; i++) {
-        size_t num_active = m_wheel_particles[i].size();
-
-        for (size_t j = 0; j < num_active; j++) {
+        for (size_t j = 0; j < m_num_particles[i]; j++) {
             auto v = m_wheel_particles[i][j]->GetPos_dt() + m_particle_forces[i][j] * step; 
             auto p = m_wheel_particles[i][j]->GetPos() + v * step + m_particle_forces[i][j] * step2;
             m_wheel_particles[i][j]->SetPos(p);
@@ -412,7 +433,7 @@ int main(int argc, char* argv[]) {
         is >> slope >> banking;
         is.close();
     }
-    ChCoordsys<> init_pos(ChVector<>(4, 0, 0.25 + 4 * std::sin(slope)), Q_from_AngX(banking) * Q_from_AngY(-slope));
+    ChCoordsys<> init_pos(ChVector<>(4, 0, 0.05 + 4 * std::sin(slope)), Q_from_AngX(banking) * Q_from_AngY(-slope));
     auto vehicle = CreateVehicle(sys, init_pos);
 
     // Create driver
