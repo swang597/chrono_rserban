@@ -106,6 +106,7 @@ bool GetProblemSpecs(int argc,
 
 class ProxyTire : public RigidTire {
   public:
+    ProxyTire(const std::string& filename) : RigidTire(filename) {}
     ProxyTire(const rapidjson::Document& d) : RigidTire(d) {}
     virtual TerrainForce ReportTireForce(ChTerrain* terrain) const override { return m_force; }
     virtual TerrainForce GetTireForce() const { return m_force; }
@@ -122,6 +123,10 @@ class NNterrain : public ChTerrain {
     void Synchronize(double time, const DriverInputs& driver_inputs);
     virtual void Advance(double step) override;
 
+    double GetTimerDataIn() { return m_timer_data_in(); }
+    double GetTimerModelEval() { return m_timer_model_eval(); }
+    double GetTimerDataOut() { return m_timer_data_out(); }
+
   private:
     ChSystem& m_sys;
     std::shared_ptr<WheeledVehicle> m_vehicle;
@@ -136,6 +141,10 @@ class NNterrain : public ChTerrain {
     torch::jit::script::Module module;
     std::array<std::vector<ChVector<>>, 4> m_particle_forces;
     std::array<TerrainForce, 4> m_tire_forces;
+
+    ChTimer<> m_timer_data_in;
+    ChTimer<> m_timer_model_eval;
+    ChTimer<> m_timer_data_out;
 };
 
 NNterrain::NNterrain(ChSystem& sys, std::shared_ptr<WheeledVehicle> vehicle) : m_sys(sys), m_vehicle(vehicle) {
@@ -233,10 +242,15 @@ struct in_box {
 };
 
 void NNterrain::Synchronize(double time, const DriverInputs& driver_inputs) {
-    const auto& p_all = m_particles->GetParticles();
+    m_timer_data_in.reset();
+    m_timer_model_eval.reset();
+    m_timer_data_out.reset();
 
     // Prepare NN model inputs
+    const auto& p_all = m_particles->GetParticles();
     std::vector<torch::jit::IValue> inputs;
+
+    m_timer_data_in.start();
 
     // Loop over all vehicle wheels
     for (int i = 0; i < 4; i++) {
@@ -267,9 +281,11 @@ void NNterrain::Synchronize(double time, const DriverInputs& driver_inputs) {
             return;
         }
 
+        std::cout << "  wheel " << i << " num. particles: " << m_num_particles[i] << std::endl;
+
         // Load particle positions and velocities
-        auto part_pos = torch::empty(m_wheel_particles[i].size() * 3, torch::kFloat32);
-        auto part_vel = torch::empty(m_wheel_particles[i].size() * 3, torch::kFloat32);
+        auto part_pos = torch::empty({(int)m_num_particles[i], 3}, torch::kFloat32);
+        auto part_vel = torch::empty({(int)m_num_particles[i], 3}, torch::kFloat32);
         float* part_pos_data = part_pos.data<float>();
         float* part_vel_data = part_vel.data<float>();
         for (const auto& part : m_wheel_particles[i]) {
@@ -294,7 +310,7 @@ void NNterrain::Synchronize(double time, const DriverInputs& driver_inputs) {
         tuple.push_back(part_pos);
         tuple.push_back(part_vel);
         tuple.push_back(w_pos_t);
-        ////tuple.push_back(w_rot_t);
+        tuple.push_back(w_rot_t);
         tuple.push_back(w_linvel_t);
         tuple.push_back(w_angvel_t);
 
@@ -308,8 +324,27 @@ void NNterrain::Synchronize(double time, const DriverInputs& driver_inputs) {
     // Add the vehicle data to NN model inputs
     inputs.push_back(drv_inputs);
 
+    m_timer_data_in.stop();
+
     // Invoke NN model
-    auto outputs = module.forward(inputs);
+
+    m_timer_model_eval.start();
+    torch::jit::IValue outputs;
+    try {
+        outputs = module.forward(inputs);
+    } catch (const c10::Error& e) {
+        cerr << "Execute error: " << e.msg() << endl;
+        return;
+    } catch (const std::exception& e) {
+        cerr << "Execute error other: " << e.what() << endl;
+        return;
+    }
+    ////auto outputs = module.forward(inputs);
+    m_timer_model_eval.stop();
+
+    // Extract outputs
+
+    m_timer_data_out.start();
 
     // Loop over all vehicle wheels
     for (int i = 0; i < 4; i++) {
@@ -331,7 +366,10 @@ void NNterrain::Synchronize(double time, const DriverInputs& driver_inputs) {
         m_tire_forces[i].point = ChVector<>(0, 0, 0);
 
         std::static_pointer_cast<ProxyTire>(m_wheels[i]->GetTire())->m_force = m_tire_forces[i];
+        std::cout << "  tire " << i << " force: " << m_tire_forces[i].force << std::endl;
     }
+
+    m_timer_data_out.stop();
 }
 
 void NNterrain::Advance(double step) {
@@ -382,7 +420,7 @@ std::shared_ptr<WheeledVehicle> CreateVehicle(ChSystem& sys,
     // Create and initialize the tires
     for (auto& axle : vehicle->GetAxles()) {
         for (auto& wheel : axle->GetWheels()) {
-            auto tire = ReadTireJSON(vehicle::GetDataFile(tire_json));
+            auto tire = chrono_types::make_shared<ProxyTire>(vehicle::GetDataFile(tire_json));
             vehicle->InitializeTire(tire, wheel, VisualizationType::MESH);
         }
     }
@@ -394,7 +432,7 @@ int main(int argc, char* argv[]) {
     // Parse command line arguments
     std::string terrain_dir;
     double tend = 30;
-    bool run_time_vis = false;      // no run-time visualization
+    bool run_time_vis = false;
     bool verbose = true;
 
     if (!GetProblemSpecs(argc, argv, terrain_dir, tend, run_time_vis, verbose)) {
@@ -449,7 +487,7 @@ int main(int argc, char* argv[]) {
     cout << "Create terrain..." << endl;
     NNterrain terrain(sys, vehicle);
     terrain.Create(terrain_dir);
-    if (!terrain.Load(vehicle::GetDataFile("terrain/sph/wrapped_gnn_seqlen_1_force_cpu.pt"))) {
+    if (!terrain.Load(vehicle::GetDataFile("terrain/sph/wrapped_gnn_markers_cpu.pt"))) {
         return 1;
     }
 
@@ -496,7 +534,8 @@ int main(int argc, char* argv[]) {
         if (verbose)
             cout << std::fixed << std::setprecision(3) << "t = " << t << "  STB = " << driver_inputs.m_steering << " "
                  << driver_inputs.m_throttle << " " << driver_inputs.m_braking << "  spd = " << vehicle->GetSpeed()
-                 << endl;
+                 << "   timers = " << terrain.GetTimerDataIn() << " " << terrain.GetTimerModelEval() << " "
+                 << terrain.GetTimerDataOut() << endl;
 
         // Synchronize subsystems
         driver.Synchronize(t);
