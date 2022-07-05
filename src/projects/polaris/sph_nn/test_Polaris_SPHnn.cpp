@@ -60,12 +60,15 @@ using std::endl;
 
 // -----------------------------------------------------------------------------
 
-enum class MRZR_MODEL {ORIGINAL, MODIFIED};
+enum class MRZR_MODEL { ORIGINAL, MODIFIED };
 
 MRZR_MODEL model = MRZR_MODEL::MODIFIED;
 
 // Speed controller target speed (in m/s)
 double target_speed = 7;
+
+// NN model
+std::string NN_module_name = "terrain/sph/wrapped_gnn_markers_cpu.pt";
 
 // -----------------------------------------------------------------------------
 
@@ -74,12 +77,14 @@ bool GetProblemSpecs(int argc,
                      std::string& terrain_dir,
                      double& tend,
                      bool& run_time_vis,
-                     bool& verbose) {
+                     bool& verbose,
+                     bool& verbose_nn) {
     ChCLI cli(argv[0], "Polaris SPH terrain simulation");
 
     cli.AddOption<std::string>("", "terrain_dir", "Directory with terrain specification data");
     cli.AddOption<double>("", "tend", "Simulation end time [s]", std::to_string(tend));
     cli.AddOption<bool>("", "quiet", "Disable all messages during simulation");
+    cli.AddOption<bool>("", "quiet_nn", "Disable all messages from NN model");
     cli.AddOption<bool>("", "run_time_vis", "Enable run-time visualization");
 
     if (!cli.Parse(argc, argv)) {
@@ -98,6 +103,7 @@ bool GetProblemSpecs(int argc,
     run_time_vis = cli.GetAsType<bool>("run_time_vis");
     tend = cli.GetAsType<double>("tend");
     verbose = !cli.GetAsType<bool>("quiet");
+    verbose_nn = !cli.GetAsType<bool>("quiet_nn");
 
     return true;
 }
@@ -127,6 +133,8 @@ class NNterrain : public ChTerrain {
     double GetTimerModelEval() { return m_timer_model_eval(); }
     double GetTimerDataOut() { return m_timer_data_out(); }
 
+    void SetVerbose(bool val) { m_verbose = val; }
+
   private:
     ChSystem& m_sys;
     std::shared_ptr<WheeledVehicle> m_vehicle;
@@ -135,7 +143,7 @@ class NNterrain : public ChTerrain {
 
     ChVector<> m_box_size;
     ChVector<> m_box_offset;
-    std::array<std::vector<ChAparticle*>,4> m_wheel_particles;
+    std::array<std::vector<ChAparticle*>, 4> m_wheel_particles;
     std::array<size_t, 4> m_num_particles;
 
     torch::jit::script::Module module;
@@ -145,9 +153,12 @@ class NNterrain : public ChTerrain {
     ChTimer<> m_timer_data_in;
     ChTimer<> m_timer_model_eval;
     ChTimer<> m_timer_data_out;
+
+    bool m_verbose;
 };
 
-NNterrain::NNterrain(ChSystem& sys, std::shared_ptr<WheeledVehicle> vehicle) : m_sys(sys), m_vehicle(vehicle) {
+NNterrain::NNterrain(ChSystem& sys, std::shared_ptr<WheeledVehicle> vehicle)
+    : m_sys(sys), m_vehicle(vehicle), m_verbose(true) {
     m_wheels[0] = vehicle->GetWheel(0, LEFT);
     m_wheels[1] = vehicle->GetWheel(0, RIGHT);
     m_wheels[2] = vehicle->GetWheel(1, LEFT);
@@ -258,6 +269,7 @@ void NNterrain::Synchronize(double time, const DriverInputs& driver_inputs) {
     std::array<ChVector<float>, 4> w_nrm;
     std::array<ChVector<float>, 4> w_linvel;
     std::array<ChVector<float>, 4> w_angvel;
+    std::array<bool, 4> w_contact;
     for (int i = 0; i < 4; i++) {
         // Wheel state
         const auto& w_state = m_wheels[i]->GetState();
@@ -278,7 +290,8 @@ void NNterrain::Synchronize(double time, const DriverInputs& driver_inputs) {
 
         // Find particles in sampling OBB
         m_wheel_particles[i].resize(p_all.size());
-        auto end = std::copy_if(p_all.begin(), p_all.end(), m_wheel_particles[i].begin(), in_box(box_pos, box_rot, m_box_size));
+        auto end = std::copy_if(p_all.begin(), p_all.end(), m_wheel_particles[i].begin(),
+                                in_box(box_pos, box_rot, m_box_size));
         m_num_particles[i] = (size_t)(end - m_wheel_particles[i].begin());
         m_wheel_particles[i].resize(m_num_particles[i]);
 
@@ -288,6 +301,7 @@ void NNterrain::Synchronize(double time, const DriverInputs& driver_inputs) {
         }
 
         // Load particle positions and velocities
+        w_contact[i] = false;
         auto part_pos = torch::empty({(int)m_num_particles[i], 3}, torch::kFloat32);
         auto part_vel = torch::empty({(int)m_num_particles[i], 3}, torch::kFloat32);
         float* part_pos_data = part_pos.data<float>();
@@ -301,6 +315,9 @@ void NNterrain::Synchronize(double time, const DriverInputs& driver_inputs) {
             *part_vel_data++ = v.x();
             *part_vel_data++ = v.y();
             *part_vel_data++ = v.z();
+
+            if (!w_contact[i] && (p - w_pos[i]).Length2() < tire_radius * tire_radius)
+                w_contact[i] = true;
         }
 
         // Load wheel position, orientation, linear velocity, and angular velocity
@@ -328,11 +345,14 @@ void NNterrain::Synchronize(double time, const DriverInputs& driver_inputs) {
         }
 #endif
 
-#if 0
-        std::cout << "wheel " << i << std::endl;
-        std::cout << "  num. particles: " << m_num_particles[i] << std::endl;
-        std::cout << "  position:       " << w_pos[i] << std::endl;
-        std::cout << "  pos. address:   " << w_pos[i].data() << std::endl;
+#if 1
+        if (m_verbose) {
+            std::cout << "wheel " << i << std::endl;
+            std::cout << "  num. particles: " << m_num_particles[i] << std::endl;
+            std::cout << "  position:       " << w_pos[i] << std::endl;
+            std::cout << "  pos. address:   " << w_pos[i].data() << std::endl;
+            std::cout << "  in contact:     " << w_contact[i] << std::endl;
+        }
 #endif
 
         // Prepare the tuple input for this wheel
@@ -349,10 +369,13 @@ void NNterrain::Synchronize(double time, const DriverInputs& driver_inputs) {
     }
 
     // Load vehicle data (1 tensor)
-    auto drv_inputs = torch::tensor({(float)driver_inputs.m_steering, (float)driver_inputs.m_throttle, (float)driver_inputs.m_braking}, torch::kFloat32);
-
-    // Add the vehicle data to NN model inputs
+    auto drv_inputs = torch::tensor(
+        {(float)driver_inputs.m_steering, (float)driver_inputs.m_throttle, (float)driver_inputs.m_braking},
+        torch::kFloat32);
     inputs.push_back(drv_inputs);
+
+    // Verbose flag
+    inputs.push_back(m_verbose);
 
     m_timer_data_in.stop();
 
@@ -385,7 +408,6 @@ void NNterrain::Synchronize(double time, const DriverInputs& driver_inputs) {
         cerr << "Execute error other: " << e.what() << endl;
         return;
     }
-    ////auto outputs = module.forward(inputs);
     m_timer_model_eval.stop();
 
     // Extract outputs
@@ -413,7 +435,9 @@ void NNterrain::Synchronize(double time, const DriverInputs& driver_inputs) {
         m_tire_forces[i].point = ChVector<>(0, 0, 0);
 
         std::static_pointer_cast<ProxyTire>(m_wheels[i]->GetTire())->m_force = m_tire_forces[i];
-        std::cout << "  tire " << i << " force: " << m_tire_forces[i].force << std::endl;
+        if (m_verbose) {
+            std::cout << "  tire " << i << " force: " << m_tire_forces[i].force << std::endl;
+        }
     }
 
     m_timer_data_out.stop();
@@ -430,7 +454,7 @@ void NNterrain::Advance(double step) {
     double step2 = step * step / 2;
     for (int i = 0; i < 4; i++) {
         for (size_t j = 0; j < m_num_particles[i]; j++) {
-            auto v = m_wheel_particles[i][j]->GetPos_dt() + m_particle_forces[i][j] * step; 
+            auto v = m_wheel_particles[i][j]->GetPos_dt() + m_particle_forces[i][j] * step;
             auto p = m_wheel_particles[i][j]->GetPos() + v * step + m_particle_forces[i][j] * step2;
             m_wheel_particles[i][j]->SetPos(p);
             m_wheel_particles[i][j]->SetPos_dt(v);
@@ -440,8 +464,7 @@ void NNterrain::Advance(double step) {
 
 // -----------------------------------------------------------------------------
 
-std::shared_ptr<WheeledVehicle> CreateVehicle(ChSystem& sys,
-                                              const ChCoordsys<>& init_pos) {
+std::shared_ptr<WheeledVehicle> CreateVehicle(ChSystem& sys, const ChCoordsys<>& init_pos) {
     std::string model_dir = (model == MRZR_MODEL::ORIGINAL) ? "mrzr/JSON_orig/" : "mrzr/JSON_new/";
 
     std::string vehicle_json = model_dir + "vehicle/MRZR.json";
@@ -481,8 +504,9 @@ int main(int argc, char* argv[]) {
     double tend = 30;
     bool run_time_vis = false;
     bool verbose = true;
+    bool verbose_nn = true;
 
-    if (!GetProblemSpecs(argc, argv, terrain_dir, tend, run_time_vis, verbose)) {
+    if (!GetProblemSpecs(argc, argv, terrain_dir, tend, run_time_vis, verbose, verbose_nn)) {
         return 1;
     }
 
@@ -533,8 +557,9 @@ int main(int argc, char* argv[]) {
     // Create terrain
     cout << "Create terrain..." << endl;
     NNterrain terrain(sys, vehicle);
+    terrain.SetVerbose(verbose_nn);
     terrain.Create(terrain_dir);
-    if (!terrain.Load(vehicle::GetDataFile("terrain/sph/wrapped_gnn_markers_cpu.pt"))) {
+    if (!terrain.Load(vehicle::GetDataFile(NN_module_name))) {
         return 1;
     }
 
