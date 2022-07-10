@@ -548,6 +548,7 @@ set(ChronoEngine_geometry_SOURCES
     geometry/ChLineCam.cpp
     geometry/ChLinePoly.cpp
     geometry/ChTriangle.cpp
+    geometry/ChTriangleMesh.cpp
     geometry/ChTriangleMeshSoup.cpp
     geometry/ChTriangleMeshConnected.cpp
     geometry/ChRoundedBox.cpp
@@ -1350,6 +1351,27 @@ set(ChronoEngine_FILES
     ${ChronoEngine_utils_HEADERS}
     ${ChronoEngine_tiny_obj_FILES}
     )
+
+# Disable all warnings from external code
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  set_source_files_properties(${ChronoEngine_collision_bullet_SOURCES} PROPERTIES COMPILE_OPTIONS "-Wno-everything")
+  set_source_files_properties(${ChronoEngine_collision_convexdecompHACD_SOURCES} PROPERTIES COMPILE_OPTIONS "-Wno-everything")
+  set_source_files_properties(${ChronoEngine_collision_convexdecompHACDv2_SOURCES} PROPERTIES COMPILE_OPTIONS "-Wno-everything")
+  set_source_files_properties(${ChronoEngine_collision_gimpact_SOURCES} PROPERTIES COMPILE_OPTIONS "-Wno-everything")
+  set_source_files_properties(${ChronoEngine_tiny_obj_FILES} PROPERTIES COMPILE_OPTIONS "-Wno-everything")
+elseif(MSVC)
+  set_source_files_properties(${ChronoEngine_collision_bullet_SOURCES} PROPERTIES COMPILE_OPTIONS "/w")
+  set_source_files_properties(${ChronoEngine_collision_convexdecompHACD_SOURCES} PROPERTIES COMPILE_OPTIONS "/w")
+  set_source_files_properties(${ChronoEngine_collision_convexdecompHACDv2_SOURCES} PROPERTIES COMPILE_OPTIONS "/w")
+  set_source_files_properties(${ChronoEngine_collision_gimpact_SOURCES} PROPERTIES COMPILE_OPTIONS "/w")
+  set_source_files_properties(${ChronoEngine_tiny_obj_FILES} PROPERTIES COMPILE_OPTIONS "/w")
+else()
+  set_source_files_properties(${ChronoEngine_collision_bullet_SOURCES} PROPERTIES COMPILE_OPTIONS "-w")
+  set_source_files_properties(${ChronoEngine_collision_convexdecompHACD_SOURCES} PROPERTIES COMPILE_OPTIONS "-w")
+  set_source_files_properties(${ChronoEngine_collision_convexdecompHACDv2_SOURCES} PROPERTIES COMPILE_OPTIONS "-w")
+  set_source_files_properties(${ChronoEngine_collision_gimpact_SOURCES} PROPERTIES COMPILE_OPTIONS "-w")
+  set_source_files_properties(${ChronoEngine_tiny_obj_FILES} PROPERTIES COMPILE_OPTIONS "-w")
+endif()
 
 # Add the ChronoEngine library to the project
 add_library(ChronoEngine SHARED ${ChronoEngine_FILES})
