@@ -59,7 +59,8 @@ int main(int argc, char* argv[]) {
     ////body2->AddAsset(vshape2);
 
     auto& gl_window = opengl::ChOpenGLWindow::getInstance();
-    gl_window.Initialize(1600, 900, "OpenGL meshes", &system);
+    gl_window.AttachSystem(&system);
+    gl_window.Initialize(1600, 900, "OpenGL meshes");
     gl_window.SetCamera(ChVector<>(0.0, -10.0, 5.0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1));
     gl_window.SetRenderMode(opengl::SOLID);
 

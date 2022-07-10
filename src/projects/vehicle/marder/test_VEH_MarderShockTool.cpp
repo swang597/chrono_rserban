@@ -215,7 +215,7 @@ int main(int argc, char* argv[]) {
         minfo.Y = 2e7f;
         for (int i = 0; i < 6; i++) {
             auto patch_mat = minfo.CreateMaterial(contact_method);
-            auto patch = terrain.AddPatch(patch_mat, ChVector<>(terrainLength * double(i), 0, 0), ChVector<>(0, 0, 1),
+            auto patch = terrain.AddPatch(patch_mat, ChCoordsys<>(ChVector<>(terrainLength * double(i), 0, 0), QUNIT),
                                           terrainLength, terrainWidth);
             patch->SetColor(ChColor(0.5f, 0.8f, 0.5f));
             patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 200);

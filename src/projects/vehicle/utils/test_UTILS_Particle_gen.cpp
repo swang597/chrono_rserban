@@ -260,7 +260,8 @@ int main(int argc, char* argv[]) {
 
     // Initialize OpenGL
     opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-    gl_window.Initialize(1280, 720, "JSON visualization", &sys);
+    gl_window.AttachSystem(&sys);
+    gl_window.Initialize(1280, 720, "JSON visualization");
     gl_window.SetCamera(ChVector<>(maxX, maxY, maxZ) + ChVector<>(3), ChVector<>(0), ChVector<>(0, 0, 1));
     gl_window.SetRenderMode(opengl::SOLID);
 

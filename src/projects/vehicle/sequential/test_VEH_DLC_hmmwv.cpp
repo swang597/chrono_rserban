@@ -107,7 +107,7 @@ int main(int argc, char* argv[]) {
     minfo.Y = 2e7f;
     auto patch_mat = minfo.CreateMaterial(my_hmmwv.GetSystem()->GetContactMethod());
     RigidTerrain terrain(my_hmmwv.GetSystem());
-    auto patch = terrain.AddPatch(patch_mat, ChVector<>(0, 0, 0), ChVector<>(0, 0, 1), 200, 20);
+    auto patch = terrain.AddPatch(patch_mat, CSYSNORM, 200, 20);
     patch->SetColor(ChColor(1, 1, 1));
     patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 20);
     terrain.Initialize();

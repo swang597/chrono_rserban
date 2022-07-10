@@ -204,8 +204,7 @@ int main(int argc, char* argv[]) {
         terrain = terrain_D;
     } else {
         auto terrain_R = new RigidTerrain(vehicle.GetSystem());
-        auto patch = terrain_R->AddPatch(material, ChVector<>(0, 0, 0), ChVector<>(0, 0, 1), terrainLength,
-                                         terrainWidth);
+        auto patch = terrain_R->AddPatch(material, CSYSNORM, terrainLength, terrainWidth);
         patch->SetColor(ChColor(0.8f, 0.8f, 0.5f));
         patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 200);
         terrain_R->Initialize();

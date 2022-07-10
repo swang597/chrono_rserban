@@ -566,7 +566,8 @@ int main(int argc, char* argv[]) {
 #ifdef CHRONO_OPENGL
     opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
     if (run_time_vis) {
-        gl_window.Initialize(1280, 720, "JSON visualization", &sys);
+        gl_window.AttachSystem(&sys);
+        gl_window.Initialize(1280, 720, "JSON visualization");
         ////gl_window.SetCamera(ChVector<>(0, -4, 2), ChVector<>(5, 0, 0.5), ChVector<>(0, 0, 1));
         gl_window.SetCamera(ChVector<>(-3, 0, 6), ChVector<>(5, 0, 0.5), ChVector<>(0, 0, 1));
         gl_window.SetRenderMode(opengl::SOLID);

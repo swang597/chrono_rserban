@@ -88,7 +88,7 @@ int main(int argc, char* argv[]) {
     minfo_1.cr = 0.01f;
     minfo_1.Y = 2e7f;
     auto mat_1 = minfo_1.CreateMaterial(sys.GetContactMethod());
-    auto patch_1 = terrain.AddPatch(mat_1, ChVector<>(0, -5.5, 0), ChVector<>(0, 0, 1), 200, 10);
+    auto patch_1 = terrain.AddPatch(mat_1, ChCoordsys<>(ChVector<>(0, -5.5, 0), QUNIT), 200, 10);
     patch_1->SetColor(ChColor(0.8f, 0.8f, 1.0f));
     patch_1->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 10);
 
@@ -118,7 +118,7 @@ int main(int argc, char* argv[]) {
     minfo_2.cr = 0.01f;
     minfo_2.Y = 2e7f;
     auto mat_2 = minfo_2.CreateMaterial(sys.GetContactMethod());
-    auto patch_2 = terrain.AddPatch(mat_2, ChVector<>(0, +5.5, 0), ChVector<>(0, 0, 1), 200, 10);
+    auto patch_2 = terrain.AddPatch(mat_2, ChCoordsys<>(ChVector<>(0, +5.5, 0), QUNIT), 200, 10);
     patch_2->SetColor(ChColor(1.0f, 0.8f, 0.8f));
     patch_2->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 10);
 

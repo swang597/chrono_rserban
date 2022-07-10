@@ -179,7 +179,7 @@ int main(int argc, char* argv[]) {
     patch_mat->SetFriction(0.4f);
     patch_mat->SetRestitution(0.01f);
     RigidTerrain terrain(wvp.GetSystem());
-    auto patch = terrain.AddPatch(patch_mat, ChVector<>(0, 0, 0), ChVector<>(0, 0, 1), 1000, 30);
+    auto patch = terrain.AddPatch(patch_mat, CSYSNORM, 1000, 30);
     patch->SetColor(ChColor(0.8f, 0.8f, 0.5f));
     patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 20, 20);
     terrain.Initialize();

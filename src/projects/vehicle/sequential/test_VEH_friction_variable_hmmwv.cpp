@@ -93,7 +93,7 @@ int main(int argc, char* argv[]) {
     minfo.Y = 2e7f;
     auto mat = minfo.CreateMaterial(sys.GetContactMethod());
 
-    auto patch = terrain.AddPatch(mat, ChVector<>(0, 0, 0), ChVector<>(0, 0, 1), 200, 10);
+    auto patch = terrain.AddPatch(mat, CSYSNORM, 200, 10);
     patch->SetColor(ChColor(0.8f, 0.8f, 1.0f));
     patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 10);
 
