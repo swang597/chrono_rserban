@@ -1,0 +1,37 @@
+{
+  "Name": "Test cart",
+  "Type": "Vehicle",
+  "Template": "WheeledVehicle",
+
+  "Chassis": {
+    "Input File": "generic/chassis/Chassis.json"
+  },
+
+  "Axles": [
+    {
+      "Suspension Input File": "generic/suspension/RigidSuspension.json",
+      "Suspension Location": [ 1.25, 0, -0.21 ],
+      "Left Wheel Input File": "generic/wheel/WheelSimple.json",
+      "Right Wheel Input File": "generic/wheel/WheelSimple.json",
+      "Left Brake Input File": "generic/brake/BrakeSimple.json",
+      "Right Brake Input File": "generic/brake/BrakeSimple.json"
+    },
+
+    {
+      "Suspension Input File": "generic/suspension/RigidSuspension.json",
+      "Suspension Location": [ -1.25, 0, -0.21 ],
+      "Left Wheel Input File": "generic/wheel/WheelSimple.json",
+      "Right Wheel Input File": "generic/wheel/WheelSimple.json",
+      "Left Brake Input File": "generic/brake/BrakeSimple.json",
+      "Right Brake Input File": "generic/brake/BrakeSimple.json"
+    }
+  ],
+
+  "Wheelbase": 2.5,
+  "Maximum Steering Angle": 25,
+
+  "Driveline": {
+    "Input File": "generic/driveline/DrivelineSimple.json",
+    "Suspension Indexes": [ 0, 1 ]
+  }
+}

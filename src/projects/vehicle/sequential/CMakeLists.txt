@@ -36,6 +36,7 @@ SET(DEMOS
     test_VEH_tire_csys
     test_VEH_SCM_hm
     test_VEH_SIMD_test_m113
+    test_VEH_WheeledJSON_Accel
 )
 
 # ------------------------------------------------------------------------------
@@ -53,6 +54,7 @@ FOREACH(PROGRAM ${DEMOS})
         COMPILE_FLAGS "${CH_CXX_FLAGS} ${CH_IRRLICHT_CXX_FLAGS}"
         LINK_FLAGS "${CH_LINKERFLAG_EXE}"
     )
+    set_property(TARGET ${PROGRAM} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROGRAM}>")
 
     TARGET_LINK_LIBRARIES(${PROGRAM} ${LIBRARIES})
 
