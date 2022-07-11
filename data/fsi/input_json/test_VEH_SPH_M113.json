@@ -44,23 +44,6 @@
     "FluidDimensionZ": 0.22
   },
 
-  "Body Inf": {
-    "BodyDimensionX": 0.0,
-    "BodyDimensionY": 0.0,
-    "BodyDimensionZ": 0.0,
-    "BodyRadius": 0.0,
-    "BodyLength": 0.0,
-    "BodyIniPosX": -1.0,
-    "BodyIniPosY": -1.0,
-    "BodyIniPosZ": 1.2,
-    "BodyIniVelX": 0.0,
-    "BodyIniVelY": 0.0,
-    "BodyIniVelZ": 0.0,
-    "BodyIniAngVel": 0.0,
-    "BodyMass": 0.0,
-    "BodyDensity": 200.0
-  },
-
   "Body Active Domain": [ 0.5, 0.5, 1.0 ],
   "Settling Time": 0.0
 

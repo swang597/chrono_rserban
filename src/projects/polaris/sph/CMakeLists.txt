@@ -25,12 +25,11 @@ endif()
 #--------------------------------------------------------------
 
 set(PROGRAM test_Polaris_SPH)
-set(UTILITIES FindParticles.h FindParticles.cu)
 
 message(STATUS "...add ${PROGRAM}")
 
-cuda_add_executable(${PROGRAM}  "${PROGRAM}.cpp" ${UTILITIES})
-source_group(""  FILES "${PROGRAM}.cpp" ${UTILITIES})
+cuda_add_executable(${PROGRAM}  "${PROGRAM}.cpp")
+source_group(""  FILES "${PROGRAM}.cpp")
 
 set_target_properties(${PROGRAM} PROPERTIES
         FOLDER demos

@@ -23,6 +23,13 @@
 #include <stdexcept>
 #include <iomanip>
 
+#include <thrust/copy.h>
+#include <thrust/gather.h>
+#include <thrust/for_each.h>
+#include <thrust/iterator/counting_iterator.h>
+#include <thrust/functional.h>
+#include <thrust/execution_policy.h>
+
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/physics/ChSystemSMC.h"
 #include "chrono/utils/ChUtilsInputOutput.h"
@@ -42,8 +49,6 @@
 #include "chrono_thirdparty/cxxopts/ChCLI.h"
 #include "chrono_thirdparty/filesystem/path.h"
 
-#include "FindParticles.h"
-
 using namespace chrono;
 using namespace chrono::fsi;
 using namespace chrono::vehicle;
@@ -61,12 +66,15 @@ MRZR_MODEL model = MRZR_MODEL::MODIFIED;
 // Speed controller target speed (in m/s)
 double target_speed = 7;
 
+const ChVector<> gravity(0, 0, -9.81);
+
 // -----------------------------------------------------------------------------
 
 bool GetProblemSpecs(int argc,
                      char** argv,
                      std::string& terrain_dir,
                      double& tend,
+                     double& step_size,
                      double& active_box_dim,
                      double& output_major_fps,
                      double& output_minor_fps,
@@ -80,6 +88,7 @@ bool GetProblemSpecs(int argc,
 
     cli.AddOption<std::string>("Simulation", "terrain_dir", "Directory with terrain specification data");
     cli.AddOption<double>("Simulation", "tend", "Simulation end time [s]", std::to_string(tend));
+    cli.AddOption<double>("Simulation", "step_size", "Integration step size [s]", std::to_string(step_size));
     cli.AddOption<double>("Simulation", "active_box_dim", "Half-dimension of active box [m]", std::to_string(active_box_dim));
 
     cli.AddOption<double>("Simulation output", "output_major_fps", "Simulation output major frequency [fps]",
@@ -121,6 +130,7 @@ bool GetProblemSpecs(int argc,
     run_time_vis = cli.GetAsType<bool>("run_time_vis");
 
     tend = cli.GetAsType<double>("tend");
+    step_size = cli.GetAsType<double>("step_size");
     active_box_dim = cli.GetAsType<double>("active_box_dim");
 
     verbose = !cli.GetAsType<bool>("quiet");
@@ -133,7 +143,7 @@ bool GetProblemSpecs(int argc,
 class DataWriter {
   public:
     /// Construct an output data writer for the specified FSI system and vehicle.
-    DataWriter(std::shared_ptr<ChSystemFsi_impl> sysFSI, std::shared_ptr<WheeledVehicle> vehicle)
+    DataWriter(ChSystemFsi& sysFSI, std::shared_ptr<WheeledVehicle> vehicle)
         : m_sysFSI(sysFSI),
           m_vehicle(vehicle),
           m_out_vel(false),
@@ -270,7 +280,7 @@ class DataWriter {
             ChMatrix33<> box_rot(X_dir, Y_dir, Z_dir);
             ChVector<> box_pos = wheel_pos + box_rot * (m_box_offset - ChVector<>(0, 0, tire_radius));
 
-            m_indices[i] = FindParticlesInBox(m_sysFSI, ConvertOBB(ChFrame<>(box_pos, box_rot), m_box_size));
+            m_indices[i] = m_sysFSI.FindParticlesInBox(ChFrame<>(box_pos, box_rot), m_box_size);
         }
     }
 
@@ -407,25 +417,62 @@ class DataWriter {
         m_veh_stream << "\n";
     }
 
-    static OBBspec ConvertOBB(const ChFrame<>& box_frame, const ChVector<>& box_size) {
-        // Extract OBB position and rotation
-        const ChVector<>& box_pos = box_frame.GetPos();
-        ChVector<> Ax = box_frame.GetA().Get_A_Xaxis();
-        ChVector<> Ay = box_frame.GetA().Get_A_Yaxis();
-        ChVector<> Az = box_frame.GetA().Get_A_Zaxis();
+    struct print_particle_pos {
+        print_particle_pos(std::ofstream* stream) : m_stream(stream) {}
+        __host__ void operator()(const Real4 p) { (*m_stream) << p.x << ", " << p.y << ", " << p.z << "\n"; }
+        std::ofstream* m_stream;
+    };
 
-        // Save as OBB spec
-        OBBspec obb;
-        obb.h = 0.5 * mR3(box_size.x(), box_size.y(), box_size.z());
-        obb.p = mR3(box_pos.x(), box_pos.y(), box_pos.z());
-        obb.ax = mR3(Ax.x(), Ax.y(), Ax.z());
-        obb.ay = mR3(Ay.x(), Ay.y(), Ay.z());
-        obb.az = mR3(Az.x(), Az.y(), Az.z());
+    struct print_particle_pos_vel {
+        print_particle_pos_vel(std::ofstream* stream) : m_stream(stream) {}
+        template <typename T>
+        __host__ void operator()(const T pv) {
+            auto p = thrust::get<0>(pv);
+            auto v = thrust::get<1>(pv);
+            (*m_stream) << p.x << ", " << p.y << ", " << p.z << ", " << v.x << ", " << v.y << ", " << v.z << "\n";
+        }
+        std::ofstream* m_stream;
+    };
 
-        return obb;
+    void WriteParticlePos(ChSystemFsi& sysFSI,
+                          const thrust::device_vector<int>& indices_D,
+                          const std::string& filename) {
+        // Get particle positions on device
+        auto pos_D = sysFSI.GetParticlePositions(indices_D);
+
+        // Copy vector to host
+        thrust::host_vector<Real4> pos_H = pos_D;
+
+        // Write output file
+        std::ofstream stream;
+        stream.open(filename, std::ios_base::trunc);
+        thrust::for_each(thrust::host, pos_H.begin(), pos_H.end(), print_particle_pos(&stream));
+        stream.close();
     }
 
-    std::shared_ptr<ChSystemFsi_impl> m_sysFSI;
+    void WriteParticlePosVel(ChSystemFsi& sysFSI,
+                             const thrust::device_vector<int>& indices_D,
+                             const std::string& filename) {
+        // Get particle positions and velocities on device
+        auto pos_D = sysFSI.GetParticlePositions(indices_D);
+        auto vel_D = sysFSI.GetParticleVelocities(indices_D);
+
+        // Copy vectors to host
+        thrust::host_vector<Real4> pos_H = pos_D;
+        thrust::host_vector<Real3> vel_H = vel_D;
+
+        // Write output file
+        std::ofstream stream;
+        stream.open(filename, std::ios_base::trunc);
+        thrust::for_each(thrust::host,                                                                 //
+                         thrust::make_zip_iterator(thrust::make_tuple(pos_H.begin(), vel_H.begin())),  //
+                         thrust::make_zip_iterator(thrust::make_tuple(pos_H.end(), vel_H.end())),      //
+                         print_particle_pos_vel(&stream)                                               //
+        );
+        stream.close();
+    }
+
+    ChSystemFsi& m_sysFSI;
     std::shared_ptr<WheeledVehicle> m_vehicle;
     std::array<std::shared_ptr<ChWheel>, 4> m_wheels;
     std::array<thrust::device_vector<int>, 4> m_indices;
@@ -562,7 +609,7 @@ void CreateMeshMarkers(const geometry::ChTriangleMeshConnected& mesh,
     }
 }
 
-void CreateTerrain(ChSystem& sys, ChSystemFsi& sysFSI, std::shared_ptr<fsi::SimParams> params, const std::string& terrain_dir, bool enable_terrain_mesh) {
+void CreateTerrain(ChSystem& sys, ChSystemFsi& sysFSI, const std::string& terrain_dir, bool enable_terrain_mesh) {
     // Create SPH markers with initial locations from file
     int num_particles = 0;
     ChVector<> aabb_min(std::numeric_limits<double>::max());
@@ -582,9 +629,10 @@ void CreateTerrain(ChSystem& sys, ChSystemFsi& sysFSI, std::shared_ptr<fsi::SimP
             aabb_min[i] = std::min(aabb_min[i], marker[i]);
             aabb_max[i] = std::max(aabb_max[i], marker[i]);
         }
-        ////ChVector<> tau(-params->rho0 * std::abs(params->gravity.z) * (-marker.z() + fzDim));
+        ////ChVector<> tau(-sysFSI.GetSensity() * std::abs(gravity.z) * (-marker.z() + fzDim));
         ChVector<> tau(0);
-        sysFSI.AddSphMarker(marker, params->rho0, 0, params->mu0, params->HSML, -1, VNULL, tau, VNULL);
+        sysFSI.AddSPHParticle(marker, sysFSI.GetDensity(), 0, sysFSI.GetViscosity(), sysFSI.GetKernelLength(), VNULL,
+                              tau, VNULL);
         num_particles++;
     }
     is.close();
@@ -592,13 +640,7 @@ void CreateTerrain(ChSystem& sys, ChSystemFsi& sysFSI, std::shared_ptr<fsi::SimP
     // Set computational domain
     ChVector<> aabb_dim = aabb_max - aabb_min;
     aabb_dim.z() *= 50;
-    sysFSI.SetBoundaries(aabb_min - 0.1 * aabb_dim, aabb_max + 0.1 * aabb_dim, params);
-
-    // Setup sub domains for a faster neighbor particle searching
-    sysFSI.SetSubDomain(params);
-
-    // Set start/end particle array indices
-    sysFSI.AddRefArray(0, num_particles, -1, -1);
+    sysFSI.SetBoundaries(aabb_min - 0.1 * aabb_dim, aabb_max + 0.1 * aabb_dim);
 
     // Create ground body and attach BCE markers
     // Note: BCE markers must be created after SPH markers!
@@ -623,13 +665,12 @@ void CreateTerrain(ChSystem& sys, ChSystemFsi& sysFSI, std::shared_ptr<fsi::SimP
         body->SetCollide(true);
     }
 
-    sysFSI.AddBceFile(params, body, vehicle::GetDataFile(terrain_dir + "/bce_20mm.txt"), VNULL, QUNIT, 1.0, false);
+    sysFSI.AddFileBCE(body, vehicle::GetDataFile(terrain_dir + "/bce_20mm.txt"), VNULL, QUNIT, 1.0, false);
 }
 
 std::shared_ptr<WheeledVehicle> CreateVehicle(ChSystem& sys,
                                               const ChCoordsys<>& init_pos,
-                                              ChSystemFsi& sysFSI,
-                                              std::shared_ptr<fsi::SimParams> params) {
+                                              ChSystemFsi& sysFSI) {
     std::string model_dir = (model == MRZR_MODEL::ORIGINAL) ? "mrzr/JSON_orig/" : "mrzr/JSON_new/";
 
     std::string vehicle_json = model_dir + "vehicle/MRZR.json";
@@ -655,9 +696,8 @@ std::shared_ptr<WheeledVehicle> CreateVehicle(ChSystem& sys,
     // Create BCE markers for a tire
     geometry::ChTriangleMeshConnected trimesh;
     trimesh.LoadWavefrontMesh(vehicle::GetDataFile(tire_coll_obj));
-    auto delta = params->MULT_INITSPACE * params->HSML;
     std::vector<ChVector<>> point_cloud;
-    CreateMeshMarkers(trimesh, (double)delta, point_cloud);
+    CreateMeshMarkers(trimesh, sysFSI.GetInitialSpacing(), point_cloud);
 
     // Create and initialize the tires
     for (auto& axle : vehicle->GetAxles()) {
@@ -665,7 +705,7 @@ std::shared_ptr<WheeledVehicle> CreateVehicle(ChSystem& sys,
             auto tire = ReadTireJSON(vehicle::GetDataFile(tire_json));
             vehicle->InitializeTire(tire, wheel, VisualizationType::MESH);
             sysFSI.AddFsiBody(wheel->GetSpindle());
-            sysFSI.AddBceFromPoints(params, wheel->GetSpindle(), point_cloud, VNULL, QUNIT);
+            sysFSI.AddPointsBCE(wheel->GetSpindle(), point_cloud, VNULL, QUNIT);
         }
     }
 
@@ -676,6 +716,7 @@ int main(int argc, char* argv[]) {
     // Parse command line arguments
     std::string terrain_dir;
     double tend = 30;
+    double step_size = 5e-4;
     double active_box_dim = 0.5;
     double output_major_fps = 20;
     double output_minor_fps = 1000;
@@ -686,7 +727,7 @@ int main(int argc, char* argv[]) {
     bool run_time_vis = false;      // no run-time visualization
     bool verbose = true;
 
-    if (!GetProblemSpecs(argc, argv, terrain_dir, tend, active_box_dim, output_major_fps, output_minor_fps,
+    if (!GetProblemSpecs(argc, argv, terrain_dir, tend, step_size, active_box_dim, output_major_fps, output_minor_fps,
                          output_frames, output_velocities, filter_window, vis_output_fps, run_time_vis, verbose)) {
         return 1;
     }
@@ -721,25 +762,26 @@ int main(int argc, char* argv[]) {
 
     // Load SPH parameter file
     cout << "Load SPH parameter file..." << endl;
-    std::shared_ptr<fsi::SimParams> params = sysFSI.GetSimParams();
-    sysFSI.SetSimParameter(vehicle::GetDataFile(terrain_dir + "/sph_params.json"), params, ChVector<>(1));
-    params->bodyActiveDomain = mR3(active_box_dim, active_box_dim, 1.0);
+    sysFSI.ReadParametersFromFile(vehicle::GetDataFile(terrain_dir + "/sph_params.json"));
+
+    sysFSI.SetActiveDomain(ChVector<>(active_box_dim, active_box_dim, 1));
     sysFSI.SetDiscreType(false, false);
     sysFSI.SetWallBC(BceVersion::ORIGINAL);
-    sysFSI.SetFluidDynamics(params->fluid_dynamic_type);
+    sysFSI.SetSPHMethod(FluidDynamics::WCSPH);
+    sysFSI.SetStepSize(step_size);
+    sysFSI.SetVerbose(false);
 
     // Set simulation data output and FSI information output
     std::string out_dir = GetChronoOutputPath() + "FSI_POLARIS/";
-    std::string vis_dir = params->demo_dir;
-    sysFSI.SetFsiInfoOutput(false);
-    sysFSI.SetFsiOutputDir(params, vis_dir, out_dir, "");
+    std::string vis_dir = out_dir + "Visualization/";
     sysFSI.SetOutputLength(0);
+    ////sysFSI.SetOutputDirectory(out_dir);
 
-    sys.Set_G_acc(ChVector<>(params->gravity.x, params->gravity.y, params->gravity.z));
+    sys.Set_G_acc(gravity);
 
     // Create terrain
     cout << "Create terrain..." << endl;
-    CreateTerrain(sys, sysFSI, params, terrain_dir, enable_terrain_mesh);
+    CreateTerrain(sys, sysFSI, terrain_dir, enable_terrain_mesh);
 
     // Create vehicle
     cout << "Create vehicle..." << endl;
@@ -751,7 +793,7 @@ int main(int argc, char* argv[]) {
         is.close();
     }
     ChCoordsys<> init_pos(ChVector<>(4, 0, 0.25 + 4 * std::sin(slope)), Q_from_AngX(banking) * Q_from_AngY(-slope));
-    auto vehicle = CreateVehicle(sys, init_pos, sysFSI, params);
+    auto vehicle = CreateVehicle(sys, init_pos, sysFSI);
 
     // Create driver
     auto path = ChBezierCurve::read(vehicle::GetDataFile(terrain_dir + "/path.txt"));
@@ -762,13 +804,14 @@ int main(int argc, char* argv[]) {
     driver.GetSpeedController().SetGains(0.6, 0.05, 0);
     driver.Initialize();
 
-    // Finalize construction of FSI system
-    sysFSI.Finalize();
+    // Complete construction of FSI system
+    sysFSI.Initialize();
 
 #ifdef CHRONO_OPENGL
     opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
     if (run_time_vis) {
-        gl_window.Initialize(1280, 720, "JSON visualization", &sys);
+        gl_window.AttachSystem(&sys);
+        gl_window.Initialize(1280, 720, "JSON visualization");
         ////gl_window.SetCamera(ChVector<>(0, -4, 2), ChVector<>(5, 0, 0.5), ChVector<>(0, 0, 1));
         gl_window.SetCamera(ChVector<>(-3, 0, 6), ChVector<>(5, 0, 0.5), ChVector<>(0, 0, 1));
         gl_window.SetRenderMode(opengl::SOLID);
@@ -783,11 +826,11 @@ int main(int argc, char* argv[]) {
         cout << "Error creating directory " << sim_dir << endl;
         return 1;
     }
-    DataWriter data_writer(sysFSI.GetFsiData(), vehicle);
+    DataWriter data_writer(sysFSI, vehicle);
     data_writer.SetVerbose(verbose);
     data_writer.SaveVelocities(output_velocities);
     data_writer.UseFilteredData(use_filter, filter_window);
-    data_writer.Initialize(sim_dir, output_major_fps, output_minor_fps, output_frames, params->dT);
+    data_writer.Initialize(sim_dir, output_major_fps, output_minor_fps, output_frames, step_size);
     cout << "Simulation output data saved in: " << sim_dir << endl;
     cout << "===============================================================================" << endl;
 
@@ -795,7 +838,7 @@ int main(int argc, char* argv[]) {
     DriverInputs driver_inputs = {0, 0, 0};
     ChTerrain terrain;
 
-    int vis_output_steps = (int)std::round((1.0 / vis_output_fps) / params->dT);
+    int vis_output_steps = (int)std::round((1.0 / vis_output_fps) / step_size);
     int vis_output_frame = 0;
 
     double t = 0;
@@ -847,9 +890,9 @@ int main(int argc, char* argv[]) {
         vehicle->Synchronize(t, driver_inputs, terrain);
 
         // Advance system state
-        driver.Advance(params->dT);
+        driver.Advance(step_size);
         sysFSI.DoStepDynamics_FSI();
-        t += params->dT;
+        t += step_size;
 
         frame++;
     }
