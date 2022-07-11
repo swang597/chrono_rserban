@@ -20,9 +20,9 @@ endif()
 
 #--------------------------------------------------------------
 
-find_package(Torch REQUIRED)
-find_package(TorchCluster REQUIRED)
-find_package(TorchScatter REQUIRED)
+find_package(Torch)
+find_package(TorchCluster)
+find_package(TorchScatter)
 
 if(NOT Torch_FOUND)
   message(STATUS "Torch package not found - disabling Polaris NN test")
