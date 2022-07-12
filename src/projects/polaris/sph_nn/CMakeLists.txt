@@ -20,18 +20,19 @@ endif()
 
 #--------------------------------------------------------------
 
-find_package(Torch)
-find_package(TorchCluster)
-find_package(TorchScatter)
-
+find_package(Torch QUIET)
 if(NOT Torch_FOUND)
   message(STATUS "Torch package not found - disabling Polaris NN test")
   return()
 endif()
+
+find_package(TorchCluster QUIET)
 if(NOT TorchCluster_FOUND)
   message(STATUS "TorchCluster package not found - disabling Polaris NN test")
   return()
 endif()
+
+find_package(TorchScatter QUIET)
 if(NOT TorchScatter_FOUND)
   message(STATUS "TorchScatter package not found - disabling Polaris NN test")
   return()
