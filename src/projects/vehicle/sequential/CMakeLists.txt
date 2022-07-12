@@ -3,24 +3,9 @@ if(NOT ENABLE_MODULE_IRRLICHT)
 endif()  
 
 # ------------------------------------------------------------------------------
-# Additional include paths and libraries
-# ------------------------------------------------------------------------------
-
-INCLUDE_DIRECTORIES(${CH_IRRLICHTINC})
-
-SET(LIBRARIES
-    ChronoEngine
-    ChronoEngine_irrlicht
-    ChronoEngine_vehicle
-    ChronoEngine_vehicle_irrlicht
-    ChronoModels_vehicle
-)
-
-# ------------------------------------------------------------------------------
 # List of all executables
-# ------------------------------------------------------------------------------
 
-SET(DEMOS
+set(DEMOS
     test_VEH_bump
     test_VEH_Bezier
     test_VEH_BezierTracker
@@ -44,24 +29,47 @@ if(THRUST_FOUND)
      )
 endif()
 
-# ------------------------------------------------------------------------------
-# Add all executables
-# ------------------------------------------------------------------------------
+#--------------------------------------------------------------
+# Include directories, compiler flags, libraries
 
-FOREACH(PROGRAM ${DEMOS})
-    MESSAGE(STATUS "...add ${PROGRAM}")
+include_directories(${CH_IRRLICHTINC})
+set(COMPILER_FLAGS "${CH_CXX_FLAGS}  ${CH_IRRLICHT_CXX_FLAGS}")
+set(LINKER_FLAGS "${CH_LINKERFLAG_EXE}")
+list(APPEND LIBS "")
 
-    ADD_EXECUTABLE(${PROGRAM}  "${PROGRAM}.cpp")
-    SOURCE_GROUP(""  FILES "${PROGRAM}.cpp")
+if(ENABLE_MODULE_PARDISO_MKL)
+    include_directories(${CH_MKL_INCLUDES})
+    set(COMPILER_FLAGS "${COMPILER_FLAGS} ${CH_MKL_CXX_FLAGS}")
+    set(LINKER_FLAGS "${LINKER_FLAGS} ${CH_MKL_LINK_FLAGS}")
+    list(APPEND LIBS "ChronoEngine_pardisomkl")
+endif()
 
-    SET_TARGET_PROPERTIES(${PROGRAM} PROPERTIES
-        FOLDER demos
-        COMPILE_FLAGS "${CH_CXX_FLAGS} ${CH_IRRLICHT_CXX_FLAGS}"
-        LINK_FLAGS "${CH_LINKERFLAG_EXE}"
-    )
+if(ENABLE_MODULE_MUMPS)
+    include_directories(${CH_MUMPS_INCLUDES})
+    list(APPEND LIBS "ChronoEngine_mumps")
+endif()
+
+#--------------------------------------------------------------
+# Create the executables
+
+foreach(PROGRAM ${DEMOS})
+    message(STATUS "...add ${PROGRAM}")
+
+    add_executable(${PROGRAM} ${PROGRAM}.cpp)
+    source_group("" FILES ${PROGRAM}.cpp)
+
+    set_target_properties(${PROGRAM} PROPERTIES
+                          COMPILE_FLAGS "${COMPILER_FLAGS}"
+                          LINK_FLAGS "${LINKER_FLAGS}")
+    if(APPLE)
+      set_target_properties(${PROGRAM} PROPERTIES MACOSX_BUNDLE_INFO_PLIST ${MACOSX_BUNDLE_INFO_PLIST})
+    endif()
     set_property(TARGET ${PROGRAM} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROGRAM}>")
-
-    TARGET_LINK_LIBRARIES(${PROGRAM} ${LIBRARIES})
-
-ENDFOREACH(PROGRAM)
-
+    target_link_libraries(${PROGRAM}
+                          ChronoEngine
+                          ChronoEngine_irrlicht
+                          ChronoEngine_vehicle
+                          ChronoEngine_vehicle_irrlicht
+                          ChronoModels_vehicle
+                          ${LIBS})
+endforeach(PROGRAM)

@@ -19,6 +19,10 @@
 //
 // =============================================================================
 
+#include "chrono/solver/ChIterativeSolverLS.h"
+#include "chrono/solver/ChIterativeSolverVI.h"
+#include "chrono/solver/ChDirectSolverLS.h"
+
 #include "chrono_vehicle/ChConfigVehicle.h"
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/terrain/RigidTerrain.h"
@@ -35,6 +39,14 @@
 #include "chrono_models/vehicle/hmmwv/HMMWV_Pac02Tire.h"
 #include "chrono_models/vehicle/hmmwv/HMMWV_RigidTire.h"
 #include "chrono_models/vehicle/hmmwv/HMMWV_TMeasyTire.h"
+
+#ifdef CHRONO_PARDISO_MKL
+    #include "chrono_pardisomkl/ChSolverPardisoMKL.h"
+#endif
+
+#ifdef CHRONO_MUMPS
+    #include "chrono_mumps/ChSolverMumps.h"
+#endif
 
 using namespace chrono;
 using namespace chrono::vehicle;
@@ -57,7 +69,7 @@ enum class TerrainType { FLAT, RIGID };
 TerrainType terrain_type = TerrainType::RIGID;
 
 // Terrain length (X direction)
-double terrainLength = 400.0;
+double terrainLength = 200.0;
 
 // Lane direction
 double yaw_angle = 0 * CH_C_DEG_TO_RAD;
@@ -66,12 +78,77 @@ double yaw_angle = 0 * CH_C_DEG_TO_RAD;
 bool disconnect_driveline = true;
 double init_vel = 10;
 
-// Simulation step sizes
-double step_size = 1e-3;
+// Contact formulation (when using rigid tires)
+ChContactMethod contact_method = ChContactMethod::SMC;
+
+// Simulation step size
+double step_size_NSC = 1e-3;
+double step_size_SMC = 5e-4;
+
 double tire_step_size = 1e-3;
 
+// Solver and integrator types
+////ChSolver::Type slvr_type = ChSolver::Type::BARZILAIBORWEIN;
+////ChSolver::Type slvr_type = ChSolver::Type::PSOR;
+////ChSolver::Type slvr_type = ChSolver::Type::MINRES;
+////ChSolver::Type slvr_type = ChSolver::Type::GMRES;
+////ChSolver::Type slvr_type = ChSolver::Type::SPARSE_LU;
+////ChSolver::Type slvr_type = ChSolver::Type::SPARSE_QR;
+ChSolver::Type slvr_type = ChSolver::Type::PARDISO_MKL;
+////ChSolver::Type slvr_type = ChSolver::Type::MUMPS;
+
+////ChTimestepper::Type intgr_type = ChTimestepper::Type::EULER_IMPLICIT_LINEARIZED;
+ChTimestepper::Type intgr_type = ChTimestepper::Type::EULER_IMPLICIT_PROJECTED;
+////ChTimestepper::Type intgr_type = ChTimestepper::Type::EULER_IMPLICIT;
+////ChTimestepper::Type intgr_type = ChTimestepper::Type::HHT;
+
+// Verbose output level (solver and integrator)
+bool verbose_solver = false;
+bool verbose_integrator = false;
+
 // =============================================================================
+
+// Forward declarations
 void CreateTires(WheeledVehicle& vehicle, VisualizationType tire_vis);
+void SelectSolver(ChSystem& sys, ChSolver::Type& solver_type, ChTimestepper::Type& integrator_type);
+void ReportTiming(ChSystem& sys);
+
+// =============================================================================
+
+class ContactReporter : public ChContactContainer::ReportContactCallback {
+  public:
+    ContactReporter() {}
+
+  private:
+    virtual bool OnReportContact(const ChVector<>& pA,
+                                 const ChVector<>& pB,
+                                 const ChMatrix33<>& plane_coord,
+                                 const double& distance,
+                                 const double& eff_radius,
+                                 const ChVector<>& cforce,
+                                 const ChVector<>& ctorque,
+                                 ChContactable* modA,
+                                 ChContactable* modB) override {
+        const ChVector<>& nrm = plane_coord.Get_A_Xaxis();
+        std::cout << "   " << ((ChBody*)modA)->GetNameString() << "  -  " << ((ChBody*)modB)->GetNameString()
+                  << std::endl;
+        std::cout << "      pt A:  " << pA << std::endl;
+        std::cout << "      pt B:  " << pB << std::endl;
+        std::cout << "      nrm:   " << nrm << std::endl;
+        std::cout << "      frc:   " << plane_coord * cforce << std::endl;
+        std::cout << "      delta: " << distance << std::endl;
+        std::cout << "      reff:  " << eff_radius << std::endl;
+
+        if (nrm.z() < 0.5) {
+            std::cout << "\n\n\n*************\n\n\n" << std::endl;
+            exit(1);
+        }
+
+        return true;
+    }
+};
+
+// =============================================================================
 
 int main(int argc, char* argv[]) {
     GetLog() << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
@@ -89,12 +166,12 @@ int main(int argc, char* argv[]) {
     ChVector<> path_end = patch_sys.TransformPointLocalToParent(ChVector<>(+terrainLength / 2, 0, 0.5));
 
     // Create the vehicle system
-    WheeledVehicle vehicle(vehicle::GetDataFile(vehicle_json), ChContactMethod::SMC);
+    WheeledVehicle vehicle(vehicle::GetDataFile(vehicle_json), contact_method);
     if (disconnect_driveline) {
         vehicle.Initialize(ChCoordsys<>(init_loc, yaw_rot), init_vel);
         vehicle.DisconnectDriveline();
     } else {
-        vehicle.Initialize(ChCoordsys<>(init_loc, yaw_rot));    
+        vehicle.Initialize(ChCoordsys<>(init_loc, yaw_rot));
     }
     vehicle.DisconnectDriveline();
     vehicle.GetChassis()->SetFixed(false);
@@ -122,15 +199,18 @@ int main(int argc, char* argv[]) {
     switch (terrain_type) {
         case TerrainType::RIGID:
         default: {
+            MaterialInfo minfo;
+            minfo.mu = 0.9f;
+            minfo.cr = 0.1f;
+            minfo.Y = 2e7f;
+            minfo.nu = 0.3f;
+            auto patch_mat = minfo.CreateMaterial(contact_method);
+
             auto rigid_terrain = chrono_types::make_shared<RigidTerrain>(system);
-            auto patch_mat = chrono_types::make_shared<ChMaterialSurfaceSMC>();
-            patch_mat->SetFriction(0.9f);
-            patch_mat->SetRestitution(0.01f);
-            patch_mat->SetYoungModulus(2e7f);
-            patch_mat->SetPoissonRatio(0.3f);
-            auto patch = rigid_terrain->AddPatch(patch_mat, ChCoordsys<>(ChVector<>(0), yaw_rot), terrainLength, 5);
+            auto patch = rigid_terrain->AddPatch(patch_mat, ChCoordsys<>(ChVector<>(0), yaw_rot), terrainLength, 10);
             patch->SetColor(ChColor(0.8f, 0.8f, 0.5f));
             patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 5);
+
             rigid_terrain->Initialize();
             terrain = rigid_terrain;
             break;
@@ -150,7 +230,7 @@ int main(int argc, char* argv[]) {
     driver.GetSpeedController().SetGains(0.4, 0, 0);
     driver.Initialize();
 
-    // Create Irrilicht visualization
+    // Create Irrlicht visualization
     auto vis = chrono_types::make_shared<ChWheeledVehicleVisualSystemIrrlicht>();
     vis->SetWindowTitle("Vehicle acceleration - JSON specification");
     vis->SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 6.0, 0.5);
@@ -160,23 +240,57 @@ int main(int argc, char* argv[]) {
     vis->AddLogo();
     vehicle.SetVisualSystem(vis);
 
+    // Solver and integrator settings
+    double step_size = 1e-3;
+    switch (contact_method) {
+        case ChContactMethod::NSC:
+            std::cout << "Use NSC" << std::endl;
+            step_size = step_size_NSC;
+            break;
+        case ChContactMethod::SMC:
+            std::cout << "Use SMC" << std::endl;
+            step_size = step_size_SMC;
+            break;
+    }
+
+    SelectSolver(*vehicle.GetSystem(), slvr_type, intgr_type);
+    vehicle.GetSystem()->GetSolver()->SetVerbose(verbose_solver);
+    vehicle.GetSystem()->GetTimestepper()->SetVerbose(verbose_integrator);
+
+    std::cout << "SOLVER TYPE:     " << (int)slvr_type << std::endl;
+    std::cout << "INTEGRATOR TYPE: " << (int)intgr_type << std::endl;
+
+    // Set tire integration step-size
+    tire_step_size = std::min(tire_step_size, step_size);
+
+    for (auto& axle : vehicle.GetAxles()) {
+        for (auto& wheel : axle->GetWheels()) {
+            wheel->GetTire()->SetCollisionType(ChTire::CollisionType::SINGLE_POINT);
+            if (tire_step_size > 0)
+                wheel->GetTire()->SetStepsize(tire_step_size);
+        }
+    }
+
+    // User-defined callback for contact reporting
+    auto creporter = chrono_types::make_shared<ContactReporter>();
+
     vehicle.LogSubsystemTypes();
 
     // Simulation loop
     int step_number = 0;
     double time = 0;
+    double time_end = 6;
 
     ChTimer<> timer;
     timer.start();
-    while (vis->Run()) {
+    while (vis->Run() && time < time_end) {
         time = system->GetChTime();
 
-        // End simulation
-        if (time >= 15)
-            break;
-
+        // Render scene and draw a coordinate system aligned with the world frame
         vis->BeginScene();
         vis->DrawAll();
+        irrlicht::tools::drawCoordsys(vis.get(), ChCoordsys<>(vehicle.GetPos(), QUNIT), 2);
+        vis->EndScene();
 
         // Driver inputs
         DriverInputs driver_inputs = driver.GetInputs();
@@ -193,21 +307,29 @@ int main(int argc, char* argv[]) {
         vehicle.Advance(step_size);
         vis->Advance(step_size);
 
+        ////ReportTiming(*system);
+
+        /*
+        // Output contact information
+        if (terrain_type == TerrainType::RIGID && time > 1) {
+            std::cout << "--------------------------------------" << std::endl;
+            std::cout << "time: " << time << std::endl;
+            system->GetContactContainer()->ReportAllContacts(creporter);
+            auto rterrain = std::static_pointer_cast<RigidTerrain>(terrain);
+            std::cout << "Ground frc: " << rterrain->GetPatches()[0]->GetGroundBody()->GetContactForce() << std::endl;
+        }
+        */
+
         // Increment frame number
         step_number++;
-
-        // Draw a coordinate system aligned with the world frame
-        irrlicht::tools::drawCoordsys(vis.get(), ChCoordsys<>(vehicle.GetPos(), QUNIT), 2);
-
-        vis->EndScene();
     }
 
-    std::cout << "Final vehicle speed: " << vehicle.GetSpeed() << std::endl;
+    std::cout << "\n\nFinal vehicle speed: " << vehicle.GetSpeed() << std::endl;
 
     return 0;
 }
 
-// ----------------------------------------------------------------------
+// =============================================================================
 
 void CreateTires(WheeledVehicle& vehicle, VisualizationType tire_vis) {
     switch (tire_model) {
@@ -282,12 +404,126 @@ void CreateTires(WheeledVehicle& vehicle, VisualizationType tire_vis) {
         default:
             break;
     }
+}
 
-    for (auto& axle : vehicle.GetAxles()) {
-        for (auto& wheel : axle->GetWheels()) {
-            wheel->GetTire()->SetCollisionType(ChTire::CollisionType::SINGLE_POINT);
-            if (tire_step_size > 0)
-                wheel->GetTire()->SetStepsize(tire_step_size);
+void SelectSolver(ChSystem& sys, ChSolver::Type& solver_type, ChTimestepper::Type& integrator_type) {
+    // For NSC systems, use implicit linearized Euler and an iterative VI solver
+    if (sys.GetContactMethod() == ChContactMethod::NSC) {
+        integrator_type = ChTimestepper::Type::EULER_IMPLICIT_LINEARIZED;
+        if (solver_type != ChSolver::Type::BARZILAIBORWEIN && solver_type != ChSolver::Type::APGD &&
+            solver_type != ChSolver::Type::PSOR && solver_type != ChSolver::Type::PSSOR) {
+            solver_type = ChSolver::Type::BARZILAIBORWEIN;
         }
     }
+
+    // If none of the direct sparse solver modules is enabled, default to SPARSE_QR
+    if (solver_type == ChSolver::Type::PARDISO_MKL) {
+#ifndef CHRONO_PARDISO_MKL
+        solver_type = ChSolver::Type::SPARSE_QR;
+#endif
+    } else if (solver_type == ChSolver::Type::PARDISO_PROJECT) {
+#ifndef CHRONO_PARDISOPROJECT
+        solver_type = ChSolver::Type::SPARSE_QR;
+#endif
+    } else if (solver_type == ChSolver::Type::MUMPS) {
+#ifndef CHRONO_MUMPS
+        solver_type = ChSolver::Type::SPARSE_QR;
+#endif
+    }
+
+    if (solver_type == ChSolver::Type::PARDISO_MKL) {
+#ifdef CHRONO_PARDISO_MKL
+        auto solver = chrono_types::make_shared<ChSolverPardisoMKL>();
+        solver->LockSparsityPattern(true);
+        sys.SetSolver(solver);
+#endif
+    } else if (solver_type == ChSolver::Type::PARDISO_PROJECT) {
+#ifdef CHRONO_PARDISOPROJECT
+        auto solver = chrono_types::make_shared<ChSolverPardisoProject>();
+        solver->LockSparsityPattern(true);
+        sys->SetSolver(solver);
+#endif
+    } else if (solver_type == ChSolver::Type::MUMPS) {
+#ifdef CHRONO_MUMPS
+        auto solver = chrono_types::make_shared<ChSolverMumps>();
+        solver->LockSparsityPattern(true);
+        solver->EnableNullPivotDetection(true);
+        solver->GetMumpsEngine().SetICNTL(14, 50);
+        sys.SetSolver(solver);
+#endif
+    } else {
+        sys.SetSolverType(solver_type);
+        switch (solver_type) {
+            case ChSolver::Type::SPARSE_LU:
+            case ChSolver::Type::SPARSE_QR: {
+                auto solver = std::static_pointer_cast<ChDirectSolverLS>(sys.GetSolver());
+                solver->LockSparsityPattern(false);
+                solver->UseSparsityPatternLearner(false);
+                break;
+            }
+            case ChSolver::Type::BARZILAIBORWEIN:
+            case ChSolver::Type::APGD:
+            case ChSolver::Type::PSOR: {
+                auto solver = std::static_pointer_cast<ChIterativeSolverVI>(sys.GetSolver());
+                solver->SetMaxIterations(100);
+                solver->SetOmega(0.8);
+                solver->SetSharpnessLambda(1.0);
+
+                ////sys.SetMaxPenetrationRecoverySpeed(1.5);
+                ////sys.SetMinBounceSpeed(2.0);
+                break;
+            }
+            case ChSolver::Type::BICGSTAB:
+            case ChSolver::Type::MINRES:
+            case ChSolver::Type::GMRES: {
+                auto solver = std::static_pointer_cast<ChIterativeSolverLS>(sys.GetSolver());
+                solver->SetMaxIterations(200);
+                solver->SetTolerance(1e-10);
+                solver->EnableDiagonalPreconditioner(true);
+                break;
+            }
+        }
+    }
+
+    sys.SetTimestepperType(integrator_type);
+    switch (integrator_type) {
+        case ChTimestepper::Type::HHT: {
+            auto integrator = std::static_pointer_cast<ChTimestepperHHT>(sys.GetTimestepper());
+            integrator->SetAlpha(-0.2);
+            integrator->SetMaxiters(50);
+            integrator->SetAbsTolerances(1e-4, 1e2);
+            integrator->SetMode(ChTimestepperHHT::ACCELERATION);
+            integrator->SetStepControl(false);
+            integrator->SetModifiedNewton(false);
+            integrator->SetScaling(false);
+            break;
+        }
+        case ChTimestepper::Type::EULER_IMPLICIT: {
+            auto integrator = std::static_pointer_cast<ChTimestepperEulerImplicit>(sys.GetTimestepper());
+            integrator->SetMaxiters(50);
+            integrator->SetAbsTolerances(1e-4, 1e2);
+            break;
+        }
+        case ChTimestepper::Type::EULER_IMPLICIT_LINEARIZED:
+        case ChTimestepper::Type::EULER_IMPLICIT_PROJECTED:
+            break;
+    }
+}
+
+void ReportTiming(ChSystem& sys) {
+    std::stringstream ss;
+    ss.precision(4);
+    ss << std::fixed << sys.GetChTime() << " | ";
+    ss << sys.GetTimerStep() << " " << sys.GetTimerAdvance() << " " << sys.GetTimerUpdate() << " | ";
+    ss << sys.GetTimerJacobian() << " " << sys.GetTimerLSsetup() << " " << sys.GetTimerLSsolve() << " | ";
+    ss << sys.GetTimerCollision() << " " << sys.GetTimerCollisionBroad() << " " << sys.GetTimerCollisionNarrow();
+
+    auto LS = std::dynamic_pointer_cast<ChDirectSolverLS>(sys.GetSolver());
+    if (LS) {
+        ss << " | ";
+        ss << LS->GetTimeSetup_Assembly() << " " << LS->GetTimeSetup_SolverCall() << " ";
+        ss << LS->GetTimeSolve_Assembly() << " " << LS->GetTimeSolve_SolverCall();
+        LS->ResetTimers();
+    }
+    std::cout << ss.str() << std::endl;
 }
