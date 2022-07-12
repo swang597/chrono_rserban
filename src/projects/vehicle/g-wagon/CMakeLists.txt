@@ -16,7 +16,7 @@ set(PROGRAMS
     test_VEH_GD250_TurnCircle
 )
 
-if (ENABLE_OPENCRG)
+if (HAVE_OPENCRG)
     set(PROGRAMS ${PROGRAMS}
         test_VEH_GD250_Shock
     )
