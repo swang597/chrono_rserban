@@ -36,15 +36,12 @@
 #include "chrono/utils/ChFilters.h"
 
 #include "chrono_fsi/ChSystemFsi.h"
+#include "chrono_fsi/ChVisualizationFsi.h"
 
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/utils/ChUtilsJSON.h"
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"
 #include "chrono_vehicle/wheeled_vehicle/vehicle/WheeledVehicle.h"
-
-#ifdef CHRONO_OPENGL
-    #include "chrono_opengl/ChOpenGLWindow.h"
-#endif
 
 #include "chrono_thirdparty/cxxopts/ChCLI.h"
 #include "chrono_thirdparty/filesystem/path.h"
@@ -83,13 +80,17 @@ bool GetProblemSpecs(int argc,
                      double& filter_window,
                      double& vis_output_fps,
                      bool& run_time_vis,
+                     bool& run_time_vis_particles,
+                     bool& run_time_vis_bce,
+                     double& run_time_vis_fps,
                      bool& verbose) {
     ChCLI cli(argv[0], "Polaris SPH terrain simulation");
 
     cli.AddOption<std::string>("Simulation", "terrain_dir", "Directory with terrain specification data");
     cli.AddOption<double>("Simulation", "tend", "Simulation end time [s]", std::to_string(tend));
     cli.AddOption<double>("Simulation", "step_size", "Integration step size [s]", std::to_string(step_size));
-    cli.AddOption<double>("Simulation", "active_box_dim", "Half-dimension of active box [m]", std::to_string(active_box_dim));
+    cli.AddOption<double>("Simulation", "active_box_dim", "Half-dimension of active box [m]",
+                          std::to_string(active_box_dim));
 
     cli.AddOption<double>("Simulation output", "output_major_fps", "Simulation output major frequency [fps]",
                           std::to_string(output_major_fps));
@@ -105,6 +106,11 @@ bool GetProblemSpecs(int argc,
     cli.AddOption<double>("Visualization", "vis_output_fps", "Visualization output frequency [fps]",
                           std::to_string(vis_output_fps));
     cli.AddOption<bool>("Visualization", "run_time_vis", "Enable run-time visualization");
+    cli.AddOption<bool>("Visualization", "run_time_vis_particles", "Enable run-time particle visualization");
+    cli.AddOption<bool>("Visualization", "run_time_vis_bce", "Enabale run-time BCE markjer visualization");
+    cli.AddOption<double>("Visualization", "run_time_vis_fps", "Run-time visualization frequency [fps]",
+                          std::to_string(run_time_vis_fps));
+
 
     if (!cli.Parse(argc, argv)) {
         cli.Help();
@@ -128,6 +134,9 @@ bool GetProblemSpecs(int argc,
 
     vis_output_fps = cli.GetAsType<double>("vis_output_fps");
     run_time_vis = cli.GetAsType<bool>("run_time_vis");
+    run_time_vis_particles = cli.GetAsType<bool>("run_time_vis_particles");
+    run_time_vis_bce = cli.GetAsType<bool>("run_time_vis_bce");
+    run_time_vis_fps = cli.GetAsType<double>("run_time_vis_fps");
 
     tend = cli.GetAsType<double>("tend");
     step_size = cli.GetAsType<double>("step_size");
@@ -609,7 +618,11 @@ void CreateMeshMarkers(const geometry::ChTriangleMeshConnected& mesh,
     }
 }
 
-void CreateTerrain(ChSystem& sys, ChSystemFsi& sysFSI, const std::string& terrain_dir, bool enable_terrain_mesh) {
+void CreateTerrain(ChSystem& sys,
+                   ChSystemFsi& sysFSI,
+                   const std::string& terrain_dir,
+                   bool terrain_mesh_vis,
+                   bool terrain_mesh_contact) {
     // Create SPH markers with initial locations from file
     int num_particles = 0;
     ChVector<> aabb_min(std::numeric_limits<double>::max());
@@ -650,12 +663,15 @@ void CreateTerrain(ChSystem& sys, ChSystemFsi& sysFSI, const std::string& terrai
 
     auto trimesh = chrono_types::make_shared<geometry::ChTriangleMeshConnected>();
     trimesh->LoadWavefrontMesh(vehicle::GetDataFile(terrain_dir + "/mesh.obj"), true, false);
-    auto trimesh_shape = chrono_types::make_shared<ChTriangleMeshShape>();
-    trimesh_shape->SetMesh(trimesh);
-    trimesh_shape->SetMutable(false);
-    body->AddVisualShape(trimesh_shape);
 
-    if (enable_terrain_mesh) {
+    if (terrain_mesh_vis) {
+        auto trimesh_shape = chrono_types::make_shared<ChTriangleMeshShape>();
+        trimesh_shape->SetMesh(trimesh);
+        trimesh_shape->SetMutable(false);
+        body->AddVisualShape(trimesh_shape);
+    }
+
+    if (terrain_mesh_contact) {
         MaterialInfo mat_info;
         mat_info.mu = 0.9f;
         auto mat = mat_info.CreateMaterial(sys.GetContactMethod());
@@ -721,22 +737,24 @@ int main(int argc, char* argv[]) {
     double output_major_fps = 20;
     double output_minor_fps = 1000;
     int output_frames = 5;
-    bool output_velocities = true;  // output particle velocities
-    double filter_window = 0;       // do not filter data
-    double vis_output_fps = 0;      // no post-processing visualization output
-    bool run_time_vis = false;      // no run-time visualization
+    bool output_velocities = true;        // output particle velocities
+    double filter_window = 0;             // do not filter data
+    double vis_output_fps = 0;            // no post-processing visualization output
+    bool run_time_vis = false;            // no run-time visualization
+    double run_time_vis_fps = 0;          // render every simulation frame
+    bool run_time_vis_particles = false;  // render only terrain surface mesh
+    bool run_time_vis_bce = false;        // render vehicle meshes
     bool verbose = true;
 
     if (!GetProblemSpecs(argc, argv, terrain_dir, tend, step_size, active_box_dim, output_major_fps, output_minor_fps,
-                         output_frames, output_velocities, filter_window, vis_output_fps, run_time_vis, verbose)) {
+                         output_frames, output_velocities, filter_window, vis_output_fps, run_time_vis,
+                         run_time_vis_particles, run_time_vis_bce, run_time_vis_fps, verbose)) {
         return 1;
     }
 
     bool sim_output = (output_major_fps > 0);
     bool use_filter = (filter_window > 0);
     bool vis_output = (vis_output_fps > 0);
-
-    bool enable_terrain_mesh = false;
 
     // Check input files exist
     if (!filesystem::path(vehicle::GetDataFile(terrain_dir + "/sph_params.json")).exists()) {
@@ -772,7 +790,7 @@ int main(int argc, char* argv[]) {
     sysFSI.SetVerbose(false);
 
     // Set simulation data output and FSI information output
-    std::string out_dir = GetChronoOutputPath() + "FSI_POLARIS/";
+    std::string out_dir = GetChronoOutputPath() + "POLARIS_SPH/";
     std::string vis_dir = out_dir + "Visualization/";
     sysFSI.SetOutputLength(0);
     ////sysFSI.SetOutputDirectory(out_dir);
@@ -781,7 +799,8 @@ int main(int argc, char* argv[]) {
 
     // Create terrain
     cout << "Create terrain..." << endl;
-    CreateTerrain(sys, sysFSI, terrain_dir, enable_terrain_mesh);
+    bool terrain_mesh_contact = false;
+    CreateTerrain(sys, sysFSI, terrain_dir, !run_time_vis_particles, terrain_mesh_contact);
 
     // Create vehicle
     cout << "Create vehicle..." << endl;
@@ -807,21 +826,31 @@ int main(int argc, char* argv[]) {
     // Complete construction of FSI system
     sysFSI.Initialize();
 
-#ifdef CHRONO_OPENGL
-    opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
+    // Create run-time visualization
+    ChVisualizationFsi fsi_vis(&sysFSI);
     if (run_time_vis) {
-        gl_window.AttachSystem(&sys);
-        gl_window.Initialize(1280, 720, "JSON visualization");
-        ////gl_window.SetCamera(ChVector<>(0, -4, 2), ChVector<>(5, 0, 0.5), ChVector<>(0, 0, 1));
-        gl_window.SetCamera(ChVector<>(-3, 0, 6), ChVector<>(5, 0, 0.5), ChVector<>(0, 0, 1));
-        gl_window.SetRenderMode(opengl::SOLID);
-        gl_window.EnableHUD(false);
+        fsi_vis.SetTitle("Chrono::FSI single wheel demo");
+        fsi_vis.SetSize(1280, 720);
+        fsi_vis.SetCameraPosition(ChVector<>(-3, 0, 6), ChVector<>(5, 0, 0.5));
+        fsi_vis.SetCameraMoveScale(1.0f);
+        fsi_vis.EnableFluidMarkers(run_time_vis_particles);
+        fsi_vis.EnableRigidBodyMarkers(run_time_vis_bce);
+        fsi_vis.EnableBoundaryMarkers(false);
+        if (!run_time_vis_bce) {
+            fsi_vis.AttachSystem(&sys);
+        }
+        fsi_vis.SetRenderMode(ChVisualizationFsi::RenderMode::SOLID);
+        fsi_vis.EnableInfoOverlay(false);
+        fsi_vis.Initialize();
     }
-#endif
 
     // Enable data output
     cout << "===============================================================================" << endl;
     auto sim_dir = out_dir + filesystem::path(terrain_dir).filename() + "/";
+    if (!filesystem::create_directory(filesystem::path(out_dir))) {
+        cout << "Error creating directory " << out_dir << endl;
+        return 1;
+    }
     if (!filesystem::create_directory(filesystem::path(sim_dir))) {
         cout << "Error creating directory " << sim_dir << endl;
         return 1;
@@ -839,19 +868,12 @@ int main(int argc, char* argv[]) {
     ChTerrain terrain;
 
     int vis_output_steps = (int)std::round((1.0 / vis_output_fps) / step_size);
+    int render_steps = (run_time_vis_fps > 0) ? (int)std::round((1.0 / run_time_vis_fps) / step_size) : 1;
     int vis_output_frame = 0;
 
     double t = 0;
     int frame = 0;
     while (t < tend) {
-#ifdef CHRONO_OPENGL
-        if (run_time_vis) {
-            if (!gl_window.Active())
-                break;
-            gl_window.Render();
-        }
-#endif
-
         // Stop before end of patch
         if (vehicle->GetPos().x() > x_max)
             break;
@@ -869,6 +891,12 @@ int main(int argc, char* argv[]) {
             chrono::utils::WriteVisualizationAssets(&sys, vehicle_file);
 
             vis_output_frame++;
+        }
+
+        // Run-time visualization
+        if (run_time_vis && frame % render_steps == 0) {
+            if (!fsi_vis.Render())
+                break;
         }
 
         // Set current driver inputs
