@@ -1,7 +1,4 @@
 {
-
-  "Output Folder": "Visualization",
-
   "Physical Properties of Fluid": {
     "Density": 3000,
     "Gravity": [ 0.0, 0.0, -9.81 ]
