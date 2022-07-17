@@ -24,18 +24,28 @@ endif()
 
 #--------------------------------------------------------------
 
-set(PROGRAM test_Polaris_SPH)
+set(PROGRAMS 
+    test_Polaris_SPH
+    test_Polaris_SPH_ramp)
 
-message(STATUS "...add ${PROGRAM}")
+set(UTILITIES
+    DataWriter.h
+    DataWriter.cpp
+    CreateObjects.h
+    CreateObjects.cpp
+)
 
-cuda_add_executable(${PROGRAM}  "${PROGRAM}.cpp")
-source_group(""  FILES "${PROGRAM}.cpp")
+foreach(PROGRAM ${PROGRAMS})
+  message(STATUS "...add ${PROGRAM}")
 
-set_target_properties(${PROGRAM} PROPERTIES
+  add_executable(${PROGRAM}  ${PROGRAM}.cpp ${UTILITIES})
+  source_group(""  FILES ${PROGRAM}.cpp ${UTILITIES})
+
+  set_target_properties(${PROGRAM} PROPERTIES
         FOLDER demos
         COMPILE_FLAGS "${COMPILE_FLAGS}"
         LINK_FLAGS "${LINKER_FLAGS}"
-)
-set_property(TARGET ${PROGRAM} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROGRAM}>")
-target_link_libraries(${PROGRAM} ${LIBRARIES})
-
+  )
+  set_property(TARGET ${PROGRAM} PROPERTY VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${PROGRAM}>")
+  target_link_libraries(${PROGRAM} ${LIBRARIES})
+endforeach()
