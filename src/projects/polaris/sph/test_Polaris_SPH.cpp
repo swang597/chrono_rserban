@@ -168,9 +168,6 @@ int main(int argc, char* argv[]) {
     driver.GetSpeedController().SetGains(0.6, 0.05, 0);
     driver.Initialize();
 
-    // Complete construction of FSI system
-    sysFSI.Initialize();
-
     // Create run-time visualization
     ChVisualizationFsi fsi_vis(&sysFSI);
     if (run_time_vis) {
@@ -216,12 +213,24 @@ int main(int argc, char* argv[]) {
     int render_steps = (run_time_vis_fps > 0) ? (int)std::round((1.0 / run_time_vis_fps) / step_size) : 1;
     int vis_output_frame = 0;
 
+    bool on_ramp = true;
+
     double t = 0;
     int frame = 0;
+
     while (t < tend) {
         const auto& veh_loc = vehicle->GetPos();
 
-        bool on_ramp = (veh_loc.x() < -3);
+        // Check if vehicle approaching SPH terrain patch
+        if (on_ramp && veh_loc.x() > -2) {
+            // Create the wheel BCE markers at current wheel body locations
+            CreateWheelBCEMarkers(vehicle, sysFSI);
+
+            // Complete construction of FSI system
+            sysFSI.Initialize();
+
+            on_ramp = false;
+        }
 
         // Stop before end of patch
         if (veh_loc.x() > x_max)

@@ -77,8 +77,8 @@ chrono::ChCoordsys<> CreateTerrain(ChSystem& sys,
 
     //// RADU TODO:  FIX THIS SOMEHOW ELSE!!!
     if (create_ramp)
-       aabb_min.x() -= 20;
-    
+        aabb_min.x() -= 5;
+
     sysFSI.SetBoundaries(aabb_min - 0.1 * aabb_dim, aabb_max + 0.1 * aabb_dim);
 
     // Create ground body
@@ -193,8 +193,6 @@ std::shared_ptr<WheeledVehicle> CreateVehicle(PolarisModel model,
     std::string powertrain_json = model_dir + "powertrain/MRZR_SimpleMapPowertrain.json";
     std::string tire_json = model_dir + "tire/MRZR_RigidTire.json";
 
-    std::string tire_coll_obj = "mrzr/meshes_new/Polaris_tire_collision.obj";
-
     // Create and initialize the vehicle
     auto vehicle = chrono_types::make_shared<WheeledVehicle>(&sys, vehicle::GetDataFile(vehicle_json));
     vehicle->Initialize(init_pos);
@@ -208,28 +206,38 @@ std::shared_ptr<WheeledVehicle> CreateVehicle(PolarisModel model,
     auto powertrain = ReadPowertrainJSON(vehicle::GetDataFile(powertrain_json));
     vehicle->InitializePowertrain(powertrain);
 
-    // Create BCE markers for a tire
-    geometry::ChTriangleMeshConnected trimesh;
-    trimesh.LoadWavefrontMesh(vehicle::GetDataFile(tire_coll_obj));
-    std::vector<ChVector<>> point_cloud;
-    CreateMeshMarkers(trimesh, sysFSI.GetInitialSpacing(), point_cloud);
-
     // Create and initialize the tires
     for (auto& axle : vehicle->GetAxles()) {
         for (auto& wheel : axle->GetWheels()) {
             auto tire = ReadTireJSON(vehicle::GetDataFile(tire_json));
             vehicle->InitializeTire(tire, wheel, VisualizationType::MESH);
-            sysFSI.AddFsiBody(wheel->GetSpindle());
-            sysFSI.AddPointsBCE(wheel->GetSpindle(), point_cloud, VNULL, QUNIT);
         }
     }
 
     return vehicle;
 }
 
-void CreateMeshMarkers(const geometry::ChTriangleMeshConnected& mesh,
-                       double delta,
-                       std::vector<ChVector<>>& point_cloud) {
+void CreateWheelBCEMarkers(std::shared_ptr<WheeledVehicle> vehicle, ChSystemFsi& sysFSI) {
+    // Create BCE markers for a tire
+    std::string tire_coll_obj = "mrzr/meshes_new/Polaris_tire_collision.obj";
+
+    geometry::ChTriangleMeshConnected trimesh;
+    trimesh.LoadWavefrontMesh(vehicle::GetDataFile(tire_coll_obj));
+    std::vector<ChVector<>> point_cloud;
+    CreateMeshBCEMarkers(trimesh, sysFSI.GetInitialSpacing(), point_cloud);
+
+    // Create and initialize the tires
+    for (auto& axle : vehicle->GetAxles()) {
+        for (auto& wheel : axle->GetWheels()) {
+            sysFSI.AddFsiBody(wheel->GetSpindle());
+            sysFSI.AddPointsBCE(wheel->GetSpindle(), point_cloud, VNULL, QUNIT);
+        }
+    }
+}
+
+void CreateMeshBCEMarkers(const geometry::ChTriangleMeshConnected& mesh,
+                          double delta,
+                          std::vector<ChVector<>>& point_cloud) {
     ChVector<> minV = mesh.m_vertices[0];
     ChVector<> maxV = mesh.m_vertices[0];
     ChVector<> currV = mesh.m_vertices[0];
