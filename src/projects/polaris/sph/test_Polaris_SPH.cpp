@@ -50,9 +50,6 @@ using std::endl;
 
 PolarisModel model = PolarisModel::MODIFIED;
 
-// Speed controller target speed (in m/s)
-double target_speed = 7;
-
 const ChVector<> gravity(0, 0, -9.81);
 
 // ===================================================================================================================
@@ -60,6 +57,8 @@ const ChVector<> gravity(0, 0, -9.81);
 bool GetProblemSpecs(int argc,
                      char** argv,
                      std::string& terrain_dir,
+                     double& ramp_length,
+                     double& target_speed,
                      double& tend,
                      double& step_size,
                      double& active_box_dim,
@@ -73,6 +72,7 @@ bool GetProblemSpecs(int argc,
                      bool& run_time_vis_particles,
                      bool& run_time_vis_bce,
                      double& run_time_vis_fps,
+                     bool& chase_cam,
                      bool& verbose);
 
 // ===================================================================================================================
@@ -80,6 +80,8 @@ bool GetProblemSpecs(int argc,
 int main(int argc, char* argv[]) {
     // Parse command line arguments
     std::string terrain_dir;
+    double ramp_length = 0.0;
+    double target_speed = 7.0;
     double tend = 30;
     double step_size = 5e-4;
     double active_box_dim = 0.5;
@@ -93,11 +95,13 @@ int main(int argc, char* argv[]) {
     double run_time_vis_fps = 0;          // render every simulation frame
     bool run_time_vis_particles = false;  // render only terrain surface mesh
     bool run_time_vis_bce = false;        // render vehicle meshes
+    bool chase_cam = false;               // fixed camera
     bool verbose = true;
 
-    if (!GetProblemSpecs(argc, argv, terrain_dir, tend, step_size, active_box_dim, output_major_fps, output_minor_fps,
-                         output_frames, output_velocities, filter_window, vis_output_fps, run_time_vis,
-                         run_time_vis_particles, run_time_vis_bce, run_time_vis_fps, verbose)) {
+    if (!GetProblemSpecs(argc, argv, terrain_dir, ramp_length, target_speed, tend, step_size, active_box_dim,
+                         output_major_fps, output_minor_fps, output_frames, output_velocities, filter_window,
+                         vis_output_fps, run_time_vis, run_time_vis_particles, run_time_vis_bce, run_time_vis_fps,
+                         chase_cam, verbose)) {
         return 1;
     }
 
@@ -149,22 +153,14 @@ int main(int argc, char* argv[]) {
     // Create terrain
     cout << "Create terrain..." << endl;
     bool terrain_mesh_contact = false;
-    CreateTerrain(sys, sysFSI, terrain_dir, !run_time_vis_particles, terrain_mesh_contact);
+    auto init_pos = CreateTerrain(sys, sysFSI, terrain_dir, ramp_length, !run_time_vis_particles, terrain_mesh_contact);
 
     // Create vehicle
     cout << "Create vehicle..." << endl;
-    double slope = 0;
-    double banking = 0;
-    if (filesystem::path(vehicle::GetDataFile(terrain_dir + "/slope.txt")).exists()) {
-        std::ifstream is(vehicle::GetDataFile(terrain_dir + "/slope.txt"));
-        is >> slope >> banking;
-        is.close();
-    }
-    ChCoordsys<> init_pos(ChVector<>(4, 0, 0.25 + 4 * std::sin(slope)), Q_from_AngX(banking) * Q_from_AngY(-slope));
     auto vehicle = CreateVehicle(model, sys, init_pos, sysFSI);
 
     // Create driver
-    auto path = ChBezierCurve::read(vehicle::GetDataFile(terrain_dir + "/path.txt"));
+    auto path = CreatePath(terrain_dir, ramp_length);
     double x_max = path->getPoint(path->getNumPoints() - 1).x() - 3.0;
     ChPathFollowerDriver driver(*vehicle, path, "my_path", target_speed);
     driver.GetSteeringController().SetLookAheadDistance(2.0);
@@ -180,7 +176,7 @@ int main(int argc, char* argv[]) {
     if (run_time_vis) {
         fsi_vis.SetTitle("Chrono::FSI single wheel demo");
         fsi_vis.SetSize(1280, 720);
-        fsi_vis.SetCameraPosition(ChVector<>(-3, 0, 6), ChVector<>(5, 0, 0.5));
+        fsi_vis.SetCameraPosition(init_pos.pos + ChVector<>(-7, 0, 6), init_pos.pos + ChVector<>(1, 0, 0.5));
         fsi_vis.SetCameraMoveScale(1.0f);
         fsi_vis.EnableFluidMarkers(run_time_vis_particles);
         fsi_vis.EnableRigidBodyMarkers(run_time_vis_bce);
@@ -223,12 +219,16 @@ int main(int argc, char* argv[]) {
     double t = 0;
     int frame = 0;
     while (t < tend) {
+        const auto& veh_loc = vehicle->GetPos();
+
+        bool on_ramp = (veh_loc.x() < -3);
+
         // Stop before end of patch
-        if (vehicle->GetPos().x() > x_max)
+        if (veh_loc.x() > x_max)
             break;
 
         // Simulation data output
-        if (sim_output)
+        if (sim_output && !on_ramp)
             data_writer.Process(frame, driver_inputs);
 
         // Visualization data output
@@ -244,6 +244,11 @@ int main(int argc, char* argv[]) {
 
         // Run-time visualization
         if (run_time_vis && frame % render_steps == 0) {
+            if (chase_cam) {
+                ChVector<> cam_loc = veh_loc + ChVector<>(-3, 3, 2);
+                ChVector<> cam_point = veh_loc;
+                fsi_vis.SetCameraPosition(cam_loc, cam_point);
+            }
             if (!fsi_vis.Render())
                 break;
         }
@@ -251,11 +256,11 @@ int main(int argc, char* argv[]) {
         // Set current driver inputs
         driver_inputs = driver.GetInputs();
 
-        if (t < 1) {
+        if (t < 0.5) {
             driver_inputs.m_throttle = 0;
             driver_inputs.m_braking = 1;
         } else {
-            ChClampValue(driver_inputs.m_throttle, driver_inputs.m_throttle, (t - 1) / 0.5);
+            ChClampValue(driver_inputs.m_throttle, driver_inputs.m_throttle, (t - 0.5) / 0.5);
         }
 
         if (verbose)
@@ -267,9 +272,18 @@ int main(int argc, char* argv[]) {
         vehicle->Synchronize(t, driver_inputs, terrain);
 
         // Advance system state
-        driver.Advance(step_size);
-        sysFSI.DoStepDynamics_FSI();
-        t += step_size;
+        if (on_ramp) {
+            // While vehicle on acceleration ramp, only advance MBD system
+            double step = std::max(step_size, 1e-3);
+            driver.Advance(step);
+            sys.DoStepDynamics(step);
+            t += step;
+        } else {
+            // Advance both FSI and embedded MBD systems
+            driver.Advance(step_size);
+            sysFSI.DoStepDynamics_FSI();
+            t += step_size;
+        } 
 
         frame++;
     }
@@ -282,6 +296,8 @@ int main(int argc, char* argv[]) {
 bool GetProblemSpecs(int argc,
                      char** argv,
                      std::string& terrain_dir,
+                     double& ramp_length,
+                     double& target_speed,
                      double& tend,
                      double& step_size,
                      double& active_box_dim,
@@ -295,10 +311,13 @@ bool GetProblemSpecs(int argc,
                      bool& run_time_vis_particles,
                      bool& run_time_vis_bce,
                      double& run_time_vis_fps,
+                     bool& chase_cam,
                      bool& verbose) {
     ChCLI cli(argv[0], "Polaris SPH terrain simulation");
 
     cli.AddOption<std::string>("Simulation", "terrain_dir", "Directory with terrain specification data");
+    cli.AddOption<double>("Simulation", "ramp_length", "Length of the acceleration ramp");
+    cli.AddOption<double>("Simulation", "target_speed", "Target speed [m/s]");
     cli.AddOption<double>("Simulation", "tend", "Simulation end time [s]", std::to_string(tend));
     cli.AddOption<double>("Simulation", "step_size", "Integration step size [s]", std::to_string(step_size));
     cli.AddOption<double>("Simulation", "active_box_dim", "Half-dimension of active box [m]",
@@ -320,7 +339,8 @@ bool GetProblemSpecs(int argc,
                           std::to_string(vis_output_fps));
     cli.AddOption<bool>("Visualization", "run_time_vis", "Enable run-time visualization");
     cli.AddOption<bool>("Visualization", "run_time_vis_particles", "Enable run-time particle visualization");
-    cli.AddOption<bool>("Visualization", "run_time_vis_bce", "Enabale run-time BCE markjer visualization");
+    cli.AddOption<bool>("Visualization", "run_time_vis_bce", "Enable run-time BCE markjer visualization");
+    cli.AddOption<bool>("Visualization", "chase_cam", "Enable vehicle-following camera");
     cli.AddOption<double>("Visualization", "run_time_vis_fps", "Run-time visualization frequency [fps]",
                           std::to_string(run_time_vis_fps));
 
@@ -337,6 +357,9 @@ bool GetProblemSpecs(int argc,
         return false;
     }
 
+    ramp_length = cli.GetAsType<double>("ramp_length");
+    target_speed = cli.GetAsType<double>("target_speed");
+
     output_major_fps = cli.GetAsType<double>("output_major_fps");
     output_minor_fps = cli.GetAsType<double>("output_minor_fps");
     output_frames = cli.GetAsType<int>("output_frames");
@@ -349,6 +372,7 @@ bool GetProblemSpecs(int argc,
     run_time_vis_particles = cli.GetAsType<bool>("run_time_vis_particles");
     run_time_vis_bce = cli.GetAsType<bool>("run_time_vis_bce");
     run_time_vis_fps = cli.GetAsType<double>("run_time_vis_fps");
+    chase_cam = cli.GetAsType<bool>("chase_cam");
 
     tend = cli.GetAsType<double>("tend");
     step_size = cli.GetAsType<double>("step_size");

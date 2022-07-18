@@ -19,16 +19,20 @@
 #pragma once
 
 #include "chrono/physics/ChSystem.h"
-#include "chrono_vehicle/wheeled_vehicle/vehicle/WheeledVehicle.h"
+#include "chrono/core/ChBezierCurve.h"
 #include "chrono_fsi/ChSystemFsi.h"
+#include "chrono_vehicle/wheeled_vehicle/vehicle/WheeledVehicle.h"
 
 enum class PolarisModel { ORIGINAL, MODIFIED };
 
-void CreateTerrain(chrono::ChSystem& sys,
-                   chrono::fsi::ChSystemFsi& sysFSI,
-                   const std::string& terrain_dir,
-                   bool terrain_mesh_vis,
-                   bool terrain_mesh_contact);
+chrono::ChCoordsys<> CreateTerrain(chrono::ChSystem& sys,
+                                   chrono::fsi::ChSystemFsi& sysFSI,
+                                   const std::string& terrain_dir,
+                                   double ramp_length,
+                                   bool terrain_mesh_vis,
+                                   bool terrain_mesh_contact);
+
+std::shared_ptr<chrono::ChBezierCurve> CreatePath(const std::string& terrain_dir, double ramp_length);
 
 void CreateMeshMarkers(const chrono::geometry::ChTriangleMeshConnected& mesh,
                        double delta,

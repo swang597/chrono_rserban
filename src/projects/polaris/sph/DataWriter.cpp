@@ -77,6 +77,7 @@ void DataWriter::Initialize(const std::string& dir,
     m_major_skip = (int)std::round((1.0 / major_FPS) / step_size);
     m_minor_skip = (int)std::round((1.0 / minor_FPS) / step_size);
     m_major_frame = -1;
+    m_last_major = -1;
     m_minor_frame = 0;
 
     // Sanity check
@@ -113,7 +114,7 @@ void DataWriter::Process(int sim_frame, const DriverInputs& driver_inputs) {
             std::cout << "Start collection " << m_major_frame << std::endl;
         Reset();
     }
-    if ((sim_frame - m_last_major) % m_minor_skip == 0 && m_minor_frame < m_out_frames) {
+    if (m_last_major > 0 && (sim_frame - m_last_major) % m_minor_skip == 0 && m_minor_frame < m_out_frames) {
         if (m_verbose)
             std::cout << "    Output data " << m_major_frame << "/" << m_minor_frame << std::endl;
         Write();

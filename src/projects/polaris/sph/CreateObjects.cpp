@@ -16,8 +16,18 @@
 //
 // =============================================================================
 
+#include <string>
+#include <fstream>
+#include <iostream>
+#include <sstream>
+
+#include "chrono/assets/ChBoxShape.h"
+#include "chrono/assets/ChTriangleMeshShape.h"
+
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/utils/ChUtilsJSON.h"
+
+#include "chrono_thirdparty/filesystem/path.h"
 
 #include "CreateObjects.h"
 
@@ -25,11 +35,15 @@ using namespace chrono;
 using namespace chrono::vehicle;
 using namespace chrono::fsi;
 
-void CreateTerrain(ChSystem& sys,
-                   ChSystemFsi& sysFSI,
-                   const std::string& terrain_dir,
-                   bool terrain_mesh_vis,
-                   bool terrain_mesh_contact) {
+chrono::ChCoordsys<> CreateTerrain(ChSystem& sys,
+                                   ChSystemFsi& sysFSI,
+                                   const std::string& terrain_dir,
+                                   double ramp_length,
+                                   bool terrain_mesh_vis,
+                                   bool terrain_mesh_contact) {
+    // Include acceleration ramp?
+    bool create_ramp = (ramp_length > 0);
+
     // Create SPH markers with initial locations from file
     int num_particles = 0;
     ChVector<> aabb_min(std::numeric_limits<double>::max());
@@ -39,9 +53,9 @@ void CreateTerrain(ChSystem& sys,
     std::string line;
     std::string cell;
 
-    std::ifstream is(vehicle::GetDataFile(terrain_dir + "/particles_20mm.txt"));
-    getline(is, line);  // Comment line
-    while (getline(is, line)) {
+    std::ifstream ifile(vehicle::GetDataFile(terrain_dir + "/particles_20mm.txt"));
+    getline(ifile, line);  // Comment line
+    while (getline(ifile, line)) {
         std::stringstream ls(line);
         for (int i = 0; i < 3; i++) {
             getline(ls, cell, ',');
@@ -55,21 +69,51 @@ void CreateTerrain(ChSystem& sys,
                               tau, VNULL);
         num_particles++;
     }
-    is.close();
+    ifile.close();
 
     // Set computational domain
     ChVector<> aabb_dim = aabb_max - aabb_min;
     aabb_dim.z() *= 50;
+
+    //// RADU TODO:  FIX THIS SOMEHOW ELSE!!!
+    if (create_ramp)
+       aabb_min.x() -= 20;
+    
     sysFSI.SetBoundaries(aabb_min - 0.1 * aabb_dim, aabb_max + 0.1 * aabb_dim);
 
-    // Create ground body and attach BCE markers
-    // Note: BCE markers must be created after SPH markers!
+    // Create ground body
     auto body = std::shared_ptr<ChBody>(sys.NewBody());
     body->SetBodyFixed(true);
     sys.AddBody(body);
 
+    // Attach BCE markers (Note: BCE markers must be created after SPH markers!)
+    sysFSI.AddFileBCE(body, vehicle::GetDataFile(terrain_dir + "/bce_20mm.txt"), VNULL, QUNIT, 1.0, false);
+
+    // Extract slope and banking of the terrain patch
+    double slope = 0;
+    double banking = 0;
+    if (filesystem::path(vehicle::GetDataFile(terrain_dir + "/slope.txt")).exists()) {
+        std::ifstream is(vehicle::GetDataFile(terrain_dir + "/slope.txt"));
+        is >> slope >> banking;
+        is.close();
+    }
+
+    // Ramp dimensions and orientation
+    double hlen = ramp_length / 2;
+    double hwidth = 2;
+    double hheight = 0.5;
+    auto ramp_rot = Q_from_AngX(banking) * Q_from_AngY(-slope);
+    auto ramp_loc = ramp_rot.Rotate(ChVector<>(-hlen, 0, -hheight));
+
+    // Create visual and collision shapes
     auto trimesh = chrono_types::make_shared<geometry::ChTriangleMeshConnected>();
     trimesh->LoadWavefrontMesh(vehicle::GetDataFile(terrain_dir + "/mesh.obj"), true, false);
+
+    if (create_ramp) {
+        auto box = chrono_types::make_shared<ChBoxShape>();
+        box->GetBoxGeometry().Size = ChVector<>(hlen, hwidth, hheight);
+        body->AddVisualShape(box, ChFrame<>(ramp_loc, ramp_rot));
+    }
 
     if (terrain_mesh_vis) {
         auto trimesh_shape = chrono_types::make_shared<ChTriangleMeshShape>();
@@ -78,17 +122,64 @@ void CreateTerrain(ChSystem& sys,
         body->AddVisualShape(trimesh_shape);
     }
 
+    MaterialInfo mat_info;
+    mat_info.mu = 0.9f;
+    auto mat = mat_info.CreateMaterial(sys.GetContactMethod());
+
+    body->GetCollisionModel()->ClearModel();
+    if (create_ramp) {
+        body->GetCollisionModel()->AddBox(mat, hlen, hwidth, hheight, ramp_loc, ramp_rot);
+    }
     if (terrain_mesh_contact) {
-        MaterialInfo mat_info;
-        mat_info.mu = 0.9f;
-        auto mat = mat_info.CreateMaterial(sys.GetContactMethod());
-        body->GetCollisionModel()->ClearModel();
         body->GetCollisionModel()->AddTriangleMesh(mat, trimesh, true, false, VNULL, ChMatrix33<>(1), 0.01);
-        body->GetCollisionModel()->BuildModel();
-        body->SetCollide(true);
+    }
+    body->GetCollisionModel()->BuildModel();
+    body->SetCollide(true);
+
+    // Set and return vehicle initial location
+    double init_x = create_ramp ? -2 * hlen + 4 : 4;
+    ChVector<> init_loc = ramp_rot.Rotate(ChVector<>(init_x, 0, 0.25));
+
+    return ChCoordsys<>(init_loc, ramp_rot);
+}
+
+std::shared_ptr<ChBezierCurve> CreatePath(const std::string& terrain_dir, double ramp_length) {
+    // Include acceleration ramp?
+    bool create_ramp = (ramp_length > 0);
+
+    // Open input file
+    std::ifstream ifile(vehicle::GetDataFile(terrain_dir + "/path.txt"));
+    std::string line;
+
+    // Read number of knots and type of curve
+    size_t numPoints;
+    size_t numCols;
+
+    std::getline(ifile, line);
+    std::istringstream iss(line);
+    iss >> numPoints >> numCols;
+
+    assert(numCols == 3);
+
+    // Read path points
+    std::vector<ChVector<>> points;
+
+    if (create_ramp) {
+        // Include additional point if creating a ramp
+        points.push_back(ChVector<>(-ramp_length, 0, 0));
     }
 
-    sysFSI.AddFileBCE(body, vehicle::GetDataFile(terrain_dir + "/bce_20mm.txt"), VNULL, QUNIT, 1.0, false);
+    for (size_t i = 0; i < numPoints; i++) {
+        double x, y, z;
+        std::getline(ifile, line);
+        std::istringstream jss(line);
+        jss >> x >> y >> z;
+        points.push_back(ChVector<>(x, y, z));
+    }
+
+    ifile.close();
+
+    return std::shared_ptr<ChBezierCurve>(new ChBezierCurve(points));
 }
 
 std::shared_ptr<WheeledVehicle> CreateVehicle(PolarisModel model,

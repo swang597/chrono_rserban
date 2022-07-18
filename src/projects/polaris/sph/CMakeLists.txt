@@ -25,8 +25,7 @@ endif()
 #--------------------------------------------------------------
 
 set(PROGRAMS 
-    test_Polaris_SPH
-    test_Polaris_SPH_ramp)
+    test_Polaris_SPH)
 
 set(UTILITIES
     DataWriter.h
