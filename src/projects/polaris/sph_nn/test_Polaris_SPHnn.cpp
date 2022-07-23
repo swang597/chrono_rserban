@@ -39,7 +39,7 @@
 #include "chrono_vehicle/wheeled_vehicle/tire/RigidTire.h"
 
 #ifdef CHRONO_OPENGL
-    #include "chrono_opengl/ChOpenGLWindow.h"
+    #include "chrono_opengl/ChVisualSystemOpenGL.h"
 #endif
 
 #include "chrono_thirdparty/cxxopts/ChCLI.h"
@@ -564,14 +564,15 @@ int main(int argc, char* argv[]) {
     }
 
 #ifdef CHRONO_OPENGL
-    opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
+    opengl::ChVisualSystemOpenGL vis;
     if (run_time_vis) {
-        gl_window.AttachSystem(&sys);
-        gl_window.Initialize(1280, 720, "JSON visualization");
-        ////gl_window.SetCamera(ChVector<>(0, -4, 2), ChVector<>(5, 0, 0.5), ChVector<>(0, 0, 1));
-        gl_window.SetCamera(ChVector<>(-3, 0, 6), ChVector<>(5, 0, 0.5), ChVector<>(0, 0, 1));
-        gl_window.SetRenderMode(opengl::SOLID);
-        gl_window.EnableHUD(false);
+        vis.AttachSystem(&sys);
+        vis.SetWindowTitle("Test");
+        vis.SetWindowSize(1280, 720);
+        vis.SetRenderMode(opengl::WIREFRAME);
+        vis.Initialize();
+        vis.SetCameraPosition(ChVector<>(-3, 0, 6), ChVector<>(5, 0, 0.5));
+        vis.SetCameraVertical(CameraVerticalDir::Z);
     }
 #endif
 
@@ -584,9 +585,11 @@ int main(int argc, char* argv[]) {
     while (t < tend) {
 #ifdef CHRONO_OPENGL
         if (run_time_vis) {
-            if (!gl_window.Active())
+            if (vis.Run()) {
+                vis.Render();
+            } else {
                 break;
-            gl_window.Render();
+            }
         }
 #endif
 

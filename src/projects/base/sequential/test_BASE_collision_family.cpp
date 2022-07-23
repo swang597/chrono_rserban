@@ -105,7 +105,7 @@ int main(int argc, char* argv[]) {
     vis->AddSkyBox();
     vis->AddTypicalLights();
     vis->AddCamera(ChVector<>(0, 2, -4));
-    sys.SetVisualSystem(vis);
+    vis->AttachSystem(&sys);
 
     for (const auto& body : sys.Get_bodylist()) {
         std::cout << "Body " << body->GetIdentifier() << "  family: " << body->GetCollisionModel()->GetFamily()
@@ -115,7 +115,7 @@ int main(int argc, char* argv[]) {
     // Run simulation for specified time
     while (vis->Run()) {
         vis->BeginScene();
-        vis->DrawAll();
+        vis->Render();
         vis->EndScene();
         sys.DoStepDynamics(1e-3);
     }

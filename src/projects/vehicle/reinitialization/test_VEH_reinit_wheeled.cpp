@@ -174,7 +174,7 @@ int main(int argc, char* argv[]) {
     vis->AddTypicalLights();
     vis->AddSkyBox();
     vis->AddLogo();
-    veh.GetVehicle().SetVisualSystem(vis);
+    vis->AttachVehicle(&veh.GetVehicle());
 
     // Initialize output
     if (!filesystem::create_directory(filesystem::path(out_dir))) {
@@ -203,7 +203,7 @@ int main(int argc, char* argv[]) {
         double time = veh.GetSystem()->GetChTime();
 
         vis->BeginScene();
-        vis->DrawAll();
+        vis->Render();
         vis->EndScene();
 
         // Driver inputs (do not change driver inputs after reset)

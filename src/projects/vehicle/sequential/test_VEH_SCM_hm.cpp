@@ -97,7 +97,6 @@ int main(int argc, char* argv[]) {
 
     // Create the Irrlicht visualization
     auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
-    my_system.SetVisualSystem(vis);
     vis->SetCameraVertical(CameraVerticalDir::Z);
     vis->SetWindowSize(800, 600);
     vis->SetWindowTitle("SCM test");
@@ -106,13 +105,13 @@ int main(int argc, char* argv[]) {
     vis->AddSkyBox();
     vis->AddCamera(ChVector<>(2, 2, 2.5));
     vis->AddTypicalLights();
-
+    vis->AttachSystem(&my_system);
 
     while (vis->Run()) {
         vis->BeginScene();
         vis->GetActiveCamera()->setTarget(irr::core::vector3dfCH(mrigidbody->GetPos()));
         vis->GetActiveCamera()->setPosition(irr::core::vector3dfCH(mrigidbody->GetPos() + ChVector<>(0, 2, 0)));
-        vis->DrawAll();
+        vis->Render();
         vis->EndScene();
         my_system.DoStepDynamics(2e-3);
     }

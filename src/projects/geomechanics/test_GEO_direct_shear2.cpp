@@ -47,7 +47,7 @@
 //#undef CHRONO_OPENGL
 
 #ifdef CHRONO_OPENGL
-#include "chrono_opengl/ChOpenGLWindow.h"
+#include "chrono_opengl/ChVisualSystemOpenGL.h"
 #endif
 
 #include "utils.h"
@@ -753,10 +753,15 @@ int main(int argc, char* argv[]) {
     shearStream.SetNumFormat("%16.4e");
 
 #ifdef CHRONO_OPENGL
-    opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-    gl_window.Initialize(1280, 720, "Direct Shear Test", msystem);
-    gl_window.SetCamera(ChVector<>(0, -10 * hdimY, hdimZ), ChVector<>(0, 0, hdimZ), ChVector<>(0, 0, 1));
-    gl_window.SetRenderMode(opengl::WIREFRAME);
+    opengl::ChVisualSystemOpenGL vis;
+    vis.AttachSystem(msystem);
+    vis.SetWindowTitle("Test");
+    vis.SetWindowSize(1280, 720);
+    vis.SetRenderMode(opengl::WIREFRAME);
+    vis.Initialize();
+    vis.SetCameraPosition(ChVector<>(0, -10 * hdimY, hdimZ), ChVector<>(0, 0, hdimZ));
+    vis.SetCameraVertical(CameraVerticalDir::Z);
+
 #endif
 
     // Loop until reaching the end time...
@@ -824,9 +829,9 @@ int main(int argc, char* argv[]) {
 
 // Advance simulation by one step
 #ifdef CHRONO_OPENGL
-        if (gl_window.Active()) {
-            gl_window.DoStepDynamics(time_step);
-            gl_window.Render();
+        if (vis.Run()) {
+            msystem->DoStepDynamics(time_step);
+            vis.Render();
         } else
             break;
 #else

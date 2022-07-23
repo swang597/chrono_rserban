@@ -124,7 +124,7 @@ int main(int argc, char* argv[]) {
     vis->AddSkyBox();
     vis->AddTypicalLights();
     vis->AddCamera(ChVector<>(10, 10, -20));
-    system.SetVisualSystem(vis);
+    vis->AttachSystem(&system);
 
     // ---------------
     // Simulate system
@@ -137,7 +137,7 @@ int main(int argc, char* argv[]) {
         std::cout << std::endl;
 
         vis->BeginScene();
-        vis->DrawAll();
+        vis->Render();
         vis->EndScene();
 
         system.DoStepDynamics(time_step);

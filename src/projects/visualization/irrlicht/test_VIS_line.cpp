@@ -84,12 +84,12 @@ int main(int argc, char* argv[]) {
     vis->AddSkyBox();
     vis->AddTypicalLights();
     vis->AddCamera(ChVector<>(0, 0, -20));
-    sys.SetVisualSystem(vis);
+    vis->AttachSystem(&sys);
 
     // Simulation loop
     while (vis->Run()) {
         vis->BeginScene();
-        vis->DrawAll();
+        vis->Render();
         vis->EndScene();
         sys.DoStepDynamics(0.1);
     }

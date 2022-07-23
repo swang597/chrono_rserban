@@ -20,53 +20,18 @@
 #include "chrono_thirdparty/filesystem/path.h"
 #include "chrono_thirdparty/filesystem/resolver.h"
 
-#include "chrono_thirdparty/SimpleOpt/SimpleOpt.h"
+#include "chrono_thirdparty/cxxopts/ChCLI.h"
 
 #include "chrono_multicore/solver/ChIterativeSolverMulticore.h"
 
 #ifdef CHRONO_OPENGL
-#include "chrono_opengl/ChOpenGLWindow.h"
+#include "chrono_opengl/ChVisualSystemOpenGL.h"
 #endif
 
 using namespace chrono;
 using namespace chrono::collision;
 
 #define MASTER 0
-
-// ID values to identify command line arguments
-enum { OPT_HELP, OPT_THREADS, OPT_X, OPT_Y, OPT_Z, OPT_TIME, OPT_SAMPLING, OPT_RENDER, OPT_MONITOR, OPT_OUTPUT_DIR, OPT_VERBOSE };
-
-// Table of CSimpleOpt::Soption structures. Each entry specifies:
-// - the ID for the option (returned from OptionId() during processing)
-// - the option as it should appear on the command line
-// - type of the option
-// The last entry must be SO_END_OF_OPTIONS
-CSimpleOptA::SOption g_options[] = {{OPT_HELP, "--help", SO_NONE},
-                                    {OPT_HELP, "-h", SO_NONE},
-                                    {OPT_THREADS, "-n", SO_REQ_CMB},
-                                    {OPT_X, "-x", SO_REQ_CMB},
-                                    {OPT_Y, "-y", SO_REQ_CMB},
-                                    {OPT_Z, "-z", SO_REQ_CMB},
-                                    {OPT_TIME, "-t", SO_REQ_CMB},
-                                    {OPT_SAMPLING, "-s", SO_REQ_CMB},
-                                    {OPT_RENDER, "-r", SO_NONE},
-                                    {OPT_MONITOR, "-m", SO_NONE},
-                                    {OPT_OUTPUT_DIR, "-o", SO_REQ_CMB},
-                                    {OPT_VERBOSE, "-v", SO_NONE},
-                                    SO_END_OF_OPTIONS};
-
-bool GetProblemSpecs(int argc,
-                     char** argv,
-                     int rank,
-                     int& num_threads,
-                     double& time_end,
-                     int& sampling,
-                     bool& render,
-                     bool& monitor,
-                     bool& verbose,
-                     bool& output_data,
-                     std::string& outdir);
-void ShowUsage();
 
 // Granular Properties
 float Y = 2e6f;
@@ -113,7 +78,7 @@ void Monitor(chrono::ChSystemMulticore* system, int rank) {
     double STEP = system->GetTimerStep();
     double BROD = system->GetTimerCollisionBroad();
     double NARR = system->GetTimerCollisionNarrow();
-    double SOLVER = system->GetTimerSolver();
+    double SOLVER = system->GetTimerLSsolve();
     double UPDT = system->GetTimerUpdate();
     double EXCH = system->data_manager->system_timer.GetTime("Exchange");
     int BODS = system->GetNbodies();
@@ -134,7 +99,7 @@ void AddContainer(ChSystemDistributed* sys) {
     mat->SetFriction(mu);
     mat->SetRestitution(cr);
 
-    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelDistributed>());
     bin->SetIdentifier(binId);
     bin->SetMass(1);
     bin->SetPos(ChVector<>(0, 0, 0));
@@ -222,22 +187,35 @@ int main(int argc, char* argv[]) {
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
 
-    // Parse program arguments
-    int num_threads = 2;
-    double time_end = 2;
     int isampling = 0;
-    std::string outdir;
     bool render = false;
-    bool verbose = false;
-    bool monitor = false;
-    bool output_data = false;
-    if (!GetProblemSpecs(argc, argv, my_rank, num_threads, time_end, isampling, render, monitor, verbose, output_data, outdir)) {
+
+    // Command-line arguments for the demo
+    ChCLI cli(argv[0]);
+
+    cli.AddOption<int>("Demo", "n,nthreads", "Number of OpenMP threads on each rank");
+    cli.AddOption<double>("Demo", "t,end_time", "Simulation length");
+    cli.AddOption<std::string>("Demo", "o,outdir", "Output directory (must not exist)", "");
+    cli.AddOption<bool>("Demo", "m,perf_mon", "Enable performance monitoring", "false");
+    cli.AddOption<bool>("Demo", "v,verbose", "Enable verbose output", "false");
+
+    if (!cli.Parse(argc, argv, my_rank == 0)) {
         MPI_Finalize();
         return 1;
     }
 
+    // Parse program arguments
+    const int num_threads = cli.GetAsType<int>("nthreads");
+    const double time_end = cli.GetAsType<double>("end_time");
+    std::string outdir = cli.GetAsType<std::string>("outdir");
+    const bool output_data = outdir.compare("") != 0;
+    const bool monitor = cli.GetAsType<bool>("m");
+    const bool verbose = cli.GetAsType<bool>("v");
+
+
     utils::SamplingType sampling_type;
     switch (isampling) {
+        default:
         case 0:
             sampling_type = utils::SamplingType::REGULAR_GRID;
             break;
@@ -302,7 +280,7 @@ int main(int argc, char* argv[]) {
         std::cout << "Rank: " << my_rank << " Node name: " << my_sys.node_name << std::endl;
     }
 
-    CHOMPfunctions::SetNumThreads(num_threads);
+    my_sys.SetNumThreads(num_threads);
 
     my_sys.Set_G_acc(ChVector<double>(0, 0, -9.8));
 
@@ -310,7 +288,7 @@ int main(int argc, char* argv[]) {
     ChVector<double> domlo(-hx - spacing, -hy - spacing, -2.0 * gran_radius);
     ChVector<double> domhi(hx + spacing, hy + spacing, height + 3.0 * spacing);
     my_sys.GetDomain()->SetSplitAxis(0);  // Split along the x-axis
-    my_sys.GetDomain()->SetSimDomain(domlo.x(), domhi.x(), domlo.y(), domhi.y(), domlo.z(), domhi.z());
+    my_sys.GetDomain()->SetSimDomain(domlo, domhi);
 
     if (verbose)
         my_sys.GetDomain()->PrintDomain();
@@ -322,7 +300,7 @@ int main(int argc, char* argv[]) {
     my_sys.GetSettings()->solver.contact_force_model = ChSystemSMC::ContactForceModel::Hertz;
     my_sys.GetSettings()->solver.adhesion_force_model = ChSystemSMC::AdhesionForceModel::Constant;
 
-    my_sys.GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_R;
+    my_sys.GetSettings()->collision.narrowphase_algorithm = ChNarrowphase::Algorithm::PRIMS;
 
     int binX;
     int binY;
@@ -338,11 +316,15 @@ int main(int argc, char* argv[]) {
         printf("Rank: %d   bins: %d %d %d\n", my_rank, binX, binY, binZ);
 
 #ifdef CHRONO_OPENGL
+    opengl::ChVisualSystemOpenGL vis;
     if (render) {
-        opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-        gl_window.Initialize(1280, 720, "Scaling test", &my_sys);
-        gl_window.SetCamera(ChVector<>(0, -2 * hy, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1), 0.05f);
-        gl_window.SetRenderMode(opengl::WIREFRAME);
+        vis.AttachSystem(&my_sys);
+        vis.SetWindowTitle("Test");
+        vis.SetWindowSize(1280, 720);
+        vis.SetRenderMode(opengl::WIREFRAME);
+        vis.Initialize();
+        vis.SetCameraPosition(ChVector<>(0, -2 * hy, 0), ChVector<>(0, 0, 0));
+        vis.SetCameraVertical(CameraVerticalDir::Z);
     }
 #endif
 
@@ -381,9 +363,8 @@ int main(int argc, char* argv[]) {
 
 #ifdef CHRONO_OPENGL
         if (render) {
-            opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-            if (gl_window.Active()) {
-                gl_window.Render();
+            if (vis.Run()) {
+                vis.Render();
             } else {
                 MPI_Abort(MPI_COMM_WORLD, 1);
             }
@@ -402,106 +383,3 @@ int main(int argc, char* argv[]) {
     return 0;
 }
 
-bool GetProblemSpecs(int argc,
-                     char** argv,
-                     int rank,
-                     int& num_threads,
-                     double& time_end,
-                     int& sampling,
-                     bool& render,
-                     bool& monitor,
-                     bool& verbose,
-                     bool& output_data,
-                     std::string& outdir) {
-    // Create the option parser and pass it the program arguments and the array of valid options.
-    CSimpleOptA args(argc, argv, g_options);
-
-    // Then loop for as long as there are arguments to be processed.
-    while (args.Next()) {
-        // Exit immediately if we encounter an invalid argument.
-        if (args.LastError() != SO_SUCCESS) {
-            if (rank == MASTER) {
-                std::cout << "Invalid argument: " << args.OptionText() << std::endl;
-                ShowUsage();
-            }
-            return false;
-        }
-
-        // Process the current argument.
-        switch (args.OptionId()) {
-            case OPT_HELP:
-                if (rank == MASTER)
-                    ShowUsage();
-                return false;
-
-            case OPT_THREADS:
-                num_threads = std::stoi(args.OptionArg());
-                break;
-
-            case OPT_OUTPUT_DIR:
-                output_data = true;
-                outdir = args.OptionArg();
-                break;
-
-            case OPT_X:
-                hx = std::stod(args.OptionArg()) / 2.0;
-                break;
-
-            case OPT_Y:
-                hy = std::stod(args.OptionArg()) / 2.0;
-                break;
-
-            case OPT_Z:
-                height = std::stod(args.OptionArg()) / 2.0;
-                break;
-
-            case OPT_TIME:
-                time_end = std::stod(args.OptionArg());
-                break;
-
-            case OPT_SAMPLING:
-                sampling = std::stoi(args.OptionArg());
-                break;
-
-            case OPT_RENDER:
-                render = true;
-                break;
-
-            case OPT_MONITOR:
-                monitor = true;
-                break;
-
-            case OPT_VERBOSE:
-                verbose = true;
-                break;
-        }
-    }
-
-    // Check that required parameters were specified
-    if (hx < 0 || hy < 0 || height < 0) {
-        if (rank == MASTER) {
-            std::cout << "Invalid parameter or missing required parameter." << std::endl;
-            ShowUsage();
-        }
-        return false;
-    }
-
-    return true;
-}
-
-void ShowUsage() {
-    std::cout << "Usage: mpirun -np <num_ranks> ./test_DISTR_scaling [ARGS]" << std::endl;
-    std::cout << "-n=<nthreads>   Number of OpenMP threads on each rank (default: 2])" << std::endl;
-    std::cout << "-x=<xsize>      Patch half dimension in X direction [REQUIRED]" << std::endl;
-    std::cout << "-y=<ysize>      Patch half dimension in Y direction [REQUIRED]" << std::endl;
-    std::cout << "-z=<zsize>      Patch dimension in Z direction [REQUIRED]" << std::endl;
-    std::cout << "-t=<end_time>   Simulation length (default: 2s)" << std::endl;
-    std::cout << "-s=<sampling>   Type of sampling for particle initialization (default: 0)" << std::endl;
-    std::cout << "                   0: REGULAR_GRID" << std::endl;
-    std::cout << "                   1: POISSON_DISK" << std::endl;
-    std::cout << "                   2: HCP_PACK" << std::endl;
-    std::cout << "-o=<outdir>     Output directory (must not exist)" << std::endl;
-    std::cout << "-r              Enable OpenGL rendering for rank 0" << std::endl;
-    std::cout << "-m              Enable performance monitoring" << std::endl;
-    std::cout << "-h              Print usage help" << std::endl;
-}

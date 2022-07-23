@@ -247,7 +247,6 @@ int main(int argc, char* argv[]) {
     // ---------------------------
 
     auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
-    sys.SetVisualSystem(vis);
     vis->SetWindowSize(800, 600);
     vis->SetWindowTitle("Compliant steering");
     vis->Initialize();
@@ -255,6 +254,7 @@ int main(int argc, char* argv[]) {
     vis->AddSkyBox();
     vis->AddCamera(ChVector<>(0, 0, -2));
     vis->AddTypicalLights();
+    vis->AttachSystem(&sys);
 
     // -------------
     // Set up output
@@ -292,7 +292,7 @@ int main(int argc, char* argv[]) {
     while (vis->Run()) {
         // Render scene
         vis->BeginScene();
-        vis->DrawAll();
+        vis->Render();
         vis->EndScene();
 
         // Update steering input

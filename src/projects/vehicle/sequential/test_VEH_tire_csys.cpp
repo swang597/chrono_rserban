@@ -457,7 +457,6 @@ int main(int argc, char* argv[]) {
     MechanismYUP mYUP(&sysYUP);
 
     auto visISO = chrono_types::make_shared<ChVisualSystemIrrlicht>();
-    sysISO.SetVisualSystem(visISO);
     visISO->SetWindowSize(800, 600);
     visISO->SetWindowTitle("Tire ISO csys");
     visISO->Initialize();
@@ -465,9 +464,9 @@ int main(int argc, char* argv[]) {
     visISO->AddSkyBox();
     visISO->AddCamera(ChVector<>(1, 1, 3));
     visISO->AddTypicalLights();
+    visISO->AttachSystem(&sysISO);
 
     auto visYUP = chrono_types::make_shared<ChVisualSystemIrrlicht>();
-    sysYUP.SetVisualSystem(visYUP);
     visYUP->SetWindowSize(800, 600);
     visYUP->SetWindowTitle("Tire YUP csys");
     visYUP->Initialize();
@@ -475,15 +474,16 @@ int main(int argc, char* argv[]) {
     visYUP->AddSkyBox();
     visYUP->AddCamera(ChVector<>(1, 1, 3));
     visYUP->AddTypicalLights();
+    visYUP->AttachSystem(&sysYUP);
 
     while (visISO->Run()) {
         visISO->BeginScene();
-        visISO->DrawAll();
+        visISO->Render();
         irrlicht::tools::drawAllCOGs(visISO.get(), 1);
         visISO->EndScene();
 
         visYUP->BeginScene();
-        visYUP->DrawAll();
+        visYUP->Render();
         irrlicht::tools::drawAllCOGs(visYUP.get(), 1);
         visYUP->EndScene();
 

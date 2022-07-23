@@ -192,7 +192,7 @@ int main(int argc, char* argv[]) {
         while (time < time_sim) {
 #ifdef CHRONO_IRRLICHT
             vis->BeginScene();
-            vis->DrawAll();
+            vis->Render();
 #endif
 
             while (time == 0 || time < out_time) {

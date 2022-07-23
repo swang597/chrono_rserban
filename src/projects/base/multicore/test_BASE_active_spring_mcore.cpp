@@ -28,7 +28,7 @@
 
 #include "chrono_multicore/physics/ChSystemMulticore.h"
 
-#include "chrono_opengl/ChOpenGLWindow.h"
+#include "chrono_opengl/ChVisualSystemOpenGL.h"
 
 #ifdef CHRONO_POSTPROCESS
 #include "chrono_postprocess/ChGnuPlot.h"
@@ -129,10 +129,14 @@ int main(int argc, char* argv[]) {
     spring->AddVisualShape(spring_shape);
 
     // Create the visualization window
-    opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-    gl_window.Initialize(1280, 720, "Collide flag", &system);
-    gl_window.SetCamera(ChVector<>(0, 0, 5), ChVector<>(0, 0, 0), ChVector<>(0, 1, 0), 0.05f);
-    gl_window.SetRenderMode(opengl::WIREFRAME);
+    opengl::ChVisualSystemOpenGL vis;
+    vis.AttachSystem(&system);
+    vis.SetWindowTitle("Active spring");
+    vis.SetWindowSize(1280, 720);
+    vis.SetRenderMode(opengl::WIREFRAME);
+    vis.Initialize();
+    vis.SetCameraPosition(ChVector<>(0, 0, 5), ChVector<>(0, 0, 0));
+    vis.SetCameraVertical(CameraVerticalDir::Y);
 
     // Create output directory and log file
     const std::string out_dir = GetChronoOutputPath() + "DEMO_ACTIVE_SPRING";
@@ -144,11 +148,11 @@ int main(int argc, char* argv[]) {
     ChStreamOutAsciiFile log(logfile.c_str());
 
     // Simulation loop
-    while (gl_window.Active()) {
+    while (vis.Run()) {
         ChVectorDynamic<> state = spring->GetStates();
         log << system.GetChTime() << ", " << state(0) << ", " << state(1) << "\n";
         system.DoStepDynamics(0.001);
-        gl_window.Render();
+        vis.Render();
     }
 
 #ifdef CHRONO_POSTPROCESS

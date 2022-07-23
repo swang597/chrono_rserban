@@ -130,7 +130,7 @@ int main(int argc, char* argv[]) {
     vis->AddTypicalLights();
     vis->AddSkyBox();
     vis->AddLogo();
-    hmmwv.GetVehicle().SetVisualSystem(vis);
+    vis->AttachVehicle(&hmmwv.GetVehicle());
 
     // Initialize output
     if (output) {
@@ -178,7 +178,7 @@ int main(int argc, char* argv[]) {
 
         // Render scene
         vis->BeginScene();
-        vis->DrawAll();
+        vis->Render();
         vis->EndScene();
 
         // Driver inputs

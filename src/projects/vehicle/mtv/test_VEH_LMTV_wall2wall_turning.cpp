@@ -159,7 +159,7 @@ int main(int argc, char* argv[]) {
     vis->AddTypicalLights();
     vis->AddSkyBox();
     vis->AddLogo();
-    lmtv.GetVehicle().SetVisualSystem(vis);
+    vis->AttachVehicle(&lmtv.GetVehicle());
 
     ChDataDriver driver(lmtv.GetVehicle(), vehicle::GetDataFile(driver_file), true);
     driver.Initialize();
@@ -179,7 +179,7 @@ int main(int argc, char* argv[]) {
         // Render scene
         if (step_number % render_steps == 0) {
             vis->BeginScene();
-            vis->DrawAll();
+            vis->Render();
             vis->EndScene();
         }
 

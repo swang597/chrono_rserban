@@ -211,7 +211,7 @@ int main(int argc, char* argv[]) {
     minfo.cr = 0.75f;
     minfo.Y = 2e7f;
     auto patch_mat = minfo.CreateMaterial(contact_method);
-    auto patch = terrain.AddPatch(patch_mat, ChVector<>(0, 0, 0), ChVector<>(0, 0, 1), sizeX, sizeY);
+    auto patch = terrain.AddPatch(patch_mat, CSYSNORM, sizeX, sizeY);
     patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), sizeX, sizeY);
     terrain.Initialize();
 
@@ -226,7 +226,7 @@ int main(int argc, char* argv[]) {
     vis->AddTypicalLights();
     vis->AddSkyBox();
     vis->AddLogo();
-    marder.GetVehicle().SetVisualSystem(vis);
+    vis->AttachVehicle(&marder.GetVehicle());
 
     // ------------------------
     // Create the driver system
@@ -320,7 +320,7 @@ int main(int argc, char* argv[]) {
         if (step_number % render_steps == 0) {
             // Render scene
             vis->BeginScene();
-            vis->DrawAll();
+            vis->Render();
             vis->EndScene();
         }
 

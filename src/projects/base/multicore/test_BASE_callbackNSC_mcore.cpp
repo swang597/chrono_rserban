@@ -25,7 +25,7 @@
 #include "chrono/utils/ChUtilsCreators.h"
 #include "chrono_multicore/physics/ChSystemMulticore.h"
 
-#include "chrono_opengl/ChOpenGLWindow.h"
+#include "chrono_opengl/ChVisualSystemOpenGL.h"
 
 using namespace chrono;
 
@@ -147,10 +147,14 @@ int main(int argc, char* argv[]) {
     // Create the visualization window
     // -------------------------------
 
-    opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-    gl_window.Initialize(1280, 720, "Chrono::Multicore callback test", &system);
-    gl_window.SetCamera(ChVector<>(6, 6, 10), ChVector<>(0, 0, 0), ChVector<>(0, 1, 0), 0.05f);
-    gl_window.SetRenderMode(opengl::WIREFRAME);
+    opengl::ChVisualSystemOpenGL vis;
+    vis.AttachSystem(&system);
+    vis.SetWindowTitle("Test");
+    vis.SetWindowSize(1280, 720);
+    vis.SetRenderMode(opengl::WIREFRAME);
+    vis.Initialize();
+    vis.SetCameraPosition(ChVector<>(6, 6, 10), ChVector<>(0, 0, 0));
+    vis.SetCameraVertical(CameraVerticalDir::Z);
 
     // ---------------
     // Simulate system
@@ -159,9 +163,9 @@ int main(int argc, char* argv[]) {
     auto cmaterial = chrono_types::make_shared<ContactMaterial>();
     system.GetContactContainer()->RegisterAddContactCallback(cmaterial);
 
-    while (gl_window.Active()) {
-        gl_window.DoStepDynamics(1e-3);
-        gl_window.Render();
+    while (vis.Run()) {
+        system.DoStepDynamics(1e-3);
+        vis.Render();
         ////std::cout << std::fixed << std::setprecision(8) << box1->GetPos().x() << "   " << box2->GetPos().x() << std::endl;
         std::cout << box1->GetPos().x() - box2->GetPos().x() << std::endl;
     }

@@ -214,7 +214,7 @@ int main(int argc, char* argv[]) {
     vis->AddCamera(ChVector<>(0, 3, -6));
     vis->SetSymbolScale(1e-4);
     vis->EnableContactDrawing(ContactsDrawMode::CONTACT_FORCES);
-    system.SetVisualSystem(vis);
+    vis->AttachSystem(&system);
 
     // ----------------------------
     // Use custom contact container
@@ -281,7 +281,7 @@ int main(int argc, char* argv[]) {
     // ---------------
     while (vis->Run()) {
         vis->BeginScene();
-        vis->DrawAll();
+        vis->Render();
         vis->EndScene();
 
         system.DoStepDynamics(time_step);

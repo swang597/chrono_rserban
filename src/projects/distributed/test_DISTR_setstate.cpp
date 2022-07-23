@@ -19,7 +19,7 @@
 #include "chrono_thirdparty/filesystem/path.h"
 #include "chrono_thirdparty/filesystem/resolver.h"
 
-#include "chrono_thirdparty/SimpleOpt/SimpleOpt.h"
+#include "chrono_thirdparty/cxxopts/ChCLI.h"
 
 #include "chrono_multicore/solver/ChIterativeSolverMulticore.h"
 
@@ -27,31 +27,6 @@ using namespace chrono;
 using namespace chrono::collision;
 
 #define MASTER 0
-
-// ID values to identify command line arguments
-enum { OPT_HELP, OPT_THREADS, OPT_TIME, OPT_MONITOR, OPT_OUTPUT_DIR, OPT_VERBOSE };
-
-// Table of CSimpleOpt::Soption structures. Each entry specifies:
-// - the ID for the option (returned from OptionId() during processing)
-// - the option as it should appear on the command line
-// - type of the option
-// The last entry must be SO_END_OF_OPTIONS
-CSimpleOptA::SOption g_options[] = {{OPT_HELP, "--help", SO_NONE},   {OPT_HELP, "-h", SO_NONE},
-                                    {OPT_THREADS, "-n", SO_REQ_CMB}, {OPT_TIME, "-t", SO_REQ_CMB},
-                                    {OPT_MONITOR, "-m", SO_NONE},    {OPT_OUTPUT_DIR, "-o", SO_REQ_CMB},
-                                    {OPT_VERBOSE, "-v", SO_NONE},    SO_END_OF_OPTIONS};
-
-bool GetProblemSpecs(int argc,
-                     char** argv,
-                     int rank,
-                     int& num_threads,
-                     double& time_end,
-                     bool& monitor,
-                     bool& verbose,
-                     bool& output_data,
-                     std::string& outdir);
-
-void ShowUsage();
 
 // Granular Properties
 float Y = 2e6f;
@@ -109,7 +84,7 @@ void Monitor(chrono::ChSystemMulticore* system, int rank) {
     double STEP = system->GetTimerStep();
     double BROD = system->GetTimerCollisionBroad();
     double NARR = system->GetTimerCollisionNarrow();
-    double SOLVER = system->GetTimerSolver();
+    double SOLVER = system->GetTimerLSsolve();
     double UPDT = system->GetTimerUpdate();
     double EXCH = system->data_manager->system_timer.GetTime("Exchange");
     int BODS = system->GetNbodies();
@@ -166,17 +141,27 @@ int main(int argc, char* argv[]) {
     MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &num_ranks);
 
-    // Parse program arguments
-    int num_threads;
-    double time_end;
-    std::string outdir;
-    bool verbose;
-    bool monitor;
-    bool output_data;
-    if (!GetProblemSpecs(argc, argv, my_rank, num_threads, time_end, monitor, verbose, output_data, outdir)) {
+    // Command-line arguments for the demo
+    ChCLI cli(argv[0]);
+
+    cli.AddOption<int>("Demo", "n,nthreads", "Number of OpenMP threads on each rank");
+    cli.AddOption<double>("Demo", "t,end_time", "Simulation length");
+    cli.AddOption<std::string>("Demo", "o,outdir", "Output directory (must not exist)", "");
+    cli.AddOption<bool>("Demo", "m,perf_mon", "Enable performance monitoring", "false");
+    cli.AddOption<bool>("Demo", "v,verbose", "Enable verbose output", "false");
+
+    if (!cli.Parse(argc, argv, my_rank == 0)) {
         MPI_Finalize();
         return 1;
     }
+
+    // Parse program arguments
+    const int num_threads = cli.GetAsType<int>("nthreads");
+    const double time_end = cli.GetAsType<double>("end_time");
+    std::string outdir = cli.GetAsType<std::string>("outdir");
+    const bool output_data = outdir.compare("") != 0;
+    const bool monitor = cli.GetAsType<bool>("m");
+    const bool verbose = cli.GetAsType<bool>("v");
 
     // if (my_rank == 0) {
     // 	int foo;
@@ -228,7 +213,7 @@ int main(int argc, char* argv[]) {
         std::cout << "Rank: " << my_rank << " Node name: " << my_sys.node_name << std::endl;
     }
 
-    CHOMPfunctions::SetNumThreads(num_threads);
+    my_sys.SetNumThreads(num_threads);
 
     my_sys.Set_G_acc(ChVector<double>(0, 0, 0));
 
@@ -236,7 +221,7 @@ int main(int argc, char* argv[]) {
     ChVector<double> domlo(-hx, -hy, -hz);
     ChVector<double> domhi(hx, hy, hz);
     my_sys.GetDomain()->SetSplitAxis(split_axis);
-    my_sys.GetDomain()->SetSimDomain(domlo.x(), domhi.x(), domlo.y(), domhi.y(), domlo.z(), domhi.z());
+    my_sys.GetDomain()->SetSimDomain(domlo, domhi);
 
     if (verbose)
         my_sys.GetDomain()->PrintDomain();
@@ -248,7 +233,7 @@ int main(int argc, char* argv[]) {
     my_sys.GetSettings()->solver.contact_force_model = ChSystemSMC::ContactForceModel::Hooke;
     my_sys.GetSettings()->solver.adhesion_force_model = ChSystemSMC::AdhesionForceModel::Constant;
 
-    my_sys.GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_R;
+    my_sys.GetSettings()->collision.narrowphase_algorithm = ChNarrowphase::Algorithm::PRIMS;
 
     int binX = 1;
     int binY = 1;
@@ -281,7 +266,6 @@ int main(int argc, char* argv[]) {
     if (verbose && my_rank == MASTER)
         std::cout << "Starting Simulation" << std::endl;
 
-    bool settling = true;
     double t_start = MPI_Wtime();
     for (int i = 0; i < num_steps; i++) {
         my_sys.DoStepDynamics(time_step);
@@ -326,86 +310,4 @@ int main(int argc, char* argv[]) {
 
     MPI_Finalize();
     return 0;
-}
-
-bool GetProblemSpecs(int argc,
-                     char** argv,
-                     int rank,
-                     int& num_threads,
-                     double& time_end,
-                     bool& monitor,
-                     bool& verbose,
-                     bool& output_data,
-                     std::string& outdir) {
-    // Initialize parameters.
-    num_threads = -1;
-    time_end = -1;
-    verbose = false;
-    monitor = false;
-    output_data = false;
-
-    // Create the option parser and pass it the program arguments and the array of valid options.
-    CSimpleOptA args(argc, argv, g_options);
-
-    // Then loop for as long as there are arguments to be processed.
-    while (args.Next()) {
-        // Exit immediately if we encounter an invalid argument.
-        if (args.LastError() != SO_SUCCESS) {
-            if (rank == MASTER) {
-                std::cout << "Invalid argument: " << args.OptionText() << std::endl;
-                ShowUsage();
-            }
-            return false;
-        }
-
-        // Process the current argument.
-        switch (args.OptionId()) {
-            case OPT_HELP:
-                if (rank == MASTER)
-                    ShowUsage();
-                return false;
-
-            case OPT_THREADS:
-                num_threads = std::stoi(args.OptionArg());
-                break;
-
-            case OPT_OUTPUT_DIR:
-                output_data = true;
-                outdir = args.OptionArg();
-                break;
-
-            case OPT_TIME:
-                time_end = std::stod(args.OptionArg());
-                break;
-
-            case OPT_MONITOR:
-                monitor = true;
-                break;
-
-            case OPT_VERBOSE:
-                verbose = true;
-                break;
-        }
-    }
-
-    // Check that required parameters were specified
-    if (num_threads == -1 || time_end <= 0) {
-        if (rank == MASTER) {
-            std::cout << "Invalid parameter or missing required parameter." << std::endl;
-            ShowUsage();
-        }
-        return false;
-    }
-
-    return true;
-}
-
-void ShowUsage() {
-    std::cout << "Usage: mpirun -np <num_ranks> ./demo_DISTR_scaling [ARGS]" << std::endl;
-    std::cout << "-n=<nthreads>   Number of OpenMP threads on each rank [REQUIRED]" << std::endl;
-    std::cout << "-t=<end_time>   Simulation length [REQUIRED]" << std::endl;
-    std::cout << "-o=<outdir>     Output directory (must not exist)" << std::endl;
-    std::cout << "-m              Enable performance monitoring (default: false)" << std::endl;
-    std::cout << "-v              Enable verbose output (default: false)" << std::endl;
-    std::cout << "-h              Print usage help" << std::endl;
 }

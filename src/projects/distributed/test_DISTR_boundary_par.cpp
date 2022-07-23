@@ -29,7 +29,7 @@
 
 #include "chrono_distributed/collision/ChBoundary.h"
 
-#include "chrono_opengl/ChOpenGLWindow.h"
+#include "chrono_opengl/ChVisualSystemOpenGL.h"
 
 using namespace chrono;
 using namespace chrono::collision;
@@ -69,7 +69,7 @@ void AddContainer(ChSystemMulticoreSMC* sys) {
     mat->SetRestitution(cr);
 
     // Create the containing bin (4 x 4 x 1)
-    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelChrono>());
     bin->SetIdentifier(binId);
     bin->SetMass(1);
     bin->SetPos(ChVector<>(0, 0, 0));
@@ -134,7 +134,7 @@ std::shared_ptr<ChBody> AddFallingObjects(ChSystemMulticore* sys) {
             for (int iy = -count_Y; iy <= count_Y; iy++) {
                 ChVector<> pos(0.4 * ix, 0.4 * iy, h);
 
-                auto obj = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+                auto obj = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelChrono>());
 
                 obj->SetIdentifier(objId++);
                 obj->SetMass(mass);
@@ -189,10 +189,10 @@ int main(int argc, char* argv[]) {
     ChSystemMulticoreSMC msystem;
 
     // Set number of threads.
-    int max_threads = CHOMPfunctions::GetNumProcs();
+    int max_threads = ChOMP::GetNumProcs();
     if (threads > max_threads)
         threads = max_threads;
-    CHOMPfunctions::SetNumThreads(threads);
+    msystem.SetNumThreads(threads);
 
     // Set gravitational acceleration
     msystem.Set_G_acc(ChVector<>(0, 0, -gravity));
@@ -201,7 +201,7 @@ int main(int argc, char* argv[]) {
     msystem.GetSettings()->solver.max_iteration_bilateral = max_iteration;
     msystem.GetSettings()->solver.tolerance = tolerance;
 
-    msystem.GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
+    msystem.GetSettings()->collision.narrowphase_algorithm = ChNarrowphase::Algorithm::MPR;
     msystem.GetSettings()->collision.bins_per_axis = vec3(10, 10, 10);
 
     msystem.GetSettings()->solver.contact_force_model = ChSystemSMC::ContactForceModel::Hooke;
@@ -215,25 +215,27 @@ int main(int argc, char* argv[]) {
     // Perform the simulation
     // ----------------------
 
-    opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-    gl_window.Initialize(1280, 720, "Boundary test SMC", &msystem);
-    gl_window.SetCamera(ChVector<>(0, -6, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1));
-    gl_window.SetRenderMode(opengl::WIREFRAME);
+    opengl::ChVisualSystemOpenGL vis;
+    vis.AttachSystem(&msystem);
+    vis.SetWindowTitle("Test");
+    vis.SetWindowSize(1280, 720);
+    vis.SetRenderMode(opengl::WIREFRAME);
+    vis.Initialize();
+    vis.SetCameraPosition(ChVector<>(0, -6, 0), ChVector<>(0, 0, 0));
+    vis.SetCameraVertical(CameraVerticalDir::Z);
 
     // Uncomment the following two lines for the OpenGL manager to automatically
     // run the simulation in an infinite loop.
-    // gl_window.StartDrawLoop(time_step);
+    // vis.StartDrawLoop(time_step);
     // return 0;
 
-    while (gl_window.Active()) {
-        gl_window.DoStepDynamics(time_step);
-        gl_window.Render();
-        if (gl_window.Running()) {
-            ChVector<> pos = object->GetPos();
-            real3 frc = msystem.GetBodyContactForce(0);
-            std::cout << msystem.GetChTime() << "   " << pos.x() << " " << pos.y() << " " << pos.z() << "    " << frc.x
-                      << "  " << frc.y << "  " << frc.z << std::endl;
-        }
+    while (vis.Run()) {
+        msystem.DoStepDynamics(time_step);
+        vis.Render();
+        ChVector<> pos = object->GetPos();
+        real3 frc = msystem.GetBodyContactForce(0);
+        std::cout << msystem.GetChTime() << "   " << pos.x() << " " << pos.y() << " " << pos.z() << "    " << frc.x
+                  << "  " << frc.y << "  " << frc.z << std::endl;
     }
 
     return 0;

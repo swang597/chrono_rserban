@@ -35,8 +35,9 @@
 #include "chrono_multicore/physics/ChSystemMulticore.h"
 
 #include "chrono_distributed/collision/ChBoundary.h"
+#include "chrono_distributed/collision/ChCollisionModelDistributed.h"
 
-#include "chrono_opengl/ChOpenGLWindow.h"
+#include "chrono_opengl/ChVisualSystemOpenGL.h"
 
 using namespace chrono;
 using namespace chrono::collision;
@@ -67,7 +68,7 @@ std::shared_ptr<ChBoundary> AddSlopedWall(ChSystemMulticore* sys) {
     mat->SetFriction(mu);
     mat->SetRestitution(cr);
 
-    auto container = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+    auto container = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelDistributed>());
     container->SetIdentifier(binId);
     container->SetMass(1);
     container->SetPos(ChVector<>(0));
@@ -102,7 +103,7 @@ size_t AddFallingBalls(ChSystemMulticore* sys) {
 
     int ballId = 0;
     for (int i = 0; i < points.size(); i++) {
-        auto ball = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+        auto ball = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelChrono>());
 
         ball->SetIdentifier(ballId++);
         ball->SetMass(mass);
@@ -138,7 +139,7 @@ int main(int argc, char* argv[]) {
     sys.GetSettings()->solver.max_iteration_bilateral = max_iteration;
     sys.GetSettings()->solver.tolerance = tolerance;
 
-    sys.GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
+    sys.GetSettings()->collision.narrowphase_algorithm = ChNarrowphase::Algorithm::MPR;
     sys.GetSettings()->collision.bins_per_axis = vec3(10, 10, 10);
 
     sys.GetSettings()->solver.contact_force_model = ChSystemSMC::ContactForceModel::Hooke;
@@ -150,14 +151,18 @@ int main(int argc, char* argv[]) {
     std::cout << "Created " << actual_num_bodies << " balls." << std::endl;
 
     // Perform the simulation
-    opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-    gl_window.Initialize(1280, 720, "Boundary test SMC", &sys);
-    gl_window.SetCamera(ChVector<>(-20 * gran_radius, -100 * gran_radius, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1), 0.01f);
-    gl_window.SetRenderMode(opengl::WIREFRAME);
+    opengl::ChVisualSystemOpenGL vis;
+    vis.AttachSystem(&sys);
+    vis.SetWindowTitle("Test");
+    vis.SetWindowSize(1280, 720);
+    vis.SetRenderMode(opengl::WIREFRAME);
+    vis.Initialize();
+    vis.SetCameraPosition(ChVector<>(-20 * gran_radius, -100 * gran_radius, 0), ChVector<>(0, 0, 0));
+    vis.SetCameraVertical(CameraVerticalDir::Z);
 
-    while (gl_window.Active()) {
-        gl_window.DoStepDynamics(time_step);
-        gl_window.Render();
+    while (vis.Run()) {
+        sys.DoStepDynamics(time_step);
+        vis.Render();
     }
 
     return 0;

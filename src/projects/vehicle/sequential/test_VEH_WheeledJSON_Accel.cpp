@@ -238,7 +238,7 @@ int main(int argc, char* argv[]) {
     vis->AddTypicalLights();
     vis->AddSkyBox();
     vis->AddLogo();
-    vehicle.SetVisualSystem(vis);
+    vis->AttachVehicle(&vehicle);
 
     // Solver and integrator settings
     double step_size = 1e-3;
@@ -288,7 +288,7 @@ int main(int argc, char* argv[]) {
 
         // Render scene and draw a coordinate system aligned with the world frame
         vis->BeginScene();
-        vis->DrawAll();
+        vis->Render();
         irrlicht::tools::drawCoordsys(vis.get(), ChCoordsys<>(vehicle.GetPos(), QUNIT), 2);
         vis->EndScene();
 

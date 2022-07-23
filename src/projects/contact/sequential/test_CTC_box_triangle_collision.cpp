@@ -193,7 +193,7 @@ int main(int argc, char* argv[]) {
     vis->AddSkyBox();
     vis->AddTypicalLights();
     vis->AddCamera(ChVector<>(2, 2, 1));
-    system.SetVisualSystem(vis);
+    vis->AttachSystem(&system);
 
     EvRec er(box);
     vis->AddUserEventReceiver(&er);
@@ -233,7 +233,7 @@ int main(int argc, char* argv[]) {
                                                  eff_rad, nC);
 
         vis->BeginScene();
-        vis->DrawAll();
+        vis->Render();
         irrlicht::tools::drawAllCOGs(vis.get(), 1.0);
         if (nC > 0) {
             assert(nC <= 6);

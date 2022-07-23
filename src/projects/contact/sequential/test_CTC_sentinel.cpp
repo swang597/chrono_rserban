@@ -128,7 +128,7 @@ int main(int argc, char* argv[]) {
     vis->AddSkyBox();
     vis->AddTypicalLights();
     vis->AddCamera(ChVector<>(0, 3, -6));
-    system.SetVisualSystem(vis);
+    vis->AttachSystem(&system);
 
     // Custom callback
     system.GetCollisionSystem()->RegisterNarrowphaseCallback(chrono_types::make_shared<Monitor>(sentinel));
@@ -138,7 +138,7 @@ int main(int argc, char* argv[]) {
     double speed = -2;
     while (vis->Run()) {
         vis->BeginScene();
-        vis->DrawAll();
+        vis->Render();
         vis->EndScene();
 
         auto crt_pos = sentinel->GetPos();

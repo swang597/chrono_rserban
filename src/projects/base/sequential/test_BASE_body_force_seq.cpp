@@ -113,7 +113,7 @@ int main(int argc, char* argv[]) {
     vis->AddSkyBox();
     vis->AddTypicalLights();
     vis->AddCamera(ChVector<>(0, -4, 2));
-    my_sys.SetVisualSystem(vis);
+    vis->AttachSystem(&my_sys);
 
     // Run simulation for specified time
     int out_steps = static_cast<int>(std::ceil((1 / time_step) / out_fps));
@@ -132,7 +132,7 @@ int main(int argc, char* argv[]) {
 
         if (vis->Run()) {
             vis->BeginScene();
-            vis->DrawAll();
+            vis->Render();
             irrlicht::tools::drawAllCOGs(vis.get(), 1);
             vis->EndScene();
         } else {

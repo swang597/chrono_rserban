@@ -45,7 +45,7 @@
 //#undef CHRONO_OPENGL
 
 #ifdef CHRONO_OPENGL
-#include "chrono_opengl/ChOpenGLWindow.h"
+#include "chrono_opengl/ChVisualSystemOpenGL.h"
 #endif
 
 #include "utils.h"
@@ -421,11 +421,15 @@ int main(int argc, char* argv[]) {
     // Create the OpenGL visualization window
 
 #ifdef CHRONO_OPENGL
-    opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-    gl_window.Initialize(800, 600, title.c_str(), my_system);
-    gl_window.SetCamera(ChVector<>(3 * width, 0, 0), ChVector<>(0, 0, 0), ChVector<>(0, 1, 0), (float)radius,
-                        (float)radius);
-    gl_window.SetRenderMode(opengl::SOLID);
+    opengl::ChVisualSystemOpenGL vis;
+    vis.AttachSystem(my_system);
+    vis.SetWindowTitle("Test");
+    vis.SetWindowSize(1280, 720);
+    vis.SetRenderMode(opengl::WIREFRAME);
+    vis.Initialize();
+    vis.SetCameraPosition(ChVector<>(3 * width, 0, 0), ChVector<>(0, 0, 0));
+    vis.SetCameraVertical(CameraVerticalDir::Y);
+
 #endif
 
     // Begin simulation
@@ -468,9 +472,9 @@ int main(int argc, char* argv[]) {
         //  Do time step
 
 #ifdef CHRONO_OPENGL
-        if (gl_window.Active()) {
-            gl_window.DoStepDynamics(time_step);
-            gl_window.Render();
+        if (vis.Run()) {
+            my_system->DoStepDynamics(time_step);
+            vis.Render();
         } else
             break;
 #else

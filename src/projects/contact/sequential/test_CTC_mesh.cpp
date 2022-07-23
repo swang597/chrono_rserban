@@ -294,7 +294,7 @@ int main(int argc, char* argv[]) {
     vis->AddCamera(ChVector<>(0.5, 1, -2));
     vis->SetSymbolScale(5e-3);
     vis->EnableContactDrawing(ContactsDrawMode::CONTACT_FORCES);
-    system->SetVisualSystem(vis);
+    vis->AttachSystem(system);
 
     auto cmanager = chrono_types::make_shared<ContactManager>();
 
@@ -309,7 +309,7 @@ int main(int argc, char* argv[]) {
     // ---------------
     while (vis->Run()) {
         vis->BeginScene();
-        vis->DrawAll();
+        vis->Render();
         vis->EndScene();
 
         system->DoStepDynamics(time_step);

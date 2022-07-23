@@ -52,7 +52,7 @@
 #include "chrono_thirdparty/filesystem/path.h"
 
 #ifdef CHRONO_OPENGL
-#include "chrono_opengl/ChOpenGLWindow.h"
+#include "chrono_opengl/ChVisualSystemOpenGL.h"
 #endif
 
 using namespace chrono;
@@ -341,11 +341,15 @@ int main(int argc, char* argv[]) {
 
 #ifdef CHRONO_OPENGL
     // Initialize OpenGL
+    opengl::ChVisualSystemOpenGL vis;
     if (render) {
-        opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-        gl_window.Initialize(1280, 720, "HMMWV acceleration", system);
-        gl_window.SetCamera(ChVector<>(-horizontal_pos, -5, 0), ChVector<>(-horizontal_pos, 0, 0), ChVector<>(0, 0, 1));
-        gl_window.SetRenderMode(opengl::WIREFRAME);
+        vis.AttachSystem(system);
+        vis.SetWindowTitle("Test");
+        vis.SetWindowSize(1280, 720);
+        vis.SetRenderMode(opengl::WIREFRAME);
+        vis.Initialize();
+        vis.SetCameraPosition(ChVector<>(-horizontal_pos, -5, 0), ChVector<>(-horizontal_pos, 0, 0));
+        vis.SetCameraVertical(CameraVerticalDir::Z);
     }
 #endif
 
@@ -475,11 +479,11 @@ int main(int argc, char* argv[]) {
 
 #ifdef CHRONO_OPENGL
         if (render) {
-            opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-            if (gl_window.Active())
-                gl_window.Render();
-            else
+            if (vis.Run()) {
+                vis.Render();
+            } else {
                 break;
+            }
         }
 #endif
 

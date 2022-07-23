@@ -1,7 +1,7 @@
 ﻿#include "chrono/physics/ChBodyEasy.h"
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/geometry/ChLineBezier.h"
-#include "chrono_opengl/ChOpenGLWindow.h"
+#include "chrono_opengl/ChVisualSystemOpenGL.h"
 
 using namespace chrono;
 
@@ -58,18 +58,19 @@ int main(int argc, char* argv[]) {
     ////vshape2->SetName("mesh2");
     ////body2->AddAsset(vshape2);
 
-    auto& gl_window = opengl::ChOpenGLWindow::getInstance();
-    gl_window.AttachSystem(&system);
-    gl_window.Initialize(1600, 900, "OpenGL meshes");
-    gl_window.SetCamera(ChVector<>(0.0, -10.0, 5.0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1));
-    gl_window.SetRenderMode(opengl::SOLID);
+    opengl::ChVisualSystemOpenGL vis;
+    vis.AttachSystem(&system);
+    vis.SetWindowTitle("Test");
+    vis.SetWindowSize(1280, 720);
+    vis.SetRenderMode(opengl::WIREFRAME);
+    vis.Initialize();
+    vis.SetCameraPosition(ChVector<>(0.0, -10.0, 5.0), ChVector<>(0, 0, 0));
+    vis.SetCameraVertical(CameraVerticalDir::Z);
 
     double step = 0.01;
-    while (gl_window.Active()) {
-        if (gl_window.Running()) {
-            system.DoStepDynamics(step);
-        }
-        gl_window.Render();
+    while (vis.Run()) {
+        system.DoStepDynamics(step);
+        vis.Render();
     }
     return 0;
 }

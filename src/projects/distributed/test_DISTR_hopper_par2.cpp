@@ -6,10 +6,12 @@
 #include "chrono/utils/ChUtilsSamplers.h"
 
 #include "chrono_distributed/collision/ChBoundary.h"
+#include "chrono_distributed/collision/ChCollisionModelDistributed.h"
+
 #include "chrono_multicore/physics/ChSystemMulticore.h"
 #include "chrono_multicore/solver/ChIterativeSolverMulticore.h"
 
-#include "chrono_opengl/ChOpenGLWindow.h"
+#include "chrono_opengl/ChVisualSystemOpenGL.h"
 
 using namespace chrono;
 using namespace chrono::collision;
@@ -48,7 +50,7 @@ void Monitor(chrono::ChSystemMulticore* system, int rank) {
     double STEP = system->GetTimerStep();
     double BROD = system->GetTimerCollisionBroad();
     double NARR = system->GetTimerCollisionNarrow();
-    double SOLVER = system->GetTimerSolver();
+    double SOLVER = system->GetTimerLSsolve();
     double UPDT = system->GetTimerUpdate();
     double EXCH = system->data_manager->system_timer.GetTime("Exchange");
     int BODS = system->GetNbodies();
@@ -68,7 +70,7 @@ std::shared_ptr<ChBoundary> AddContainer(ChSystemMulticoreSMC* sys) {
     mat->SetFriction(mu);
     mat->SetRestitution(cr);
 
-    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelDistributed>());
     bin->SetIdentifier(binId);
     bin->SetMass(1);
     bin->SetPos(ChVector<>(0, 0, 0));
@@ -102,7 +104,7 @@ inline std::shared_ptr<ChBody> CreateBall(const ChVector<>& pos,
                                           double m,
                                           ChVector<> inertia,
                                           double radius) {
-    auto ball = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+    auto ball = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelDistributed>());
 
     ball->SetIdentifier(*ballId++);
     ball->SetMass(m);
@@ -162,7 +164,7 @@ int main(int argc, char* argv[]) {
     // Create distributed system
     ChSystemMulticoreSMC my_sys;  // TODO
 
-    CHOMPfunctions::SetNumThreads(num_threads);
+    my_sys.SetNumThreads(num_threads);
 
     my_sys.Set_G_acc(ChVector<double>(0, 0, -9.8));
 
@@ -173,7 +175,7 @@ int main(int argc, char* argv[]) {
     my_sys.GetSettings()->solver.contact_force_model = ChSystemSMC::ContactForceModel::Hooke;
     my_sys.GetSettings()->solver.adhesion_force_model = ChSystemSMC::AdhesionForceModel::Constant;
 
-    my_sys.GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
+    my_sys.GetSettings()->collision.narrowphase_algorithm = ChNarrowphase::Algorithm::MPR;
 
     my_sys.GetSettings()->collision.bins_per_axis = vec3(10, 3, 10);
 
@@ -192,20 +194,24 @@ int main(int argc, char* argv[]) {
     bool settling = true;
 
     // Perform the simulation
-    opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-    gl_window.Initialize(1280, 720, "Boundary test SMC", &my_sys);
-    gl_window.SetCamera(ChVector<>(-20 * gran_radius, -100 * gran_radius, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1),
-                        0.01f);
-    gl_window.SetRenderMode(opengl::WIREFRAME);
-    for (int i = 0; gl_window.Active(); i++) {
-        gl_window.DoStepDynamics(time_step);
+    opengl::ChVisualSystemOpenGL vis;
+    vis.AttachSystem(&my_sys);
+    vis.SetWindowTitle("Test");
+    vis.SetWindowSize(1280, 720);
+    vis.SetRenderMode(opengl::WIREFRAME);
+    vis.Initialize();
+    vis.SetCameraPosition(ChVector<>(-20 * gran_radius, -100 * gran_radius, 0), ChVector<>(0, 0, 0));
+    vis.SetCameraVertical(CameraVerticalDir::Z);
+
+    for (int i = 0; vis.Run(); i++) {
+        my_sys.DoStepDynamics(time_step);
         time += time_step;
         if (settling && time >= settling_time) {
             settling = false;
             cb->UpdatePlane(high_x_wall,
                             ChFrame<>(ChVector<>(pouring_gap + dx / 2, 0, height / 2), Q_from_AngY(-slope_angle)));
         }
-        gl_window.Render();
+        vis.Render();
     }
 
     return 0;

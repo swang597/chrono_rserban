@@ -208,7 +208,7 @@ std::shared_ptr<ChVisualSystemIrrlicht> SetSimVis(ChSystemMulticoreSMC* sys, dou
     vis->AddSkyBox();
     vis->AddTypicalLights();
     vis->AddCamera(ChVector<>(0, 0, -7.5));
-    sys->SetVisualSystem(vis);
+    vis->AttachSystem(sys);
 
     return vis;
 }

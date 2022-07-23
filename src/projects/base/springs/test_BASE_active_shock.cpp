@@ -327,7 +327,7 @@ int main(int argc, char* argv[]) {
     vis->AddSkyBox();
     vis->AddTypicalLights();
     vis->AddCamera(ChVector<>(0, 0, 6));
-    system.SetVisualSystem(vis);
+    vis->AttachSystem(&system);
 
     // Create output directory and log file
     const std::string out_dir = GetChronoOutputPath() + "DEMO_ACTIVE_SHOCK";
@@ -411,7 +411,7 @@ int main(int argc, char* argv[]) {
         }
         
         vis->BeginScene();
-        vis->DrawAll();
+        vis->Render();
         vis->EndScene();
         system.DoStepDynamics(step_size);
 

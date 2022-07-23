@@ -160,7 +160,7 @@ int main(int argc, char* argv[]) {
     vis->AddTypicalLights();
     vis->AddSkyBox();
     vis->AddLogo();
-    hmmwv_2.GetVehicle().SetVisualSystem(vis);
+    vis->AttachVehicle(&hmmwv_2.GetVehicle());
 
     // Initialize output
     if (output) {
@@ -211,7 +211,7 @@ int main(int argc, char* argv[]) {
 
         // Render scene
         vis->BeginScene();
-        vis->DrawAll();
+        vis->Render();
         vis->EndScene();
 
         double throttle_input = 0;

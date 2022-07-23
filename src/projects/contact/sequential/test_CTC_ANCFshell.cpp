@@ -120,7 +120,7 @@ int main(int argc, char* argv[]) {
     vis->AddTypicalLights();
     vis->AddCamera(ChVector<>(1.0, 0.0, 0.0));
     vis->EnableContactDrawing(ContactsDrawMode::CONTACT_DISTANCES);
-    sys.SetVisualSystem(vis);
+    vis->AttachSystem(&sys);
 
     // ---------------
     // Simulation loop
@@ -152,7 +152,7 @@ int main(int argc, char* argv[]) {
     int frame = 0;
     while (vis->Run()) {
         vis->BeginScene();
-        vis->DrawAll();
+        vis->Render();
         if (frame % flip_frames == 0)
             sys.Set_G_acc(-sys.Get_G_acc());
         vis->EndScene();

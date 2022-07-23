@@ -51,7 +51,7 @@ void AddContainer(ChSystemDistributed* sys) {
     mat->SetFriction(mu);
     mat->SetRestitution(cr);
 
-    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelDistributed>());
     bin->SetIdentifier(binId);
     bin->SetMass(1);
     bin->SetPos(ChVector<>(0, 0, 0));
@@ -137,7 +137,7 @@ int main(int argc, char* argv[]) {
 
     std::cout << "Rank: " << my_rank << " Node name: " << my_sys.node_name << std::endl;
 
-    CHOMPfunctions::SetNumThreads(num_threads);
+    my_sys.SetNumThreads(num_threads);
 
     my_sys.Set_G_acc(ChVector<double>(0, 0.0, -9.8));
 
@@ -145,7 +145,7 @@ int main(int argc, char* argv[]) {
     ChVector<double> domlo(-hx - spacing, -hy - spacing, 0 - spacing);
     ChVector<double> domhi(hx + spacing, hy + spacing, height + spacing);
     my_sys.GetDomain()->SetSplitAxis(1);  // Split along the y-axis
-    my_sys.GetDomain()->SetSimDomain(domlo.x(), domhi.x(), domlo.y(), domhi.y(), domlo.z(), domhi.z());
+    my_sys.GetDomain()->SetSimDomain(domlo, domhi);
 
     my_sys.GetDomain()->PrintDomain();
 
@@ -156,7 +156,7 @@ int main(int argc, char* argv[]) {
     my_sys.GetSettings()->solver.contact_force_model = ChSystemSMC::ContactForceModel::Hertz;
     my_sys.GetSettings()->solver.adhesion_force_model = ChSystemSMC::AdhesionForceModel::Constant;
 
-    my_sys.GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
+    my_sys.GetSettings()->collision.narrowphase_algorithm = ChNarrowphase::Algorithm::MPR;
 
     my_sys.GetSettings()->collision.bins_per_axis = vec3(10, 10, 10);
 

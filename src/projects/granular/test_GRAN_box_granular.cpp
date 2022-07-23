@@ -38,7 +38,7 @@
 #include "chrono_multicore/physics/ChSystemMulticore.h"
 #include "chrono_multicore/solver/ChIterativeSolverMulticore.h"
 
-#include "chrono_opengl/ChOpenGLWindow.h"
+#include "chrono_opengl/ChVisualSystemOpenGL.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 
@@ -439,11 +439,15 @@ int main(int argc, char** argv) {
     // Create the visualization window
     // -------------------------------
 
+    opengl::ChVisualSystemOpenGL vis;
     if (render) {
-        opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-        gl_window.Initialize(1280, 720, "Settling test", system);
-        gl_window.SetCamera(ChVector<>(0, -4, center.z()), ChVector<>(0, 0, center.z()), ChVector<>(0, 0, 1), 0.05f);
-        gl_window.SetRenderMode(opengl::WIREFRAME);
+        vis.AttachSystem(system);
+        vis.SetWindowTitle("Test");
+        vis.SetWindowSize(1280, 720);
+        vis.SetRenderMode(opengl::WIREFRAME);
+        vis.Initialize();
+        vis.SetCameraPosition(ChVector<>(0, -4, center.z()), ChVector<>(0, 0, center.z()));
+        vis.SetCameraVertical(CameraVerticalDir::Z);
     }
 
     // ---------------
@@ -478,9 +482,8 @@ int main(int argc, char** argv) {
         TimingOutput(system);
 
         if (render) {
-            opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-            if (gl_window.Active()) {
-                gl_window.Render();
+            if (vis.Run()) {
+                vis.Render();
             } else {
                 return 1;
             }

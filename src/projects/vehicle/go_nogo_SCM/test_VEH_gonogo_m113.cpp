@@ -361,7 +361,7 @@ int main(int argc, char* argv[]) {
     vis->AddTypicalLights();
     vis->AddSkyBox();
     vis->AddLogo();
-    m113.SetVisualSystem(vis);
+    vis->AttachVehicle(&m113);
 
     ////vis->SetChaseCameraAngle(CH_C_PI / 5);
     ////vis->EnableStats(false);
@@ -437,7 +437,7 @@ int main(int argc, char* argv[]) {
             break;
 
         vis->BeginScene();
-        vis->DrawAll();
+        vis->Render();
 #endif
 
         // Extract chassis state

@@ -250,7 +250,7 @@ int main(int argc, char* argv[]) {
         vis->AddSkyBox();
         vis->AddTypicalLights();
         vis->AddCamera(ChVector<>(0, 0, -7.5));
-        sys.SetVisualSystem(vis);
+        vis->AttachSystem(&sys);
 
         // Callback for contact reporting
         auto creporter = chrono_types::make_shared<ContactReporter>(body);
@@ -259,7 +259,7 @@ int main(int argc, char* argv[]) {
         double time_end = 2.0;
         while (sys.GetChTime() < time_end) {
             vis->BeginScene();
-            vis->DrawAll();
+            vis->Render();
             vis->EndScene();
             sys.DoStepDynamics(time_step);
 
@@ -279,7 +279,7 @@ int main(int argc, char* argv[]) {
         time_end = sys.GetChTime() + 2.0;
         while (vis->Run()) {
             vis->BeginScene();
-            vis->DrawAll();
+            vis->Render();
             vis->EndScene();
 
             ////std::cout << "============= " << sys.GetChTime() << std::endl;

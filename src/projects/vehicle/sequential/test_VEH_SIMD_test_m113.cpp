@@ -141,7 +141,7 @@ int main(int argc, char* argv[]) {
         vis->AddTypicalLights();
         vis->AddSkyBox();
         vis->AddLogo();
-        m113.SetVisualSystem(vis);
+        vis->AttachVehicle(&m113);
     }
 
     // ---------------
@@ -169,7 +169,7 @@ int main(int argc, char* argv[]) {
                 break;
             if (step_number % render_steps == 0) {
                 vis->BeginScene();
-                vis->DrawAll();
+                vis->Render();
                 vis->EndScene();
             }
         }

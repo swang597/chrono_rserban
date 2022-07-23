@@ -8,8 +8,9 @@
 #include "chrono_multicore/physics/ChSystemMulticore.h"
 
 #include "chrono_distributed/collision/ChBoundary.h"
+#include "chrono_distributed/collision/ChCollisionModelDistributed.h"
 
-#include "chrono_opengl/ChOpenGLWindow.h"
+#include "chrono_opengl/ChVisualSystemOpenGL.h"
 
 using namespace chrono;
 using namespace chrono::collision;
@@ -45,7 +46,7 @@ std::shared_ptr<ChBoundary> AddContainer(ChSystemMulticore* sys) {
     mat->SetFriction(mu);
     mat->SetRestitution(cr);
 
-    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelMulticore>());
+    auto bin = chrono_types::make_shared<ChBody>(chrono_types::make_shared<ChCollisionModelDistributed>());
     bin->SetIdentifier(binId);
     bin->SetMass(1);
     bin->SetPos(ChVector<>(0, 0, 0));
@@ -116,7 +117,9 @@ size_t AddFallingBalls(ChSystemMulticore* sys) {
     gen.RegisterCreateObjectsCallback(filter);
 
     gen.setBodyIdentifier(0);
-    gen.createObjectsBox(utils::SamplingType::HCP_PACK, spacing, box_center, h_dims);
+
+    utils::HCPSampler<> sampler(spacing);
+    gen.CreateObjectsBox(sampler, box_center, h_dims);
 
     return gen.getTotalNumBodies();
 }
@@ -131,10 +134,10 @@ int main(int argc, char* argv[]) {
     my_sys.Set_G_acc(ChVector<>(0, 0, -9.8));
 
     // Set number of threads.
-    int max_threads = CHOMPfunctions::GetNumProcs();
+    int max_threads = ChOMP::GetNumProcs();
     if (threads > max_threads)
         threads = max_threads;
-    CHOMPfunctions::SetNumThreads(threads);
+   my_sys.SetNumThreads(threads);
 
     // Set solver parameters
     my_sys.GetSettings()->solver.max_iteration_bilateral = max_iteration;
@@ -143,7 +146,7 @@ int main(int argc, char* argv[]) {
     my_sys.GetSettings()->solver.contact_force_model = ChSystemSMC::ContactForceModel::Hooke;
     my_sys.GetSettings()->solver.adhesion_force_model = ChSystemSMC::AdhesionForceModel::Constant;
 
-    my_sys.GetSettings()->collision.narrowphase_algorithm = NarrowPhaseType::NARROWPHASE_HYBRID_MPR;
+    my_sys.GetSettings()->collision.narrowphase_algorithm = ChNarrowphase::Algorithm::MPR;
     my_sys.GetSettings()->collision.bins_per_axis = vec3(10, 10, 10);
 
     // Create objects
@@ -152,21 +155,25 @@ int main(int argc, char* argv[]) {
     std::cout << "Created " << num_bodies << " balls." << std::endl;
 
     // Perform the simulation
-    opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-    gl_window.Initialize(1280, 720, "Hopper", &my_sys);
-    gl_window.SetCamera(ChVector<>(0, -100 * gran_radius, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1), 0.01f);
-    gl_window.SetRenderMode(opengl::SOLID);
+    opengl::ChVisualSystemOpenGL vis;
+    vis.AttachSystem(&my_sys);
+    vis.SetWindowTitle("Test");
+    vis.SetWindowSize(1280, 720);
+    vis.SetRenderMode(opengl::WIREFRAME);
+    vis.Initialize();
+    vis.SetCameraPosition(ChVector<>(0, -100 * gran_radius, 0), ChVector<>(0, 0, 0));
+    vis.SetCameraVertical(CameraVerticalDir::Z);
 
     bool moved = false;
-    while (gl_window.Active()) {
+    while (vis.Run()) {
         double time = my_sys.GetChTime();
         if (!moved && time > 0.25) {
             cb->UpdatePlane(0, ChFrame<>(ChVector<>(pouring_gap + dx / 2, 0, height / 2), Q_from_AngY(-slope_angle)));
             moved = true;
         }
 
-        gl_window.DoStepDynamics(time_step);
-        gl_window.Render();
+        my_sys.DoStepDynamics(time_step);
+        vis.Render();
     }
 
     return 0;

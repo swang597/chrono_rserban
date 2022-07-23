@@ -7,7 +7,7 @@
 #include "chrono/utils/ChUtilsCreators.h"
 #include "chrono_multicore/physics/ChSystemMulticore.h"
 
-#include "chrono_opengl/ChOpenGLWindow.h"
+#include "chrono_opengl/ChVisualSystemOpenGL.h"
 
 using namespace chrono;
 using namespace chrono::collision;
@@ -104,10 +104,14 @@ int main(int argc, char* argv[]) {
     my_sys.AddBody(plate);
 
     // Create the visualization window
-    opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-    gl_window.Initialize(1280, 720, "Collide flag", &my_sys);
-    gl_window.SetCamera(ChVector<>(0, -4, 10), ChVector<>(0, 0, 10), ChVector<>(0, 0, 1), 0.05f);
-    gl_window.SetRenderMode(opengl::WIREFRAME);
+    opengl::ChVisualSystemOpenGL vis;
+    vis.AttachSystem(&my_sys);
+    vis.SetWindowTitle("Test");
+    vis.SetWindowSize(1280, 720);
+    vis.SetRenderMode(opengl::WIREFRAME);
+    vis.Initialize();
+    vis.SetCameraPosition(ChVector<>(0, -4, 10), ChVector<>(0, 0, 10));
+    vis.SetCameraVertical(CameraVerticalDir::Z);
 
     // Run simulation for specified time
     int out_steps = static_cast<int>(std::ceil((1 / time_step) / out_fps));
@@ -138,9 +142,8 @@ int main(int argc, char* argv[]) {
             ball_lower->SetCollide(false);
         }
 
-        opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-        if (gl_window.Active()) {
-            gl_window.Render();
+        if (vis.Run()) {
+            vis.Render();
         } else {
             return 1;
         }

@@ -416,7 +416,7 @@ int main(int argc, char* argv[]) {
     vis->AddTypicalLights();
     vis->AddSkyBox();
     vis->AddLogo();
-    feda.GetVehicle().SetVisualSystem(vis);
+    vis->AttachVehicle(&feda.GetVehicle());
 
     std::string pltName("../FEDA_LaneChange_" + std::to_string(velmph) + "mph.plt");
     std::ofstream plt(pltName);
@@ -518,7 +518,7 @@ int main(int argc, char* argv[]) {
         }
 
         vis->BeginScene();
-        vis->DrawAll();
+        vis->Render();
 
         // Driver inputs
         DriverInputs driver_inputs = driver.GetInputs();

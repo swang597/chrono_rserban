@@ -289,7 +289,6 @@ int main(int argc, char* argv[]) {
 
     // Create the Irrlicht application
     auto vis = chrono_types::make_shared<ChVisualSystemIrrlicht>();
-    sys.SetVisualSystem(vis);
     vis->SetWindowSize(800, 600);
     vis->SetCameraVertical(CameraVerticalDir::Z);
     vis->SetWindowTitle("Track test");
@@ -298,6 +297,7 @@ int main(int argc, char* argv[]) {
     vis->AddSkyBox();
     vis->AddCamera(ChVector<>(0, 1, radius), ChVector<>(0, 0, radius));
     vis->AddTypicalLights();
+    vis->AttachSystem(&sys);
 
     if (!filesystem::create_directory(filesystem::path(out_dir))) {
         std::cout << "Error creating directory " << out_dir << std::endl;
@@ -310,7 +310,7 @@ int main(int argc, char* argv[]) {
     while (vis->Run()) {
         std::cout << sys.GetChTime() << " ========================================" << std::endl;
         vis->BeginScene();
-        vis->DrawAll();
+        vis->Render();
         vis->EndScene();
 
         sys.DoStepDynamics(step_size);

@@ -137,7 +137,7 @@ int main(int argc, char* argv[]) {
     vis->AddTypicalLights();
     vis->AddSkyBox();
     vis->AddLogo();
-    my_feda.GetVehicle().SetVisualSystem(vis);
+    vis->AttachVehicle(&my_feda.GetVehicle());
 
     // -------------
     // Prepare output
@@ -214,7 +214,7 @@ int main(int argc, char* argv[]) {
             break;
 
         vis->BeginScene();
-        vis->DrawAll();
+        vis->Render();
 
         // Driver inputs
         DriverInputs driver_inputs = driver.GetInputs();

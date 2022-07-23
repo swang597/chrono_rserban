@@ -20,7 +20,7 @@
 #include <chrono/utils/ChUtilsSamplers.h>
 
 #ifdef CHRONO_OPENGL
-#include "chrono_opengl/ChOpenGLWindow.h"
+#include "chrono_opengl/ChVisualSystemOpenGL.h"
 #endif
 
 using std::cout;
@@ -343,12 +343,15 @@ int main(int argc, char* argv[]) {
     settings_stream.close();
 
 #ifdef CHRONO_OPENGL
+    opengl::ChVisualSystemOpenGL vis;
     if (render) {
-        opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-        gl_window.Initialize(800, 600, "Direct shear", &m_sys);
-        gl_window.SetCamera(ChVector<>(3 * box_dim_Y, 0, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1),
-                            (float)sphere_radius, (float)sphere_radius);
-        gl_window.SetRenderMode(opengl::WIREFRAME);
+        vis.AttachSystem(&m_sys);
+        vis.SetWindowTitle("Test");
+        vis.SetWindowSize(1280, 720);
+        vis.SetRenderMode(opengl::WIREFRAME);
+        vis.Initialize();
+        vis.SetCameraPosition(ChVector<>(3 * box_dim_Y, 0, 0), ChVector<>(0, 0, 0));
+        vis.SetCameraVertical(CameraVerticalDir::Z);
     }
 #endif
 
@@ -360,9 +363,8 @@ int main(int argc, char* argv[]) {
         m_sys.DoStepDynamics(dt);
 #ifdef CHRONO_OPENGL
         if (render) {
-            opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-            if (gl_window.Active())
-                gl_window.Render();
+            if (vis.Run())
+                vis.Render();
             else
                 return 1;
         }
@@ -393,9 +395,8 @@ int main(int argc, char* argv[]) {
         m_sys.DoStepDynamics(dt);
 #ifdef CHRONO_OPENGL
         if (render) {
-            opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-            if (gl_window.Active())
-                gl_window.Render();
+            if (vis.Run())
+                vis.Render();
             else
                 return 1;
         }
@@ -442,9 +443,8 @@ int main(int argc, char* argv[]) {
 
 #ifdef CHRONO_OPENGL
         if (render) {
-            opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-            if (gl_window.Active())
-                gl_window.Render();
+            if (vis.Run())
+                vis.Render();
             else
                 break;
         }

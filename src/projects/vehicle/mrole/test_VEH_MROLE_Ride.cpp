@@ -280,7 +280,7 @@ int main(int argc, char* argv[]) {
     vis->GetSceneManager()->setAmbientLight(irr::video::SColorf(0.1f, 0.1f, 0.1f, 1.0f));
     vis->AddSkyBox();
     vis->AddLogo();
-    mrole.GetVehicle().SetVisualSystem(vis);
+    vis->AttachVehicle(&mrole.GetVehicle());
 
     // Visualization of controller points (sentinel & target)
     irr::scene::IMeshSceneNode* ballS = vis->GetSceneManager()->addSphereSceneNode(0.1f);
@@ -410,7 +410,7 @@ int main(int argc, char* argv[]) {
         // Render scene
         if (step_number % render_steps == 0) {
             vis->BeginScene();
-            vis->DrawAll();
+            vis->Render();
             vis->EndScene();
         }
 

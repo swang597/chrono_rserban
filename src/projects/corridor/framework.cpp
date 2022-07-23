@@ -221,7 +221,7 @@ void Framework::Run(double time_end, int fps, bool real_time) {
                 break;
             if (time >= next_draw) {
                 m_vis->BeginScene();
-                m_vis->DrawAll();
+                m_vis->Render();
                 m_vis->EndScene();
                 next_draw += delta;
             }
@@ -343,7 +343,7 @@ void Framework::Initialize() {
         }
 
         // Complete Irrlicht asset construction
-        m_system->SetVisualSystem(m_vis);
+        m_vis->AttachVehicle(&m_ego_vehicle->GetVehicle());
     }
 
     m_initialized = true;

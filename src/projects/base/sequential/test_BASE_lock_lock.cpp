@@ -88,12 +88,12 @@ int main(int argc, char* argv[]) {
     vis->AddSkyBox();
     vis->AddTypicalLights();
     vis->AddCamera(ChVector<>(0, 1, 2));
-    sys->SetVisualSystem(vis);
+    vis->AttachSystem(sys.get());
 
     // Run simulation for specified time
     while (vis->Run()) {
         vis->BeginScene();
-        vis->DrawAll();
+        vis->Render();
         irrlicht::tools::drawAllCOGs(vis.get(), 0.5);
         vis->EndScene();
 

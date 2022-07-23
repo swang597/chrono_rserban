@@ -32,7 +32,7 @@
 //#undef CHRONO_OPENGL
 
 #ifdef CHRONO_OPENGL
-#include "chrono_opengl/ChOpenGLWindow.h"
+#include "chrono_opengl/ChVisualSystemOpenGL.h"
 #endif
 
 // Chrono utility header files
@@ -578,10 +578,14 @@ int main(int argc, char* argv[]) {
 
 #ifdef CHRONO_OPENGL
     // Initialize OpenGL
-    opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-    gl_window.Initialize(1280, 720, "M113", system);
-    gl_window.SetCamera(ChVector<>(0, -10, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1));
-    gl_window.SetRenderMode(opengl::WIREFRAME);
+    opengl::ChVisualSystemOpenGL vis;
+    vis.AttachSystem(system);
+    vis.SetWindowTitle("Test");
+    vis.SetWindowSize(1280, 720);
+    vis.SetRenderMode(opengl::WIREFRAME);
+    vis.Initialize();
+    vis.SetCameraPosition(ChVector<>(0, -10, 0), ChVector<>(0, 0, 0));
+    vis.SetCameraVertical(CameraVerticalDir::Z);
 #endif
 
     // Number of simulation steps between two 3D view render frames
@@ -643,8 +647,8 @@ int main(int argc, char* argv[]) {
         vehicle.Advance(time_step);
 
 #ifdef CHRONO_OPENGL
-        if (gl_window.Active())
-            gl_window.Render();
+        if (vis.Run())
+            vis.Render();
         else
             break;
 #endif

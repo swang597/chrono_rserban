@@ -205,7 +205,7 @@ int main(int argc, char* argv[]) {
     vis->AddTypicalLights();
     vis->AddSkyBox();
     vis->AddLogo();
-    mrole.GetVehicle().SetVisualSystem(vis);
+    vis->AttachVehicle(&mrole.GetVehicle());
 #endif
 
     // Create the driver
@@ -227,7 +227,7 @@ int main(int argc, char* argv[]) {
     while (vis->Run()) {
         // Render scene
         vis->BeginScene();
-        vis->DrawAll();
+        vis->Render();
 
         // Driver inputs
         DriverInputs driver_inputs = driver.GetInputs();

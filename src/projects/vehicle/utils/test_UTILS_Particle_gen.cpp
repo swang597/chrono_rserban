@@ -7,7 +7,7 @@
 #include "chrono/physics/ChSystemSMC.h"
 #include "chrono/physics/ChBodyEasy.h"
 #include "chrono/core/ChGlobal.h"
-#include "chrono_opengl/ChOpenGLWindow.h"
+#include "chrono_opengl/ChVisualSystemOpenGL.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 #include "chrono_thirdparty/cxxopts/ChCLI.h"
@@ -259,14 +259,17 @@ int main(int argc, char* argv[]) {
     std::cout << "Num BCE markers: " << bce.size() << std::endl;
 
     // Initialize OpenGL
-    opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-    gl_window.AttachSystem(&sys);
-    gl_window.Initialize(1280, 720, "JSON visualization");
-    gl_window.SetCamera(ChVector<>(maxX, maxY, maxZ) + ChVector<>(3), ChVector<>(0), ChVector<>(0, 0, 1));
-    gl_window.SetRenderMode(opengl::SOLID);
+    opengl::ChVisualSystemOpenGL vis;
+    vis.AttachSystem(&sys);
+    vis.SetWindowTitle("Test");
+    vis.SetWindowSize(1280, 720);
+    vis.SetRenderMode(opengl::WIREFRAME);
+    vis.Initialize();
+    vis.SetCameraPosition(ChVector<>(maxX, maxY, maxZ) + ChVector<>(3), ChVector<>(0));
+    vis.SetCameraVertical(CameraVerticalDir::Z);
 
-    while (gl_window.Active()) {
-        gl_window.Render();
+    while (vis.Run()) {
+        vis.Render();
     }
 
     // Create output directory

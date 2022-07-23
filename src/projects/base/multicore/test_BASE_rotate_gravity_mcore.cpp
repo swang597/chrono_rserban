@@ -33,7 +33,7 @@
 #include "chrono/utils/ChUtilsInputOutput.h"
 
 #ifdef CHRONO_OPENGL
-#include "chrono_opengl/ChOpenGLWindow.h"
+    #include "chrono_opengl/ChVisualSystemOpenGL.h"
 #endif
 
 using namespace chrono;
@@ -50,163 +50,170 @@ int count_Y = 2;
 // Create a bin consisting of five boxes attached to the ground.
 // -----------------------------------------------------------------------------
 void AddContainer(ChSystemMulticoreNSC* sys) {
-  // IDs for the two bodies
-  int binId = -200;
+    // IDs for the two bodies
+    int binId = -200;
 
-  // Create a common material
-  auto mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
-  mat->SetFriction(0.4f);
+    // Create a common material
+    auto mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
+    mat->SetFriction(0.4f);
 
-  // Create the containing bin (4 x 4 x 1)
-  auto bin = chrono_types::make_shared<ChBody>(ChCollisionSystemType::CHRONO);
-  bin->SetIdentifier(binId);
-  bin->SetMass(1);
-  bin->SetPos(ChVector<>(0, 0, 0));
-  bin->SetRot(Q_from_AngY(tilt_angle));
-  bin->SetCollide(true);
-  bin->SetBodyFixed(true);
+    // Create the containing bin (4 x 4 x 1)
+    auto bin = chrono_types::make_shared<ChBody>(ChCollisionSystemType::CHRONO);
+    bin->SetIdentifier(binId);
+    bin->SetMass(1);
+    bin->SetPos(ChVector<>(0, 0, 0));
+    bin->SetRot(Q_from_AngY(tilt_angle));
+    bin->SetCollide(true);
+    bin->SetBodyFixed(true);
 
-  ChVector<> hdim(2, 2, 0.5);
-  double hthick = 0.1;
+    ChVector<> hdim(2, 2, 0.5);
+    double hthick = 0.1;
 
-  bin->GetCollisionModel()->ClearModel();
-  utils::AddBoxGeometry(bin.get(), mat, ChVector<>(hdim.x(), hdim.y(), hthick), ChVector<>(0, 0, -hthick));
-  utils::AddBoxGeometry(bin.get(), mat, ChVector<>(hthick, hdim.y(), hdim.z()), ChVector<>(-hdim.x() - hthick, 0, hdim.z()));
-  utils::AddBoxGeometry(bin.get(), mat, ChVector<>(hthick, hdim.y(), hdim.z()), ChVector<>(hdim.x() + hthick, 0, hdim.z()));
-  utils::AddBoxGeometry(bin.get(), mat, ChVector<>(hdim.x(), hthick, hdim.z()), ChVector<>(0, -hdim.y() - hthick, hdim.z()));
-  utils::AddBoxGeometry(bin.get(), mat, ChVector<>(hdim.x(), hthick, hdim.z()), ChVector<>(0, hdim.y() + hthick, hdim.z()));
-  bin->GetCollisionModel()->BuildModel();
+    bin->GetCollisionModel()->ClearModel();
+    utils::AddBoxGeometry(bin.get(), mat, ChVector<>(hdim.x(), hdim.y(), hthick), ChVector<>(0, 0, -hthick));
+    utils::AddBoxGeometry(bin.get(), mat, ChVector<>(hthick, hdim.y(), hdim.z()),
+                          ChVector<>(-hdim.x() - hthick, 0, hdim.z()));
+    utils::AddBoxGeometry(bin.get(), mat, ChVector<>(hthick, hdim.y(), hdim.z()),
+                          ChVector<>(hdim.x() + hthick, 0, hdim.z()));
+    utils::AddBoxGeometry(bin.get(), mat, ChVector<>(hdim.x(), hthick, hdim.z()),
+                          ChVector<>(0, -hdim.y() - hthick, hdim.z()));
+    utils::AddBoxGeometry(bin.get(), mat, ChVector<>(hdim.x(), hthick, hdim.z()),
+                          ChVector<>(0, hdim.y() + hthick, hdim.z()));
+    bin->GetCollisionModel()->BuildModel();
 
-  sys->AddBody(bin);
+    sys->AddBody(bin);
 }
 
 // -----------------------------------------------------------------------------
 // Create the falling spherical objects in a uniform rectangular grid.
 // -----------------------------------------------------------------------------
 void AddFallingBalls(ChSystemMulticore* sys) {
-  // Common material
-  auto ballMat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
-  ballMat->SetFriction(0.4f);
+    // Common material
+    auto ballMat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
+    ballMat->SetFriction(0.4f);
 
-  // Create the falling balls
-  int ballId = 0;
-  double mass = 1;
-  double radius = 0.15;
-  ChVector<> inertia = (2.0 / 5.0) * mass * radius * radius * ChVector<>(1, 1, 1);
+    // Create the falling balls
+    int ballId = 0;
+    double mass = 1;
+    double radius = 0.15;
+    ChVector<> inertia = (2.0 / 5.0) * mass * radius * radius * ChVector<>(1, 1, 1);
 
-  for (int ix = -count_X; ix <= count_X; ix++) {
-    for (int iy = -count_Y; iy <= count_Y; iy++) {
-      ChVector<> pos(0.4 * ix, 0.4 * iy, 1);
+    for (int ix = -count_X; ix <= count_X; ix++) {
+        for (int iy = -count_Y; iy <= count_Y; iy++) {
+            ChVector<> pos(0.4 * ix, 0.4 * iy, 1);
 
-      auto ball = chrono_types::make_shared<ChBody>(ChCollisionSystemType::CHRONO);
+            auto ball = chrono_types::make_shared<ChBody>(ChCollisionSystemType::CHRONO);
 
-      ball->SetIdentifier(ballId++);
-      ball->SetMass(mass);
-      ball->SetInertiaXX(inertia);
-      ball->SetPos(pos);
-      ball->SetRot(ChQuaternion<>(1, 0, 0, 0));
-      ball->SetBodyFixed(false);
-      ball->SetCollide(true);
+            ball->SetIdentifier(ballId++);
+            ball->SetMass(mass);
+            ball->SetInertiaXX(inertia);
+            ball->SetPos(pos);
+            ball->SetRot(ChQuaternion<>(1, 0, 0, 0));
+            ball->SetBodyFixed(false);
+            ball->SetCollide(true);
 
-      ball->GetCollisionModel()->ClearModel();
-      utils::AddSphereGeometry(ball.get(), ballMat, radius);
-      ball->GetCollisionModel()->BuildModel();
+            ball->GetCollisionModel()->ClearModel();
+            utils::AddSphereGeometry(ball.get(), ballMat, radius);
+            ball->GetCollisionModel()->BuildModel();
 
-      sys->AddBody(ball);
+            sys->AddBody(ball);
+        }
     }
-  }
 }
 
 // -----------------------------------------------------------------------------
 // Create the system, specify simulation parameters, and run simulation loop.
 // -----------------------------------------------------------------------------
 int main(int argc, char* argv[]) {
-  int threads = 8;
+    int threads = 8;
 
-  // Simulation parameters
-  // ---------------------
+    // Simulation parameters
+    // ---------------------
 
-  ChVector<> gravity(0, 0, -10);
+    ChVector<> gravity(0, 0, -10);
 
-  uint max_iteration = 300;
-  real tolerance = 1e-3;
+    uint max_iteration = 300;
+    real tolerance = 1e-3;
 
-  // Create system
-  // -------------
+    // Create system
+    // -------------
 
-  ChSystemMulticoreNSC msystem;
+    ChSystemMulticoreNSC msystem;
 
-  // Set number of threads.
-  int max_threads = omp_get_num_procs();
-  if (threads > max_threads)
-      threads = max_threads;
-  msystem.SetNumThreads(threads);
+    // Set number of threads.
+    int max_threads = omp_get_num_procs();
+    if (threads > max_threads)
+        threads = max_threads;
+    msystem.SetNumThreads(threads);
 
-  // Set gravitational acceleration
-  msystem.Set_G_acc(gravity);
+    // Set gravitational acceleration
+    msystem.Set_G_acc(gravity);
 
-  // Set solver parameters
-  msystem.GetSettings()->solver.solver_mode = SolverMode::SLIDING;
-  msystem.GetSettings()->solver.max_iteration_normal = max_iteration / 3;
-  msystem.GetSettings()->solver.max_iteration_sliding = max_iteration / 3;
-  msystem.GetSettings()->solver.max_iteration_spinning = 0;
-  msystem.GetSettings()->solver.max_iteration_bilateral = max_iteration / 3;
-  msystem.GetSettings()->solver.tolerance = tolerance;
-  msystem.GetSettings()->solver.alpha = 0;
-  msystem.GetSettings()->solver.contact_recovery_speed = 10000;
-  msystem.ChangeSolverType(SolverType::APGDREF);
-  msystem.GetSettings()->collision.narrowphase_algorithm = ChNarrowphase::Algorithm::HYBRID;
+    // Set solver parameters
+    msystem.GetSettings()->solver.solver_mode = SolverMode::SLIDING;
+    msystem.GetSettings()->solver.max_iteration_normal = max_iteration / 3;
+    msystem.GetSettings()->solver.max_iteration_sliding = max_iteration / 3;
+    msystem.GetSettings()->solver.max_iteration_spinning = 0;
+    msystem.GetSettings()->solver.max_iteration_bilateral = max_iteration / 3;
+    msystem.GetSettings()->solver.tolerance = tolerance;
+    msystem.GetSettings()->solver.alpha = 0;
+    msystem.GetSettings()->solver.contact_recovery_speed = 10000;
+    msystem.ChangeSolverType(SolverType::APGDREF);
+    msystem.GetSettings()->collision.narrowphase_algorithm = ChNarrowphase::Algorithm::HYBRID;
 
-  msystem.GetSettings()->collision.collision_envelope = 0.01;
-  msystem.GetSettings()->collision.bins_per_axis = vec3(10, 10, 10);
+    msystem.GetSettings()->collision.collision_envelope = 0.01;
+    msystem.GetSettings()->collision.bins_per_axis = vec3(10, 10, 10);
 
-  // Create the fixed and moving bodies
-  // ----------------------------------
+    // Create the fixed and moving bodies
+    // ----------------------------------
 
-  AddContainer(&msystem);
-  AddFallingBalls(&msystem);
+    AddContainer(&msystem);
+    AddFallingBalls(&msystem);
 
-// Perform the simulation
-// ----------------------
-
-#ifdef CHRONO_OPENGL
-  opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-  gl_window.Initialize(1280, 720, "ballsDVI", &msystem);
-  gl_window.SetCamera(ChVector<>(0, -5, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1));
-  gl_window.SetRenderMode(opengl::WIREFRAME);
-#endif
-
-  ChMatrix33<> rot(CH_C_PI / 6, ChVector<>(0, 1, 0));
-  ChVector<> gravity_1 = rot * gravity;
-  ChVector<> gravity_2(0, -10, 0);
-
-  double time_step = 1e-3;
-  double time_end = 6;
-  double time_1 = 1;
-  double time_2 = 4;
-  double time = 0;
-
-  while (time < time_end) {
-      if (time > time_1) {
-          msystem.Set_G_acc(gravity_1);
-      }
-      if (time > time_2) {
-          msystem.Set_G_acc(gravity_2);
-      }
-
-      msystem.DoStepDynamics(time_step);
+    // Perform the simulation
+    // ----------------------
 
 #ifdef CHRONO_OPENGL
-      if (gl_window.Active()) {
-          gl_window.Render();
-      } else {
-          break;
-      }
+    opengl::ChVisualSystemOpenGL vis;
+    vis.AttachSystem(&msystem);
+    vis.SetWindowTitle("Test");
+    vis.SetWindowSize(1280, 720);
+    vis.SetRenderMode(opengl::WIREFRAME);
+    vis.Initialize();
+    vis.SetCameraPosition(ChVector<>(0, -5, 0), ChVector<>(0, 0, 0));
+    vis.SetCameraVertical(CameraVerticalDir::Z);
 #endif
 
-    time += time_step;
-  }
+    ChMatrix33<> rot(CH_C_PI / 6, ChVector<>(0, 1, 0));
+    ChVector<> gravity_1 = rot * gravity;
+    ChVector<> gravity_2(0, -10, 0);
 
+    double time_step = 1e-3;
+    double time_end = 6;
+    double time_1 = 1;
+    double time_2 = 4;
+    double time = 0;
 
-  return 0;
+    while (time < time_end) {
+        if (time > time_1) {
+            msystem.Set_G_acc(gravity_1);
+        }
+        if (time > time_2) {
+            msystem.Set_G_acc(gravity_2);
+        }
+
+        msystem.DoStepDynamics(time_step);
+
+#ifdef CHRONO_OPENGL
+        if (vis.Run()) {
+            vis.Render();
+        } else {
+            break;
+        }
+#endif
+
+        time += time_step;
+    }
+
+    return 0;
 }

@@ -138,7 +138,7 @@ int main(int argc, char* argv[]) {
     vis->AddSkyBox();
     vis->AddTypicalLights();
     vis->AddCamera(ChVector<>(6, 6, -10));
-    system.SetVisualSystem(vis);
+    vis->AttachSystem(&system);
 
 #endif
 
@@ -160,7 +160,7 @@ int main(int argc, char* argv[]) {
         // Render scene
         if (vis->Run()) {
             vis->BeginScene();
-            vis->DrawAll();
+            vis->Render();
             vis->EndScene();
         } else {
             return 1;

@@ -130,7 +130,7 @@ int main(int argc, char* argv[]) {
     vis->AddTypicalLights();
     vis->AddSkyBox();
     vis->AddLogo();
-    my_hmmwv.GetVehicle().SetVisualSystem(vis);
+    vis->AttachVehicle(&my_hmmwv.GetVehicle());
 
 
     // Visualization of controller points (sentinel & target)
@@ -177,7 +177,7 @@ int main(int argc, char* argv[]) {
 
         // Render scene and output images
         vis->BeginScene();
-        vis->DrawAll();
+        vis->Render();
         vis->EndScene();
 
         if (step_number % render_steps == 0) {

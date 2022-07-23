@@ -282,7 +282,7 @@ int main(int argc, char* argv[]) {
     vis->AddTypicalLights();
     vis->AddSkyBox();
     vis->AddLogo();
-    my_feda.GetVehicle().SetVisualSystem(vis);
+    vis->AttachVehicle(&my_feda.GetVehicle());
 
     // Visualization of controller points (sentinel & target)
     irr::scene::IMeshSceneNode* ballS = vis->GetSceneManager()->addSphereSceneNode(0.1f);
@@ -347,7 +347,7 @@ int main(int argc, char* argv[]) {
 
         // Render scene and output images
         vis->BeginScene();
-        vis->DrawAll();
+        vis->Render();
 
         if (output_images && sim_frame % render_steps == 0) {
             char filename[200];

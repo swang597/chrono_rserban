@@ -36,7 +36,7 @@
 
 #include "chrono_multicore/physics/ChSystemMulticore.h"
 
-#include "chrono_opengl/ChOpenGLWindow.h"
+#include "chrono_opengl/ChVisualSystemOpenGL.h"
 
 #include "chrono_models/vehicle/wvp/WVP.h"
 
@@ -286,11 +286,15 @@ int main(int argc, char* argv[]) {
     // Initialize OpenGL
     // -----------------
 
+    opengl::ChVisualSystemOpenGL vis;
     if (render) {
-        opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-        gl_window.Initialize(1280, 720, "WVP multicore test", system);
-        gl_window.SetCamera(ChVector<>(0, -10, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1));
-        gl_window.SetRenderMode(opengl::WIREFRAME);
+        vis.AttachSystem(system);
+        vis.SetWindowTitle("Test");
+        vis.SetWindowSize(1280, 720);
+        vis.SetRenderMode(opengl::WIREFRAME);
+        vis.Initialize();
+        vis.SetCameraPosition(ChVector<>(0, -10, 0), ChVector<>(0, 0, 0));
+        vis.SetCameraVertical(CameraVerticalDir::Z);
     }
 
     // ---------------
@@ -313,11 +317,11 @@ int main(int argc, char* argv[]) {
         wvp.Advance(time_step);
 
         if (render) {
-            opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-            if (gl_window.Active())
-                gl_window.Render();
-            else
+            if (vis.Run()) {
+                vis.Render();
+            } else {
                 break;
+            }
         }
 
         // Update counters.

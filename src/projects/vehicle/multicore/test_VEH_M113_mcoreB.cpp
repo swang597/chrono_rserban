@@ -24,7 +24,7 @@
 #include "chrono_multicore/physics/ChSystemMulticore.h"
 #include "chrono_multicore/solver/ChSystemDescriptorMulticore.h"
 
-#include "chrono_opengl/ChOpenGLWindow.h"
+#include "chrono_opengl/ChVisualSystemOpenGL.h"
 
 // Chrono utility header files
 #include "chrono/utils/ChUtilsGeometry.h"
@@ -257,11 +257,14 @@ int main(int argc, char* argv[]) {
     // ---------------
 
     // Initialize OpenGL
-    opengl::ChOpenGLWindow& gl_window = opengl::ChOpenGLWindow::getInstance();
-    gl_window.Initialize(1280, 720, "M113", system);
-    //gl_window.SetCamera(ChVector<>(0, -10, 0), ChVector<>(0, 0, 0), ChVector<>(0, 0, 1));
-    gl_window.SetCamera(initLoc - ChVector<>(3.5, 4, 0), initLoc - ChVector<>(3.5, 0, 0), ChVector<>(0, 0, 1));
-    gl_window.SetRenderMode(opengl::WIREFRAME);
+    opengl::ChVisualSystemOpenGL vis;
+    vis.AttachSystem(system);
+    vis.SetWindowTitle("Test");
+    vis.SetWindowSize(1280, 720);
+    vis.SetRenderMode(opengl::WIREFRAME);
+    vis.Initialize();
+    vis.SetCameraPosition(initLoc - ChVector<>(3.5, 4, 0), initLoc - ChVector<>(3.5, 0, 0));
+    vis.SetCameraVertical(CameraVerticalDir::Z);
 
     // Number of simulation steps between two 3D view render frames
     int out_steps = (int)std::ceil((1.0 / time_step) / out_fps);
@@ -313,8 +316,8 @@ int main(int argc, char* argv[]) {
         m113.Advance(time_step);
         system->DoStepDynamics(time_step);
 
-        if (gl_window.Active())
-            gl_window.Render();
+        if (vis.Run())
+            vis.Render();
         else
             break;
 

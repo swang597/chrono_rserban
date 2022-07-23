@@ -90,7 +90,7 @@ int main(int argc, char* argv[]) {
     ChVector<double> domlo(-hx - spacing, -hy - spacing, -hz - spacing);
     ChVector<double> domhi(+hx + spacing, +hy + spacing, +hz + spacing);
     my_sys.GetDomain()->SetSplitAxis(0);
-    my_sys.GetDomain()->SetSimDomain(domlo.x(), domhi.x(), domlo.y(), domhi.y(), domlo.z(), domhi.z());
+    my_sys.GetDomain()->SetSimDomain(domlo, domhi);
 
     // Create objects
     size_t num_balls;

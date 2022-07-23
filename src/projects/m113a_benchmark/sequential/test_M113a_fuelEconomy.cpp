@@ -180,7 +180,7 @@ int main(int argc, char* argv[]) {
     vis->AddTypicalLights();
     vis->AddSkyBox();
     vis->AddLogo();
-    vehicle.SetVisualSystem(vis);
+    vis->AttachVehicle(&vehicle);
 
     // Visualization of controller points (sentinel & target)
     irr::scene::IMeshSceneNode* ballS = vis->GetSceneManager()->addSphereSceneNode(0.1f);
@@ -293,7 +293,7 @@ int main(int argc, char* argv[]) {
         if (step_number % render_steps == 0) {
 #ifdef CHRONO_IRRLICHT
             vis->BeginScene();
-            vis->DrawAll();
+            vis->Render();
             vis->EndScene();
 #endif
 
