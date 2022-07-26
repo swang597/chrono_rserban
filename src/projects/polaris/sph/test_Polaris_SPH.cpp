@@ -88,19 +88,17 @@ class PolarisStats : public opengl::ChOpenGLStats {
     }
     virtual void GenerateStats(ChSystem& sys) override {
         char buffer[150];
-        sprintf(buffer, "TIME:  %.4f", sys.GetChTime());
+        sprintf(buffer, "TIME:     %.4f s", m_vehicle.GetChTime());
         text.Render(buffer, screen.LEFT, screen.TOP - 1 * screen.SPACING, screen.SX, screen.SY);
-        sprintf(buffer, "FPS:   %04d", int(fps));
-        text.Render(buffer, screen.LEFT, screen.TOP - 2 * screen.SPACING, screen.SX, screen.SY);
 
-        sprintf(buffer, "Speed:    %.2f", m_vehicle.GetSpeed());
-        text.Render(buffer, screen.LEFT, screen.TOP - 4 * screen.SPACING, screen.SX, screen.SY);
+        sprintf(buffer, "Speed:    %.2f m/s (%.1f km/h)", m_vehicle.GetSpeed(), m_vehicle.GetSpeed() * 3.6);
+        text.Render(buffer, screen.LEFT, screen.TOP - 3 * screen.SPACING, screen.SX, screen.SY);
         sprintf(buffer, "Steering: %.2f", m_steering);
-        text.Render(buffer, screen.LEFT, screen.TOP - 5 * screen.SPACING, screen.SX, screen.SY);
+        text.Render(buffer, screen.LEFT, screen.TOP - 4 * screen.SPACING, screen.SX, screen.SY);
         sprintf(buffer, "Throttle: %.2f", m_throttle);
-        text.Render(buffer, screen.LEFT, screen.TOP - 6 * screen.SPACING, screen.SX, screen.SY);
+        text.Render(buffer, screen.LEFT, screen.TOP - 5 * screen.SPACING, screen.SX, screen.SY);
         sprintf(buffer, "Braking:  %.2f", m_braking);
-        text.Render(buffer, screen.LEFT, screen.TOP - 7 * screen.SPACING, screen.SX, screen.SY);
+        text.Render(buffer, screen.LEFT, screen.TOP - 6 * screen.SPACING, screen.SX, screen.SY);
     }
 
     const WheeledVehicle& m_vehicle;
@@ -189,6 +187,9 @@ int main(int argc, char* argv[]) {
     bool terrain_mesh_contact = false;
     auto init_pos = CreateTerrain(sys, sysFSI, terrain_dir, ramp_length, !run_time_vis_particles, terrain_mesh_contact);
 
+    // Complete construction of FSI system
+    sysFSI.Initialize();
+
     // Create vehicle
     cout << "Create vehicle..." << endl;
     auto vehicle = CreateVehicle(model, sys, init_pos, sysFSI);
@@ -264,7 +265,7 @@ int main(int argc, char* argv[]) {
             // Create the wheel BCE markers at current wheel body locations
             CreateWheelBCEMarkers(vehicle, sysFSI);
 
-            // Complete construction of FSI system
+            // Complete construction of FSI system (re-run)
             sysFSI.Initialize();
 
             on_ramp = false;
