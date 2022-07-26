@@ -77,6 +77,40 @@ bool GetProblemSpecs(int argc,
 
 // ===================================================================================================================
 
+class PolarisStats : public opengl::ChOpenGLStats {
+  public:
+    PolarisStats(const WheeledVehicle& vehicle)
+        : ChOpenGLStats(), m_vehicle(vehicle), m_steering(0), m_throttle(0), m_braking(0) {}
+    void UpdateDriverInputs(const DriverInputs& inputs) { 
+        m_steering = inputs.m_steering;
+        m_throttle = inputs.m_throttle;
+        m_braking = inputs.m_braking;
+    }
+    virtual void GenerateStats(ChSystem& sys) override {
+        char buffer[150];
+        sprintf(buffer, "TIME:  %.4f", sys.GetChTime());
+        text.Render(buffer, screen.LEFT, screen.TOP - 1 * screen.SPACING, screen.SX, screen.SY);
+        sprintf(buffer, "FPS:   %04d", int(fps));
+        text.Render(buffer, screen.LEFT, screen.TOP - 2 * screen.SPACING, screen.SX, screen.SY);
+
+        sprintf(buffer, "Speed:    %.2f", m_vehicle.GetSpeed());
+        text.Render(buffer, screen.LEFT, screen.TOP - 4 * screen.SPACING, screen.SX, screen.SY);
+        sprintf(buffer, "Steering: %.2f", m_steering);
+        text.Render(buffer, screen.LEFT, screen.TOP - 5 * screen.SPACING, screen.SX, screen.SY);
+        sprintf(buffer, "Throttle: %.2f", m_throttle);
+        text.Render(buffer, screen.LEFT, screen.TOP - 6 * screen.SPACING, screen.SX, screen.SY);
+        sprintf(buffer, "Braking:  %.2f", m_braking);
+        text.Render(buffer, screen.LEFT, screen.TOP - 7 * screen.SPACING, screen.SX, screen.SY);
+    }
+
+    const WheeledVehicle& m_vehicle;
+    double m_steering;
+    double m_throttle;
+    double m_braking;
+};
+
+// ===================================================================================================================
+
 int main(int argc, char* argv[]) {
     // Parse command line arguments
     std::string terrain_dir;
@@ -170,6 +204,7 @@ int main(int argc, char* argv[]) {
 
     // Create run-time visualization
     ChVisualizationFsi fsi_vis(&sysFSI);
+    auto stats = chrono_types::make_shared<PolarisStats>(*vehicle);
     if (run_time_vis) {
         fsi_vis.SetTitle("Chrono::FSI single wheel demo");
         fsi_vis.SetSize(1280, 720);
@@ -184,6 +219,9 @@ int main(int argc, char* argv[]) {
         fsi_vis.SetRenderMode(ChVisualizationFsi::RenderMode::SOLID);
         fsi_vis.EnableInfoOverlay(false);
         fsi_vis.Initialize();
+
+        fsi_vis.GetVisualSystem().SetStatsRenderer(stats);
+        fsi_vis.GetVisualSystem().EnableStats(true);
     }
 
     // Enable data output
@@ -251,17 +289,6 @@ int main(int argc, char* argv[]) {
             vis_output_frame++;
         }
 
-        // Run-time visualization
-        if (run_time_vis && frame % render_steps == 0) {
-            if (chase_cam) {
-                ChVector<> cam_loc = veh_loc + ChVector<>(-3, 3, 2);
-                ChVector<> cam_point = veh_loc;
-                fsi_vis.SetCameraPosition(cam_loc, cam_point);
-            }
-            if (!fsi_vis.Render())
-                break;
-        }
-
         // Set current driver inputs
         driver_inputs = driver.GetInputs();
 
@@ -272,11 +299,24 @@ int main(int argc, char* argv[]) {
             ChClampValue(driver_inputs.m_throttle, driver_inputs.m_throttle, (t - 0.5) / 0.5);
         }
 
-        if (verbose)
-            cout << std::fixed << std::setprecision(3) << "t = " << t << "  STB = " << driver_inputs.m_steering << " "
-                 << driver_inputs.m_throttle << " " << driver_inputs.m_braking << "  spd = " << vehicle->GetSpeed()
-                 << endl;
+        ////if (verbose)
+        ////    cout << std::fixed << std::setprecision(3) << "t = " << t << "  STB = " << driver_inputs.m_steering << " "
+        ////         << driver_inputs.m_throttle << " " << driver_inputs.m_braking << "  spd = " << vehicle->GetSpeed()
+        ////         << endl;
 
+        // Run-time visualization
+        if (run_time_vis && frame % render_steps == 0) {
+            if (chase_cam) {
+                ChVector<> cam_loc = veh_loc + ChVector<>(-3, 3, 2);
+                ChVector<> cam_point = veh_loc;
+                fsi_vis.SetCameraPosition(cam_loc, cam_point);
+            }
+            stats->UpdateDriverInputs(driver_inputs);
+            if (!fsi_vis.Render())
+                break;
+        }
+
+        // Synchronize systems
         driver.Synchronize(t);
         vehicle->Synchronize(t, driver_inputs, terrain);
 
@@ -325,8 +365,8 @@ bool GetProblemSpecs(int argc,
     ChCLI cli(argv[0], "Polaris SPH terrain simulation");
 
     cli.AddOption<std::string>("Simulation", "terrain_dir", "Directory with terrain specification data");
-    cli.AddOption<double>("Simulation", "ramp_length", "Length of the acceleration ramp");
-    cli.AddOption<double>("Simulation", "target_speed", "Target speed [m/s]");
+    cli.AddOption<double>("Simulation", "ramp_length", "Length of the acceleration ramp", std::to_string(ramp_length));
+    cli.AddOption<double>("Simulation", "target_speed", "Target speed [m/s]", std::to_string(target_speed));
     cli.AddOption<double>("Simulation", "tend", "Simulation end time [s]", std::to_string(tend));
     cli.AddOption<double>("Simulation", "step_size", "Integration step size [s]", std::to_string(step_size));
     cli.AddOption<double>("Simulation", "active_box_dim", "Half-dimension of active box [m]",
