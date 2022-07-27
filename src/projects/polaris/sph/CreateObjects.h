@@ -33,11 +33,11 @@ chrono::ChCoordsys<> CreateTerrain(chrono::ChSystem& sys,
                                    bool terrain_mesh_contact);
 
 std::shared_ptr<chrono::ChBezierCurve> CreatePath(const std::string& terrain_dir, double ramp_length);
+std::shared_ptr<chrono::ChBody> CreateSentinel(chrono::ChSystem& sys, const chrono::ChCoordsys<>& init_pos);
 
 std::shared_ptr<chrono::vehicle::WheeledVehicle> CreateVehicle(PolarisModel model,
                                                                chrono::ChSystem& sys,
-                                                               const chrono::ChCoordsys<>& init_pos,
-                                                               chrono::fsi::ChSystemFsi& sysFSI);
+                                                               const chrono::ChCoordsys<>& init_pos);
 
 void CreateWheelBCEMarkers(std::shared_ptr<chrono::vehicle::WheeledVehicle> vehicle, chrono::fsi::ChSystemFsi& sysFSI);
 

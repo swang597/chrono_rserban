@@ -22,6 +22,7 @@
 #include <sstream>
 
 #include "chrono/assets/ChBoxShape.h"
+#include "chrono/assets/ChSphereShape.h"
 #include "chrono/assets/ChTriangleMeshShape.h"
 
 #include "chrono_vehicle/ChVehicleModelData.h"
@@ -137,7 +138,7 @@ chrono::ChCoordsys<> CreateTerrain(ChSystem& sys,
     body->SetCollide(true);
 
     // Set and return vehicle initial location
-    double init_x = create_ramp ? -2 * hlen + 4 : 4;
+    double init_x = create_ramp ? -ramp_length + 4 : 4;
     ChVector<> init_loc = ramp_rot.Rotate(ChVector<>(init_x, 0, 0.25));
 
     return ChCoordsys<>(init_loc, ramp_rot);
@@ -166,7 +167,7 @@ std::shared_ptr<ChBezierCurve> CreatePath(const std::string& terrain_dir, double
 
     if (create_ramp) {
         // Include additional point if creating a ramp
-        points.push_back(ChVector<>(-ramp_length, 0, 0));
+        points.push_back(ChVector<>(-ramp_length + 4, 0, 0));
     }
 
     for (size_t i = 0; i < numPoints; i++) {
@@ -180,7 +181,7 @@ std::shared_ptr<ChBezierCurve> CreatePath(const std::string& terrain_dir, double
     // Include point beyond SPH patch
     { 
         auto np = points.size();
-        points.push_back(2.0 * points[np - 2] + points[np - 1]);
+        points.push_back(2.0 * points[np - 1] - points[np - 2]);
     }
 
     ifile.close();
@@ -188,10 +189,22 @@ std::shared_ptr<ChBezierCurve> CreatePath(const std::string& terrain_dir, double
     return std::shared_ptr<ChBezierCurve>(new ChBezierCurve(points));
 }
 
+std::shared_ptr<ChBody> CreateSentinel(ChSystem& sys, const ChCoordsys<>& init_pos) {
+    auto body = std::shared_ptr<ChBody>(sys.NewBody());
+    body->SetBodyFixed(true);
+    body->SetPos(init_pos.pos);
+    sys.AddBody(body);
+
+    auto box = chrono_types::make_shared<ChSphereShape>();
+    box->GetSphereGeometry().rad = 0.1;
+    body->AddVisualShape(box, ChFrame<>());
+
+    return body;
+}
+
 std::shared_ptr<WheeledVehicle> CreateVehicle(PolarisModel model,
                                               ChSystem& sys,
-                                              const ChCoordsys<>& init_pos,
-                                              ChSystemFsi& sysFSI) {
+                                              const ChCoordsys<>& init_pos) {
     std::string model_dir = (model == PolarisModel::ORIGINAL) ? "mrzr/JSON_orig/" : "mrzr/JSON_new/";
 
     std::string vehicle_json = model_dir + "vehicle/MRZR.json";

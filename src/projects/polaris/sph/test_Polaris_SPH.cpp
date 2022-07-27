@@ -189,9 +189,10 @@ int main(int argc, char* argv[]) {
 
     // Create vehicle
     cout << "Create vehicle..." << endl;
-    auto vehicle = CreateVehicle(model, sys, init_pos, sysFSI);
+    auto vehicle = CreateVehicle(model, sys, init_pos);
 
     // Create driver
+    cout << "Create path..." << endl;
     auto path = CreatePath(terrain_dir, ramp_length);
     double x_max = path->getPoint(path->getNumPoints() - 1).x() - 3.0;
     ChPathFollowerDriver driver(*vehicle, path, "my_path", target_speed);
@@ -200,10 +201,16 @@ int main(int argc, char* argv[]) {
     driver.GetSpeedController().SetGains(0.6, 0.05, 0);
     driver.Initialize();
 
+    cout << "  Num points: " << path->getNumPoints() << endl;
+    for (int i = 0; i < path->getNumPoints(); i++) {
+        cout << "  [" << i << "]   " << path->getPoint(i) << endl;
+    }
+
     // Create run-time visualization
     opengl::ChVisualSystemOpenGL vis;
     ChVisualizationFsi visFSI(&sysFSI, &vis);
-    auto stats = chrono_types::make_shared<PolarisStats>(*vehicle);
+    std::shared_ptr<ChBody> sentinel;
+    std::shared_ptr<PolarisStats> stats;
     if (run_time_vis) {
         visFSI.SetTitle("Chrono::FSI single wheel demo");
         visFSI.SetSize(1280, 720);
@@ -215,11 +222,13 @@ int main(int argc, char* argv[]) {
         visFSI.SetRenderMode(ChVisualizationFsi::RenderMode::SOLID);
         ////visFSI.SetParticleRenderMode(sysFSI.GetInitialSpacing() / 2, ChVisualizationFsi::RenderMode::SOLID);
 
-        if (!run_time_vis_bce) {
-            vis.AttachSystem(&sys);
-        }
+        sentinel = CreateSentinel(sys, init_pos);
+
+        stats = chrono_types::make_shared<PolarisStats>(*vehicle);
         vis.SetStatsRenderer(stats);
         vis.EnableStats(true);
+
+        vis.AttachSystem(&sys);
         vis.Initialize();
     }
 
@@ -267,6 +276,9 @@ int main(int argc, char* argv[]) {
             sysFSI.Initialize();
             visFSI.Initialize();
 
+            if (run_time_vis_bce)
+                vehicle->SetTireVisualizationType(VisualizationType::NONE);
+
             on_ramp = false;
         }
 
@@ -311,6 +323,7 @@ int main(int argc, char* argv[]) {
                 ChVector<> cam_point = veh_loc;
                 visFSI.SetCameraPosition(cam_loc, cam_point);
             }
+            sentinel->SetPos(driver.GetSteeringController().GetTargetLocation());
             stats->UpdateDriverInputs(driver_inputs);
             if (!visFSI.Render())
                 break;
