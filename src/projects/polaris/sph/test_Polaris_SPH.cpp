@@ -187,9 +187,6 @@ int main(int argc, char* argv[]) {
     bool terrain_mesh_contact = false;
     auto init_pos = CreateTerrain(sys, sysFSI, terrain_dir, ramp_length, !run_time_vis_particles, terrain_mesh_contact);
 
-    // Complete construction of FSI system
-    sysFSI.Initialize();
-
     // Create vehicle
     cout << "Create vehicle..." << endl;
     auto vehicle = CreateVehicle(model, sys, init_pos, sysFSI);
@@ -204,25 +201,26 @@ int main(int argc, char* argv[]) {
     driver.Initialize();
 
     // Create run-time visualization
-    ChVisualizationFsi fsi_vis(&sysFSI);
+    opengl::ChVisualSystemOpenGL vis;
+    ChVisualizationFsi visFSI(&sysFSI, &vis);
     auto stats = chrono_types::make_shared<PolarisStats>(*vehicle);
     if (run_time_vis) {
-        fsi_vis.SetTitle("Chrono::FSI single wheel demo");
-        fsi_vis.SetSize(1280, 720);
-        fsi_vis.SetCameraPosition(init_pos.pos + ChVector<>(-7, 0, 6), init_pos.pos + ChVector<>(1, 0, 0.5));
-        fsi_vis.SetCameraMoveScale(1.0f);
-        fsi_vis.EnableFluidMarkers(run_time_vis_particles);
-        fsi_vis.EnableRigidBodyMarkers(run_time_vis_bce);
-        fsi_vis.EnableBoundaryMarkers(false);
-        if (!run_time_vis_bce) {
-            fsi_vis.AttachSystem(&sys);
-        }
-        fsi_vis.SetRenderMode(ChVisualizationFsi::RenderMode::SOLID);
-        fsi_vis.EnableInfoOverlay(false);
-        fsi_vis.Initialize();
+        visFSI.SetTitle("Chrono::FSI single wheel demo");
+        visFSI.SetSize(1280, 720);
+        visFSI.SetCameraPosition(init_pos.pos + ChVector<>(-7, 0, 6), init_pos.pos + ChVector<>(1, 0, 0.5));
+        visFSI.SetCameraMoveScale(1.0f);
+        visFSI.EnableFluidMarkers(run_time_vis_particles);
+        visFSI.EnableRigidBodyMarkers(run_time_vis_bce);
+        visFSI.EnableBoundaryMarkers(false);
+        visFSI.SetRenderMode(ChVisualizationFsi::RenderMode::SOLID);
+        ////visFSI.SetParticleRenderMode(sysFSI.GetInitialSpacing() / 2, ChVisualizationFsi::RenderMode::SOLID);
 
-        fsi_vis.GetVisualSystem().SetStatsRenderer(stats);
-        fsi_vis.GetVisualSystem().EnableStats(true);
+        if (!run_time_vis_bce) {
+            vis.AttachSystem(&sys);
+        }
+        vis.SetStatsRenderer(stats);
+        vis.EnableStats(true);
+        vis.Initialize();
     }
 
     // Enable data output
@@ -265,8 +263,9 @@ int main(int argc, char* argv[]) {
             // Create the wheel BCE markers at current wheel body locations
             CreateWheelBCEMarkers(vehicle, sysFSI);
 
-            // Complete construction of FSI system (re-run)
+            // Complete construction of FSI system
             sysFSI.Initialize();
+            visFSI.Initialize();
 
             on_ramp = false;
         }
@@ -310,10 +309,10 @@ int main(int argc, char* argv[]) {
             if (chase_cam) {
                 ChVector<> cam_loc = veh_loc + ChVector<>(-3, 3, 2);
                 ChVector<> cam_point = veh_loc;
-                fsi_vis.SetCameraPosition(cam_loc, cam_point);
+                visFSI.SetCameraPosition(cam_loc, cam_point);
             }
             stats->UpdateDriverInputs(driver_inputs);
-            if (!fsi_vis.Render())
+            if (!visFSI.Render())
                 break;
         }
 

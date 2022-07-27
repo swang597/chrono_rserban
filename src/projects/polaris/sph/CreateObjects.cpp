@@ -177,6 +177,12 @@ std::shared_ptr<ChBezierCurve> CreatePath(const std::string& terrain_dir, double
         points.push_back(ChVector<>(x, y, z));
     }
 
+    // Include point beyond SPH patch
+    { 
+        auto np = points.size();
+        points.push_back(2.0 * points[np - 2] + points[np - 1]);
+    }
+
     ifile.close();
 
     return std::shared_ptr<ChBezierCurve>(new ChBezierCurve(points));
