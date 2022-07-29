@@ -184,6 +184,10 @@ std::shared_ptr<ChBezierCurve> CreatePath(const std::string& terrain_dir, double
         points.push_back(2.0 * points[np - 1] - points[np - 2]);
     }
 
+    // Raise all path points
+    for (auto& p : points)
+        p.z() += 0.1;
+
     ifile.close();
 
     return std::shared_ptr<ChBezierCurve>(new ChBezierCurve(points));
