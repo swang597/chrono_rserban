@@ -16,7 +16,6 @@ set(DEMOS
     demo_VEH_Gator
     demo_VEH_Gator_Accel
     demo_VEH_HMMWV
-    demo_VEH_HMMWV_acc_tst
     demo_VEH_HMMWV_Accel
     demo_VEH_HMMWV_DoubleLaneChange
     demo_VEH_HMMWV_DefSoil

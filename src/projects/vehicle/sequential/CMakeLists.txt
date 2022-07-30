@@ -21,6 +21,7 @@ set(DEMOS
     test_VEH_tire_csys
     test_VEH_SCM_hm    
     test_VEH_WheeledJSON_Accel
+    test_VEH_HMMWV_acc_tst
 )
 
 if(THRUST_FOUND)

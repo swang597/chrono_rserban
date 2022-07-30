@@ -1,0 +1,226 @@
+// =============================================================================
+// PROJECT CHRONO - http://projectchrono.org
+//
+// Copyright (c) 2014 projectchrono.org
+// All rights reserved.
+//
+// Use of this source code is governed by a BSD-style license that can be found
+// in the LICENSE file at the top level of the distribution and at
+// http://projectchrono.org/license-chrono.txt.
+//
+// =============================================================================
+// Authors: Radu Serban, Rainer Gericke
+// =============================================================================
+//
+// HMMWV acceleration test
+//
+// The vehicle reference frame has Z up, X towards the front of the vehicle, and
+// Y pointing to the left.
+//
+// =============================================================================
+
+#include "chrono/core/ChStream.h"
+#include "chrono/utils/ChUtilsInputOutput.h"
+#include "chrono/utils/ChFilters.h"
+
+#include "chrono_vehicle/ChConfigVehicle.h"
+#include "chrono_vehicle/ChVehicleModelData.h"
+#include "chrono_vehicle/terrain/RigidTerrain.h"
+#include "chrono_vehicle/driver/ChDataDriver.h"
+#include "chrono_vehicle/output/ChVehicleOutputASCII.h"
+
+#include "chrono_vehicle/wheeled_vehicle/utils/ChWheeledVehicleVisualSystemIrrlicht.h"
+
+#include "chrono_models/vehicle/hmmwv/HMMWV.h"
+
+#include "chrono_thirdparty/filesystem/path.h"
+
+using namespace chrono;
+using namespace chrono::irrlicht;
+using namespace chrono::vehicle;
+using namespace chrono::vehicle::hmmwv;
+
+// =============================================================================
+
+// Type of powertrain model (SHAFTS, SIMPLE)
+PowertrainModelType powertrain_model = PowertrainModelType::SHAFTS;
+
+// Drive type (FWD, RWD, or AWD)
+DrivelineTypeWV drive_type = DrivelineTypeWV::AWD;
+
+// Type of tire model (RIGID, RIGID_MESH, ANCF, REISSNER, TMEASY, PACEJKA, LUGRE, FIALA, PAC89, PAC02)
+TireModelType tire_model = TireModelType::TMEASY;
+
+// Contact method
+ChContactMethod contact_method = ChContactMethod::SMC;
+
+// Simulation step sizes
+double step_size = 3e-3;
+double tire_step_size = 1e-3;
+
+// Simulation end time
+double t_end = 18;
+
+// Speed limit
+double speed_end = 25.0;
+
+// Time interval between two render frames
+double render_step_size = 1.0 / 50;  // FPS = 50
+
+// Output directories
+const std::string out_dir = "../HMMWV_ACC_TST";
+
+// =============================================================================
+
+int main(int argc, char* argv[]) {
+    GetLog() << "Copyright (c) 2017 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
+
+    // --------------
+    // Create systems
+    // --------------
+
+    // Create the HMMWV vehicle, set parameters, and initialize
+    HMMWV_Full my_hmmwv;
+    my_hmmwv.SetContactMethod(contact_method);
+    my_hmmwv.SetChassisCollisionType(CollisionType::NONE);
+    my_hmmwv.SetChassisFixed(false);
+    my_hmmwv.SetInitPosition(ChCoordsys<>(ChVector<>(-180, 0, 0.6), QUNIT));
+    my_hmmwv.SetPowertrainType(powertrain_model);
+    my_hmmwv.SetDriveType(drive_type);
+    my_hmmwv.UseTierodBodies(true);
+    my_hmmwv.SetSteeringType(SteeringTypeWV::PITMAN_ARM);
+    my_hmmwv.SetTireType(tire_model);
+    my_hmmwv.SetTireStepSize(tire_step_size);
+    my_hmmwv.Initialize();
+
+    my_hmmwv.SetChassisVisualizationType(VisualizationType::NONE);
+    my_hmmwv.SetSuspensionVisualizationType(VisualizationType::PRIMITIVES);
+    my_hmmwv.SetSteeringVisualizationType(VisualizationType::PRIMITIVES);
+    my_hmmwv.SetWheelVisualizationType(VisualizationType::MESH);
+    my_hmmwv.SetTireVisualizationType(VisualizationType::MESH);
+
+    // Create the terrain
+    MaterialInfo minfo;
+    minfo.mu = 0.9f;
+    minfo.cr = 0.01f;
+    minfo.Y = 2e7f;
+    auto patch_mat = minfo.CreateMaterial(contact_method);
+
+    RigidTerrain terrain(my_hmmwv.GetSystem());
+    auto patch = terrain.AddPatch(patch_mat, CSYSNORM, 400, 200);
+    patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 400, 200);
+    patch->SetColor(ChColor(0.8f, 0.8f, 0.5f));
+    terrain.Initialize();
+
+    // Create the vehicle Irrlicht interface
+    auto vis = chrono_types::make_shared<ChWheeledVehicleVisualSystemIrrlicht>();
+    vis->SetWindowTitle("HMMWV Special Test");
+    vis->SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 6.0, 0.5);
+    vis->Initialize();
+    vis->AddTypicalLights();
+    vis->AddSkyBox();
+    vis->AddLogo();
+    vis->AttachVehicle(&my_hmmwv.GetVehicle());
+
+    // -----------------
+    // Initialize output
+    // -----------------
+
+    if (!filesystem::create_directory(filesystem::path(out_dir))) {
+        std::cout << "Error creating directory " << out_dir << std::endl;
+        return 1;
+    }
+
+    utils::CSV_writer driver_csv(" ");
+
+    // ------------------------
+    // Create the driver system
+    // ------------------------
+    std::string driverFile = GetChronoDataFile("vehicle/hmmwv/driver/AccTest_Maneuver.txt");
+    GetLog() << driverFile << "\n";
+    ChDataDriver driver(my_hmmwv.GetVehicle(), driverFile);
+    driver.Initialize();
+
+    // ---------------
+    // Simulation loop
+    // ---------------
+
+    my_hmmwv.GetVehicle().LogSubsystemTypes();
+
+    // Number of simulation steps between miscellaneous events
+    int render_steps = (int)std::ceil(render_step_size / step_size);
+
+    // Initialize simulation frame counters
+    int step_number = 0;
+    int render_frame = 0;
+
+    my_hmmwv.GetVehicle().EnableRealtime(true);
+    utils::ChRunningAverage RTF_filter(50);
+    utils::ChRunningAverage AVG_filter(20);
+    while (vis->Run()) {
+        double time = my_hmmwv.GetSystem()->GetChTime();
+        double speed = my_hmmwv.GetVehicle().GetSpeed();
+
+        // End simulation
+        if (speed >= speed_end)
+            break;
+        if (time >= t_end)
+            break;
+
+        // Driver inputs
+        DriverInputs driver_inputs = driver.GetInputs();
+
+        // Render scene and output POV-Ray data
+        if (step_number % render_steps == 0) {
+            vis->BeginScene();
+            vis->Render();
+            vis->EndScene();
+
+            double engine_torque = my_hmmwv.GetPowertrain()->GetMotorTorque();
+            double engine_speed = my_hmmwv.GetPowertrain()->GetMotorSpeed();
+            double throttle = driver_inputs.m_throttle;
+            double fx = my_hmmwv.GetVehicle().GetWheel(0, LEFT)->GetTire()->ReportTireForce(&terrain).force.x() +
+                        my_hmmwv.GetVehicle().GetWheel(0, RIGHT)->GetTire()->ReportTireForce(&terrain).force.x() +
+                        my_hmmwv.GetVehicle().GetWheel(1, LEFT)->GetTire()->ReportTireForce(&terrain).force.x() +
+                        my_hmmwv.GetVehicle().GetWheel(1, RIGHT)->GetTire()->ReportTireForce(&terrain).force.x();
+            driver_csv << time << throttle << speed << engine_torque << engine_speed << AVG_filter.Add(fx) << "\n";
+            render_frame++;
+        }
+
+        // Update modules (process inputs from other modules)
+        driver.Synchronize(time);
+        terrain.Synchronize(time);
+        my_hmmwv.Synchronize(time, driver_inputs, terrain);
+        vis->Synchronize("Acceleration test", driver_inputs);
+
+        // Advance simulation for one timestep for all modules
+        driver.Advance(step_size);
+        terrain.Advance(step_size);
+        my_hmmwv.Advance(step_size);
+        vis->Advance(step_size);
+
+        // Increment frame number
+        step_number++;
+    }
+    switch (tire_model) {
+        case TireModelType::RIGID:
+            driver_csv.write_to_file(out_dir + "/test_hmmwv_rigid.csv",
+                                     "#time throttle speed engine_torque engine_speed\n");
+            break;
+        case TireModelType::TMEASY:
+            driver_csv.write_to_file(out_dir + "/test_hmmwv_tmeasy.csv",
+                                     "#time throttle speed engine_torque engine_speed\n");
+            break;
+        case TireModelType::PAC89:
+            driver_csv.write_to_file(out_dir + "/test_hmmwv_pac89.csv",
+                                     "#time throttle speed engine_torque engine_speed\n");
+            break;
+        case TireModelType::PAC02:
+            driver_csv.write_to_file(out_dir + "/test_hmmwv_pac02.csv",
+                                     "#time throttle speed engine_torque engine_speed\n");
+            break;
+        default:
+            break;
+    }
+    return 0;
+}
