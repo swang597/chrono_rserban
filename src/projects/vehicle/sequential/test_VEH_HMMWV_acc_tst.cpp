@@ -33,6 +33,10 @@
 
 #include "chrono_models/vehicle/hmmwv/HMMWV.h"
 
+#ifdef CHRONO_POSTPROCESS
+    #include "chrono_postprocess/ChGnuPlot.h"
+#endif
+
 #include "chrono_thirdparty/filesystem/path.h"
 
 using namespace chrono;
@@ -55,7 +59,7 @@ TireModelType tire_model = TireModelType::TMEASY;
 ChContactMethod contact_method = ChContactMethod::SMC;
 
 // Simulation step sizes
-double step_size = 3e-3;
+double step_size = 1e-3;
 double tire_step_size = 1e-3;
 
 // Simulation end time
@@ -147,19 +151,38 @@ int main(int argc, char* argv[]) {
 
     my_hmmwv.GetVehicle().LogSubsystemTypes();
 
+    // Recorders
+    ChFunction_Recorder speed_recorder;
+    ChFunction_Recorder engine_speed_recorder;
+    ChFunction_Recorder engine_torque_recorder;
+
     // Number of simulation steps between miscellaneous events
     int render_steps = (int)std::ceil(render_step_size / step_size);
 
     // Initialize simulation frame counters
     int step_number = 0;
-    int render_frame = 0;
 
     my_hmmwv.GetVehicle().EnableRealtime(true);
     utils::ChRunningAverage RTF_filter(50);
     utils::ChRunningAverage AVG_filter(20);
     while (vis->Run()) {
+        // Driver inputs
+        DriverInputs driver_inputs = driver.GetInputs();
+
         double time = my_hmmwv.GetSystem()->GetChTime();
         double speed = my_hmmwv.GetVehicle().GetSpeed();
+        double engine_torque = my_hmmwv.GetPowertrain()->GetMotorTorque();
+        double engine_speed = my_hmmwv.GetPowertrain()->GetMotorSpeed();
+        double throttle = driver_inputs.m_throttle;
+        double fx = my_hmmwv.GetVehicle().GetWheel(0, LEFT)->GetTire()->ReportTireForce(&terrain).force.x() +
+                    my_hmmwv.GetVehicle().GetWheel(0, RIGHT)->GetTire()->ReportTireForce(&terrain).force.x() +
+                    my_hmmwv.GetVehicle().GetWheel(1, LEFT)->GetTire()->ReportTireForce(&terrain).force.x() +
+                    my_hmmwv.GetVehicle().GetWheel(1, RIGHT)->GetTire()->ReportTireForce(&terrain).force.x();
+        driver_csv << time << throttle << speed << engine_torque << engine_speed << AVG_filter.Add(fx) << "\n";
+
+        speed_recorder.AddPoint(time, speed);
+        engine_speed_recorder.AddPoint(time, engine_speed);
+        engine_torque_recorder.AddPoint(time, engine_torque);
 
         // End simulation
         if (speed >= speed_end)
@@ -167,24 +190,11 @@ int main(int argc, char* argv[]) {
         if (time >= t_end)
             break;
 
-        // Driver inputs
-        DriverInputs driver_inputs = driver.GetInputs();
-
         // Render scene and output POV-Ray data
         if (step_number % render_steps == 0) {
             vis->BeginScene();
             vis->Render();
             vis->EndScene();
-
-            double engine_torque = my_hmmwv.GetPowertrain()->GetMotorTorque();
-            double engine_speed = my_hmmwv.GetPowertrain()->GetMotorSpeed();
-            double throttle = driver_inputs.m_throttle;
-            double fx = my_hmmwv.GetVehicle().GetWheel(0, LEFT)->GetTire()->ReportTireForce(&terrain).force.x() +
-                        my_hmmwv.GetVehicle().GetWheel(0, RIGHT)->GetTire()->ReportTireForce(&terrain).force.x() +
-                        my_hmmwv.GetVehicle().GetWheel(1, LEFT)->GetTire()->ReportTireForce(&terrain).force.x() +
-                        my_hmmwv.GetVehicle().GetWheel(1, RIGHT)->GetTire()->ReportTireForce(&terrain).force.x();
-            driver_csv << time << throttle << speed << engine_torque << engine_speed << AVG_filter.Add(fx) << "\n";
-            render_frame++;
         }
 
         // Update modules (process inputs from other modules)
@@ -202,25 +212,57 @@ int main(int argc, char* argv[]) {
         // Increment frame number
         step_number++;
     }
+
+    std::string tire_model_str;
     switch (tire_model) {
         case TireModelType::RIGID:
-            driver_csv.write_to_file(out_dir + "/test_hmmwv_rigid.csv",
-                                     "#time throttle speed engine_torque engine_speed\n");
+            tire_model_str = "rigid";
             break;
         case TireModelType::TMEASY:
-            driver_csv.write_to_file(out_dir + "/test_hmmwv_tmeasy.csv",
-                                     "#time throttle speed engine_torque engine_speed\n");
+            tire_model_str = "tmeasy";
             break;
         case TireModelType::PAC89:
-            driver_csv.write_to_file(out_dir + "/test_hmmwv_pac89.csv",
-                                     "#time throttle speed engine_torque engine_speed\n");
+            tire_model_str = "pac89";
             break;
         case TireModelType::PAC02:
-            driver_csv.write_to_file(out_dir + "/test_hmmwv_pac02.csv",
-                                     "#time throttle speed engine_torque engine_speed\n");
+            tire_model_str = "pac02";
             break;
         default:
             break;
     }
+    driver_csv.write_to_file(out_dir + "/output_" + tire_model_str + ".csv",
+                             "#time throttle speed engine_torque engine_speed\n");
+
+#ifdef CHRONO_POSTPROCESS
+    std::string title_command = "set title 'Tire model: " + tire_model_str + "'";
+    {
+        postprocess::ChGnuPlot gplot(out_dir + "/speed.gpl");
+        gplot.SetCommand(title_command.c_str());
+        gplot.SetGrid();
+        gplot.SetLabelX("time (s)");
+        gplot.SetLabelY("speed (m/s)");
+        gplot.OutputPNG(out_dir + "/speed.png", 800, 600);
+        gplot.Plot(speed_recorder, "", " with lines lt -1 lc rgb'#00AAEE' ");
+    }
+    {
+        postprocess::ChGnuPlot gplot(out_dir + "/engine_speed.gpl");
+        gplot.SetCommand(title_command.c_str());
+        gplot.SetGrid();
+        gplot.SetLabelX("time (s)");
+        gplot.SetLabelY("engine speed (rad/s)");
+        gplot.OutputPNG(out_dir + "/engin_speed.png", 800, 600);
+        gplot.Plot(engine_speed_recorder, "", " with lines lt -1 lc rgb'#00AAEE' ");
+    }
+    {
+        postprocess::ChGnuPlot gplot(out_dir + "/engine_torque.gpl");
+        gplot.SetCommand(title_command.c_str());
+        gplot.SetGrid();
+        gplot.SetLabelX("time (s)");
+        gplot.SetLabelY("engine torque (N.m)");
+        gplot.OutputPNG(out_dir + "/engine_torque.png", 800, 600);
+        gplot.Plot(engine_torque_recorder, "", " with lines lt -1 lc rgb'#00AAEE' ");
+    }
+#endif
+
     return 0;
 }
