@@ -178,7 +178,7 @@ int main(int argc, char* argv[]) {
                     my_hmmwv.GetVehicle().GetWheel(0, RIGHT)->GetTire()->ReportTireForce(&terrain).force.x() +
                     my_hmmwv.GetVehicle().GetWheel(1, LEFT)->GetTire()->ReportTireForce(&terrain).force.x() +
                     my_hmmwv.GetVehicle().GetWheel(1, RIGHT)->GetTire()->ReportTireForce(&terrain).force.x();
-        driver_csv << time << throttle << speed << engine_torque << engine_speed << AVG_filter.Add(fx) << "\n";
+        driver_csv << time << throttle << speed << engine_torque << engine_speed << AVG_filter.Add(fx) << std::endl;
 
         speed_recorder.AddPoint(time, speed);
         engine_speed_recorder.AddPoint(time, engine_speed);
@@ -231,7 +231,7 @@ int main(int argc, char* argv[]) {
             break;
     }
     driver_csv.write_to_file(out_dir + "/output_" + tire_model_str + ".csv",
-                             "#time throttle speed engine_torque engine_speed\n");
+                             "#time throttle speed engine_torque engine_speed");
 
 #ifdef CHRONO_POSTPROCESS
     std::string title_command = "set title 'Tire model: " + tire_model_str + "'";
