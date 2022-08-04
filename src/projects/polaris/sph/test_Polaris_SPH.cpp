@@ -194,7 +194,7 @@ int main(int argc, char* argv[]) {
     // Create driver
     cout << "Create path..." << endl;
     auto path = CreatePath(terrain_dir, ramp_length);
-    double x_max = path->getPoint(path->getNumPoints() - 1).x() - 3.0;
+    double x_max = path->getPoint(path->getNumPoints() - 2).x() - 3.0;
     ChPathFollowerDriver driver(*vehicle, path, "my_path", target_speed);
     driver.GetSteeringController().SetLookAheadDistance(2.0);
     driver.GetSteeringController().SetGains(1.0, 0, 0);
