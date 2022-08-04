@@ -23,8 +23,7 @@
 #include "chrono_vehicle/driver/ChDataDriver.h"
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 
-#include "chrono_models/vehicle/m113a/M113a_Vehicle.h"
-#include "chrono_models/vehicle/m113a/M113a_SimpleMapPowertrain.h"
+#include "chrono_models/vehicle/m113/M113.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 
@@ -86,29 +85,35 @@ int main(int argc, char* argv[]) {
     // --------------------------
     // Construct the M113 vehicle
     // --------------------------
+
     // Create the vehicle system
-    M113a_Vehicle vehicle(false, ChContactMethod::SMC);
-    vehicle.Initialize(ChCoordsys<>(initLoc, initRot));
+    M113 m113;
+    m113.SetContactMethod(ChContactMethod::SMC);
+    m113.SetChassisFixed(false);
+    m113.SetTrackShoeType(TrackShoeType::SINGLE_PIN);
+    m113.SetDrivelineType(DrivelineTypeTV::SIMPLE);
+    m113.SetPowertrainType(PowertrainModelType::SIMPLE_MAP);
+
+    m113.SetInitPosition(ChCoordsys<>(initLoc, initRot));
+    m113.Initialize();
+    auto& vehicle = m113.GetVehicle();
+    auto powertrain = m113.GetPowertrain();
 
     // Set visualization type for subsystems
-    vehicle.SetChassisVisualizationType(vis_type);
-    vehicle.SetSprocketVisualizationType(vis_type);
-    vehicle.SetIdlerVisualizationType(vis_type);
-    vehicle.SetRoadWheelAssemblyVisualizationType(vis_type);
-    vehicle.SetRoadWheelVisualizationType(vis_type);
-    vehicle.SetTrackShoeVisualizationType(vis_type);
+    m113.SetChassisVisualizationType(vis_type);
+    m113.SetSprocketVisualizationType(vis_type);
+    m113.SetIdlerVisualizationType(vis_type);
+    m113.SetSuspensionVisualizationType(vis_type);
+    m113.SetRoadWheelVisualizationType(vis_type);
+    m113.SetTrackShoeVisualizationType(vis_type);
 
     // Control steering type (enable crossdrive capability).
-    vehicle.GetDriveline()->SetGyrationMode(true);
-
-    // Create and initialize the powertrain system
-    auto powertrain = chrono_types::make_shared<M113a_SimpleMapPowertrain>("Powertrain");
-    vehicle.InitializePowertrain(powertrain);
+    m113.GetDriveline()->SetGyrationMode(true);
 
     auto solver = chrono_types::make_shared<ChSolverMINRES>();
     solver->EnableWarmStart(true);
     solver->SetTolerance(1e-10);
-    vehicle.GetSystem()->SetSolver(solver);
+    m113.GetSystem()->SetSolver(solver);
 
     // ------------------
     // Create the terrain
@@ -123,7 +128,7 @@ int main(int argc, char* argv[]) {
     // Height-map terrain
     //     texture in Chrono::Vehicle data directory
     //     bitmap in VehicleTests data directory
-    ////RigidTerrain terrain(vehicle.GetSystem());
+    ////RigidTerrain terrain(m113.GetSystem());
     ////auto patch = terrain.AddPatch(patch_mat, CSYSNORM, vehicle::GetDataFile("M113a_benchmark/height_maps/slope4.bmp"), "my_mesh", 270, 20, -3, 3);
     ////patch->SetColor(ChColor(0.4f, 0.2f, 0.0f));
     ////patch->SetTexture(vehicle::GetDataFile("terrain/textures/dirt.jpg"), 12, 12);
@@ -132,7 +137,7 @@ int main(int argc, char* argv[]) {
     // Step terrain
     //    height change:  0 -> 0.2
     //    X-Y dimensions of flat areas: 120x40
-    ////RigidTerrainStep terrain(vehicle.GetSystem());
+    ////RigidTerrainStep terrain(m113.GetSystem());
     ////terrain.SetColor(ChColor(0.4f, 0.2f, 0.0f));
     ////terrain.Initialize(patch_mat, 0, 0.2, 120, 40);
     ////terrain.SetTexture(vehicle::GetDataFile("terrain/textures/dirt.jpg"), 12, 12);
@@ -141,7 +146,7 @@ int main(int argc, char* argv[]) {
     //    height change: 0 -> 15
     //    grade: 20%
     //    X-Y dimensions of flat areas: 120x40
-    ////RigidTerrainSlope terrain(vehicle.GetSystem());
+    ////RigidTerrainSlope terrain(m113.GetSystem());
     ////terrain.SetColor(ChColor(0.4f, 0.2f, 0.0f));
     ////terrain.Initialize(patch_mat, 0, 15, 20, 120, 40);
     ////terrain.SetTexture(vehicle::GetDataFile("terrain/textures/dirt.jpg"), 12, 12);
@@ -150,7 +155,7 @@ int main(int argc, char* argv[]) {
     //    10cm tall, 50cm top width, 45 deg trapezoid bump at x = -95m
     //    X-Y dimensions of the first flat area: 100x4
     //    X-Y dimensions of the last flat area:  100x4
-    RigidTerrainTrapezoid terrain(vehicle.GetSystem());
+    RigidTerrainTrapezoid terrain(m113.GetSystem());
     terrain.Initialize(patch_mat, 0, 0.1, 0, CH_C_PI_4, CH_C_PI_4, 100, 0.5, 100, 4, -95);
     terrain.SetTexture(vehicle::GetDataFile("terrain/textures/dirt.jpg"), 12, 12);
 
@@ -238,9 +243,9 @@ int main(int argc, char* argv[]) {
     while (vis->Run()) {
         // Debugging output
         if (dbg_output) {
-            cout << "Time: " << vehicle.GetSystem()->GetChTime() << endl;
-            const ChFrameMoving<>& c_ref = vehicle.GetChassisBody()->GetFrame_REF_to_abs();
-            const ChVector<>& c_pos = vehicle.GetChassis()->GetPos();
+            cout << "Time: " << m113.GetSystem()->GetChTime() << endl;
+            const ChFrameMoving<>& c_ref = m113.GetChassisBody()->GetFrame_REF_to_abs();
+            const ChVector<>& c_pos = m113.GetChassis()->GetPos();
             cout << "      chassis:    " << c_pos.x() << "  " << c_pos.y() << "  " << c_pos.z() << endl;
             {
                 const ChVector<>& i_pos_abs = vehicle.GetTrackAssembly(LEFT)->GetIdler()->GetWheelBody()->GetPos();
@@ -269,7 +274,7 @@ int main(int argc, char* argv[]) {
             if (povray_output) {
                 char filename[100];
                 sprintf(filename, "%s/data_%03d.dat", pov_dir.c_str(), render_frame + 1);
-                utils::WriteVisualizationAssets(vehicle.GetSystem(), filename);
+                utils::WriteVisualizationAssets(m113.GetSystem(), filename);
             }
 
             if (img_output && step_number > 200) {

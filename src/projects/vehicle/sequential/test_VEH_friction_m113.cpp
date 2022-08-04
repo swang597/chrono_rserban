@@ -72,7 +72,7 @@ int main(int argc, char* argv[]) {
     vehicle_1.SetChassisVisualizationType(VisualizationType::NONE);
     vehicle_1.SetSprocketVisualizationType(VisualizationType::PRIMITIVES);
     vehicle_1.SetIdlerVisualizationType(VisualizationType::PRIMITIVES);
-    vehicle_1.SetRoadWheelAssemblyVisualizationType(VisualizationType::PRIMITIVES);
+    vehicle_1.SetSuspensionVisualizationType(VisualizationType::PRIMITIVES);
     vehicle_1.SetRoadWheelVisualizationType(VisualizationType::PRIMITIVES);
     vehicle_1.SetTrackShoeVisualizationType(VisualizationType::PRIMITIVES);
 
@@ -102,7 +102,7 @@ int main(int argc, char* argv[]) {
     vehicle_2.SetChassisVisualizationType(VisualizationType::NONE);
     vehicle_2.SetSprocketVisualizationType(VisualizationType::PRIMITIVES);
     vehicle_2.SetIdlerVisualizationType(VisualizationType::PRIMITIVES);
-    vehicle_2.SetRoadWheelAssemblyVisualizationType(VisualizationType::PRIMITIVES);
+    vehicle_2.SetSuspensionVisualizationType(VisualizationType::PRIMITIVES);
     vehicle_2.SetRoadWheelVisualizationType(VisualizationType::PRIMITIVES);
     vehicle_2.SetTrackShoeVisualizationType(VisualizationType::PRIMITIVES);
 

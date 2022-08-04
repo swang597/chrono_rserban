@@ -221,8 +221,8 @@ int main(int argc, char* argv[]) {
 
     auto fun_vel = chrono_types::make_shared<ChFunction_Ramp>(0, vel);
     auto actuator = chrono_types::make_shared<ChLinkLinActuator>();
-    actuator->Set_lin_offset(1);
-    actuator->Set_dist_funct(fun_vel);
+    actuator->SetDistanceOffset(1);
+    actuator->SetActuatorFunction(fun_vel);
     actuator->Initialize(ground, rig, false, ChCoordsys<>(rigLoc, QUNIT), ChCoordsys<>(rigLoc + ChVector<>(1, 0, 0), QUNIT));
     wvp.GetSystem()->AddLink(actuator);
 #endif

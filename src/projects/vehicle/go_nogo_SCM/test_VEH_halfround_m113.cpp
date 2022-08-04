@@ -29,8 +29,7 @@
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 #include "chrono_vehicle/utils/ChVehiclePath.h"
 
-#include "chrono_models/vehicle/m113a/M113a_SimpleMapPowertrain.h"
-#include "chrono_models/vehicle/m113a/M113a_Vehicle.h"
+#include "chrono_models/vehicle/m113/M113.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 
@@ -96,24 +95,29 @@ int main(int argc, char* argv[]) {
     // ---------------
 
     // Create the vehicle system
-    CollisionType chassis_collision_type = CollisionType::PRIMITIVES;
-    M113a_Vehicle vehicle(false, ChContactMethod::SMC, chassis_collision_type);
-    vehicle.Initialize(ChCoordsys<>(ChVector<>(0.0, 0.0, 1.0), QUNIT));
+    M113 m113;
+    m113.SetContactMethod(ChContactMethod::SMC);
+    m113.SetChassisCollisionType(CollisionType::PRIMITIVES);
+    m113.SetChassisFixed(false);
+    m113.SetTrackShoeType(TrackShoeType::SINGLE_PIN);
+    m113.SetDrivelineType(DrivelineTypeTV::SIMPLE);
+    m113.SetPowertrainType(PowertrainModelType::SIMPLE_MAP);
+
+    m113.SetInitPosition(ChCoordsys<>(ChVector<>(0.0, 0.0, 1.0), QUNIT));
+    m113.Initialize();
+    auto& vehicle = m113.GetVehicle();
+    auto powertrain = m113.GetPowertrain();
 
     // Set visualization type for subsystems
     vehicle.SetChassisVisualizationType(vis_type);
     vehicle.SetSprocketVisualizationType(vis_type);
     vehicle.SetIdlerVisualizationType(vis_type);
-    vehicle.SetRoadWheelAssemblyVisualizationType(vis_type);
+    vehicle.SetSuspensionVisualizationType(vis_type);
     vehicle.SetRoadWheelVisualizationType(vis_type);
     vehicle.SetTrackShoeVisualizationType(vis_type);
 
     // Control steering type (enable crossdrive capability)
     vehicle.GetDriveline()->SetGyrationMode(true);
-
-    // Create and initialize the powertrain system
-    auto powertrain = chrono_types::make_shared<M113a_SimpleMapPowertrain>("Powertrain");
-    vehicle.InitializePowertrain(powertrain);
 
     // --------------------------------------------------
     // Control internal collisions and contact monitoring

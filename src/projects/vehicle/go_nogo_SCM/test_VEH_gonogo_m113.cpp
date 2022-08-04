@@ -41,8 +41,7 @@
 #include "chrono_vehicle/utils/ChVehiclePath.h"
 #include "chrono_vehicle/utils/ChSteeringController.h"
 
-#include "chrono_models/vehicle/m113a/M113a_SimpleMapPowertrain.h"
-#include "chrono_models/vehicle/m113a/M113a_Vehicle.h"
+#include "chrono_models/vehicle/m113/M113.h"
 
 ////#undef CHRONO_IRRLICHT
 #ifdef CHRONO_IRRLICHT
@@ -289,24 +288,28 @@ int main(int argc, char* argv[]) {
     // Create the vehicle
     // -------------------------------------
 
-    M113a_Vehicle m113(false, system);
+    M113 m113;
+    m113.SetContactMethod(ChContactMethod::SMC);
+    m113.SetChassisFixed(false);
+    m113.SetTrackShoeType(TrackShoeType::SINGLE_PIN);
+    m113.SetDrivelineType(DrivelineTypeTV::SIMPLE);
+    m113.SetPowertrainType(PowertrainModelType::SIMPLE_MAP);
 
-    m113.Initialize(ChCoordsys<>(initLoc, initRot));
+    m113.SetInitPosition(ChCoordsys<>(initLoc, initRot));
+    m113.Initialize();
+    auto& vehicle = m113.GetVehicle();
+    auto powertrain = m113.GetPowertrain();
 
     // Set visualization type for subsystems
     m113.SetChassisVisualizationType(VisualizationType::NONE);
     m113.SetSprocketVisualizationType(VisualizationType::MESH);
     m113.SetIdlerVisualizationType(VisualizationType::MESH);
-    m113.SetRoadWheelAssemblyVisualizationType(VisualizationType::MESH);
+    m113.SetSuspensionVisualizationType(VisualizationType::MESH);
     m113.SetRoadWheelVisualizationType(VisualizationType::MESH);
     m113.SetTrackShoeVisualizationType(VisualizationType::MESH);
 
     // Control steering type (enable crossdrive capability).
     m113.GetDriveline()->SetGyrationMode(true);
-
-    // Create and initialize the powertrain system
-    auto powertrain = chrono_types::make_shared<M113a_SimpleMapPowertrain>("Powertrain");
-    m113.InitializePowertrain(powertrain);
 
     // -------------------------------------
     // Create the driver
@@ -315,7 +318,7 @@ int main(int argc, char* argv[]) {
     double height = initLoc.z();
     auto path = StraightLinePath(ChVector<>(-2 * hdimX, 0, height), ChVector<>(200 * hdimX, 0, height));
 
-    GONOGO_Driver driver(m113, path, false, time_start_engine, time_max_throttle);
+    GONOGO_Driver driver(vehicle, path, false, time_start_engine, time_max_throttle);
     double look_ahead_dist = 5;
     double Kp_steering = 0.5;
     double Ki_steering = 0;
@@ -361,7 +364,7 @@ int main(int argc, char* argv[]) {
     vis->AddTypicalLights();
     vis->AddSkyBox();
     vis->AddLogo();
-    vis->AttachVehicle(&m113);
+    vis->AttachVehicle(&vehicle);
 
     ////vis->SetChaseCameraAngle(CH_C_PI / 5);
     ////vis->EnableStats(false);
@@ -395,10 +398,10 @@ int main(int argc, char* argv[]) {
     // ---------------
 
     // Inter-module communication data
-    BodyStates shoe_states_left(m113.GetNumTrackShoes(LEFT));
-    BodyStates shoe_states_right(m113.GetNumTrackShoes(RIGHT));
-    TerrainForces shoe_forces_left(m113.GetNumTrackShoes(LEFT));
-    TerrainForces shoe_forces_right(m113.GetNumTrackShoes(RIGHT));
+    BodyStates shoe_states_left(vehicle.GetNumTrackShoes(LEFT));
+    BodyStates shoe_states_right(vehicle.GetNumTrackShoes(RIGHT));
+    TerrainForces shoe_forces_left(vehicle.GetNumTrackShoes(LEFT));
+    TerrainForces shoe_forces_right(vehicle.GetNumTrackShoes(RIGHT));
 
     // Number of simulation steps between two output frames
     int output_steps = (int)std::ceil((1 / output_frequency) / time_step);
@@ -489,8 +492,8 @@ int main(int argc, char* argv[]) {
 
         // Collect output data from modules (for inter-module communication)
         DriverInputs driver_inputs = driver.GetInputs();
-        m113.GetTrackShoeStates(LEFT, shoe_states_left);
-        m113.GetTrackShoeStates(RIGHT, shoe_states_right);
+        vehicle.GetTrackShoeStates(LEFT, shoe_states_left);
+        vehicle.GetTrackShoeStates(RIGHT, shoe_states_right);
 
         // Save output
         if (output && sim_frame == next_out_frame) {

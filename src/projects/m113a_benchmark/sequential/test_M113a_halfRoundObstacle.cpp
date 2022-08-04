@@ -33,8 +33,7 @@
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 
-#include "chrono_models/vehicle/m113a/M113a_Vehicle.h"
-#include "chrono_models/vehicle/m113a/M113a_SimpleMapPowertrain.h"
+#include "chrono_models/vehicle/m113/M113.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 
@@ -133,29 +132,33 @@ int main(int argc, char* argv[]) {
     // ---------------
 
     // Create the vehicle system
-    CollisionType chassis_collision_type = CollisionType::PRIMITIVES;
-	M113a_Vehicle vehicle(false, ChContactMethod::SMC, chassis_collision_type);
-	vehicle.Initialize(ChCoordsys<>(initLoc, initRot));
+    M113 m113;
+    m113.SetContactMethod(ChContactMethod::SMC);
+    m113.SetChassisFixed(false);
+    m113.SetTrackShoeType(TrackShoeType::SINGLE_PIN);
+    m113.SetDrivelineType(DrivelineTypeTV::SIMPLE);
+    m113.SetPowertrainType(PowertrainModelType::SIMPLE_MAP);
+
+    m113.SetInitPosition(ChCoordsys<>(initLoc, initRot));
+    m113.Initialize();
+    auto& vehicle = m113.GetVehicle();
+    auto powertrain = m113.GetPowertrain();
 
     // Set visualization type for subsystems
-    vehicle.SetChassisVisualizationType(vis_type);
-    vehicle.SetSprocketVisualizationType(vis_type);
-    vehicle.SetIdlerVisualizationType(vis_type);
-    vehicle.SetRoadWheelAssemblyVisualizationType(vis_type);
-    vehicle.SetRoadWheelVisualizationType(vis_type);
-    vehicle.SetTrackShoeVisualizationType(vis_type);
+    m113.SetChassisVisualizationType(vis_type);
+    m113.SetSprocketVisualizationType(vis_type);
+    m113.SetIdlerVisualizationType(vis_type);
+    m113.SetSuspensionVisualizationType(vis_type);
+    m113.SetRoadWheelVisualizationType(vis_type);
+    m113.SetTrackShoeVisualizationType(vis_type);
 
     // Control steering type (enable crossdrive capability).
-    vehicle.GetDriveline()->SetGyrationMode(true);
-
-    // Create and initialize the powertrain system
-    auto powertrain = chrono_types::make_shared<M113a_SimpleMapPowertrain>("Powertrain");
-    vehicle.InitializePowertrain(powertrain);
+    m113.GetDriveline()->SetGyrationMode(true);
 
     auto solver = chrono_types::make_shared<ChSolverMINRES>();
     solver->EnableWarmStart(true);
     solver->SetTolerance(1e-10);
-    vehicle.GetSystem()->SetSolver(solver);
+    m113.GetSystem()->SetSolver(solver);
 
 	// --------------------------------------------------
 	// Control internal collisions and contact monitoring
@@ -195,14 +198,14 @@ int main(int argc, char* argv[]) {
     patch_mat->SetYoungModulus(2e7f);
     patch_mat->SetPoissonRatio(0.3f);
 
-    RigidTerrain terrain(vehicle.GetSystem());
+    RigidTerrain terrain(m113.GetSystem());
     auto patch =
         terrain.AddPatch(patch_mat, ChCoordsys<>(ChVector<>(0, 0, terrainHeight), QUNIT), terrainLength, terrainWidth);
     patch->SetColor(ChColor(0.8f, 0.8f, 0.5f));
     patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 200);
     terrain.Initialize();
 
-    AddFixedObstacles(vehicle.GetSystem(), radius, obstacle_distance);
+    AddFixedObstacles(m113.GetSystem(), radius, obstacle_distance);
 
     // -------------------------------------
     // Create the path and the driver system
@@ -270,7 +273,7 @@ int main(int argc, char* argv[]) {
     utils::ChRunningAverage vert_acc_driver_filter(filter_window_size);
 
     // Driver location in vehicle local frame
-    ChVector<> driver_pos = vehicle.GetChassis()->GetLocalDriverCoordsys().pos;
+    ChVector<> driver_pos = m113.GetChassis()->GetLocalDriverCoordsys().pos;
 
     // ---------------
     // Simulation loop
@@ -311,8 +314,8 @@ int main(int argc, char* argv[]) {
         time = vehicle.GetChTime();
 
         // Extract accelerations to add to the filter
-        ChVector<> acc_CG = vehicle.GetChassisBody()->GetPos_dtdt();
-        acc_CG = vehicle.GetChassisBody()->GetCoord().TransformDirectionParentToLocal(acc_CG);
+        ChVector<> acc_CG = m113.GetChassisBody()->GetPos_dtdt();
+        acc_CG = m113.GetChassisBody()->GetCoord().TransformDirectionParentToLocal(acc_CG);
         ChVector<> acc_driver = vehicle.GetPointAcceleration(driver_pos);
         double fwd_acc_CG = fwd_acc_GC_filter.Add(acc_CG.x());
         double lat_acc_CG = lat_acc_GC_filter.Add(acc_CG.y());
@@ -326,40 +329,40 @@ int main(int argc, char* argv[]) {
 
 		if (reset_arm_angle) {
 			reset_arm_angle = false;
-			maximum_arm_angle = vehicle.GetTrackAssembly(VehicleSide::LEFT)->GetRoadWheelAssembly(0)->GetCarrierAngle();
+			maximum_arm_angle = vehicle.GetTrackAssembly(VehicleSide::LEFT)->GetTrackSuspension(0)->GetCarrierAngle();
 			minimum_arm_angle = maximum_arm_angle;
 		}
-		for (size_t i = 0; i < vehicle.GetTrackAssembly(LEFT)->GetNumRoadWheelAssemblies(); i++) {
-			maximum_arm_angle = (maximum_arm_angle >= vehicle.GetTrackAssembly(VehicleSide::LEFT)->GetRoadWheelAssembly(i)->GetCarrierAngle()) ? 
-				maximum_arm_angle : vehicle.GetTrackAssembly(VehicleSide::LEFT)->GetRoadWheelAssembly(i)->GetCarrierAngle();
-			minimum_arm_angle = (minimum_arm_angle <= vehicle.GetTrackAssembly(VehicleSide::LEFT)->GetRoadWheelAssembly(i)->GetCarrierAngle()) ? 
-				minimum_arm_angle : vehicle.GetTrackAssembly(VehicleSide::LEFT)->GetRoadWheelAssembly(i)->GetCarrierAngle();
+		for (size_t i = 0; i < vehicle.GetTrackAssembly(LEFT)->GetNumTrackSuspensions(); i++) {
+			maximum_arm_angle = (maximum_arm_angle >= vehicle.GetTrackAssembly(VehicleSide::LEFT)->GetTrackSuspension(i)->GetCarrierAngle()) ? 
+				maximum_arm_angle : vehicle.GetTrackAssembly(VehicleSide::LEFT)->GetTrackSuspension(i)->GetCarrierAngle();
+			minimum_arm_angle = (minimum_arm_angle <= vehicle.GetTrackAssembly(VehicleSide::LEFT)->GetTrackSuspension(i)->GetCarrierAngle()) ? 
+				minimum_arm_angle : vehicle.GetTrackAssembly(VehicleSide::LEFT)->GetTrackSuspension(i)->GetCarrierAngle();
 		}
-		for (size_t i = 0; i < vehicle.GetTrackAssembly(RIGHT)->GetNumRoadWheelAssemblies(); i++) {
-			maximum_arm_angle = (maximum_arm_angle >= vehicle.GetTrackAssembly(VehicleSide::RIGHT)->GetRoadWheelAssembly(i)->GetCarrierAngle()) ? 
-				maximum_arm_angle : vehicle.GetTrackAssembly(VehicleSide::RIGHT)->GetRoadWheelAssembly(i)->GetCarrierAngle();
-			minimum_arm_angle = (minimum_arm_angle <= vehicle.GetTrackAssembly(VehicleSide::RIGHT)->GetRoadWheelAssembly(i)->GetCarrierAngle()) ? 
-				minimum_arm_angle : vehicle.GetTrackAssembly(VehicleSide::RIGHT)->GetRoadWheelAssembly(i)->GetCarrierAngle();
+		for (size_t i = 0; i < vehicle.GetTrackAssembly(RIGHT)->GetNumTrackSuspensions(); i++) {
+			maximum_arm_angle = (maximum_arm_angle >= vehicle.GetTrackAssembly(VehicleSide::RIGHT)->GetTrackSuspension(i)->GetCarrierAngle()) ? 
+				maximum_arm_angle : vehicle.GetTrackAssembly(VehicleSide::RIGHT)->GetTrackSuspension(i)->GetCarrierAngle();
+			minimum_arm_angle = (minimum_arm_angle <= vehicle.GetTrackAssembly(VehicleSide::RIGHT)->GetTrackSuspension(i)->GetCarrierAngle()) ? 
+				minimum_arm_angle : vehicle.GetTrackAssembly(VehicleSide::RIGHT)->GetTrackSuspension(i)->GetCarrierAngle();
 		}
 
 
 		if ((state_output) && (step_number % output_steps == 0)) {
-			ChVector<> vel_CG = vehicle.GetChassisBody()->GetPos_dt();
-			vel_CG = vehicle.GetChassisBody()->GetCoord().TransformDirectionParentToLocal(vel_CG);
+			ChVector<> vel_CG = m113.GetChassisBody()->GetPos_dt();
+			vel_CG = m113.GetChassisBody()->GetCoord().TransformDirectionParentToLocal(vel_CG);
 
 			ChVector<> vel_driver_abs =
-				vehicle.GetChassisBody()->GetFrame_REF_to_abs().PointSpeedLocalToParent(driver_pos);
+				m113.GetChassisBody()->GetFrame_REF_to_abs().PointSpeedLocalToParent(driver_pos);
 			ChVector<> vel_driver_local =
-				vehicle.GetChassisBody()->GetFrame_REF_to_abs().TransformDirectionParentToLocal(vel_driver_abs);
+				m113.GetChassisBody()->GetFrame_REF_to_abs().TransformDirectionParentToLocal(vel_driver_abs);
 
 			ChVector<> FrontLeftCornerPos =
-				vehicle.GetChassisBody()->GetFrame_REF_to_abs().TransformPointLocalToParent(FrontLeftCornerLoc);
+				m113.GetChassisBody()->GetFrame_REF_to_abs().TransformPointLocalToParent(FrontLeftCornerLoc);
 			ChVector<> FrontRightCornerPos =
-				vehicle.GetChassisBody()->GetFrame_REF_to_abs().TransformPointLocalToParent(FrontRightCornerLoc);
+				m113.GetChassisBody()->GetFrame_REF_to_abs().TransformPointLocalToParent(FrontRightCornerLoc);
 			ChVector<> RearLeftCornerPos =
-				vehicle.GetChassisBody()->GetFrame_REF_to_abs().TransformPointLocalToParent(RearLeftCornerLoc);
+				m113.GetChassisBody()->GetFrame_REF_to_abs().TransformPointLocalToParent(RearLeftCornerLoc);
 			ChVector<> RearRightCornerPos =
-				vehicle.GetChassisBody()->GetFrame_REF_to_abs().TransformPointLocalToParent(RearRightCornerLoc);
+				m113.GetChassisBody()->GetFrame_REF_to_abs().TransformPointLocalToParent(RearRightCornerLoc);
 
 			// Vehicle and Control Values
 			csv << time << driver_inputs.m_steering << driver_inputs.m_throttle << driver_inputs.m_braking;
@@ -367,8 +370,8 @@ int main(int argc, char* argv[]) {
 				<< vehicle.GetTrackAssembly(RIGHT)->GetSprocket()->GetAxleSpeed();
 			csv << powertrain->GetMotorSpeed() << powertrain->GetMotorTorque();
 			// Chassis Position, Velocity, & Acceleration (Unfiltered and Filtered)
-			csv << vehicle.GetChassis()->GetPos().x() << vehicle.GetChassis()->GetPos().y()
-				<< vehicle.GetChassis()->GetPos().z();
+			csv << m113.GetChassis()->GetPos().x() << m113.GetChassis()->GetPos().y()
+				<< m113.GetChassis()->GetPos().z();
 			csv << vel_CG.x() << vel_CG.y() << vel_CG.z();
 			csv << acc_CG.x() << acc_CG.y() << acc_CG.z();
 			csv << fwd_acc_CG << lat_acc_CG << vert_acc_CG;
@@ -417,7 +420,7 @@ int main(int argc, char* argv[]) {
             if (povray_output) {
                 char filename[100];
                 sprintf(filename, "%s/data_%03d.dat", pov_dir.c_str(), render_frame + 1);
-                utils::WriteVisualizationAssets(vehicle.GetSystem(), filename);
+                utils::WriteVisualizationAssets(m113.GetSystem(), filename);
             }
 
 
@@ -453,10 +456,10 @@ int main(int argc, char* argv[]) {
         step_number++;
 
         // End simulation
-        if (((vehicle.GetChassis()->GetPos().x()) > (obstacle_distance + target_speed * 5)) || (time > (10+(1.5*obstacle_distance/target_speed))))
+        if (((m113.GetChassis()->GetPos().x()) > (obstacle_distance + target_speed * 5)) || (time > (10+(1.5*obstacle_distance/target_speed))))
             break;
 
-		if (vehicle.GetChassis()->GetPos().x() > (obstacle_distance-5)) {
+		if (m113.GetChassis()->GetPos().x() > (obstacle_distance-5)) {
 			step_size = 1e-4;
 			output_steps = (int)std::ceil(output_step_size / step_size);
 		}

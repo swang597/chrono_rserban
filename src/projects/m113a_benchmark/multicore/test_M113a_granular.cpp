@@ -44,8 +44,7 @@
 #include "chrono_vehicle/driver/ChDataDriver.h"
 
 // M113 model header files
-#include "chrono_models/vehicle/m113a/M113a_Vehicle.h"
-#include "chrono_models/vehicle/m113a/M113a_SimpleMapPowertrain.h"
+#include "chrono_models/vehicle/m113/M113.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 
@@ -402,25 +401,29 @@ int main(int argc, char* argv[]) {
     // Construct the M113 vehicle
     // --------------------------
 
-    // Create and initialize vehicle system
-    M113a_Vehicle vehicle(true, system);
-    ////vehicle.SetStepsize(0.0001);
-    vehicle.Initialize(ChCoordsys<>(initLoc, initRot));
+    // Create the vehicle system
+    M113 m113(system);
+    m113.SetContactMethod(ChContactMethod::SMC);
+    m113.SetChassisFixed(true);
+    m113.SetTrackShoeType(TrackShoeType::SINGLE_PIN);
+    m113.SetDrivelineType(DrivelineTypeTV::SIMPLE);
+    m113.SetPowertrainType(PowertrainModelType::SIMPLE_MAP);
+
+    m113.SetInitPosition(ChCoordsys<>(initLoc, initRot));
+    m113.Initialize();
+    auto& vehicle = m113.GetVehicle();
+    auto powertrain = m113.GetPowertrain();
 
     // Set visualization type for subsystems
     vehicle.SetSprocketVisualizationType(VisualizationType::MESH);
     vehicle.SetIdlerVisualizationType(VisualizationType::MESH);
-    vehicle.SetRoadWheelAssemblyVisualizationType(VisualizationType::MESH);
+    vehicle.SetSuspensionVisualizationType(VisualizationType::MESH);
     vehicle.SetRoadWheelVisualizationType(VisualizationType::MESH);
     vehicle.SetTrackShoeVisualizationType(VisualizationType::MESH);
 
     ////vehicle.SetCollide(TrackCollide::NONE);
     ////vehicle.SetCollide(TrackCollide::WHEELS_LEFT | TrackCollide::WHEELS_RIGHT);
     ////vehicle.SetCollide(TrackCollide::ALL & (~TrackCollide::SPROCKET_LEFT) & (~TrackCollide::SPROCKET_RIGHT));
-
-    // Create the powertrain system
-    auto powertrain = chrono_types::make_shared<M113a_SimpleMapPowertrain>("Powertrain");
-    vehicle.InitializePowertrain(powertrain);
 
     // Create the driver system
     MyDriver driver(vehicle, 0.5);
@@ -490,9 +493,9 @@ int main(int argc, char* argv[]) {
         }
 
         // Release the vehicle chassis at the end of the hold time.
-        if (vehicle.GetChassis()->IsFixed() && time > time_hold) {
+        if (m113.GetChassis()->IsFixed() && time > time_hold) {
             std::cout << std::endl << "Release vehicle t = " << time << std::endl;
-            vehicle.GetChassisBody()->SetBodyFixed(false);
+            m113.GetChassisBody()->SetBodyFixed(false);
         }
 
         // Update modules (process inputs from other modules)

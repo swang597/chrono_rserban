@@ -172,7 +172,7 @@ int main(int argc, char* argv[]) {
         marder.SetSprocketVisualizationType(track_vis);
         marder.SetIdlerVisualizationType(track_vis);
         marder.SetRollerVisualizationType(track_vis);
-        marder.SetRoadWheelAssemblyVisualizationType(track_vis);
+        marder.SetSuspensionVisualizationType(track_vis);
         marder.SetRoadWheelVisualizationType(track_vis);
         marder.SetTrackShoeVisualizationType(VisualizationType::PRIMITIVES);
 
@@ -379,13 +379,13 @@ int main(int argc, char* argv[]) {
                          << endl;
                 }
                 cout << "      L suspensions (arm angles):";
-                for (size_t i = 0; i < track_L->GetNumRoadWheelAssemblies(); i++) {
-                    cout << " " << track_L->GetRoadWheelAssembly(i)->GetCarrierAngle();
+                for (size_t i = 0; i < track_L->GetNumTrackSuspensions(); i++) {
+                    cout << " " << track_L->GetTrackSuspension(i)->GetCarrierAngle();
                 }
                 cout << endl;
                 cout << "      R suspensions (arm angles):";
-                for (size_t i = 0; i < track_R->GetNumRoadWheelAssemblies(); i++) {
-                    cout << " " << track_R->GetRoadWheelAssembly(i)->GetCarrierAngle();
+                for (size_t i = 0; i < track_R->GetNumTrackSuspensions(); i++) {
+                    cout << " " << track_R->GetTrackSuspension(i)->GetCarrierAngle();
                 }
                 cout << endl;
             }

@@ -47,8 +47,7 @@
 #include "chrono_vehicle/driver/ChDataDriver.h"
 
 // M113 model header files
-#include "chrono_models/vehicle/m113a/M113a_Vehicle.h"
-#include "chrono_models/vehicle/m113a/M113a_SimpleMapPowertrain.h"
+#include "chrono_models/vehicle/m113/M113.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 
@@ -493,25 +492,25 @@ int main(int argc, char* argv[]) {
     // Construct the M113 vehicle
     // --------------------------
 
-    // Create and initialize vehicle system
-    M113a_Vehicle vehicle(true, system);
-    ////vehicle.SetStepsize(0.0001);
-    vehicle.Initialize(ChCoordsys<>(initLoc, initRot));
+    // Create the vehicle system
+    M113 m113(system);
+    m113.SetContactMethod(ChContactMethod::SMC);
+    m113.SetChassisFixed(true);
+    m113.SetTrackShoeType(TrackShoeType::SINGLE_PIN);
+    m113.SetDrivelineType(DrivelineTypeTV::SIMPLE);
+    m113.SetPowertrainType(PowertrainModelType::SIMPLE_MAP);
 
-    // Set visualization type for subsystems
-    vehicle.SetSprocketVisualizationType(VisualizationType::MESH);
-    vehicle.SetIdlerVisualizationType(VisualizationType::MESH);
-    vehicle.SetRoadWheelAssemblyVisualizationType(VisualizationType::MESH);
-    vehicle.SetRoadWheelVisualizationType(VisualizationType::MESH);
-    vehicle.SetTrackShoeVisualizationType(VisualizationType::MESH);
+    m113.SetInitPosition(ChCoordsys<>(initLoc, initRot));
+    m113.Initialize();
+    auto& vehicle = m113.GetVehicle();
+    auto powertrain = m113.GetPowertrain();
+
+    // Control steering type (enable crossdrive capability).
+    m113.GetDriveline()->SetGyrationMode(true);
 
     ////vehicle.SetCollide(TrackCollide::NONE);
     ////vehicle.SetCollide(TrackCollide::WHEELS_LEFT | TrackCollide::WHEELS_RIGHT);
     ////vehicle.SetCollide(TrackCollide::ALL & (~TrackCollide::SPROCKET_LEFT) & (~TrackCollide::SPROCKET_RIGHT));
-
-    // Create the powertrain system
-    auto powertrain = chrono_types::make_shared<M113a_SimpleMapPowertrain>("Powertrain");
-    vehicle.InitializePowertrain(powertrain);
 
     // Create the driver system
     ChDataDriver driver(vehicle, vehicle::GetDataFile("M113a_benchmark/driver/Acceleration.txt"));
@@ -519,7 +518,7 @@ int main(int argc, char* argv[]) {
     double drawbarPull = 0;
 
     // Control the slip of the vehicle
-    auto slipRig = std::shared_ptr<ChBody>(vehicle.GetSystem()->NewBody());
+    auto slipRig = std::shared_ptr<ChBody>(m113.GetSystem()->NewBody());
     slipRig->SetIdentifier(-1);
     slipRig->SetName("slipRig");
     slipRig->SetPos(initLoc);
@@ -543,7 +542,7 @@ int main(int argc, char* argv[]) {
 
     auto transJoint = chrono_types::make_shared<ChLinkLockPrismatic>();
     transJoint->SetNameString("_transJoint");
-    transJoint->Initialize(slipRig, vehicle.GetChassisBody(), ChCoordsys<>(initLoc, QUNIT));
+    transJoint->Initialize(slipRig, m113.GetChassisBody(), ChCoordsys<>(initLoc, QUNIT));
     system->AddLink(transJoint);
 
     auto lockJoint = chrono_types::make_shared<ChLinkLockLock>();
@@ -556,7 +555,7 @@ int main(int argc, char* argv[]) {
 
     auto motor = chrono_types::make_shared<ChLinkMotorRotationAngle>();
     motor->Initialize(
-        vehicle.GetTrackAssembly(chrono::vehicle::RIGHT)->GetSprocket()->GetGearBody(), vehicle.GetChassisBody(),
+        vehicle.GetTrackAssembly(chrono::vehicle::RIGHT)->GetSprocket()->GetGearBody(), m113.GetChassisBody(),
         ChFrame<>(vehicle.GetTrackAssembly(chrono::vehicle::RIGHT)->GetSprocket()->GetGearBody()->GetPos(),
                   chrono::Q_from_AngAxis(CH_C_PI / 2, VECT_X)));
     auto speedFunc = chrono_types::make_shared<ChFunction_Ramp>(0, -rotSpeed);
@@ -565,7 +564,7 @@ int main(int argc, char* argv[]) {
 
     auto motor2 = chrono_types::make_shared<ChLinkMotorRotationAngle>();
     motor2->Initialize(
-        vehicle.GetTrackAssembly(chrono::vehicle::LEFT)->GetSprocket()->GetGearBody(), vehicle.GetChassisBody(),
+        vehicle.GetTrackAssembly(chrono::vehicle::LEFT)->GetSprocket()->GetGearBody(), m113.GetChassisBody(),
         ChFrame<>(vehicle.GetTrackAssembly(chrono::vehicle::LEFT)->GetSprocket()->GetGearBody()->GetPos(),
                   chrono::Q_from_AngAxis(CH_C_PI / 2, VECT_X)));
     auto speedFunc2 = chrono_types::make_shared<ChFunction_Ramp>(0, -rotSpeed);
@@ -626,9 +625,9 @@ int main(int argc, char* argv[]) {
         }
 
         // Release the vehicle chassis at the end of the hold time.
-        if (vehicle.GetChassis()->IsFixed() && time > time_hold) {
+        if (m113.GetChassis()->IsFixed() && time > time_hold) {
             std::cout << std::endl << "Release vehicle t = " << time << std::endl;
-            vehicle.GetChassisBody()->SetBodyFixed(false);
+            m113.GetChassisBody()->SetBodyFixed(false);
             mat_g->SetFriction(mu_g);  // set friction of soil to true value
             lockJoint->SetMotion_X(motion);
         }

@@ -44,8 +44,7 @@
 #include "chrono_vehicle/driver/ChDataDriver.h"
 
 // M113 model header files
-#include "chrono_models/vehicle/m113a/M113a_Vehicle.h"
-#include "chrono_models/vehicle/m113a/M113a_SimpleMapPowertrain.h"
+#include "chrono_models/vehicle/m113/M113.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 
@@ -426,26 +425,30 @@ int main(int argc, char* argv[]) {
     // Construct the M113 vehicle
     // --------------------------
 
-    // Create and initialize vehicle system
-    M113a_Vehicle vehicle(true, system);
-    ////vehicle.SetStepsize(0.0001);
-    vehicle.Initialize(ChCoordsys<>(initLoc + ChVector<>(0.0, 0.0, vertical_offset), initRot));
+    // Create the vehicle system
+    M113 m113(system);
+    m113.SetContactMethod(ChContactMethod::SMC);
+    m113.SetChassisFixed(true);
+    m113.SetTrackShoeType(TrackShoeType::SINGLE_PIN);
+    m113.SetDrivelineType(DrivelineTypeTV::SIMPLE);
+    m113.SetPowertrainType(PowertrainModelType::SIMPLE_MAP);
+
+    m113.SetInitPosition(ChCoordsys<>(initLoc + ChVector<>(0.0, 0.0, vertical_offset), initRot));
+    m113.Initialize();
+    auto& vehicle = m113.GetVehicle();
+    auto powertrain = m113.GetPowertrain();
 
     // Set visualization type for subsystems
     vehicle.SetChassisVisualizationType(VisualizationType::PRIMITIVES);
     vehicle.SetSprocketVisualizationType(VisualizationType::MESH);
     vehicle.SetIdlerVisualizationType(VisualizationType::MESH);
-    vehicle.SetRoadWheelAssemblyVisualizationType(VisualizationType::PRIMITIVES);
+    vehicle.SetSuspensionVisualizationType(VisualizationType::PRIMITIVES);
     vehicle.SetRoadWheelVisualizationType(VisualizationType::MESH);
     vehicle.SetTrackShoeVisualizationType(VisualizationType::MESH);
 
     ////vehicle.SetCollide(TrackCollide::NONE);
     ////vehicle.SetCollide(TrackCollide::WHEELS_LEFT | TrackCollide::WHEELS_RIGHT);
     ////vehicle.SetCollide(TrackCollide::ALL & (~TrackCollide::SPROCKET_LEFT) & (~TrackCollide::SPROCKET_RIGHT));
-
-    // Create the powertrain system
-    auto powertrain = chrono_types::make_shared<M113a_SimpleMapPowertrain>("Powertrain");
-    vehicle.InitializePowertrain(powertrain);
 
     // Create the driver system
     MyDriver driver(vehicle, 0.5);
@@ -505,18 +508,18 @@ int main(int argc, char* argv[]) {
         vehicle.GetTrackShoeStates(LEFT, shoe_states_left);
         vehicle.GetTrackShoeStates(RIGHT, shoe_states_right);
 
-        ChVector<> vel_CG = vehicle.GetChassisBody()->GetPos_dt();
-        vel_CG = vehicle.GetChassisBody()->GetCoord().TransformDirectionParentToLocal(vel_CG);
+        ChVector<> vel_CG = m113.GetChassisBody()->GetPos_dt();
+        vel_CG = m113.GetChassisBody()->GetCoord().TransformDirectionParentToLocal(vel_CG);
 
         // Vehicle and Control Values
         csv << time << driver_inputs.m_steering << driver_inputs.m_throttle << driver_inputs.m_braking;
         csv << vehicle.GetTrackAssembly(LEFT)->GetSprocket()->GetAxleSpeed()
             << vehicle.GetTrackAssembly(RIGHT)->GetSprocket()->GetAxleSpeed();
         csv << powertrain->GetMotorSpeed() << powertrain->GetMotorTorque();
-        csv << powertrain->GetOutputTorque() << vehicle.GetDriveline()->GetDriveshaftSpeed();
+        csv << powertrain->GetOutputTorque() << m113.GetDriveline()->GetDriveshaftSpeed();
         // Chassis Position & Velocity
-        csv << vehicle.GetChassis()->GetPos().x() << vehicle.GetChassis()->GetPos().y()
-            << vehicle.GetChassis()->GetPos().z();
+        csv << m113.GetChassis()->GetPos().x() << m113.GetChassis()->GetPos().y()
+            << m113.GetChassis()->GetPos().z();
         csv << vel_CG.x() << vel_CG.y() << vel_CG.z();
         csv << std::endl;
 
@@ -546,9 +549,9 @@ int main(int argc, char* argv[]) {
         }
 
         // Release the vehicle chassis at the end of the hold time.
-        if (vehicle.GetChassis()->IsFixed() && time > time_hold) {
+        if (m113.GetChassis()->IsFixed() && time > time_hold) {
             std::cout << std::endl << "Release vehicle t = " << time << std::endl;
-            vehicle.GetChassisBody()->SetBodyFixed(false);
+            m113.GetChassisBody()->SetBodyFixed(false);
         }
 
         // Update modules (process inputs from other modules)

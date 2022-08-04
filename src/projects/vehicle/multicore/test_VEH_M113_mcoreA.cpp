@@ -183,7 +183,7 @@ int main(int argc, char* argv[]) {
     m113.SetChassisVisualizationType(VisualizationType::NONE);
     m113.SetSprocketVisualizationType(track_vis);
     m113.SetIdlerVisualizationType(track_vis);
-    m113.SetRoadWheelAssemblyVisualizationType(track_vis);
+    m113.SetSuspensionVisualizationType(track_vis);
     m113.SetRoadWheelVisualizationType(track_vis);
     m113.SetTrackShoeVisualizationType(VisualizationType::PRIMITIVES);
 
@@ -339,13 +339,13 @@ int main(int argc, char* argv[]) {
                 cout << "      R sprocket: " << s_pos_rel.x() << "  " << s_pos_rel.y() << "  " << s_pos_rel.z() << endl;
             }
             cout << "      L suspensions (arm angles):";
-            for (size_t i = 0; i < track_L->GetNumRoadWheelAssemblies(); i++) {
-                cout << " " << track_L->GetRoadWheelAssembly(i)->GetCarrierAngle();
+            for (size_t i = 0; i < track_L->GetNumTrackSuspensions(); i++) {
+                cout << " " << track_L->GetTrackSuspension(i)->GetCarrierAngle();
             }
             cout << endl;
             cout << "      R suspensions (arm angles):";
-            for (size_t i = 0; i < track_R->GetNumRoadWheelAssemblies(); i++) {
-                cout << " " << track_R->GetRoadWheelAssembly(i)->GetCarrierAngle();
+            for (size_t i = 0; i < track_R->GetNumTrackSuspensions(); i++) {
+                cout << " " << track_R->GetTrackSuspension(i)->GetCarrierAngle();
             }
             cout << endl;
         }

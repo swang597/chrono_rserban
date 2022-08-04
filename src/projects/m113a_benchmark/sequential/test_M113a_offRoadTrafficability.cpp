@@ -35,8 +35,7 @@
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 
-#include "chrono_models/vehicle/m113a/M113a_Vehicle.h"
-#include "chrono_models/vehicle/m113a/M113a_SimpleMapPowertrain.h"
+#include "chrono_models/vehicle/m113/M113.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 
@@ -168,21 +167,30 @@ int main(int argc, char* argv[]) {
     // ---------------
 
     // Create the vehicle system
-    M113a_Vehicle vehicle(false, ChContactMethod::SMC);
-    vehicle.Initialize(ChCoordsys<>(initLoc, initRot));
+    M113 m113;
+    m113.SetContactMethod(ChContactMethod::SMC);
+    m113.SetChassisFixed(false);
+    m113.SetTrackShoeType(TrackShoeType::SINGLE_PIN);
+    m113.SetDrivelineType(DrivelineTypeTV::SIMPLE);
+    m113.SetPowertrainType(PowertrainModelType::SIMPLE_MAP);
+
+    m113.SetInitPosition(ChCoordsys<>(initLoc, initRot));
+    m113.Initialize();
+    auto& vehicle = m113.GetVehicle();
+    auto powertrain = m113.GetPowertrain();
 
     // Set visualization type for subsystems
-    vehicle.SetChassisVisualizationType(vis_type);
-    vehicle.SetSprocketVisualizationType(vis_type);
-    vehicle.SetIdlerVisualizationType(vis_type);
-    vehicle.SetRoadWheelAssemblyVisualizationType(vis_type);
-    vehicle.SetRoadWheelVisualizationType(vis_type);
-    vehicle.SetTrackShoeVisualizationType(vis_type);
+    m113.SetChassisVisualizationType(vis_type);
+    m113.SetSprocketVisualizationType(vis_type);
+    m113.SetIdlerVisualizationType(vis_type);
+    m113.SetSuspensionVisualizationType(vis_type);
+    m113.SetRoadWheelVisualizationType(vis_type);
+    m113.SetTrackShoeVisualizationType(vis_type);
 
     if (chassisMass > 0)
-        vehicle.GetChassisBody()->SetMass(chassisMass);
+        m113.GetChassisBody()->SetMass(chassisMass);
 
-    vehicle.GetChassisBody()->SetCollide(true);
+    m113.GetChassisBody()->SetCollide(true);
 
     // Add collision geometry to vehicle
     /*
@@ -192,42 +200,38 @@ int main(int argc, char* argv[]) {
     chassis_mat->SetYoungModulus(E);
     chassis_mat->SetPoissonRatio(nu);
 
-    vehicle.GetChassisBody()->GetCollisionModel()->ClearModel();
+    m113.GetChassisBody()->GetCollisionModel()->ClearModel();
 
     // Add flat bottom plate
-    vehicle.GetChassisBody()->GetCollisionModel()->AddBox(chassis_mat, 0.5 * 4.25, 0.5 * 1.65, 0.05,
+    m113.GetChassisBody()->GetCollisionModel()->AddBox(chassis_mat, 0.5 * 4.25, 0.5 * 1.65, 0.05,
                                                           ChVector<>(-1.925, 0, -.153 + 0.1));
 
     auto bottomPlate = chrono_types::make_shared<ChBoxShape>();
     bottomPlate->GetBoxGeometry().Size = ChVector<>(0.5 * 4.25, 0.5 * 1.65, 0.05);
-    vehicle.GetChassisBody()->AddVisualShape(bottomPlate, ChFrame<>(ChVector<>(-1.925, 0, -.153 + 0.05)));
+    m113.GetChassisBody()->AddVisualShape(bottomPlate, ChFrame<>(ChVector<>(-1.925, 0, -.153 + 0.05)));
 
     // Add angled bottom plate
     // ChQuaternion<> plateAngleQuat = chrono::Q_from_AngAxis(1.0474, VECT_Y);
     ChMatrix33<> plateAngle;
     plateAngle.Set_A_quaternion(chrono::Q_from_AngAxis(-1.0474, VECT_Y));
-    vehicle.GetChassisBody()->GetCollisionModel()->AddBox(chassis_mat, 0.5 * .3521, 0.5 * 1.65, 0.05,
+    m113.GetChassisBody()->GetCollisionModel()->AddBox(chassis_mat, 0.5 * .3521, 0.5 * 1.65, 0.05,
                                                           ChVector<>(.2457, 0, 0.0245), plateAngle);
 
     auto angledPlate = chrono_types::make_shared<ChBoxShape>();
     angledPlate->GetBoxGeometry().Size = ChVector<>(0.5 * .3521, 0.5 * 1.65, 0.05);
-    vehicle.GetChassisBody()->AddVisualShape(angledPlate, ChFrame<>(ChVector<>(.2457, 0, 0.0245), plateAngle));
+    m113.GetChassisBody()->AddVisualShape(angledPlate, ChFrame<>(ChVector<>(.2457, 0, 0.0245), plateAngle));
 
-    vehicle.GetChassisBody()->GetCollisionModel()->BuildModel();
+    m113.GetChassisBody()->GetCollisionModel()->BuildModel();
     */
 
     // Control steering type (enable crossdrive capability).
-    vehicle.GetDriveline()->SetGyrationMode(true);
+    m113.GetDriveline()->SetGyrationMode(true);
 
     // Create and initialize the powertrain system
-    auto powertrain = chrono_types::make_shared<M113a_SimpleMapPowertrain>("Powertrain");
-    if (!controlSlip)
-        vehicle.InitializePowertrain(powertrain);
-
     auto solver = chrono_types::make_shared<ChSolverMINRES>();
     solver->EnableWarmStart(true);
     solver->SetTolerance(1e-10);
-    vehicle.GetSystem()->SetSolver(solver);
+    m113.GetSystem()->SetSolver(solver);
 
     // ------------------
     // Create the terrain
@@ -287,7 +291,7 @@ int main(int argc, char* argv[]) {
 
     ChTerrain* terrain;
     if (useDefSoil) {
-        auto terrain_D = new SCMDeformableTerrain(vehicle.GetSystem());
+        auto terrain_D = new SCMDeformableTerrain(m113.GetSystem());
         terrain_D->SetPlane(ChCoordsys<>(VNULL, Q_from_AngX(CH_C_PI_2)));
         terrain_D->SetSoilParameters(Kphi,       // Bekker Kphi
                                      Kc,         // Bekker Kc
@@ -304,7 +308,7 @@ int main(int argc, char* argv[]) {
         terrain_D->Initialize(terrainLength, terrainWidth, 1.0 / factor);
         terrain = terrain_D;
     } else {
-        auto terrain_R = new RigidTerrain(vehicle.GetSystem());
+        auto terrain_R = new RigidTerrain(m113.GetSystem());
         auto patch = terrain_R->AddPatch(ground_mat, CSYSNORM, terrainLength, terrainWidth);
         patch->SetColor(ChColor(0.8f, 0.8f, 0.5f));
         patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 200);
@@ -316,13 +320,13 @@ int main(int argc, char* argv[]) {
     // Create the rigid ground
     // -------------------
 
-    auto ground1 = std::shared_ptr<ChBody>(vehicle.GetSystem()->NewBody());
+    auto ground1 = std::shared_ptr<ChBody>(m113.GetSystem()->NewBody());
     ground1->SetIdentifier(-1);
     ground1->SetName("ground1");
     ground1->SetPos(ChVector<>(-terrainLength, 0, 0));
     ground1->SetBodyFixed(true);
     ground1->SetCollide(true);
-    vehicle.GetSystem()->AddBody(ground1);
+    m113.GetSystem()->AddBody(ground1);
 
     ground1->GetCollisionModel()->ClearModel();
     ground1->GetCollisionModel()->AddBox(ground_mat, 0.5 * terrainLength, 0.5 * terrainWidth, 0.5 * depth,
@@ -333,13 +337,13 @@ int main(int argc, char* argv[]) {
     ground1->AddVisualShape(box1, ChFrame<>(ChVector<>(0, 0, -0.5 * depth)));
     ground1->GetCollisionModel()->BuildModel();
 
-    auto ground2 = std::shared_ptr<ChBody>(vehicle.GetSystem()->NewBody());
+    auto ground2 = std::shared_ptr<ChBody>(m113.GetSystem()->NewBody());
     ground2->SetIdentifier(-2);
     ground2->SetName("ground2");
     ground2->SetPos(ChVector<>(terrainLength, 0, 0));
     ground2->SetBodyFixed(true);
     ground2->SetCollide(true);
-    vehicle.GetSystem()->AddBody(ground2);
+    m113.GetSystem()->AddBody(ground2);
 
     ground2->GetCollisionModel()->ClearModel();
     ground2->GetCollisionModel()->AddBox(ground_mat, 0.5 * terrainLength, 0.5 * terrainWidth, 0.5 * depth,
@@ -355,13 +359,13 @@ int main(int argc, char* argv[]) {
     auto motor = chrono_types::make_shared<ChLinkMotorRotationAngle>();
     auto motor2 = chrono_types::make_shared<ChLinkMotorRotationAngle>();
     if (controlSlip) {
-        auto slipRig = std::shared_ptr<ChBody>(vehicle.GetSystem()->NewBody());
+        auto slipRig = std::shared_ptr<ChBody>(m113.GetSystem()->NewBody());
         slipRig->SetIdentifier(-3);
         slipRig->SetName("slipRig");
         slipRig->SetPos(initLoc);
         slipRig->SetBodyFixed(false);
         slipRig->SetCollide(false);
-        vehicle.GetSystem()->AddBody(slipRig);
+        m113.GetSystem()->AddBody(slipRig);
 
         slipRig->GetCollisionModel()->ClearModel();
 
@@ -379,47 +383,47 @@ int main(int argc, char* argv[]) {
 
         auto transJoint = chrono_types::make_shared<ChLinkLockPrismatic>();
         transJoint->SetNameString("_transJoint");
-        transJoint->Initialize(slipRig, vehicle.GetChassisBody(), ChCoordsys<>(initLoc, QUNIT));
-        vehicle.GetSystem()->AddLink(transJoint);
+        transJoint->Initialize(slipRig, m113.GetChassisBody(), ChCoordsys<>(initLoc, QUNIT));
+        m113.GetSystem()->AddLink(transJoint);
 
         lockJoint->SetNameString("_transJoint");
         lockJoint->Initialize(slipRig, ground1, ChCoordsys<>(initLoc, QUNIT));
-        vehicle.GetSystem()->AddLink(lockJoint);
+        m113.GetSystem()->AddLink(lockJoint);
 
         double transSpeed = (1.0 - slip) * sprocketRadius * rotSpeed;
         auto motion = chrono_types::make_shared<ChFunction_Ramp>(0, transSpeed);
         lockJoint->SetMotion_X(motion);
 
         motor->Initialize(
-            vehicle.GetTrackAssembly(chrono::vehicle::RIGHT)->GetSprocket()->GetGearBody(), vehicle.GetChassisBody(),
+            vehicle.GetTrackAssembly(chrono::vehicle::RIGHT)->GetSprocket()->GetGearBody(), m113.GetChassisBody(),
             ChFrame<>(vehicle.GetTrackAssembly(chrono::vehicle::RIGHT)->GetSprocket()->GetGearBody()->GetPos(),
                       chrono::Q_from_AngAxis(CH_C_PI / 2, VECT_X)));
         auto speedFunc = chrono_types::make_shared<ChFunction_Ramp>(0, -rotSpeed);
         motor->SetAngleFunction(speedFunc);
-        vehicle.GetSystem()->AddLink(motor);
+        m113.GetSystem()->AddLink(motor);
 
         motor2->Initialize(
-            vehicle.GetTrackAssembly(chrono::vehicle::LEFT)->GetSprocket()->GetGearBody(), vehicle.GetChassisBody(),
+            vehicle.GetTrackAssembly(chrono::vehicle::LEFT)->GetSprocket()->GetGearBody(), m113.GetChassisBody(),
             ChFrame<>(vehicle.GetTrackAssembly(chrono::vehicle::LEFT)->GetSprocket()->GetGearBody()->GetPos(),
                       chrono::Q_from_AngAxis(CH_C_PI / 2, VECT_X)));
         auto speedFunc2 = chrono_types::make_shared<ChFunction_Ramp>(0, -rotSpeed);
         motor2->SetAngleFunction(speedFunc2);
-        vehicle.GetSystem()->AddLink(motor2);
+        m113.GetSystem()->AddLink(motor2);
     } else {
         // add joint to keep the vehicle centered
         auto planeJoint = chrono_types::make_shared<ChLinkLockPointPlane>();
         planeJoint->SetNameString("_planeJoint");
-        planeJoint->Initialize(ground1, vehicle.GetChassisBody(),
+        planeJoint->Initialize(ground1, m113.GetChassisBody(),
                                ChCoordsys<>(initLoc, chrono::Q_from_AngAxis(CH_C_PI / 2, VECT_X)));
-        vehicle.GetSystem()->AddLink(planeJoint);
+        m113.GetSystem()->AddLink(planeJoint);
 
         // add joint to keep the vehicle centered
         auto planeJoint2 = chrono_types::make_shared<ChLinkLockPointPlane>();
         planeJoint2->SetNameString("_planeJoint2");
         planeJoint2->Initialize(
-            ground1, vehicle.GetChassisBody(),
+            ground1, m113.GetChassisBody(),
             ChCoordsys<>(initLoc + ChVector<>(1, 0, 0), chrono::Q_from_AngAxis(CH_C_PI / 2, VECT_X)));
-        vehicle.GetSystem()->AddLink(planeJoint2);
+        m113.GetSystem()->AddLink(planeJoint2);
     }
 
     // -------------------------------------
@@ -488,7 +492,7 @@ int main(int argc, char* argv[]) {
     utils::ChRunningAverage lat_acc_driver_filter(filter_window_size);
 
     // Driver location in vehicle local frame
-    ChVector<> driver_pos = vehicle.GetChassis()->GetLocalDriverCoordsys().pos;
+    ChVector<> driver_pos = m113.GetChassis()->GetLocalDriverCoordsys().pos;
 
     // ---------------
     // Simulation loop
@@ -533,7 +537,7 @@ int main(int argc, char* argv[]) {
             break;
 
         // Forward Mode
-        if (vehicle.GetChassis()->GetPos().x() > traversalLength && !performBrakingManeuver) {
+        if (m113.GetChassis()->GetPos().x() > traversalLength && !performBrakingManeuver) {
             if (!controlSlip) powertrain->SetDriveMode(ChPowertrain::DriveMode::REVERSE);
             if (goingForward) {
                 performBrakingManeuver = true;
@@ -545,7 +549,7 @@ int main(int argc, char* argv[]) {
         }
 
         // Reverse mode
-        if (vehicle.GetChassis()->GetPos().x() < -traversalLength && !performBrakingManeuver) {
+        if (m113.GetChassis()->GetPos().x() < -traversalLength && !performBrakingManeuver) {
             if (!controlSlip)
                 powertrain->SetDriveMode(ChPowertrain::DriveMode::FORWARD);
             if (!goingForward) {
@@ -560,9 +564,9 @@ int main(int argc, char* argv[]) {
         }
 
         // Extract system state
-        ChVector<> vel_CG = vehicle.GetChassisBody()->GetPos_dt();
-        ChVector<> acc_CG = vehicle.GetChassisBody()->GetPos_dt();
-        acc_CG = vehicle.GetChassisBody()->GetCoord().TransformDirectionParentToLocal(acc_CG);
+        ChVector<> vel_CG = m113.GetChassisBody()->GetPos_dt();
+        ChVector<> acc_CG = m113.GetChassisBody()->GetPos_dt();
+        acc_CG = m113.GetChassisBody()->GetCoord().TransformDirectionParentToLocal(acc_CG);
         ChVector<> acc_driver = vehicle.GetPointAcceleration(driver_pos);
         double fwd_acc_CG = fwd_acc_GC_filter.Add(acc_CG.x());
         double lat_acc_CG = lat_acc_GC_filter.Add(acc_CG.y());
@@ -570,12 +574,12 @@ int main(int argc, char* argv[]) {
         double lat_acc_driver = lat_acc_driver_filter.Add(acc_driver.y());
 
         ChVector<> FrontLeftCornerPos =
-            vehicle.GetChassisBody()->GetCoord().TransformPointLocalToParent(FrontLeftCornerLoc);
+            m113.GetChassisBody()->GetCoord().TransformPointLocalToParent(FrontLeftCornerLoc);
         ChVector<> FrontRightCornerPos =
-            vehicle.GetChassisBody()->GetCoord().TransformPointLocalToParent(FrontRightCornerLoc);
-        ChVector<> RearLeftCornerPos = vehicle.GetChassisBody()->GetCoord().TransformPointLocalToParent(RearLeftCornerLoc);
+            m113.GetChassisBody()->GetCoord().TransformPointLocalToParent(FrontRightCornerLoc);
+        ChVector<> RearLeftCornerPos = m113.GetChassisBody()->GetCoord().TransformPointLocalToParent(RearLeftCornerLoc);
         ChVector<> RearRightCornerPos =
-            vehicle.GetChassisBody()->GetCoord().TransformPointLocalToParent(RearRightCornerLoc);
+            m113.GetChassisBody()->GetCoord().TransformPointLocalToParent(RearRightCornerLoc);
 
         // Update sentinel and target location markers for the path-follower controller.
         // Note that we do this whether or not we are currently using the path-follower driver.
@@ -593,7 +597,7 @@ int main(int argc, char* argv[]) {
             if (povray_output) {
                 char filename[100];
                 sprintf(filename, "%s/data_%03d.dat", pov_dir.c_str(), render_frame + 1);
-                utils::WriteVisualizationAssets(vehicle.GetSystem(), filename);
+                utils::WriteVisualizationAssets(m113.GetSystem(), filename);
             }
 
             render_frame++;
@@ -612,19 +616,19 @@ int main(int argc, char* argv[]) {
             csv << acc_driver.x() << ", " << fwd_acc_driver << ", " << acc_driver.y() << ", " << lat_acc_driver << ", ";
             csv << acc_CG.z() << ", ";  // vertical acceleration
             csv << vel_CG.x() << ", " << vel_CG.y() << ", " << vel_CG.z() << ", ";
-            csv << vehicle.GetChassis()->GetPos().x() << ", " << vehicle.GetChassis()->GetPos().y() << ", "
-                << vehicle.GetChassis()->GetPos().z() << ", ";
+            csv << m113.GetChassis()->GetPos().x() << ", " << m113.GetChassis()->GetPos().y() << ", "
+                << m113.GetChassis()->GetPos().z() << ", ";
             csv << 180.0 * theta / CH_C_PI << ", ";                                                    // ground angle
-            csv << 180.0 * (theta - vehicle.GetChassisBody()->GetA().Get_A_Rxyz().x()) / CH_C_PI << ", ";  // vehicle roll
-            csv << 180.0 * (vehicle.GetChassisBody()->GetA().Get_A_Rxyz().y()) / CH_C_PI << ", ";          // vehicle pitch
-            csv << 180.0 * (vehicle.GetChassisBody()->GetA().Get_A_Rxyz().z()) / CH_C_PI << ", ";          // vehicle yaw
+            csv << 180.0 * (theta - m113.GetChassisBody()->GetA().Get_A_Rxyz().x()) / CH_C_PI << ", ";  // vehicle roll
+            csv << 180.0 * (m113.GetChassisBody()->GetA().Get_A_Rxyz().y()) / CH_C_PI << ", ";          // vehicle pitch
+            csv << 180.0 * (m113.GetChassisBody()->GetA().Get_A_Rxyz().z()) / CH_C_PI << ", ";          // vehicle yaw
             csv << FrontLeftCornerPos.x() << ", " << FrontLeftCornerPos.y() << ", " << FrontLeftCornerPos.z() << ", ";
             csv << FrontRightCornerPos.x() << ", " << FrontRightCornerPos.y() << ", " << FrontRightCornerPos.z()
                 << ", ";
             csv << RearLeftCornerPos.x() << ", " << RearLeftCornerPos.y() << ", " << RearLeftCornerPos.z() << ", ";
             csv << RearRightCornerPos.x() << ", " << RearRightCornerPos.y() << ", " << RearRightCornerPos.z() << ", ";
-            csv << vehicle.GetDriveline()->GetSprocketSpeed(chrono::vehicle::RIGHT) << ", ";
-            csv << vehicle.GetDriveline()->GetSprocketSpeed(chrono::vehicle::LEFT) << ", ";
+            csv << m113.GetDriveline()->GetSprocketSpeed(chrono::vehicle::RIGHT) << ", ";
+            csv << m113.GetDriveline()->GetSprocketSpeed(chrono::vehicle::LEFT) << ", ";
             csv << drawbarPull << ", " << torque << ", " << torque2 << ", ";
             csv << "\n";
             csv.GetFstream().flush();
@@ -681,7 +685,7 @@ int main(int argc, char* argv[]) {
             break;
 
         // Forward Mode
-        if (vehicle.GetChassis()->GetPos().x() > traversalLength && !performBrakingManeuver) {
+        if (m113.GetChassis()->GetPos().x() > traversalLength && !performBrakingManeuver) {
             if (!controlSlip)
                 powertrain->SetDriveMode(ChPowertrain::DriveMode::REVERSE);
             if (goingForward) {
@@ -694,7 +698,7 @@ int main(int argc, char* argv[]) {
         }
 
         // Reverse mode
-        if (vehicle.GetChassis()->GetPos().x() < -traversalLength && !performBrakingManeuver) {
+        if (m113.GetChassis()->GetPos().x() < -traversalLength && !performBrakingManeuver) {
             if (!controlSlip)
                 powertrain->SetDriveMode(ChPowertrain::DriveMode::FORWARD);
             if (!goingForward) {
@@ -709,9 +713,9 @@ int main(int argc, char* argv[]) {
         }
 
         // Extract system state
-        ChVector<> vel_CG = vehicle.GetChassisBody()->GetPos_dt();
-        ChVector<> acc_CG = vehicle.GetChassisBody()->GetPos_dtdt();
-        acc_CG = vehicle.GetChassisBody()->GetCoord().TransformDirectionParentToLocal(acc_CG);
+        ChVector<> vel_CG = m113.GetChassisBody()->GetPos_dt();
+        ChVector<> acc_CG = m113.GetChassisBody()->GetPos_dtdt();
+        acc_CG = m113.GetChassisBody()->GetCoord().TransformDirectionParentToLocal(acc_CG);
         ChVector<> acc_driver = vehicle.GetPointAcceleration(driver_pos);
         double fwd_acc_CG = fwd_acc_GC_filter.Add(acc_CG.x());
         double lat_acc_CG = lat_acc_GC_filter.Add(acc_CG.y());
@@ -719,13 +723,13 @@ int main(int argc, char* argv[]) {
         double lat_acc_driver = lat_acc_driver_filter.Add(acc_driver.y());
 
         ChVector<> FrontLeftCornerPos =
-            vehicle.GetChassisBody()->GetCoord().TransformPointLocalToParent(FrontLeftCornerLoc);
+            m113.GetChassisBody()->GetCoord().TransformPointLocalToParent(FrontLeftCornerLoc);
         ChVector<> FrontRightCornerPos =
-            vehicle.GetChassisBody()->GetCoord().TransformPointLocalToParent(FrontRightCornerLoc);
+            m113.GetChassisBody()->GetCoord().TransformPointLocalToParent(FrontRightCornerLoc);
         ChVector<> RearLeftCornerPos =
-            vehicle.GetChassisBody()->GetCoord().TransformPointLocalToParent(RearLeftCornerLoc);
+            m113.GetChassisBody()->GetCoord().TransformPointLocalToParent(RearLeftCornerLoc);
         ChVector<> RearRightCornerPos =
-            vehicle.GetChassisBody()->GetCoord().TransformPointLocalToParent(RearRightCornerLoc);
+            m113.GetChassisBody()->GetCoord().TransformPointLocalToParent(RearRightCornerLoc);
 
         //        if (step_number % output_steps == 0)
         //            std::cout << "Time = " << time << "   % Complete = " << time / tend * 100.0 << std::endl;
@@ -772,21 +776,21 @@ int main(int argc, char* argv[]) {
             // Output render data
             char filename[100];
             sprintf(filename, "%s/data_%03d.dat", pov_dir.c_str(), render_frame + 1);
-            utils::WriteVisualizationAssets(vehicle.GetSystem(), filename);
+            utils::WriteVisualizationAssets(m113.GetSystem(), filename);
             std::cout << "Output frame:   " << render_frame << std::endl;
             std::cout << "Sim frame:      " << step_number << std::endl;
             std::cout << "Time:           " << time << "   # Passes Left = " << numPasses << std::endl;
             std::cout << "   throttle: " << driver.GetThrottle() << "   steering: " << driver.GetSteering()
                       << "   braking:  " << driver.GetBraking() << std::endl;
-            std::cout << "   xPos: " << vehicle.GetChassis()->GetPos().x()
-                      << "   yPos: " << vehicle.GetChassis()->GetPos().y()
-                      << "   zPos:  " << vehicle.GetChassis()->GetPos().z() << std::endl;
+            std::cout << "   xPos: " << m113.GetChassis()->GetPos().x()
+                      << "   yPos: " << m113.GetChassis()->GetPos().y()
+                      << "   zPos:  " << m113.GetChassis()->GetPos().z() << std::endl;
             std::cout << std::endl;
 
             if (povray_output) {
                 char filename[100];
                 sprintf(filename, "%s/data_%03d.dat", pov_dir.c_str(), render_frame + 1);
-                utils::WriteVisualizationAssets(vehicle.GetSystem(), filename);
+                utils::WriteVisualizationAssets(m113.GetSystem(), filename);
             }
 
             render_frame++;
@@ -828,20 +832,20 @@ int main(int argc, char* argv[]) {
             csv << acc_driver.x() << ", " << fwd_acc_driver << ", " << acc_driver.y() << ", " << lat_acc_driver << ", ";
             csv << acc_CG.z() << ", ";  // vertical acceleration
             csv << vel_CG.x() << ", " << vel_CG.y() << ", " << vel_CG.z() << ", ";
-            csv << vehicle.GetChassis()->GetPos().x() << ", " << vehicle.GetChassis()->GetPos().y() << ", "
-                << vehicle.GetChassis()->GetPos().z() << ", ";
+            csv << m113.GetChassis()->GetPos().x() << ", " << m113.GetChassis()->GetPos().y() << ", "
+                << m113.GetChassis()->GetPos().z() << ", ";
             csv << 180.0 * theta / CH_C_PI << ", ";  // ground angle
-            csv << 180.0 * (theta - vehicle.GetChassisBody()->GetA().Get_A_Rxyz().x()) / CH_C_PI
+            csv << 180.0 * (theta - m113.GetChassisBody()->GetA().Get_A_Rxyz().x()) / CH_C_PI
                 << ", ";                                                                           // vehicle roll
-            csv << 180.0 * (vehicle.GetChassisBody()->GetA().Get_A_Rxyz().y()) / CH_C_PI << ", ";  // vehicle pitch
-            csv << 180.0 * (vehicle.GetChassisBody()->GetA().Get_A_Rxyz().z()) / CH_C_PI << ", ";  // vehicle yaw
+            csv << 180.0 * (m113.GetChassisBody()->GetA().Get_A_Rxyz().y()) / CH_C_PI << ", ";  // vehicle pitch
+            csv << 180.0 * (m113.GetChassisBody()->GetA().Get_A_Rxyz().z()) / CH_C_PI << ", ";  // vehicle yaw
             csv << FrontLeftCornerPos.x() << ", " << FrontLeftCornerPos.y() << ", " << FrontLeftCornerPos.z() << ", ";
             csv << FrontRightCornerPos.x() << ", " << FrontRightCornerPos.y() << ", " << FrontRightCornerPos.z()
                 << ", ";
             csv << RearLeftCornerPos.x() << ", " << RearLeftCornerPos.y() << ", " << RearLeftCornerPos.z() << ", ";
             csv << RearRightCornerPos.x() << ", " << RearRightCornerPos.y() << ", " << RearRightCornerPos.z() << ", ";
-            csv << vehicle.GetDriveline()->GetSprocketSpeed(chrono::vehicle::RIGHT) << ", ";
-            csv << vehicle.GetDriveline()->GetSprocketSpeed(chrono::vehicle::LEFT) << ", ";
+            csv << m113.GetDriveline()->GetSprocketSpeed(chrono::vehicle::RIGHT) << ", ";
+            csv << m113.GetDriveline()->GetSprocketSpeed(chrono::vehicle::LEFT) << ", ";
             csv << drawbarPull << ", " << torque << ", " << torque2 << ", " << motionResistance << ", " << tractiveEffort << ", ";
             csv << "\n";
             csv.GetFstream().flush();
