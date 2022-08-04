@@ -568,6 +568,8 @@ set(CVM_MARDER_FILES
     marder/Marder_BrakeShafts.h
     marder/Marder_Idler.h
     marder/Marder_Idler.cpp
+    marder/Marder_IdlerWheel.h
+    marder/Marder_IdlerWheel.cpp
     marder/Marder_RoadWheel.h
     marder/Marder_RoadWheel.cpp
     marder/Marder_SprocketSinglePin.h
@@ -605,6 +607,8 @@ set(CVM_M113_FILES
     m113/M113_SimpleDriveline.h
     m113/M113_Idler.cpp
     m113/M113_Idler.h
+    m113/M113_IdlerWheel.cpp
+    m113/M113_IdlerWheel.h
     m113/M113_RoadWheel.cpp
     m113/M113_RoadWheel.h
     m113/M113_ShaftsPowertrain.cpp
