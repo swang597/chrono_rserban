@@ -167,7 +167,10 @@ std::shared_ptr<ChBezierCurve> CreatePath(const std::string& terrain_dir, double
 
     if (create_ramp) {
         // Include additional point if creating a ramp
-        points.push_back(ChVector<>(-ramp_length + 4, 0, 0));
+        auto np = std::ceil(ramp_length / 10);
+        auto dx = (ramp_length - 4) / np;
+        for (int i = 0; i < (int)np; i++)
+            points.push_back(ChVector<>(i * dx - (ramp_length - 4), 0, 0));
     }
 
     for (size_t i = 0; i < numPoints; i++) {
