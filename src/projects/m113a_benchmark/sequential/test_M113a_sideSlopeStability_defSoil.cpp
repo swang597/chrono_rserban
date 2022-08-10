@@ -531,7 +531,7 @@ int main(int argc, char* argv[]) {
                         ((SCMDeformableTerrain*)terrain)->GetMesh()->GetMesh()->getCoordsVertices();
                     std::vector<ChVector<int> >& idx_vertices =
                         ((SCMDeformableTerrain*)terrain)->GetMesh()->GetMesh()->getIndicesVertexes();
-                    std::vector<ChVector<float> >& colors =
+                    std::vector<ChVector<ChColor> >& colors =
                         ((SCMDeformableTerrain*)terrain)->GetMesh()->GetMesh()->getCoordsColors();
 
                     std::string delim = ",";
@@ -542,12 +542,11 @@ int main(int argc, char* argv[]) {
                                           vertices[idx_vertices[i].z()]) /
                                          3.0;
                         csv << pos << vertices[idx_vertices[i].x()] << vertices[idx_vertices[i].y()]
-                            << vertices[idx_vertices[i].z()] << (double)colors[idx_vertices[i].x()].x()
-                            << (double)colors[idx_vertices[i].x()].y() << (double)colors[idx_vertices[i].x()].z()
-                            << (double)colors[idx_vertices[i].y()].x() << (double)colors[idx_vertices[i].y()].y()
-                            << (double)colors[idx_vertices[i].y()].z() << (double)colors[idx_vertices[i].z()].x()
-                            << (double)colors[idx_vertices[i].z()].y() << (double)colors[idx_vertices[i].z()].z()
-                            << std::endl;
+                            << vertices[idx_vertices[i].z()] << colors[idx_vertices[i].x()].R
+                            << colors[idx_vertices[i].x()].G << colors[idx_vertices[i].x()].B
+                            << colors[idx_vertices[i].y()].R << colors[idx_vertices[i].y()].G
+                            << colors[idx_vertices[i].y()].B << colors[idx_vertices[i].z()].R
+                            << colors[idx_vertices[i].z()].G << colors[idx_vertices[i].z()].B << std::endl;
                     }
                     sprintf(filename, "%s/terrain_%05d.dat", pov_dir.c_str(), render_frame + 1);
                     csv.write_to_file(filename);
