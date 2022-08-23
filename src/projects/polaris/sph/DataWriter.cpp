@@ -35,7 +35,12 @@ using namespace chrono::vehicle;
 using namespace chrono::fsi;
 
 DataWriter::DataWriter(ChSystemFsi& sysFSI, std::shared_ptr<WheeledVehicle> vehicle)
-    : m_sysFSI(sysFSI), m_vehicle(vehicle), m_out_vel(false), m_filter(true), m_filter_window(0.05), m_verbose(true) {
+    : m_sysFSI(sysFSI),
+      m_vehicle(vehicle),
+      m_out_pos(false),
+      m_filter(true),
+      m_filter_window(0.05),
+      m_verbose(true) {
     m_wheels[0] = vehicle->GetWheel(0, LEFT);
     m_wheels[1] = vehicle->GetWheel(0, RIGHT);
     m_wheels[2] = vehicle->GetWheel(1, LEFT);
@@ -144,10 +149,10 @@ void DataWriter::Write() {
     for (int i = 0; i < 4; i++) {
         std::string filename = m_dir + "/soil_" + std::to_string(m_major_frame) + "_" + std::to_string(m_minor_frame) +
                                "_w" + std::to_string(i) + ".csv ";
-        if (m_out_vel)
-            WriteParticlePosVel(m_sysFSI, m_indices[i], filename);
-        else
+        if (m_out_pos)
             WriteParticlePos(m_sysFSI, m_indices[i], filename);
+        else
+            WriteParticlePosVelFrc(m_sysFSI, m_indices[i], filename);
     }
 
     {
@@ -279,13 +284,16 @@ struct print_particle_pos {
     std::ofstream* m_stream;
 };
 
-struct print_particle_pos_vel {
-    print_particle_pos_vel(std::ofstream* stream) : m_stream(stream) {}
+struct print_particle_pos_vel_frc {
+    print_particle_pos_vel_frc(std::ofstream* stream) : m_stream(stream) {}
     template <typename T>
-    __host__ void operator()(const T pv) {
-        auto p = thrust::get<0>(pv);
-        auto v = thrust::get<1>(pv);
-        (*m_stream) << p.x << ", " << p.y << ", " << p.z << ", " << v.x << ", " << v.y << ", " << v.z << "\n";
+    __host__ void operator()(const T pvf) {
+        auto p = thrust::get<0>(pvf);
+        auto v = thrust::get<1>(pvf);
+        auto f = thrust::get<2>(pvf);
+        (*m_stream) << p.x << ", " << p.y << ", " << p.z << ", "  //
+                    << v.x << ", " << v.y << ", " << v.z << ", "  //
+                    << f.x << ", " << f.y << ", " << f.z << "\n";
     }
     std::ofstream* m_stream;
 };
@@ -306,24 +314,26 @@ void DataWriter::WriteParticlePos(ChSystemFsi& sysFSI,
     stream.close();
 }
 
-void DataWriter::WriteParticlePosVel(ChSystemFsi& sysFSI,
+void DataWriter::WriteParticlePosVelFrc(ChSystemFsi& sysFSI,
                                      const thrust::device_vector<int>& indices_D,
                                      const std::string& filename) {
-    // Get particle positions and velocities on device
+    // Get particle positions, velocities, and forces on device
     auto pos_D = sysFSI.GetParticlePositions(indices_D);
     auto vel_D = sysFSI.GetParticleVelocities(indices_D);
+    auto frc_D = sysFSI.GetParticleForces(indices_D);
 
     // Copy vectors to host
     thrust::host_vector<Real4> pos_H = pos_D;
     thrust::host_vector<Real3> vel_H = vel_D;
+    thrust::host_vector<Real4> frc_H = frc_D;
 
     // Write output file
     std::ofstream stream;
     stream.open(filename, std::ios_base::trunc);
-    thrust::for_each(thrust::host,                                                                 //
-                     thrust::make_zip_iterator(thrust::make_tuple(pos_H.begin(), vel_H.begin())),  //
-                     thrust::make_zip_iterator(thrust::make_tuple(pos_H.end(), vel_H.end())),      //
-                     print_particle_pos_vel(&stream)                                               //
+    thrust::for_each(thrust::host,                                                                                //
+                     thrust::make_zip_iterator(thrust::make_tuple(pos_H.begin(), vel_H.begin(), frc_H.begin())),  //
+                     thrust::make_zip_iterator(thrust::make_tuple(pos_H.end(), vel_H.end(), frc_H.end())),        //
+                     print_particle_pos_vel_frc(&stream)                                                          //
     );
     stream.close();
 }

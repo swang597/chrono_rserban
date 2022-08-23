@@ -65,7 +65,7 @@ bool GetProblemSpecs(int argc,
                      double& output_major_fps,
                      double& output_minor_fps,
                      int& output_frames,
-                     bool& output_velocities,
+                     bool& output_pos_only,
                      double& filter_window,
                      double& vis_output_fps,
                      bool& run_time_vis,
@@ -81,7 +81,7 @@ class PolarisStats : public opengl::ChOpenGLStats {
   public:
     PolarisStats(const WheeledVehicle& vehicle)
         : ChOpenGLStats(), m_vehicle(vehicle), m_steering(0), m_throttle(0), m_braking(0) {}
-    void UpdateDriverInputs(const DriverInputs& inputs) { 
+    void UpdateDriverInputs(const DriverInputs& inputs) {
         m_steering = inputs.m_steering;
         m_throttle = inputs.m_throttle;
         m_braking = inputs.m_braking;
@@ -120,7 +120,7 @@ int main(int argc, char* argv[]) {
     double output_major_fps = 20;
     double output_minor_fps = 1000;
     int output_frames = 5;
-    bool output_velocities = true;        // output particle velocities
+    bool position_only = false;           // output only particle positions
     double filter_window = 0;             // do not filter data
     double vis_output_fps = 0;            // no post-processing visualization output
     bool run_time_vis = false;            // no run-time visualization
@@ -131,7 +131,7 @@ int main(int argc, char* argv[]) {
     bool verbose = true;
 
     if (!GetProblemSpecs(argc, argv, terrain_dir, ramp_length, target_speed, tend, step_size, active_box_dim,
-                         output_major_fps, output_minor_fps, output_frames, output_velocities, filter_window,
+                         output_major_fps, output_minor_fps, output_frames, position_only, filter_window,
                          vis_output_fps, run_time_vis, run_time_vis_particles, run_time_vis_bce, run_time_vis_fps,
                          chase_cam, verbose)) {
         return 1;
@@ -245,7 +245,7 @@ int main(int argc, char* argv[]) {
     }
     DataWriter data_writer(sysFSI, vehicle);
     data_writer.SetVerbose(verbose);
-    data_writer.SaveVelocities(output_velocities);
+    data_writer.SavePositionsOnly(position_only);
     data_writer.UseFilteredData(use_filter, filter_window);
     data_writer.Initialize(sim_dir, output_major_fps, output_minor_fps, output_frames, step_size);
     cout << "Simulation output data saved in: " << sim_dir << endl;
@@ -345,7 +345,7 @@ int main(int argc, char* argv[]) {
             driver.Advance(step_size);
             sysFSI.DoStepDynamics_FSI();
             t += step_size;
-        } 
+        }
 
         frame++;
     }
@@ -366,7 +366,7 @@ bool GetProblemSpecs(int argc,
                      double& output_major_fps,
                      double& output_minor_fps,
                      int& output_frames,
-                     bool& output_velocities,
+                     bool& output_pos_only,
                      double& filter_window,
                      double& vis_output_fps,
                      bool& run_time_vis,
@@ -391,7 +391,7 @@ bool GetProblemSpecs(int argc,
                           std::to_string(output_minor_fps));
     cli.AddOption<int>("Simulation output", "output_frames", "Number of successive output frames",
                        std::to_string(output_frames));
-    cli.AddOption<bool>("Simulation output", "no_particle_vel", "Do not output particle velocities");
+    cli.AddOption<bool>("Simulation output", "position_only", "Do not output particle velocities and forces");
     cli.AddOption<double>("Simulation output", "filter_window", "Running average filter window [s]",
                           std::to_string(filter_window));
 
@@ -425,7 +425,7 @@ bool GetProblemSpecs(int argc,
     output_major_fps = cli.GetAsType<double>("output_major_fps");
     output_minor_fps = cli.GetAsType<double>("output_minor_fps");
     output_frames = cli.GetAsType<int>("output_frames");
-    output_velocities = !cli.GetAsType<bool>("no_particle_vel");
+    output_pos_only = cli.GetAsType<bool>("position_only");
 
     filter_window = cli.GetAsType<double>("filter_window");
 

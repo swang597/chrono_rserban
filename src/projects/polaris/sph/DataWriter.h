@@ -45,8 +45,9 @@ class DataWriter {
     /// Enable/disable terminal messages (default: true).
     void SetVerbose(bool verbose) { m_verbose = verbose; }
 
-    /// Enable/disable output of SPH particle velocities (default: true).
-    void SaveVelocities(bool val) { m_out_vel = val; }
+    /// Write only particle positions (default: false).
+    /// By default, output contains particle positions, velocities, and forces.
+    void SavePositionsOnly(bool val) { m_out_pos = val; }
 
     /// Set the location (relative to tire bottom point) and dimension (x and y) of the soil sampling domain.
     void SetSamplingVolume(const chrono::ChVector<>& offset, const chrono::ChVector2<>& size);
@@ -96,9 +97,9 @@ class DataWriter {
                           const thrust::device_vector<int>& indices_D,
                           const std::string& filename);
 
-    void WriteParticlePosVel(chrono::fsi::ChSystemFsi& sysFSI,
-                             const thrust::device_vector<int>& indices_D,
-                             const std::string& filename);
+    void WriteParticlePosVelFrc(chrono::fsi::ChSystemFsi& sysFSI,
+                                const thrust::device_vector<int>& indices_D,
+                                const std::string& filename);
 
     chrono::fsi::ChSystemFsi& m_sysFSI;
     std::shared_ptr<chrono::vehicle::WheeledVehicle> m_vehicle;
@@ -115,7 +116,7 @@ class DataWriter {
     int m_minor_frame;
     int m_last_major;
 
-    bool m_out_vel;
+    bool m_out_pos;
     chrono::ChVector<> m_box_size;
     chrono::ChVector<> m_box_offset;
     double m_box_x;
