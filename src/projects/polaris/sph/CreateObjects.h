@@ -40,7 +40,3 @@ std::shared_ptr<chrono::vehicle::WheeledVehicle> CreateVehicle(PolarisModel mode
                                                                const chrono::ChCoordsys<>& init_pos);
 
 void CreateWheelBCEMarkers(std::shared_ptr<chrono::vehicle::WheeledVehicle> vehicle, chrono::fsi::ChSystemFsi& sysFSI);
-
-void CreateMeshBCEMarkers(const chrono::geometry::ChTriangleMeshConnected& mesh,
-                          double delta,
-                          std::vector<chrono::ChVector<>>& point_cloud);
