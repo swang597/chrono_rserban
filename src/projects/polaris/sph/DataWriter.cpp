@@ -34,31 +34,18 @@ using namespace chrono;
 using namespace chrono::vehicle;
 using namespace chrono::fsi;
 
-DataWriter::DataWriter(ChSystemFsi& sysFSI, std::shared_ptr<WheeledVehicle> vehicle)
+DataWriter::DataWriter(ChSystemFsi& sysFSI, int num_sample_boxes)
     : m_sysFSI(sysFSI),
-      m_vehicle(vehicle),
+      m_num_sample_boxes(num_sample_boxes),
       m_out_pos(false),
       m_filter(true),
       m_filter_window(0.05),
       m_verbose(true) {
-    m_wheels[0] = vehicle->GetWheel(0, LEFT);
-    m_wheels[1] = vehicle->GetWheel(0, RIGHT);
-    m_wheels[2] = vehicle->GetWheel(1, LEFT);
-    m_wheels[3] = vehicle->GetWheel(1, RIGHT);
-
-    // Set default size of sampling box
-    double tire_radius = m_wheels[0]->GetTire()->GetRadius();
-    double tire_width = m_wheels[0]->GetTire()->GetWidth();
-    m_box_size.x() = 2.0 * std::sqrt(3.0) * tire_radius;
-    m_box_size.y() = 1.5 * tire_width;
-    m_box_size.z() = 0.2;
-
-    // Set default offset of sampling box
-    m_box_offset = ChVector<>(0.15, 0.0, 0.0);
+    //////m_indices.resize(m_num_sample_boxes);
 }
 
 DataWriter::~DataWriter() {
-    m_veh_stream.close();
+    m_mbs_stream.close();
 }
 
 void DataWriter::UseFilteredData(bool val, double window) {
@@ -91,25 +78,33 @@ void DataWriter::Initialize(const std::string& dir,
         throw std::runtime_error("Incompatible output frequencies");
     }
 
+    // Resize vectors
+    m_mbs_outputs.resize(GetNumChannelsMBS());
+    m_filters.resize(GetNumChannelsMBS());
+
     // Create filters
     if (m_filter) {
         int steps = (int)std::round(m_filter_window / step_size);
-        for (int i = 0; i < m_num_veh_outputs; i++) {
-            m_veh_filters[i] = chrono_types::make_shared<chrono::utils::ChRunningAverage>(steps);
+        for (int i = 0; i < GetNumChannelsMBS(); i++) {
+            m_filters[i] = chrono_types::make_shared<chrono::utils::ChRunningAverage>(steps);
         }
     }
 
-    std::string filename = m_dir + "/vehicle.csv";
-    m_veh_stream.open(filename, std::ios_base::trunc);
+    std::string filename = m_dir + "/mbs.csv";
+    m_mbs_stream.open(filename, std::ios_base::trunc);
 
-    std::cout << "Wheel sampling box size:   " << m_box_size << std::endl;
-    std::cout << "Wheel sampling box offset: " << m_box_offset << std::endl;
+    std::cout << "Sampling box size:   " << m_box_size << std::endl;
+    std::cout << "Sampling box offset: " << m_box_offset << std::endl;
 }
 
-void DataWriter::Process(int sim_frame, const DriverInputs& driver_inputs) {
-    m_drv_inp = driver_inputs;
-
-    CollectVehicleData();
+void DataWriter::Process(int sim_frame) {
+    // Collect data from all MBS channels and run through filters if requested
+    CollectDataMBS();
+    if (m_filter) {
+        for (int i = 0; i < GetNumChannelsMBS(); i++) {
+            m_mbs_outputs[i] = m_filters[i]->Add(m_mbs_outputs[i]);
+        }
+    }
 
     if (sim_frame % m_major_skip == 0) {
         m_last_major = sim_frame;
@@ -130,121 +125,182 @@ void DataWriter::Process(int sim_frame, const DriverInputs& driver_inputs) {
 }
 
 void DataWriter::Reset() {
-    for (int i = 0; i < 4; i++) {
-        auto wheel_pos = m_wheels[i]->GetPos();
-        auto wheel_normal = m_wheels[i]->GetSpindle()->GetRot().GetYaxis();
-        auto tire_radius = m_wheels[i]->GetTire()->GetRadius();
-
-        ChVector<> Z_dir(0, 0, 1);
-        ChVector<> X_dir = Vcross(wheel_normal, ChVector<>(0, 0, 1)).GetNormalized();
-        ChVector<> Y_dir = Vcross(Z_dir, X_dir);
-        ChMatrix33<> box_rot(X_dir, Y_dir, Z_dir);
-        ChVector<> box_pos = wheel_pos + box_rot * (m_box_offset - ChVector<>(0, 0, tire_radius));
-
-        m_indices[i] = m_sysFSI.FindParticlesInBox(ChFrame<>(box_pos, box_rot), m_box_size);
+    for (int i = 0; i < m_num_sample_boxes; i++) {
+        auto box_frame = GetSampleBoxFrame(i);
+        m_indices[i] = m_sysFSI.FindParticlesInBox(box_frame, m_box_size);
     }
 }
 
 void DataWriter::Write() {
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < m_num_sample_boxes; i++) {
         std::string filename = m_dir + "/soil_" + std::to_string(m_major_frame) + "_" + std::to_string(m_minor_frame) +
                                "_w" + std::to_string(i) + ".csv ";
-        if (m_out_pos)
-            WriteParticlePos(m_sysFSI, m_indices[i], filename);
-        else
-            WriteParticlePosVelFrc(m_sysFSI, m_indices[i], filename);
+        WriteDataParticles(m_indices[i], filename);
     }
 
     {
         std::string filename =
-            m_dir + "/vehicle_" + std::to_string(m_major_frame) + "_" + std::to_string(m_minor_frame) + ".csv ";
-        WriteVehicleData(filename);
+            m_dir + "/mbs_" + std::to_string(m_major_frame) + "_" + std::to_string(m_minor_frame) + ".csv ";
+        WriteDataMBS(filename);
+
+        // Write line to global MBS output file
+        m_mbs_stream << m_sysFSI.GetSimTime() << "    ";
+        for (int i = 0; i < GetNumChannelsMBS(); i++)
+            m_mbs_stream << m_mbs_outputs[i] << "  ";
+        m_mbs_stream << "\n";
     }
 }
 
-void DataWriter::CollectVehicleData() {
+struct print_particle_pos {
+    print_particle_pos(std::ofstream* stream) : m_stream(stream) {}
+    __host__ void operator()(const Real4 p) { (*m_stream) << p.x << ", " << p.y << ", " << p.z << "\n"; }
+    std::ofstream* m_stream;
+};
+
+struct print_particle_pos_vel_frc {
+    print_particle_pos_vel_frc(std::ofstream* stream) : m_stream(stream) {}
+    template <typename T>
+    __host__ void operator()(const T pvf) {
+        auto p = thrust::get<0>(pvf);
+        auto v = thrust::get<1>(pvf);
+        auto f = thrust::get<2>(pvf);
+        (*m_stream) << p.x << ", " << p.y << ", " << p.z << ", "  //
+                    << v.x << ", " << v.y << ", " << v.z << ", "  //
+                    << f.x << ", " << f.y << ", " << f.z << "\n";
+    }
+    std::ofstream* m_stream;
+};
+
+void DataWriter::WriteDataParticles(const thrust::device_vector<int>& indices_D, const std::string& filename) {
+    if (m_out_pos) {
+        // Get particle positions on device
+        auto pos_D = m_sysFSI.GetParticlePositions(indices_D);
+
+        // Copy vector to host
+        thrust::host_vector<Real4> pos_H = pos_D;
+
+        // Write output file
+        std::ofstream stream;
+        stream.open(filename, std::ios_base::trunc);
+        thrust::for_each(thrust::host, pos_H.begin(), pos_H.end(), print_particle_pos(&stream));
+        stream.close();
+    } else {
+        // Get particle positions, velocities, and forces on device
+        auto pos_D = m_sysFSI.GetParticlePositions(indices_D);
+        auto vel_D = m_sysFSI.GetParticleVelocities(indices_D);
+        auto frc_D = m_sysFSI.GetParticleForces(indices_D);
+
+        // Copy vectors to host
+        thrust::host_vector<Real4> pos_H = pos_D;
+        thrust::host_vector<Real3> vel_H = vel_D;
+        thrust::host_vector<Real4> frc_H = frc_D;
+
+        // Write output file
+        std::ofstream stream;
+        stream.open(filename, std::ios_base::trunc);
+        thrust::for_each(thrust::host,                                                                                //
+                         thrust::make_zip_iterator(thrust::make_tuple(pos_H.begin(), vel_H.begin(), frc_H.begin())),  //
+                         thrust::make_zip_iterator(thrust::make_tuple(pos_H.end(), vel_H.end(), frc_H.end())),        //
+                         print_particle_pos_vel_frc(&stream)                                                          //
+        );
+        stream.close();
+    }
+}
+
+// --------------------------------------------------------------------------------------------------------------------
+
+DataWriterVehicle::DataWriterVehicle(ChSystemFsi& sysFSI, std::shared_ptr<WheeledVehicle> vehicle)
+    : DataWriter(sysFSI, 4), m_vehicle(vehicle) {
+    m_wheels[0] = vehicle->GetWheel(0, LEFT);
+    m_wheels[1] = vehicle->GetWheel(0, RIGHT);
+    m_wheels[2] = vehicle->GetWheel(1, LEFT);
+    m_wheels[3] = vehicle->GetWheel(1, RIGHT);
+
+    // Set default size of sampling box
+    double tire_radius = m_wheels[0]->GetTire()->GetRadius();
+    double tire_width = m_wheels[0]->GetTire()->GetWidth();
+    m_box_size.x() = 2.0 * std::sqrt(3.0) * tire_radius;
+    m_box_size.y() = 1.5 * tire_width;
+    m_box_size.z() = 0.2;
+
+    // Set default offset of sampling box
+    m_box_offset = ChVector<>(0.15, 0.0, 0.0);
+}
+
+void DataWriterVehicle::CollectDataMBS() {
     size_t start = 0;
 
     auto v_pos = m_vehicle->GetPos();
-    m_veh_outputs[start + 0] = v_pos.x();
-    m_veh_outputs[start + 1] = v_pos.y();
-    m_veh_outputs[start + 2] = v_pos.z();
+    m_mbs_outputs[start + 0] = v_pos.x();
+    m_mbs_outputs[start + 1] = v_pos.y();
+    m_mbs_outputs[start + 2] = v_pos.z();
     start += 3;
 
     auto v_rot = m_vehicle->GetRot();
-    m_veh_outputs[start + 0] = v_rot.e0();
-    m_veh_outputs[start + 1] = v_rot.e1();
-    m_veh_outputs[start + 2] = v_rot.e2();
-    m_veh_outputs[start + 3] = v_rot.e3();
+    m_mbs_outputs[start + 0] = v_rot.e0();
+    m_mbs_outputs[start + 1] = v_rot.e1();
+    m_mbs_outputs[start + 2] = v_rot.e2();
+    m_mbs_outputs[start + 3] = v_rot.e3();
     start += 4;
 
     auto v_vel = m_vehicle->GetPointVelocity(ChVector<>(0, 0, 0));
-    m_veh_outputs[start + 0] = v_vel.x();
-    m_veh_outputs[start + 1] = v_vel.y();
-    m_veh_outputs[start + 2] = v_vel.z();
+    m_mbs_outputs[start + 0] = v_vel.x();
+    m_mbs_outputs[start + 1] = v_vel.y();
+    m_mbs_outputs[start + 2] = v_vel.z();
     start += 3;
 
     auto v_omg = m_vehicle->GetChassisBody()->GetWvel_par();
-    m_veh_outputs[start + 0] = v_omg.x();
-    m_veh_outputs[start + 1] = v_omg.y();
-    m_veh_outputs[start + 2] = v_omg.z();
+    m_mbs_outputs[start + 0] = v_omg.x();
+    m_mbs_outputs[start + 1] = v_omg.y();
+    m_mbs_outputs[start + 2] = v_omg.z();
     start += 3;
 
     for (int i = 0; i < 4; i++) {
         auto w_state = m_wheels[i]->GetState();
 
-        m_veh_outputs[start + 0] = w_state.pos.x();
-        m_veh_outputs[start + 1] = w_state.pos.y();
-        m_veh_outputs[start + 2] = w_state.pos.z();
+        m_mbs_outputs[start + 0] = w_state.pos.x();
+        m_mbs_outputs[start + 1] = w_state.pos.y();
+        m_mbs_outputs[start + 2] = w_state.pos.z();
         start += 3;
 
-        m_veh_outputs[start + 0] = w_state.rot.e0();
-        m_veh_outputs[start + 1] = w_state.rot.e1();
-        m_veh_outputs[start + 2] = w_state.rot.e2();
-        m_veh_outputs[start + 3] = w_state.rot.e3();
+        m_mbs_outputs[start + 0] = w_state.rot.e0();
+        m_mbs_outputs[start + 1] = w_state.rot.e1();
+        m_mbs_outputs[start + 2] = w_state.rot.e2();
+        m_mbs_outputs[start + 3] = w_state.rot.e3();
         start += 4;
 
-        m_veh_outputs[start + 0] = w_state.lin_vel.x();
-        m_veh_outputs[start + 1] = w_state.lin_vel.y();
-        m_veh_outputs[start + 2] = w_state.lin_vel.z();
+        m_mbs_outputs[start + 0] = w_state.lin_vel.x();
+        m_mbs_outputs[start + 1] = w_state.lin_vel.y();
+        m_mbs_outputs[start + 2] = w_state.lin_vel.z();
         start += 3;
 
-        m_veh_outputs[start + 0] = w_state.ang_vel.x();
-        m_veh_outputs[start + 1] = w_state.ang_vel.y();
-        m_veh_outputs[start + 2] = w_state.ang_vel.z();
+        m_mbs_outputs[start + 0] = w_state.ang_vel.x();
+        m_mbs_outputs[start + 1] = w_state.ang_vel.y();
+        m_mbs_outputs[start + 2] = w_state.ang_vel.z();
         start += 3;
     }
 
     for (int i = 0; i < 4; i++) {
         const auto& t_force = m_wheels[i]->GetSpindle()->Get_accumulated_force();
-        m_veh_outputs[start + 0] = t_force.x();
-        m_veh_outputs[start + 1] = t_force.y();
-        m_veh_outputs[start + 2] = t_force.z();
+        m_mbs_outputs[start + 0] = t_force.x();
+        m_mbs_outputs[start + 1] = t_force.y();
+        m_mbs_outputs[start + 2] = t_force.z();
         start += 3;
 
         const auto& t_torque = m_wheels[i]->GetSpindle()->Get_accumulated_torque();
-        m_veh_outputs[start + 0] = t_torque.x();
-        m_veh_outputs[start + 1] = t_torque.y();
-        m_veh_outputs[start + 2] = t_torque.z();
+        m_mbs_outputs[start + 0] = t_torque.x();
+        m_mbs_outputs[start + 1] = t_torque.y();
+        m_mbs_outputs[start + 2] = t_torque.z();
         start += 3;
-    }
-
-    if (m_filter) {
-        for (int i = 0; i < m_num_veh_outputs; i++) {
-            m_veh_outputs[i] = m_veh_filters[i]->Add(m_veh_outputs[i]);
-        }
     }
 }
 
-void DataWriter::WriteVehicleData(const std::string& filename) {
-    const auto& o = m_veh_outputs;
+void DataWriterVehicle::WriteDataMBS(const std::string& filename) {
+    const auto& o = m_mbs_outputs;
     std::ofstream stream;
     stream.open(filename, std::ios_base::trunc);
 
     size_t start = 0;
-
-    // Driver inputs
-    stream << m_drv_inp.m_steering << ", " << m_drv_inp.m_throttle << ", " << m_drv_inp.m_braking << "\n";
 
     // Vehicle position, orientation, linear and angular velocities
     for (int j = 0; j < 13; j++)
@@ -269,71 +325,103 @@ void DataWriter::WriteVehicleData(const std::string& filename) {
     }
 
     stream.close();
-
-    // Write line to global vehicle output file
-    m_veh_stream << m_vehicle->GetChTime() << "    ";
-    m_veh_stream << m_drv_inp.m_steering << " " << m_drv_inp.m_throttle << " " << m_drv_inp.m_braking << "    ";
-    for (int i = 0; i < m_num_veh_outputs; i++)
-        m_veh_stream << o[i] << "  ";
-    m_veh_stream << "\n";
 }
 
-struct print_particle_pos {
-    print_particle_pos(std::ofstream* stream) : m_stream(stream) {}
-    __host__ void operator()(const Real4 p) { (*m_stream) << p.x << ", " << p.y << ", " << p.z << "\n"; }
-    std::ofstream* m_stream;
-};
+ChFrame<> DataWriterVehicle::GetSampleBoxFrame(int box_id) const {
+    auto wheel_pos = m_wheels[box_id]->GetPos();
+    auto wheel_normal = m_wheels[box_id]->GetSpindle()->GetRot().GetYaxis();
+    auto tire_radius = m_wheels[box_id]->GetTire()->GetRadius();
 
-struct print_particle_pos_vel_frc {
-    print_particle_pos_vel_frc(std::ofstream* stream) : m_stream(stream) {}
-    template <typename T>
-    __host__ void operator()(const T pvf) {
-        auto p = thrust::get<0>(pvf);
-        auto v = thrust::get<1>(pvf);
-        auto f = thrust::get<2>(pvf);
-        (*m_stream) << p.x << ", " << p.y << ", " << p.z << ", "  //
-                    << v.x << ", " << v.y << ", " << v.z << ", "  //
-                    << f.x << ", " << f.y << ", " << f.z << "\n";
-    }
-    std::ofstream* m_stream;
-};
+    ChVector<> Z_dir(0, 0, 1);
+    ChVector<> X_dir = Vcross(wheel_normal, ChVector<>(0, 0, 1)).GetNormalized();
+    ChVector<> Y_dir = Vcross(Z_dir, X_dir);
+    ChMatrix33<> box_rot(X_dir, Y_dir, Z_dir);
+    ChVector<> box_pos = wheel_pos + box_rot * (m_box_offset - ChVector<>(0, 0, tire_radius));
 
-void DataWriter::WriteParticlePos(ChSystemFsi& sysFSI,
-                                  const thrust::device_vector<int>& indices_D,
-                                  const std::string& filename) {
-    // Get particle positions on device
-    auto pos_D = sysFSI.GetParticlePositions(indices_D);
+    return ChFrame<>(box_pos, box_rot);
+}
 
-    // Copy vector to host
-    thrust::host_vector<Real4> pos_H = pos_D;
+// --------------------------------------------------------------------------------------------------------------------
 
-    // Write output file
+DataWriterObject::DataWriterObject(ChSystemFsi& sysFSI, std::shared_ptr<ChBody> body, const ChVector<>& body_size)
+    : DataWriter(sysFSI, 1), m_body(body), m_body_size(body_size) {
+    m_box_size = 2.0 * body_size;
+    m_box_offset = VNULL;
+}
+
+void DataWriterObject::CollectDataMBS() {
+    size_t start = 0;
+
+    auto v_pos = m_body->GetPos();
+    m_mbs_outputs[start + 0] = v_pos.x();
+    m_mbs_outputs[start + 1] = v_pos.y();
+    m_mbs_outputs[start + 2] = v_pos.z();
+    start += 3;
+
+    auto v_rot = m_body->GetRot();
+    m_mbs_outputs[start + 0] = v_rot.e0();
+    m_mbs_outputs[start + 1] = v_rot.e1();
+    m_mbs_outputs[start + 2] = v_rot.e2();
+    m_mbs_outputs[start + 3] = v_rot.e3();
+    start += 4;
+
+    auto v_vel = m_body->GetPos_dt();
+    m_mbs_outputs[start + 0] = v_vel.x();
+    m_mbs_outputs[start + 1] = v_vel.y();
+    m_mbs_outputs[start + 2] = v_vel.z();
+    start += 3;
+
+    auto v_omg = m_body->GetWvel_par();
+    m_mbs_outputs[start + 0] = v_omg.x();
+    m_mbs_outputs[start + 1] = v_omg.y();
+    m_mbs_outputs[start + 2] = v_omg.z();
+    start += 3;
+
+    const auto& t_force = m_body->Get_accumulated_force();
+    m_mbs_outputs[start + 0] = t_force.x();
+    m_mbs_outputs[start + 1] = t_force.y();
+    m_mbs_outputs[start + 2] = t_force.z();
+    start += 3;
+
+    const auto& t_torque = m_body->Get_accumulated_torque();
+    m_mbs_outputs[start + 0] = t_torque.x();
+    m_mbs_outputs[start + 1] = t_torque.y();
+    m_mbs_outputs[start + 2] = t_torque.z();
+    start += 3;
+}
+
+void DataWriterObject::WriteDataMBS(const std::string& filename) {
+    const auto& o = m_mbs_outputs;
     std::ofstream stream;
     stream.open(filename, std::ios_base::trunc);
-    thrust::for_each(thrust::host, pos_H.begin(), pos_H.end(), print_particle_pos(&stream));
+
+    size_t start = 0;
+
+    // Body position, orientation, linear and angular velocities
+    for (int j = 0; j < 13; j++)
+        stream << o[start + j] << ", ";
+    stream << "\n";
+    start += 13;
+
+    // Body force and moment
+    for (int j = 0; j < 6; j++)
+        stream << o[start + j] << ", ";
+    stream << "\n";
+    start += 6;
+
     stream.close();
 }
 
-void DataWriter::WriteParticlePosVelFrc(ChSystemFsi& sysFSI,
-                                     const thrust::device_vector<int>& indices_D,
-                                     const std::string& filename) {
-    // Get particle positions, velocities, and forces on device
-    auto pos_D = sysFSI.GetParticlePositions(indices_D);
-    auto vel_D = sysFSI.GetParticleVelocities(indices_D);
-    auto frc_D = sysFSI.GetParticleForces(indices_D);
+ChFrame<> DataWriterObject::GetSampleBoxFrame(int box_id) const {
+    auto pos = m_body->GetPos();
+    auto normal = m_body->GetRot().GetYaxis();
+    auto hheight = m_body_size.z() / 2;
 
-    // Copy vectors to host
-    thrust::host_vector<Real4> pos_H = pos_D;
-    thrust::host_vector<Real3> vel_H = vel_D;
-    thrust::host_vector<Real4> frc_H = frc_D;
+    ChVector<> Z_dir(0, 0, 1);
+    ChVector<> X_dir = Vcross(normal, ChVector<>(0, 0, 1)).GetNormalized();
+    ChVector<> Y_dir = Vcross(Z_dir, X_dir);
+    ChMatrix33<> box_rot(X_dir, Y_dir, Z_dir);
+    ChVector<> box_pos = pos + box_rot * (m_box_offset - ChVector<>(0, 0, hheight));
 
-    // Write output file
-    std::ofstream stream;
-    stream.open(filename, std::ios_base::trunc);
-    thrust::for_each(thrust::host,                                                                                //
-                     thrust::make_zip_iterator(thrust::make_tuple(pos_H.begin(), vel_H.begin(), frc_H.begin())),  //
-                     thrust::make_zip_iterator(thrust::make_tuple(pos_H.end(), vel_H.end(), frc_H.end())),        //
-                     print_particle_pos_vel_frc(&stream)                                                          //
-    );
-    stream.close();
+    return ChFrame<>(box_pos, box_rot);
 }

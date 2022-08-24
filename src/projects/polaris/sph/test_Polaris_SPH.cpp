@@ -243,7 +243,7 @@ int main(int argc, char* argv[]) {
         cout << "Error creating directory " << sim_dir << endl;
         return 1;
     }
-    DataWriter data_writer(sysFSI, vehicle);
+    DataWriterVehicle data_writer(sysFSI, vehicle);
     data_writer.SetVerbose(verbose);
     data_writer.SavePositionsOnly(position_only);
     data_writer.UseFilteredData(use_filter, filter_window);
@@ -288,7 +288,7 @@ int main(int argc, char* argv[]) {
 
         // Simulation data output
         if (sim_output && !on_ramp)
-            data_writer.Process(frame, driver_inputs);
+            data_writer.Process(frame);
 
         // Visualization data output
         if (vis_output && frame % vis_output_steps == 0) {
