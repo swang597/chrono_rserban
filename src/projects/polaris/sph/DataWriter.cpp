@@ -114,7 +114,7 @@ void DataWriter::Process(int sim_frame) {
             std::cout << "Start collection " << m_major_frame << std::endl;
         Reset();
     }
-    if (m_last_major > 0 && (sim_frame - m_last_major) % m_minor_skip == 0 && m_minor_frame < m_out_frames) {
+    if (m_last_major >= 0 && (sim_frame - m_last_major) % m_minor_skip == 0 && m_minor_frame < m_out_frames) {
         if (m_verbose)
             std::cout << "    Output data " << m_major_frame << "/" << m_minor_frame << std::endl;
         Write();

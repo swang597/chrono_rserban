@@ -174,7 +174,6 @@ NNterrain::NNterrain(ChSystem& sys, std::shared_ptr<WheeledVehicle> vehicle)
 }
 
 bool NNterrain::Load(const std::string& pt_file) {
-    std::cout << "cuda version " << cuda_version() << std::endl;
     std::cout << "cuda version " << scatter::cuda_version() << std::endl;
     torch::Tensor tensor = torch::eye(3);
     std::cout << tensor << std::endl;
