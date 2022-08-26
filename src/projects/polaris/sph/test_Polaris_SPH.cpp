@@ -77,6 +77,7 @@ bool GetProblemSpecs(int argc,
 
 // ===================================================================================================================
 
+#ifdef CHRONO_OPENGL
 class PolarisStats : public opengl::ChOpenGLStats {
   public:
     PolarisStats(const WheeledVehicle& vehicle)
@@ -106,6 +107,7 @@ class PolarisStats : public opengl::ChOpenGLStats {
     double m_throttle;
     double m_braking;
 };
+#endif
 
 // ===================================================================================================================
 
@@ -206,6 +208,7 @@ int main(int argc, char* argv[]) {
         cout << "  [" << i << "]   " << path->getPoint(i) << endl;
     }
 
+#ifdef CHRONO_OPENGL
     // Create run-time visualization
     opengl::ChVisualSystemOpenGL vis;
     ChVisualizationFsi visFSI(&sysFSI, &vis);
@@ -231,6 +234,7 @@ int main(int argc, char* argv[]) {
         vis.AttachSystem(&sys);
         vis.Initialize();
     }
+#endif
 
     // Enable data output
     cout << "===============================================================================" << endl;
@@ -274,10 +278,11 @@ int main(int argc, char* argv[]) {
 
             // Complete construction of FSI system
             sysFSI.Initialize();
+#ifdef CHRONO_OPENGL
             visFSI.Initialize();
-
             if (run_time_vis_bce)
                 vehicle->SetTireVisualizationType(VisualizationType::NONE);
+#endif
 
             on_ramp = false;
         }
@@ -317,6 +322,7 @@ int main(int argc, char* argv[]) {
         ////         << endl;
 
         // Run-time visualization
+#ifdef CHRONO_OPENGL
         if (run_time_vis && frame % render_steps == 0) {
             if (chase_cam) {
                 ChVector<> cam_loc = veh_loc + ChVector<>(-3, 3, 2);
@@ -328,6 +334,7 @@ int main(int argc, char* argv[]) {
             if (!visFSI.Render())
                 break;
         }
+#endif
 
         // Synchronize systems
         driver.Synchronize(t);
