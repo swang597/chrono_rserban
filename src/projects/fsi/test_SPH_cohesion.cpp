@@ -44,48 +44,55 @@ using std::endl;
 
 // ===================================================================================================================
 
-// Dimension of the container
-double bxDim = 1.0;
-double byDim = 1.0;
-double bzDim = 0.5;
+#ifdef CHRONO_OPENGL
+class SimStats : public opengl::ChOpenGLStats {
+  public:
+    SimStats(const ChSystemFsi& sysFSI) : ChOpenGLStats(), m_sys(sysFSI) {}
+    virtual void GenerateStats(ChSystem& sys) override {
+        char buffer[150];
+        sprintf(buffer, "TIME:     %.4f s", m_sys.GetSimTime());
+        text.Render(buffer, screen.LEFT, screen.TOP - 1 * screen.SPACING, screen.SX, screen.SY);
+    }
+
+    const ChSystemFsi& m_sys;
+};
+#endif
 
 // ===================================================================================================================
 
 std::shared_ptr<chrono::ChBody> CreateSolids(chrono::ChSystemNSC& sys,
-                                                 chrono::fsi::ChSystemFsi& sysFSI) {
+                                             chrono::fsi::ChSystemFsi& sysFSI,
+                                             const ChVector<>& b_size) {
     // Set common material Properties
-    auto mat = chrono_types::make_shared<ChMaterialSurfaceSMC>();
-    mat->SetYoungModulus(1e8);
+    auto mat = chrono_types::make_shared<ChMaterialSurfaceNSC>();
     mat->SetFriction(0.2f);
     mat->SetRestitution(0.05f);
-    mat->SetAdhesion(0);
 
     // Get particle spacing in the simulation
     auto init_spacing = sysFSI.GetInitialSpacing();
 
     // Create bottom plate
     double factor = 3.0;
-    double gxDim = factor * bxDim;
-    double gyDim = factor * byDim;
+    double gxDim = factor * b_size.x();
+    double gyDim = factor * b_size.y();
     double gzDim = 0.1;
     double top_z = -3 * init_spacing;
-    ChVector<> size_XY(bxDim / 2 + 3 * init_spacing, byDim / 2 + 0 * init_spacing, 2 * init_spacing);
 
-    auto ground = chrono_types::make_shared<ChBodyEasyBox>(gxDim, gyDim, gzDim, 1000, false, true, mat);
-    ground->SetPos(ChVector<>(0.0, 0.0, top_z - gzDim / 2));
+    auto ground = chrono_types::make_shared<ChBodyEasyBox>(gxDim, gyDim, gzDim, 1000, true, true, mat);
+    ground->SetPos(ChVector<>(0.0, 0.0, top_z - 0.5 * gzDim));
     ground->SetCollide(true);
     ground->SetBodyFixed(true);
     sys.AddBody(ground);
 
     // Add BCE markers
-    sysFSI.AddBoxBCE(ground, top_z, QUNIT, size_XY, 12);
+    sysFSI.AddBoxBCE(ground, ChVector<>(0.0, 0.0, 0), QUNIT, ChVector<>(gxDim, gyDim, gzDim), 12);
 
     // Create a falling sphere
     double sphere_radius = 0.25;
     double volume = chrono::utils::CalcSphereVolume(sphere_radius);
-    double density = 7840;
+    double density = 4000;
     double mass = density * volume;
-    ChVector<> sphere_pos = ChVector<>(0.0, 0, bzDim + sphere_radius);
+    ChVector<> sphere_pos = ChVector<>(0.0, 0, b_size.z() + sphere_radius);
     ChVector<> sphere_vel = ChVector<>(0.0, 0.0, 0.0);
     ChVector<> gyration = chrono::utils::CalcSphereGyration(sphere_radius).diagonal();
 
@@ -126,6 +133,11 @@ int main(int argc, char* argv[]) {
     sysFSI.Set_G_acc(gravity);
     sys.Set_G_acc(gravity);
 
+    // Soil material properties
+    double rho = 1700.0;
+    double friction = 0.7;
+    double cohesion = 1.0e3;
+
     ChSystemFsi::ElasticMaterialProperties mat_props;
     mat_props.Young_modulus = 1e6;
     mat_props.Poisson_ratio = 0.3;
@@ -133,29 +145,29 @@ int main(int argc, char* argv[]) {
     mat_props.viscosity_alpha = 0.5;
     mat_props.viscosity_beta = 0.0;
     mat_props.mu_I0 = 0.03;
-    mat_props.mu_fric_s = 0.7;
-    mat_props.mu_fric_2 = 0.7;
+    mat_props.mu_fric_s = friction;
+    mat_props.mu_fric_2 = friction;
     mat_props.average_diam = 0.005;
     mat_props.friction_angle = CH_C_PI / 10;  // default
     mat_props.dilation_angle = CH_C_PI / 10;  // default
     mat_props.cohesion_coeff = 0;             // default
     mat_props.kernel_threshold = 0.8;
-    sysFSI.SetElasticSPH(mat_props);
 
-    double rho = 1700.0;
-    double cohesion = 1.0e2;
+    sysFSI.SetElasticSPH(mat_props);
     sysFSI.SetDensity(rho);
     sysFSI.SetCohesionForce(cohesion);
 
-    double init_spacing = 0.01;
-    double kernel_length = 0.01;
+    double init_spacing = 0.02;
+    double kernel_length = 0.03;
     sysFSI.SetInitialSpacing(init_spacing);
     sysFSI.SetKernelLength(kernel_length);
 
-    sysFSI.SetContainerDim(ChVector<>(bxDim, byDim, bzDim));
+    // Dimension of soil block
+    ChVector<> b_size(1.0, 1.0, 0.5);
+    sysFSI.SetContainerDim(b_size);
     sysFSI.SetDiscreType(false, false);
-    sysFSI.SetWallBC(BceVersion::ORIGINAL);
-    sysFSI.SetRigidBodyBC(BceVersion::ORIGINAL);
+    sysFSI.SetWallBC(BceVersion::ADAMI);
+    sysFSI.SetRigidBodyBC(BceVersion::ADAMI);
     sysFSI.SetSPHMethod(FluidDynamics::WCSPH);
     sysFSI.SetOutputLength(0);
     sysFSI.SetVerbose(false);
@@ -164,18 +176,13 @@ int main(int argc, char* argv[]) {
     sysFSI.SetMaxStepSize(step_size);
 
     // Set up the periodic boundary condition (if not, set relative larger values)
-    ChVector<> cMin(-bxDim / 2 * 10, -byDim / 2 - 0.5 * init_spacing, -bzDim * 10);
-    ChVector<> cMax(bxDim / 2 * 10, byDim / 2 + 0.5 * init_spacing, bzDim * 10);
-    sysFSI.SetBoundaries(cMin, cMax);
+    sysFSI.SetBoundaries(-3.0 * b_size, +3.0 * b_size);
 
     // Initialize the SPH particles
-    ChVector<> boxCenter(0.0, 0.0, bzDim / 2);
-    ChVector<> boxHalfDim(bxDim / 2, byDim / 2, bzDim / 2);
-    sysFSI.AddBoxSPH(init_spacing, kernel_length, boxCenter, boxHalfDim);
+    sysFSI.AddBoxSPH(init_spacing, kernel_length, ChVector<>(0.0, 0.0, b_size.z() / 2), b_size / 2);
 
     // Create bottom plate and dropping sphere with BCE markers
-    cout << "Create sphere..." << endl;
-    auto sphere = CreateSolids(sys, sysFSI);
+    auto sphere = CreateSolids(sys, sysFSI, b_size);
 
 #ifdef CHRONO_OPENGL
     // Create run-time visualization
@@ -183,12 +190,16 @@ int main(int argc, char* argv[]) {
     ChVisualizationFsi visFSI(&sysFSI, &vis);
     visFSI.SetTitle("Object drop test");
     visFSI.SetSize(1280, 720);
-    visFSI.SetCameraPosition(ChVector<>(-7, 0, 6), ChVector<>(1, 0, 0.5));
-    visFSI.SetCameraMoveScale(1.0f);
+    visFSI.SetCameraPosition(ChVector<>(0, -2 * b_size.y(), b_size.z()), ChVector<>(0, 0, b_size.z()));
+    visFSI.SetCameraMoveScale(0.02f);
     visFSI.EnableFluidMarkers(true);
     visFSI.EnableRigidBodyMarkers(false);
     visFSI.EnableBoundaryMarkers(false);
     visFSI.SetRenderMode(ChVisualizationFsi::RenderMode::SOLID);
+
+    auto stats = chrono_types::make_shared<SimStats>(sysFSI);
+    vis.SetStatsRenderer(stats);
+    vis.EnableStats(true);
 
     vis.AttachSystem(&sys);
     vis.Initialize();
@@ -196,8 +207,13 @@ int main(int argc, char* argv[]) {
 
     // Output directory
     std::string out_dir = GetChronoOutputPath() + "COHESION_SPH/";
+    std::string vis_dir = out_dir + "f" + std::to_string(friction) + "_c" + std::to_string(cohesion) + "/";
     if (!filesystem::create_directory(filesystem::path(out_dir))) {
         cout << "Error creating directory " << out_dir << endl;
+        return 1;
+    }
+    if (!filesystem::create_directory(filesystem::path(vis_dir))) {
+        cout << "Error creating directory " << vis_dir << endl;
         return 1;
     }
 
@@ -216,7 +232,7 @@ int main(int argc, char* argv[]) {
     while (t < tend) {
         // Visualization data output
         if (output && frame % output_steps == 0) {
-            sysFSI.PrintParticleToFile(out_dir);
+            sysFSI.PrintParticleToFile(vis_dir);
             vis_output_frame++;
         }
 
@@ -237,4 +253,3 @@ int main(int argc, char* argv[]) {
 
     return 0;
 }
-
