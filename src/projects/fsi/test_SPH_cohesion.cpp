@@ -45,6 +45,7 @@ using std::endl;
 // ===================================================================================================================
 
 #ifdef CHRONO_OPENGL
+
 class SimStats : public opengl::ChOpenGLStats {
   public:
     SimStats(const ChSystemFsi& sysFSI) : ChOpenGLStats(), m_sys(sysFSI) {}
@@ -56,6 +57,13 @@ class SimStats : public opengl::ChOpenGLStats {
 
     const ChSystemFsi& m_sys;
 };
+
+class ParticleSelector : public opengl::ChOpenGLParticleCB {
+  public:
+    ParticleSelector() {}
+    virtual bool Render(const ChVector<>& pos) const override { return pos.y() > 0; }
+};
+
 #endif
 
 // ===================================================================================================================
@@ -123,7 +131,6 @@ int main(int argc, char* argv[]) {
 
     bool render = true;
     bool output = true;
-    bool verbose = true;
 
     // Create the Chrono systems
     ChSystemNSC sys;
@@ -198,8 +205,11 @@ int main(int argc, char* argv[]) {
     visFSI.SetRenderMode(ChVisualizationFsi::RenderMode::SOLID);
 
     auto stats = chrono_types::make_shared<SimStats>(sysFSI);
-    vis.SetStatsRenderer(stats);
+    vis.AttachStatsRenderer(stats);
     vis.EnableStats(true);
+
+    auto sel = chrono_types::make_shared<ParticleSelector>();
+    vis.AttachParticleSelector(sel);
 
     vis.AttachSystem(&sys);
     vis.Initialize();

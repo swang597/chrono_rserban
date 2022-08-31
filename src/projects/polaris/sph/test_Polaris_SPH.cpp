@@ -228,7 +228,7 @@ int main(int argc, char* argv[]) {
         sentinel = CreateSentinel(sys, init_pos);
 
         stats = chrono_types::make_shared<PolarisStats>(*vehicle);
-        vis.SetStatsRenderer(stats);
+        vis.AttachStatsRenderer(stats);
         vis.EnableStats(true);
 
         vis.AttachSystem(&sys);
