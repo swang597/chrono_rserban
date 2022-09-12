@@ -20,6 +20,7 @@
 #include <string>
 #include <stdexcept>
 #include <iomanip>
+#include <fstream>
 
 #include "chrono/physics/ChSystemNSC.h"
 #include "chrono/physics/ChBodyEasy.h"
@@ -100,7 +101,7 @@ std::shared_ptr<chrono::ChBody> CreateSolids(chrono::ChSystemNSC& sys,
     double volume = chrono::utils::CalcSphereVolume(sphere_radius);
     double density = 4000;
     double mass = density * volume;
-    ChVector<> sphere_pos = ChVector<>(0.0, 0, b_size.z() + sphere_radius);
+    ChVector<> sphere_pos = ChVector<>(0.0, 0, b_size.z() + sphere_radius + 2 * init_spacing);
     ChVector<> sphere_vel = ChVector<>(0.0, 0.0, 0.0);
     ChVector<> gyration = chrono::utils::CalcSphereGyration(sphere_radius).diagonal();
 
@@ -124,10 +125,10 @@ std::shared_ptr<chrono::ChBody> CreateSolids(chrono::ChSystemNSC& sys,
 }
 
 int main(int argc, char* argv[]) {
-    double tend = 30;
+    double tend = 1.0;
     double step_size = 5e-4;
-    double output_fps = 120;
-    double render_fps = 120;
+    double output_fps = 100;
+    double render_fps = 50;
 
     bool render = true;
     bool output = true;
@@ -142,8 +143,8 @@ int main(int argc, char* argv[]) {
 
     // Soil material properties
     double rho = 1700.0;
-    double friction = 0.7;
-    double cohesion = 1.0e3;
+    double friction = 0.1;
+    double cohesion = 1.0e4;
 
     ChSystemFsi::ElasticMaterialProperties mat_props;
     mat_props.Young_modulus = 1e6;
@@ -183,7 +184,7 @@ int main(int argc, char* argv[]) {
     sysFSI.SetMaxStepSize(step_size);
 
     // Set up the periodic boundary condition (if not, set relative larger values)
-    sysFSI.SetBoundaries(-3.0 * b_size, +3.0 * b_size);
+    sysFSI.SetBoundaries(-5.0 * b_size, +5.0 * b_size);
 
     // Initialize the SPH particles
     sysFSI.AddBoxSPH(init_spacing, kernel_length, ChVector<>(0.0, 0.0, b_size.z() / 2), b_size / 2);
@@ -243,6 +244,15 @@ int main(int argc, char* argv[]) {
         // Visualization data output
         if (output && frame % output_steps == 0) {
             sysFSI.PrintParticleToFile(vis_dir);
+
+            auto psph = sphere->GetPos();
+            std::ofstream fsph;
+            fsph.open(vis_dir + "sphere" + std::to_string(vis_output_frame) + ".csv");
+            fsph << "x, y, z, |U|" << std::endl;
+            fsph << psph.x() << ", " << psph.y() << ", " << psph.z() << ", " << sphere->GetPos_dt().Length()
+                 << std::endl;
+            fsph.close();
+
             vis_output_frame++;
         }
 
