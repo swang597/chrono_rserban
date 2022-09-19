@@ -219,7 +219,7 @@ int main(int argc, char* argv[]) {
     sysFSI.SetWallBC(BceVersion::ORIGINAL);
     sysFSI.SetSPHMethod(FluidDynamics::WCSPH);
     sysFSI.SetStepSize(step_size);
-    sysFSI.SetVerbose(false);
+    sysFSI.SetVerbose(verbose);
 
     // Set simulation data output and FSI information output
     std::string out_dir = GetChronoOutputPath() + "POLARIS_SPH/";
