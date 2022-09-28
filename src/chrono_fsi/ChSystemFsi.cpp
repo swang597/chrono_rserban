@@ -898,7 +898,10 @@ void ChSystemFsi::DoStepDynamics_FSI() {
     if (m_fluid_dynamics->GetIntegratorType() == TimeIntegrator::EXPLICITSPH) {
         // The following is used to execute the Explicit WCSPH
         CopyDeviceDataToHalfStep();
+        thrust::copy(m_sysFSI->fsiGeneralData->derivVelRhoD.begin(), m_sysFSI->fsiGeneralData->derivVelRhoD.end(),
+            m_sysFSI->fsiGeneralData->derivVelRhoD_old.begin());
         ChUtilsDevice::FillMyThrust4(m_sysFSI->fsiGeneralData->derivVelRhoD, mR4(0));
+        
         if (m_integrate_SPH){
             m_fluid_dynamics->IntegrateSPH(m_sysFSI->sphMarkersD2, m_sysFSI->sphMarkersD1,
                 m_sysFSI->fsiBodiesD2, m_sysFSI->fsiMeshD, 0.5 * m_paramsH->dT, m_time);
@@ -991,9 +994,9 @@ void ChSystemFsi::WriteParticleFile(const std::string& outfilename) const {
 
 void ChSystemFsi::PrintParticleToFile(const std::string& dir) const {
     utils::PrintParticleToFile(m_sysFSI->sphMarkersD2->posRadD, m_sysFSI->sphMarkersD2->velMasD,
-        m_sysFSI->sphMarkersD2->rhoPresMuD, m_sysFSI->fsiGeneralData->sr_tau_I_mu_i,
-        m_sysFSI->fsiGeneralData->referenceArray, m_sysFSI->fsiGeneralData->referenceArray_FEA, 
-        dir, m_paramsH);
+        m_sysFSI->sphMarkersD2->rhoPresMuD, m_sysFSI->fsiGeneralData->sr_tau_I_mu_i, 
+        m_sysFSI->fsiGeneralData->derivVelRhoD, m_sysFSI->fsiGeneralData->referenceArray, 
+        m_sysFSI->fsiGeneralData->referenceArray_FEA, dir, m_paramsH);
 }
 
 void ChSystemFsi::PrintFsiInfoToFile(const std::string& dir, double time) const {
@@ -1095,6 +1098,20 @@ void ChSystemFsi::AddCylinderBCE(std::shared_ptr<ChBody> body,
                                  bool cartesian) {
     thrust::host_vector<Real4> posRadBCE;
     utils::CreateBCE_On_Cylinder(posRadBCE, radius, height, m_paramsH, kernel_h, cartesian);
+    CreateBceGlobalMarkersFromBceLocalPos(posRadBCE, body, relPos, relRot);
+    posRadBCE.clear();
+}
+
+void ChSystemFsi::AddCylinderAnnulusBCE(std::shared_ptr<ChBody> body,
+                                        const ChVector<>& relPos,
+                                        const ChQuaternion<>& relRot,
+                                        double rad_in,
+                                        double rad_out,
+                                        double height,
+                                        double kernel_h,
+                                        bool cartesian) {
+    thrust::host_vector<Real4> posRadBCE;
+    utils::CreateBCE_On_Cylinder_Annulus(posRadBCE, rad_in, rad_out, height, m_paramsH, kernel_h, cartesian);
     CreateBceGlobalMarkersFromBceLocalPos(posRadBCE, body, relPos, relRot);
     posRadBCE.clear();
 }
