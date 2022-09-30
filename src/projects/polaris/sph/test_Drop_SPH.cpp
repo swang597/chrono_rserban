@@ -120,7 +120,7 @@ std::shared_ptr<chrono::ChBody> CreateSolidPhase(chrono::ChSystemNSC& sys,
     sysFSI.AddFsiBody(sphere);
 
     // Add BCE particles attached on the sphere into FSI system
-    sysFSI.AddSphereBCE(sphere, ChVector<>(0), ChQuaternion<>(1, 0, 0, 0), sphere_radius);
+    sysFSI.AddSphereBCE(sphere, ChFrame<>(), sphere_radius, true);
 
     return sphere;
 }

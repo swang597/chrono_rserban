@@ -196,7 +196,7 @@ int main(int argc, char* argv[]) {
     int numPart = (int)points.size();
     for (int i = 0; i < numPart; i++) {
         double pre_ini = sysFSI.GetDensity() * gz * (-points[i].z() + bzDim);
-        sysFSI.AddSPHParticle(points[i], sysFSI.GetDensity(), 0, sysFSI.GetViscosity(), sysFSI.GetKernelLength(),
+        sysFSI.AddSPHParticle(points[i], sysFSI.GetDensity(), 0, sysFSI.GetViscosity(),
                               ChVector<>(0),         // initial velocity
                               ChVector<>(-pre_ini),  // tauxxyyzz
                               ChVector<>(0)          // tauxyxzyz
@@ -289,27 +289,8 @@ void CreateSolidPhase(ChSystemNSC& sysMBS, ChSystemFsi& sysFSI) {
     // Get the initial SPH particle spacing
     double initSpace0 = sysFSI.GetInitialSpacing();
 
-    // Bottom wall
-    ChVector<> size_XY(bxDim / 2 + 3 * initSpace0, byDim / 2 + 3 * initSpace0, 2 * initSpace0);
-    ChVector<> pos_zn(0, 0, -3 * initSpace0);
-    ChVector<> pos_zp(0, 0, bzDim + 2 * initSpace0);
-
-    // Left and right wall
-    ChVector<> size_YZ(2 * initSpace0, byDim / 2 + 3 * initSpace0, bzDim / 2);
-    ChVector<> pos_xp(bxDim / 2 + initSpace0, 0.0, bzDim / 2 + 0 * initSpace0);
-    ChVector<> pos_xn(-bxDim / 2 - 3 * initSpace0, 0.0, bzDim / 2 + 0 * initSpace0);
-
-    // Front and back wall
-    ChVector<> size_XZ(bxDim / 2, 2 * initSpace0, bzDim / 2);
-    ChVector<> pos_yp(0, byDim / 2 + initSpace0, bzDim / 2 + 0 * initSpace0);
-    ChVector<> pos_yn(0, -byDim / 2 - 3 * initSpace0, bzDim / 2 + 0 * initSpace0);
-
     // Fluid-Solid Coupling at the walls via BCE particles
-    sysFSI.AddBoxBCE(box, pos_zn, QUNIT, size_XY, 12);
-    sysFSI.AddBoxBCE(box, pos_xp, QUNIT, size_YZ, 23);
-    sysFSI.AddBoxBCE(box, pos_xn, QUNIT, size_YZ, 23);
-    // sysFSI.AddBoxBCE(box, pos_yp, QUNIT, size_XZ, 13);
-    // sysFSI.AddBoxBCE(box, pos_yn, QUNIT, size_XZ, 13);
+    sysFSI.AddContainerBCE(box, ChFrame<>(), ChVector<>(bxDim, byDim, 2 * bzDim), ChVector<int>(2, 0, -1));
 
     auto driver = chrono_types::make_shared<ViperDCMotorControl>();
     rover = chrono_types::make_shared<Viper>(&sysMBS, wheel_type);
@@ -345,9 +326,9 @@ void CreateSolidPhase(ChSystemNSC& sysMBS, ChSystemFsi& sysFSI) {
 
         sysFSI.AddFsiBody(wheel_body);
         if (i == 0 || i == 2) {
-            sysFSI.AddPointsBCE(wheel_body, BCE_wheel, ChVector<>(0.0), Q_from_AngZ(CH_C_PI));
+            sysFSI.AddPointsBCE(wheel_body, BCE_wheel, ChFrame<>(VNULL, Q_from_AngZ(CH_C_PI)), true);
         } else {
-            sysFSI.AddPointsBCE(wheel_body, BCE_wheel, ChVector<>(0.0), QUNIT);
+            sysFSI.AddPointsBCE(wheel_body, BCE_wheel, ChFrame<>(VNULL, QUNIT), true);
         }
     }
 }
