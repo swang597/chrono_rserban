@@ -97,8 +97,8 @@ int main(int argc, char* argv[]) {
     patch->SetColor(ChColor(0.8f, 0.8f, 1.0f));
     patch->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 200, 10);
 
-    MyFrictionFunctor ffun;
-    terrain.RegisterFrictionFunctor(&ffun);
+    auto ffun = chrono_types::make_shared<MyFrictionFunctor>();
+    terrain.RegisterFrictionFunctor(ffun);
     terrain.UseLocationDependentFriction(true);
 
     terrain.Initialize();
