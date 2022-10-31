@@ -243,7 +243,7 @@ void Framework::Run(double time_end, int fps, bool real_time) {
 void Framework::CreateTerrain() {
     m_terrain = new RigidTerrain(m_system);
 
-    MaterialInfo minfo;
+    ChContactMaterialData minfo;
     minfo.mu = 0.9f;
     minfo.cr = 0.01f;
     minfo.Y = 2e7f;

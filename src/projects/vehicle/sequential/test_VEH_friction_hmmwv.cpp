@@ -83,7 +83,7 @@ int main(int argc, char* argv[]) {
     hmmwv_1.SetWheelVisualizationType(VisualizationType::NONE);
     hmmwv_1.SetTireVisualizationType(VisualizationType::PRIMITIVES);
 
-    MaterialInfo minfo_1;
+    ChContactMaterialData minfo_1;
     minfo_1.mu = friction_1;
     minfo_1.cr = 0.01f;
     minfo_1.Y = 2e7f;
@@ -113,7 +113,7 @@ int main(int argc, char* argv[]) {
     hmmwv_2.SetWheelVisualizationType(VisualizationType::NONE);
     hmmwv_2.SetTireVisualizationType(VisualizationType::PRIMITIVES);
 
-    MaterialInfo minfo_2;
+    ChContactMaterialData minfo_2;
     minfo_2.mu = friction_2;
     minfo_2.cr = 0.01f;
     minfo_2.Y = 2e7f;

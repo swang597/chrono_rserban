@@ -138,7 +138,7 @@ chrono::ChCoordsys<> CreateTerrain(ChSystem& sys,
         body->AddVisualShape(trimesh_shape);
     }
 
-    MaterialInfo mat_info;
+    ChContactMaterialData mat_info;
     mat_info.mu = 0.9f;
     auto mat = mat_info.CreateMaterial(sys.GetContactMethod());
 

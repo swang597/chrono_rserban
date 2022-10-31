@@ -79,7 +79,7 @@ int main(int argc, char* argv[]) {
     auto powertrain_1 = chrono_types::make_shared<M113_SimpleCVTPowertrain>("Powertrain1");
     vehicle_1.InitializePowertrain(powertrain_1);
 
-    MaterialInfo minfo_1;
+    ChContactMaterialData minfo_1;
     minfo_1.mu = friction_1;
     minfo_1.cr = 0.01f;
     minfo_1.Y = 2e7f;
@@ -109,7 +109,7 @@ int main(int argc, char* argv[]) {
     auto powertrain_2 = chrono_types::make_shared<M113_SimpleCVTPowertrain>("Powertrain2");
     vehicle_2.InitializePowertrain(powertrain_2);
 
-    MaterialInfo minfo_2;
+    ChContactMaterialData minfo_2;
     minfo_2.mu = friction_2;
     minfo_2.cr = 0.01f;
     minfo_2.Y = 2e7f;

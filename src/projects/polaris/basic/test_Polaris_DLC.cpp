@@ -82,7 +82,7 @@ int main(int argc, char* argv[]) {
     // Create the terrain
     RigidTerrain terrain(vehicle.GetSystem());
 
-    MaterialInfo minfo;
+    ChContactMaterialData minfo;
     minfo.mu = 0.8f;
     minfo.cr = 0.01f;
     minfo.Y = 2e7f;
