@@ -97,11 +97,11 @@ int main(int argc, char* argv[]) {
 
     // Static analysis
 
-    auto statics = chrono_types::make_shared<ChStaticNonLinearAnalysis>(sys);
-    statics->SetMaxIterations(20);
-    statics->SetCorrectionTolerance(1e-6, 1e-8);  //// option 1: stopping based on correction WRMS norm
-    //statics->SetResidualTolerance(1e-4);        //// option 2: stopping based on residual norm
-    statics->SetVerbose(true);
+    ChStaticNonLinearAnalysis statics;
+    statics.SetMaxIterations(20);
+    statics.SetCorrectionTolerance(1e-6, 1e-8);  //// option 1: stopping based on correction WRMS norm
+    //statics.SetResidualTolerance(1e-4);        //// option 2: stopping based on residual norm
+    statics.SetVerbose(true);
     sys.DoStaticAnalysis(statics);
 
     std::cout << "mass: " << new_element->GetMass() << std::endl;
