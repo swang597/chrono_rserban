@@ -273,7 +273,7 @@ int main(int argc, char* argv[]) {
         visFSI.SetTitle("Chrono::FSI single wheel demo");
         visFSI.SetSize(1280, 720);
         ////visFSI.SetCameraPosition(init_pos.pos + ChVector<>(-7, 0, 6), init_pos.pos + ChVector<>(1, 0, 0.5));
-        visFSI.SetCameraPosition(ChVector<>(0, 4, 1), ChVector<>(0, -1, 0));
+        visFSI.UpdateCamera(ChVector<>(0, 4, 1), ChVector<>(0, -1, 0));
         visFSI.SetCameraMoveScale(1.0f);
         visFSI.EnableFluidMarkers(run_time_vis_particles);
         visFSI.EnableRigidBodyMarkers(run_time_vis_bce);
@@ -386,7 +386,7 @@ int main(int argc, char* argv[]) {
             if (chase_cam) {
                 ChVector<> cam_loc = veh_loc + ChVector<>(-3, 3, 2);
                 ChVector<> cam_point = veh_loc;
-                visFSI.SetCameraPosition(cam_loc, cam_point);
+                visFSI.UpdateCamera(cam_loc, cam_point);
             }
             sentinel->SetPos(driver.GetSteeringController().GetTargetLocation());
             stats->UpdateDriverInputs(driver_inputs);
