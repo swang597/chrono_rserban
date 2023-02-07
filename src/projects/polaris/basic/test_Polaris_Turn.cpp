@@ -42,31 +42,20 @@ using namespace chrono::vehicle;
 
 // =============================================================================
 
-enum class MRZR_MODEL { ORIGINAL, MODIFIED };
-
-MRZR_MODEL model = MRZR_MODEL::MODIFIED;
-
-// =============================================================================
-
 // Initial vehicle location and orientation
 ChVector<> initLoc(0, 1, 10);
 double initYaw = 0;
 ////double initYaw = CH_C_PI / 4;  // 45 deg towards vehicle's left
 
-
 // =============================================================================
 
 int main(int argc, char* argv[]) {
-    std::string model_dir = (model == MRZR_MODEL::ORIGINAL) ? "mrzr/JSON_orig/" : "mrzr/JSON_new/";
-
-    std::string vehicle_json = model_dir + "vehicle/MRZR.json";
-
-    ////std::string powertrain_json = model_dir + "powertrain/MRZR_SimplePowertrain.json";
-    std::string powertrain_json = model_dir + "powertrain/MRZR_SimpleMapPowertrain.json";
-
-    ////std::string tire_json = model_dir + "tire/MRZR_RigidTire.json";
-    ////std::string tire_json = model_dir + "tire/MRZR_TMeasyTire.json";
-    std::string tire_json = model_dir + "tire/MRZR_Pac02Tire.json";
+    std::string vehicle_json = "Polaris/Polaris.json";
+    ////std::string powertrain_json = "Polaris/Polaris_SimplePowertrain.json";
+    std::string powertrain_json = "Polaris/Polaris_SimpleMapPowertrain.json";
+    ////std::string tire_json = "Polaris/Polaris_RigidTire.json";
+    ////std::string tire_json = "Polaris/Polaris_TMeasyTire.json";
+    std::string tire_json = "Polaris/Polaris_Pac02Tire.json";
 
     // Create the vehicle system
     auto contact_method = ChContactMethod::SMC;

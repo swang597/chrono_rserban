@@ -12,7 +12,7 @@
 // Authors: Radu Serban
 // =============================================================================
 //
-// Main driver function for a Polaris MRZR specified through JSON files.
+// Main driver function for a Polaris specified through JSON files.
 //
 // The vehicle reference frame has Z up, X towards the front of the vehicle, and
 // Y pointing to the left.
@@ -39,12 +39,6 @@ using namespace chrono::vehicle;
 
 // =============================================================================
 
-enum class MRZR_MODEL { ORIGINAL, MODIFIED };
-
-MRZR_MODEL model = MRZR_MODEL::MODIFIED;
-
-// -----------------------------------------------------------------------------
-
 // JSON files for terrain
 std::string rigidterrain_file("terrain/RigidPlane.json");
 ////std::string rigidterrain_file("terrain/RigidMesh.json");
@@ -62,12 +56,10 @@ double step_size = 2e-3;
 // =============================================================================
 
 int main(int argc, char* argv[]) {
-    std::string model_dir = (model == MRZR_MODEL::ORIGINAL) ? "mrzr/JSON_orig/" : "mrzr/JSON_new/";
-
-    std::string vehicle_json = model_dir + "vehicle/MRZR.json";
-    ////std::string powertrain_json = model_dir + "powertrain/MRZR_SimplePowertrain.json";
-    std::string powertrain_json = model_dir + "powertrain/MRZR_SimpleMapPowertrain.json";
-    std::string tire_json = model_dir + "tire/MRZR_TMeasyTire.json";
+    std::string vehicle_json = "Polaris/Polaris.json";
+    ////std::string powertrain_json = "Polaris/Polaris_SimplePowertrain.json";
+    std::string powertrain_json = "Polaris/Polaris_SimpleMapPowertrain.json";
+    std::string tire_json = "Polaris/Polaris_RigidTire.json";
 
     // Create the vehicle system
     WheeledVehicle vehicle(vehicle::GetDataFile(vehicle_json), ChContactMethod::SMC);
@@ -99,7 +91,7 @@ int main(int argc, char* argv[]) {
 
     // Create Irrilicht visualization
     auto vis = chrono_types::make_shared<ChWheeledVehicleVisualSystemIrrlicht>();
-    vis->SetWindowTitle("Polaris MRZR - JSON specification");
+    vis->SetWindowTitle("Polaris - JSON specification");
     vis->SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 5.0, 0.5);
     vis->Initialize();
     vis->AddTypicalLights();

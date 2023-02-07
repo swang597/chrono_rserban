@@ -48,10 +48,6 @@ using std::endl;
 
 // ===================================================================================================================
 
-PolarisModel model = PolarisModel::MODIFIED;
-
-// ===================================================================================================================
-
 bool GetProblemSpecs(int argc,
                      char** argv,
                      std::string& terrain_dir,
@@ -246,7 +242,7 @@ int main(int argc, char* argv[]) {
 
     // Create vehicle
     cout << "Create vehicle..." << endl;
-    auto vehicle = CreateVehicle(model, sys, init_pos);
+    auto vehicle = CreateVehicle(sys, init_pos);
 
     // Create driver
     cout << "Create path..." << endl;

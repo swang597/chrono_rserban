@@ -197,7 +197,7 @@ std::shared_ptr<ChBezierCurve> CreatePath(const std::string& terrain_dir, double
     }
 
     // Include point beyond SPH patch
-    { 
+    {
         auto np = points.size();
         points.push_back(2.0 * points[np - 1] - points[np - 2]);
     }
@@ -224,15 +224,11 @@ std::shared_ptr<ChBody> CreateSentinel(ChSystem& sys, const ChCoordsys<>& init_p
     return body;
 }
 
-std::shared_ptr<WheeledVehicle> CreateVehicle(PolarisModel model,
-                                              ChSystem& sys,
-                                              const ChCoordsys<>& init_pos) {
-    std::string model_dir = (model == PolarisModel::ORIGINAL) ? "mrzr/JSON_orig/" : "mrzr/JSON_new/";
-
-    std::string vehicle_json = model_dir + "vehicle/MRZR.json";
-    ////std::string powertrain_json = model_dir + "powertrain/MRZR_SimplePowertrain.json";
-    std::string powertrain_json = model_dir + "powertrain/MRZR_SimpleMapPowertrain.json";
-    std::string tire_json = model_dir + "tire/MRZR_RigidTire.json";
+std::shared_ptr<WheeledVehicle> CreateVehicle(ChSystem& sys, const ChCoordsys<>& init_pos) {
+    std::string vehicle_json = "Polaris/Polaris.json";
+    ////std::string powertrain_json = "Polaris/Polaris_SimplePowertrain.json";
+    std::string powertrain_json = "Polaris/Polaris_SimpleMapPowertrain.json";
+    std::string tire_json = "Polaris/Polaris_RigidTire.json";
 
     // Create and initialize the vehicle
     auto vehicle = chrono_types::make_shared<WheeledVehicle>(&sys, vehicle::GetDataFile(vehicle_json));
@@ -260,7 +256,7 @@ std::shared_ptr<WheeledVehicle> CreateVehicle(PolarisModel model,
 
 void CreateWheelBCEMarkers(std::shared_ptr<WheeledVehicle> vehicle, ChSystemFsi& sysFSI) {
     // Create BCE markers for a tire
-    std::string tire_coll_obj = "mrzr/meshes_new/Polaris_tire_collision.obj";
+    std::string tire_coll_obj = "Polaris/meshes/Polaris_tire_collision.obj";
 
     geometry::ChTriangleMeshConnected trimesh;
     trimesh.LoadWavefrontMesh(vehicle::GetDataFile(tire_coll_obj));
