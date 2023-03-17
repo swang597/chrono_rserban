@@ -719,7 +719,7 @@ set(LIBRARIES ChronoEngine ChronoEngine_vehicle)
 
 add_library(ChronoModels_vehicle SHARED
     ${CVM_COMMON_FILES}
-    #${CVM_GWAGON_FILES}
+    ${CVM_GWAGON_FILES}
     ${CVM_HMMWV_FILES}
     ${CVM_FEDA_FILES}
     ${CVM_FMTV_FILES}
