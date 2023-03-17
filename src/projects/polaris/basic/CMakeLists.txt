@@ -14,6 +14,7 @@ set(PROGRAMS
     test_Polaris_Accel
     test_Polaris_DLC
     test_Polaris_Turn
+    test_Polaris_CustomTerrain
 )
 
 #--------------------------------------------------------------
