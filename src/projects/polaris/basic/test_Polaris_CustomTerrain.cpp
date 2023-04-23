@@ -266,7 +266,7 @@ int main(int argc, char* argv[]) {
             auto vis_vsg = chrono_types::make_shared<ChWheeledVehicleVisualSystemVSG>();
             vis_vsg->SetWindowTitle("Polaris - Custom terrain example");
             vis_vsg->AttachVehicle(&vehicle);
-            vis_vsg->SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 5.0, 0.5);
+            vis_vsg->SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 8.0, 0.5);
             vis_vsg->SetWindowSize(ChVector2<int>(800, 600));
             vis_vsg->SetWindowPosition(ChVector2<int>(100, 300));
             vis_vsg->SetUseSkyBox(true);
@@ -299,7 +299,7 @@ int main(int argc, char* argv[]) {
 #ifdef CHRONO_OPENGL
             auto vis_gl = chrono_types::make_shared<ChVehicleVisualSystemOpenGL>();
             vis_gl->AttachVehicle(&vehicle);
-            vis_gl->SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 5.0, 0.5);
+            vis_gl->SetChaseCamera(ChVector<>(0.0, 0.0, 1.75), 6.0, 0.5);
             vis_gl->SetWindowTitle("Polaris - Custom terrain example");
             vis_gl->SetWindowSize(1280, 720);
             vis_gl->SetRenderMode(opengl::SOLID);
@@ -312,7 +312,7 @@ int main(int argc, char* argv[]) {
     }
 
     // Simulation loop
-    DriverInputs driver_inputs = {0, 0, 0};
+    DriverInputs driver_inputs = {0, 0, 1};
 
     double step_size = 1e-3;
     while (vis->Run()) {
