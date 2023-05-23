@@ -19,7 +19,6 @@
 
 #include "chrono/core/ChBezierCurve.h"
 
-#include "chrono_vehicle/ChPowertrain.h"
 #include "chrono_vehicle/wheeled_vehicle/ChWheeledVehicle.h"
 
 #include "chrono_vehicle/utils/ChSpeedController.h"

@@ -115,19 +115,16 @@ std::shared_ptr<ChBody> AddSphereBody(int id,
     body->SetBodyFixed(fixed);
     body->SetCollide(true);
 
-    auto hsize = size / 2;
-
     // collision
     body->GetCollisionModel()->ClearModel();
-    body->GetCollisionModel()->AddSphere(mat, 0.1, ChVector<>(+hsize.x(), -hsize.y() + 0.1, +hsize.z()));
-    body->GetCollisionModel()->AddSphere(mat, 0.1, ChVector<>(+hsize.x(), -hsize.y() + 0.1, -hsize.z()));
-    body->GetCollisionModel()->AddSphere(mat, 0.1, ChVector<>(-hsize.x(), -hsize.y() + 0.1, +hsize.z()));
-    body->GetCollisionModel()->AddSphere(mat, 0.1, ChVector<>(-hsize.x(), -hsize.y() + 0.1, -hsize.z()));
+    body->GetCollisionModel()->AddSphere(mat, 0.1, ChVector<>(+size.x() / 2, -size.y() / 2 + 0.1, +size.z() / 2));
+    body->GetCollisionModel()->AddSphere(mat, 0.1, ChVector<>(+size.x() / 2, -size.y() / 2 + 0.1, -size.z() / 2));
+    body->GetCollisionModel()->AddSphere(mat, 0.1, ChVector<>(-size.x() / 2, -size.y() / 2 + 0.1, +size.z() / 2));
+    body->GetCollisionModel()->AddSphere(mat, 0.1, ChVector<>(-size.x() / 2, -size.y() / 2 + 0.1, -size.z() / 2));
     body->GetCollisionModel()->BuildModel();
 
     // visualization
-    auto box = chrono_types::make_shared<ChBoxShape>();
-    box->GetBoxGeometry().Size = hsize;
+    auto box = chrono_types::make_shared<ChBoxShape>(size.x(), size.y(), size.z());
     box->SetColor(ChColor(0.55f, 0.57f, 0.67f));
     body->AddVisualShape(box);
 

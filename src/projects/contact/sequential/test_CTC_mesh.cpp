@@ -48,7 +48,7 @@ class CustomCollision : public ChSystem::CustomCollisionCallback {
                     std::shared_ptr<ChMaterialSurface> ground_mat,
                     std::shared_ptr<ChMaterialSurface> object_mat,
                     double radius,
-                    double hlen);
+                    double len);
     virtual void OnCustomCollision(ChSystem* system) override;
 
   private:
@@ -57,7 +57,7 @@ class CustomCollision : public ChSystem::CustomCollisionCallback {
     std::shared_ptr<ChMaterialSurface> m_ground_mat;
     std::shared_ptr<ChMaterialSurface> m_object_mat;
     double m_radius;
-    double m_hlen;
+    double m_len;
 };
 
 // ====================================================================================
@@ -121,8 +121,7 @@ int main(int argc, char* argv[]) {
     ChVector<> init_omg(0, 0, 0);
 
     double radius = 0.5;  // cylinder radius
-    double hlen = 0.2;    // cylinder half-length
-
+    double len = 0.4;     // cylinder length
 
     // ---------
     // Step size
@@ -193,15 +192,12 @@ int main(int argc, char* argv[]) {
     switch (object_model) {
         case CollisionType::PRIMITIVE: {
             object->GetCollisionModel()->ClearModel();
-            object->GetCollisionModel()->AddCylinder(object_mat, radius, radius, hlen, ChVector<>(0), ChMatrix33<>(1));
+            object->GetCollisionModel()->AddCylinder(object_mat, radius, len, ChVector<>(0), ChMatrix33<>(1));
             object->GetCollisionModel()->BuildModel();
 
-            auto cyl = chrono_types::make_shared<ChCylinderShape>();
-            cyl->GetCylinderGeometry().p1 = ChVector<>(0, +hlen, 0);
-            cyl->GetCylinderGeometry().p2 = ChVector<>(0, -hlen, 0);
-            cyl->GetCylinderGeometry().rad = radius;
+            auto cyl = chrono_types::make_shared<ChCylinderShape>(radius, len);
             cyl->SetColor(ChColor(0.3f, 0.3f, 0.3f));
-            object->AddVisualShape(cyl);
+            object->AddVisualShape(cyl, ChFrame<>(VNULL, Q_from_AngX(CH_C_PI_2)));
 
             break;
         }
@@ -249,9 +245,9 @@ int main(int argc, char* argv[]) {
         matSMC->SetGt(ground_gt);
     }
 
-    double hx = 4;
-    double hy = 4;
-    double hz = 0.1;
+    double hx = 8;
+    double hy = 8;
+    double hz = 0.2;
 
     switch (ground_model) {
         case CollisionType::PRIMITIVE: {
@@ -259,8 +255,7 @@ int main(int argc, char* argv[]) {
             ground->GetCollisionModel()->AddBox(ground_mat, hx, hy, hz, ChVector<>(0, 0, -hz));
             ground->GetCollisionModel()->BuildModel();
 
-            auto box = chrono_types::make_shared<ChBoxShape>();
-            box->GetBoxGeometry().Size = ChVector<>(hx, hy, hz);
+            auto box = chrono_types::make_shared<ChBoxShape>(hx, hy, hz);
             box->SetTexture(GetChronoDataFile("textures/checker1.png"), 4, 3);
             ground->AddVisualShape(box, ChFrame<>(ChVector<>(0, 0, -hz)));
 
@@ -300,7 +295,7 @@ int main(int argc, char* argv[]) {
 
     if (use_custom_collision) {
         auto ccollision =
-            chrono_types::make_shared<CustomCollision>(ground, object, ground_mat, object_mat, radius, hlen);
+            chrono_types::make_shared<CustomCollision>(ground, object, ground_mat, object_mat, radius, len);
         system->RegisterCustomCollisionCallback(ccollision);
     }
 
@@ -389,13 +384,13 @@ CustomCollision::CustomCollision(std::shared_ptr<ChBody> ground,
                                  std::shared_ptr<ChMaterialSurface> ground_mat,
                                  std::shared_ptr<ChMaterialSurface> object_mat,
                                  double radius,
-                                 double hlen)
+                                 double len)
     : m_ground(ground),
       m_object(object),
       m_ground_mat(ground_mat),
       m_object_mat(object_mat),
       m_radius(radius),
-      m_hlen(hlen) {
+      m_len(len) {
     // Disable Chrono collision detection for ground and object
     m_ground->SetCollide(false);
     m_object->SetCollide(false);
@@ -411,8 +406,8 @@ void CustomCollision::OnCustomCollision(ChSystem* system) {
     // Express in local frame
     ChVector<> A_loc = m_object->TransformPointParentToLocal(A);
     // Points on cylinder edges (local frame)
-    ChVector<> B1_loc = A_loc + ChVector<>(0, -m_hlen, 0);
-    ChVector<> B2_loc = A_loc + ChVector<>(0, +m_hlen, 0);
+    ChVector<> B1_loc = A_loc + ChVector<>(0, -m_len / 2, 0);
+    ChVector<> B2_loc = A_loc + ChVector<>(0, +m_len / 2, 0);
     // Express in absolute frame
     ChVector<> B1 = m_object->TransformPointLocalToParent(B1_loc);
     ChVector<> B2 = m_object->TransformPointLocalToParent(B2_loc);

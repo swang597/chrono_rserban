@@ -65,8 +65,7 @@ int main(int argc, char* argv[]) {
     sentinel->GetCollisionModel()->AddSphere(material, 0.2);
     sentinel->GetCollisionModel()->BuildModel();
 
-    auto sphereS = chrono_types::make_shared<ChSphereShape>();
-    sphereS->GetSphereGeometry().rad = 0.2;
+    auto sphereS = chrono_types::make_shared<ChSphereShape>(0.2);
     sentinel->AddVisualShape(sphereS);
 
     system.AddBody(sentinel);
@@ -88,17 +87,16 @@ int main(int argc, char* argv[]) {
     ball->GetCollisionModel()->AddSphere(material, radius);
     ball->GetCollisionModel()->BuildModel();
 
-    auto sphereB = chrono_types::make_shared<ChSphereShape>();
-    sphereB->GetSphereGeometry().rad = radius;
+    auto sphereB = chrono_types::make_shared<ChSphereShape>(radius);
     sphereB->SetTexture(GetChronoDataFile("textures/bluewhite.png"));
     ball->AddVisualShape(sphereB);
 
     system.AddBody(ball);
 
     // Create ground
-    double width = 2;
-    double length = 2;
-    double thickness = 0.1;
+    double width = 4;
+    double length = 4;
+    double thickness = 0.2;
 
     auto ground = chrono_types::make_shared<ChBody>();
 
@@ -113,8 +111,7 @@ int main(int argc, char* argv[]) {
     ground->GetCollisionModel()->AddBox(material, width, thickness, length, ChVector<>(0, -thickness, 0));
     ground->GetCollisionModel()->BuildModel();
 
-    auto box = chrono_types::make_shared<ChBoxShape>();
-    box->GetBoxGeometry().Size = ChVector<>(width, thickness, length);
+    auto box = chrono_types::make_shared<ChBoxShape>(width, thickness, length);
     ground->AddVisualShape(box, ChFrame<>(ChVector<>(0, -thickness, 0)));
 
     system.AddBody(ground);

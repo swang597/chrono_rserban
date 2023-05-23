@@ -173,8 +173,7 @@ int main(int argc, char* argv[]) {
     body->SetNameString("body");
     body->SetPos(loc);
     body->SetRot(rot);
-    auto box = chrono_types::make_shared<ChBoxShape>();
-    box->GetBoxGeometry().SetLengths(ChVector<>(length, length / 8, length / 8));
+    auto box = chrono_types::make_shared<ChBoxShape>(2 * length, length / 4, length / 4);
     box->SetColor(ChColor(0.0f, 0.0f, 1.0f));
     body->AddVisualShape(box);
     sys.AddBody(body);

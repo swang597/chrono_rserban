@@ -51,13 +51,15 @@ int main(int argc, char* argv[]) {
     contact_mat->SetAdhesion(0);
 
     // Adding fixed bodies and collision shapes
-    auto cyl1 = chrono_types::make_shared<ChBodyEasyCylinder>(0.1, 0.4, 1000, true, true, contact_mat);
+    auto cyl1 =
+        chrono_types::make_shared<ChBodyEasyCylinder>(geometry::ChAxis::Y, 0.1, 0.4, 1000, true, true, contact_mat);
     cyl1->SetBodyFixed(true);
     cyl1->SetPos(ChVector<>(0, 0, -0.25));
     cyl1->SetRot(Q_from_AngZ(CH_C_PI_2));
     sys.Add(cyl1);
 
-    auto cyl2 = chrono_types::make_shared<ChBodyEasyCylinder>(0.1, 0.4, 1000, true, true, contact_mat);
+    auto cyl2 =
+        chrono_types::make_shared<ChBodyEasyCylinder>(geometry::ChAxis::Y, 0.1, 0.4, 1000, true, true, contact_mat);
     cyl2->SetBodyFixed(true);
     cyl2->SetPos(ChVector<>(0, 0, 0.25));
     cyl2->SetRot(Q_from_AngZ(CH_C_PI_2));

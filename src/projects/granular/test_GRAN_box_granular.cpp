@@ -414,10 +414,9 @@ int main(int argc, char** argv) {
     system->GetSettings()->collision.aabb_min = bmin;
     system->GetSettings()->collision.aabb_max = bmax;
 
-    auto bbox = chrono_types::make_shared<ChBoxShape>();
-    real3 bsize = 0.5 * (bmax - bmin);
+    real3 bsize = bmax - bmin;
     real3 bpos = 0.5 * (bmax + bmin);
-    bbox->GetBoxGeometry().Size = ChVector<>(bsize.x, bsize.y, bsize.z);
+    auto bbox = chrono_types::make_shared<ChBoxShape>(bsize.x, bsize.y, bsize.z);
     container->AddVisualShape(bbox, ChFrame<>(ChVector<>(bpos.x, bpos.y, bpos.z)));
 
     // -------------------------------

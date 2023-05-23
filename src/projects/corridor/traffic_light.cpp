@@ -37,14 +37,10 @@ TrafficLight::TrafficLight(Framework* framework,
     m_body->SetBodyFixed(true);
     m_body->SetCollide(false);
 
-    auto cyl = chrono_types::make_shared<ChCylinderShape>();
-    cyl->GetCylinderGeometry().p1 = ChVector<>(0, 0, 0);
-    cyl->GetCylinderGeometry().p2 = ChVector<>(0, 0, 3);
-    cyl->GetCylinderGeometry().rad = 0.2;
-    m_body->AddVisualShape(cyl);
+    auto cyl = chrono_types::make_shared<ChCylinderShape>(0.2, 3);
+    m_body->AddVisualShape(cyl, ChFrame<>(ChVector<>(0,0,1.5)));
 
-    auto sphere = chrono_types::make_shared<ChSphereShape>();
-    sphere->GetSphereGeometry().rad = 0.4;
+    auto sphere = chrono_types::make_shared<ChSphereShape>(0.4);
     sphere->SetColor(ChColor(0.6f, 0, 0));
     m_body->AddVisualShape(sphere, ChFrame<>(ChVector<>(0, 0, 3)));
 

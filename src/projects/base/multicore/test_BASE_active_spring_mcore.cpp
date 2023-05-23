@@ -96,8 +96,7 @@ int main(int argc, char* argv[]) {
     ground->SetBodyFixed(true);
     ground->SetCollide(false);
 
-    auto sph = chrono_types::make_shared<ChSphereShape>();
-    sph->GetSphereGeometry().rad = 0.1;
+    auto sph = chrono_types::make_shared<ChSphereShape>(0.1);
     ground->AddVisualShape(sph, ChFrame<>(ChVector<>(0, 0, 0)));
 
     // Create a body suspended through a ChLinkTSDA
@@ -109,8 +108,7 @@ int main(int argc, char* argv[]) {
     body->SetMass(1);
     body->SetInertiaXX(ChVector<>(1, 1, 1));
 
-    auto box = chrono_types::make_shared<ChBoxShape>();
-    box->GetBoxGeometry().SetLengths(ChVector<>(1, 1, 1));
+    auto box = chrono_types::make_shared<ChBoxShape>(2, 2, 2);
     box->SetColor(ChColor(0.6f, 0, 0));
     body->AddVisualShape(box);
 

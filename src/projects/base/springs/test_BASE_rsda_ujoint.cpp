@@ -60,12 +60,9 @@ int main(int argc, char* argv[]) {
     // Add visualization assets to represent the arm of the universal joint's
     // cross associated with the ground (a cylinder)
     {
-        auto cyl = chrono_types::make_shared<ChCylinderShape>();
-        cyl->GetCylinderGeometry().p1 = ChVector<>(-0.2, 0, 0);
-        cyl->GetCylinderGeometry().p2 = ChVector<>(+0.2, 0, 0);
-        cyl->GetCylinderGeometry().rad = 0.05;
+        auto cyl = chrono_types::make_shared<ChCylinderShape>(0.05, 0.4);
         cyl->SetColor(ChColor(0.6f, 0, 0));
-        ground->AddVisualShape(cyl);
+        ground->AddVisualShape(cyl, ChFrame<>(VNULL, Q_from_AngY(CH_C_PI_2)));
     }
 
     // Create the articulated body
@@ -83,16 +80,12 @@ int main(int argc, char* argv[]) {
     // Add visualization assets to represent the body (a box) and the arm of the
     // universal joint's cross associated with this shaft (a cylinder)
     {
-        auto box = chrono_types::make_shared<ChBoxShape>();
-        box->GetBoxGeometry().Size = ChVector<>(0.15, 0.9 * 2, 0.15);
+        auto box = chrono_types::make_shared<ChBoxShape>(0.3, 3.6, 0.3);
         body->AddVisualShape(box);
 
-        auto cyl = chrono_types::make_shared<ChCylinderShape>();
-        cyl->GetCylinderGeometry().p1 = ChVector<>(0, 2, -0.2);
-        cyl->GetCylinderGeometry().p2 = ChVector<>(0, 2, +0.2);
-        cyl->GetCylinderGeometry().rad = 0.05;
+        auto cyl = chrono_types::make_shared<ChCylinderShape>(0.05, 0.4);
         cyl->SetColor(ChColor(0, 0, 0.6f));
-        body->AddVisualShape(cyl);
+        body->AddVisualShape(cyl, ChFrame<>(ChVector<>(0, 2, 0)));
     }
 
     // Connect the body to the ground through a universal joint (located at the origin).

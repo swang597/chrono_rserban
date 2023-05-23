@@ -29,7 +29,8 @@ TruckAV::TruckAV(Framework* framework, unsigned int id, const chrono::ChCoordsys
 
     m_hmmwv->SetChassisFixed(false);
     m_hmmwv->SetChassisCollisionType(CollisionType::MESH);
-    m_hmmwv->SetPowertrainType(PowertrainModelType::SIMPLE);
+    m_hmmwv->SetEngineType(EngineModelType::SIMPLE_MAP);
+    m_hmmwv->SetTransmissionType(TransmissionModelType::SIMPLE_MAP);
     m_hmmwv->SetDriveType(DrivelineTypeWV::RWD);
     m_hmmwv->SetTireType(TireModelType::RIGID);
     m_hmmwv->SetTireStepSize(framework->m_step);

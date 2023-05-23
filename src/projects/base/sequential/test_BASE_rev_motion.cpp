@@ -36,18 +36,14 @@ int main(int argc, char* argv[]) {
     auto body1 = std::shared_ptr<ChBody>(sys.NewBody());
     body1->SetPos(ChVector<>(-0.5, 0, 0));
     body1->SetBodyFixed(true);
-    auto cyl1 = chrono_types::make_shared<ChCylinderShape>();
-    cyl1->GetCylinderGeometry().p1 = ChVector<>(-0.5, 0, 0);
-    cyl1->GetCylinderGeometry().p2 = ChVector<>(+0.5, 0, 0);
-    cyl1->GetCylinderGeometry().rad = 0.1;
+    auto cyl1 = chrono_types::make_shared<ChCylinderShape>(0.1, 1);
     cyl1->SetColor(ChColor(1.0f, 0.0f, 0.0f));
-    body1->AddVisualShape(cyl1);
+    body1->AddVisualShape(cyl1, ChFrame<>(VNULL, Q_from_AngY(CH_C_PI_2)));
     sys.AddBody(body1);
 
     auto body2 = std::shared_ptr<ChBody>(sys.NewBody());
     body2->SetPos(ChVector<>(+0.5, 0, 0));
-    auto box2 = chrono_types::make_shared<ChBoxShape>();
-    box2->GetBoxGeometry().SetLengths(ChVector<>(1, 0.2, 0.2));
+    auto box2 = chrono_types::make_shared<ChBoxShape>(2, 0.4, 0.4);
     box2->SetColor(ChColor(0.0f, 1.0f, 0.0f));
     body2->AddVisualShape(box2);
     sys.AddBody(body2);

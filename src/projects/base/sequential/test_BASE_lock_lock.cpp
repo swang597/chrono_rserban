@@ -34,15 +34,13 @@ std::shared_ptr<ChLinkLockLock> model1(std::shared_ptr<ChSystem> sys) {
     // Create the ground body
     auto m_Ground = chrono_types::make_shared<ChBodyAuxRef>();
     m_Ground->SetBodyFixed(true);
-    auto box = chrono_types::make_shared<ChBoxShape>();
+    auto box = chrono_types::make_shared<ChBoxShape>(2, 0.2, 2);
     box->SetColor(ChColor(0.0f, 0.0f, 1.0f));
-    box->GetBoxGeometry().SetLengths(ChVector<>(1, 0.1, 1));
     m_Ground->AddVisualShape(box);
     sys->AddBody(m_Ground);
 
     auto m_Body = chrono_types::make_shared<chrono::ChBodyAuxRef>();
-    auto sphere = chrono_types::make_shared<ChSphereShape>();
-    sphere->GetSphereGeometry().rad = 0.2;
+    auto sphere = chrono_types::make_shared<ChSphereShape>(0.2);
     m_Body->AddVisualShape(sphere);
     sys->AddBody(m_Body);
 
