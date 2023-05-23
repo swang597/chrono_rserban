@@ -93,7 +93,9 @@ void GD250::Initialize() {
     }
 
     // Create and initialize the powertrain system
-    auto powertrain = chrono_types::make_shared<GD250_SimpleMapPowertrain>("powertrain");
+    auto engine = chrono_types::make_shared<GD250_EngineSimpleMap>("Engine");
+    auto transmission = chrono_types::make_shared<GD250_AutomaticTransmissionSimpleMap>("Transmission");
+    auto powertrain = chrono_types::make_shared<ChPowertrainAssembly>(engine, transmission);
     m_vehicle->InitializePowertrain(powertrain);
 
     // Create the tires and set parameters depending on type.

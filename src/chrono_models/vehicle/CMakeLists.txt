@@ -45,8 +45,10 @@ set(CVM_GWAGON_FILES
     g-wagon/gd250_RigidTire.h
     g-wagon/gd250_RotaryArm.cpp
     g-wagon/gd250_RotaryArm.h
-    g-wagon/gd250_SimpleMapPowertrain.cpp
-    g-wagon/gd250_SimpleMapPowertrain.h
+    g-wagon/gd250_EngineSimpleMap.cpp
+    g-wagon/gd250_EngineSimpleMap.h    
+    g-wagon/gd250_AutomaticTransmissionSimpleMap.cpp
+    g-wagon/gd250_AutomaticTransmissionSimpleMap.h
     g-wagon/gd250_TMeasyTire.cpp
     g-wagon/gd250_TMeasyTire.h
     g-wagon/gd250_ToeBarGAxle.cpp

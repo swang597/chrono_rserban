@@ -25,7 +25,8 @@
 
 #include "chrono_models/ChApiModels.h"
 #include "chrono_models/vehicle/g-wagon/gd250_Vehicle.h"
-#include "chrono_models/vehicle/g-wagon/gd250_SimpleMapPowertrain.h"
+#include "chrono_models/vehicle/g-wagon/gd250_EngineSimpleMap.h"
+#include "chrono_models/vehicle/g-wagon/gd250_AutomaticTransmissionSimpleMap.h"
 #include "chrono_models/vehicle/g-wagon/gd250_RigidTire.h"
 #include "chrono_models/vehicle/g-wagon/gd250_TMeasyTire.h"
 #include "chrono_models/vehicle/g-wagon/gd250_Pac02Tire.h"
@@ -69,7 +70,6 @@ class CH_MODELS_API GD250 {
     ChWheeledVehicle& GetVehicle() const { return *m_vehicle; }
     std::shared_ptr<ChChassis> GetChassis() const { return m_vehicle->GetChassis(); }
     std::shared_ptr<ChBodyAuxRef> GetChassisBody() const { return m_vehicle->GetChassisBody(); }
-    std::shared_ptr<ChPowertrain> GetPowertrain() const { return m_vehicle->GetPowertrain(); }
 
     void Initialize();
 

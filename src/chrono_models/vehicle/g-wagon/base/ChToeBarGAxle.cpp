@@ -623,12 +623,7 @@ void ChToeBarGAxle::AddVisualizationLink(std::shared_ptr<ChBody> body,
     ChVector<> p_1 = body->TransformPointParentToLocal(pt_1);
     ChVector<> p_2 = body->TransformPointParentToLocal(pt_2);
 
-    auto cyl = chrono_types::make_shared<ChCylinderShape>();
-    cyl->GetCylinderGeometry().p1 = p_1;
-    cyl->GetCylinderGeometry().p2 = p_2;
-    cyl->GetCylinderGeometry().rad = radius;
-    cyl->SetColor(color);
-    body->AddVisualShape(cyl);
+    ChVehicleGeometry::AddVisualizationCylinder(body, p_1, p_2, radius);
 }
 
 void ChToeBarGAxle::AddVisualizationKnuckle(std::shared_ptr<ChBody> knuckle,
@@ -643,30 +638,16 @@ void ChToeBarGAxle::AddVisualizationKnuckle(std::shared_ptr<ChBody> knuckle,
     ChVector<> p_L = knuckle->TransformPointParentToLocal(pt_L);
     ChVector<> p_T = knuckle->TransformPointParentToLocal(pt_T);
 
-    if (p_L.Length2() > threshold2) {
-        auto cyl_L = chrono_types::make_shared<ChCylinderShape>();
-        cyl_L->GetCylinderGeometry().p1 = p_L;
-        cyl_L->GetCylinderGeometry().p2 = ChVector<>(0, 0, 0);
-        cyl_L->GetCylinderGeometry().rad = radius;
-        knuckle->AddVisualShape(cyl_L);
-    }
+    if (p_L.Length2() > threshold2)
+        ChVehicleGeometry::AddVisualizationCylinder(knuckle, p_L, VNULL, radius);
 
-    if (p_U.Length2() > threshold2) {
-        auto cyl_U = chrono_types::make_shared<ChCylinderShape>();
-        cyl_U->GetCylinderGeometry().p1 = p_U;
-        cyl_U->GetCylinderGeometry().p2 = ChVector<>(0, 0, 0);
-        cyl_U->GetCylinderGeometry().rad = radius;
-        knuckle->AddVisualShape(cyl_U);
-    }
+    if (p_U.Length2() > threshold2)
+        ChVehicleGeometry::AddVisualizationCylinder(knuckle, p_U, VNULL, radius);
 
-    if (p_T.Length2() > threshold2) {
-        auto cyl_T = chrono_types::make_shared<ChCylinderShape>();
-        cyl_T->GetCylinderGeometry().p1 = p_T;
-        cyl_T->GetCylinderGeometry().p2 = ChVector<>(0, 0, 0);
-        cyl_T->GetCylinderGeometry().rad = radius;
-        knuckle->AddVisualShape(cyl_T);
-    }
+    if (p_T.Length2() > threshold2)
+        ChVehicleGeometry::AddVisualizationCylinder(knuckle, p_T, VNULL, radius);
 }
+
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 void ChToeBarGAxle::ExportComponentList(rapidjson::Document& jsonDocument) const {

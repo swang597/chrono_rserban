@@ -30,7 +30,6 @@
 #include "chrono_models/vehicle/g-wagon/gd250_GAxle.h"
 #include "chrono_models/vehicle/g-wagon/gd250_GAxleSimple.h"
 #include "chrono_models/vehicle/g-wagon/gd250_RotaryArm.h"
-#include "chrono_models/vehicle/g-wagon/gd250_SimpleMapPowertrain.h"
 #include "chrono_models/vehicle/g-wagon/gd250_ToeBarGAxle.h"
 #include "chrono_models/vehicle/g-wagon/gd250_ToeBarGAxleSimple.h"
 #include "chrono_models/vehicle/g-wagon/gd250_Wheel.h"

@@ -1,7 +1,7 @@
 // =============================================================================
 // PROJECT CHRONO - http://projectchrono.org
 //
-// Copyright (c) 2014 projectchrono.org
+// Copyright (c) 2023 projectchrono.org
 // All rights reserved.
 //
 // Use of this source code is governed by a BSD-style license that can be found
@@ -9,21 +9,20 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Radu Serban
+// Authors: Rainer Gericke
 // =============================================================================
 //
-// Simple powertrain model for the UAZBUS vehicle.
-// - based on torque-speed engine maps
+// Automatic transmssion model for the G-wagon vehicle.
 // - both power and torque limited
 // - no torque converter
 // - simple gear-shifting model (in automatic mode)
 //
 // =============================================================================
 
-#ifndef GD250_SIMPLEMAP_POWERTRAIN_H
-#define GD250_SIMPLEMAP_POWERTRAIN_H
+#ifndef GD250_AUTOMATIC_TRANSMISSION_SIMPLEMAP_H
+#define GD250_AUTOMATIC_TRANSMISSION_SIMPLEMAP_H
 
-#include "chrono_vehicle/powertrain/ChSimpleMapPowertrain.h"
+#include "chrono_vehicle/powertrain/ChAutomaticTransmissionSimpleMap.h"
 
 #include "chrono_models/ChApiModels.h"
 
@@ -31,23 +30,13 @@ namespace chrono {
 namespace vehicle {
 namespace gwagon {
 
-/// @addtogroup vehicle_models_uaz
+/// @addtogroup vehicle_models_gwagon
 /// @{
 
-/// Simple UAZBUS powertrain subsystem (based on engine speed-torque maps).
-class CH_MODELS_API GD250_SimpleMapPowertrain : public ChSimpleMapPowertrain {
+/// G-wagon automatic transmission model template based on a simple gear-shifting model.
+class CH_MODELS_API GD250_AutomaticTransmissionSimpleMap : public ChAutomaticTransmissionSimpleMap {
   public:
-    GD250_SimpleMapPowertrain(const std::string& name);
-
-    /// Specify maximum engine speed.
-    virtual double GetMaxEngineSpeed() override;
-
-    /// Set the engine speed-torque maps.
-    /// A concrete class must add the speed-torque points to the provided maps,
-    /// using the ChFunction_Recorder::AddPoint() function.
-    virtual void SetEngineTorqueMaps(ChFunction_Recorder& map0,  ///< [out] engine map at zero throttle
-                                     ChFunction_Recorder& mapF   ///< [out] engine map at full throttle
-                                     ) override;
+    GD250_AutomaticTransmissionSimpleMap(const std::string& name);
 
     /// Set the transmission gear ratios (one or more forward gear ratios and a single reverse gear ratio).
     virtual void SetGearRatios(std::vector<double>& fwd, double& rev) override;
@@ -60,9 +49,9 @@ class CH_MODELS_API GD250_SimpleMapPowertrain : public ChSimpleMapPowertrain {
         ) override;
 };
 
-/// @} vehicle_models_uaz
+/// @} vehicle_models_gwagon
 
-}  // end namespace uaz
+}  // end namespace gwagon
 }  // end namespace vehicle
 }  // end namespace chrono
 
