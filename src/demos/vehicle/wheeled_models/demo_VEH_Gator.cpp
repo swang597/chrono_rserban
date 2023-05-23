@@ -25,7 +25,6 @@
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 
 #include "chrono_models/vehicle/gator/Gator.h"
-#include "chrono_models/vehicle/gator/Gator_SimplePowertrain.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 
@@ -145,10 +144,6 @@ int main(int argc, char* argv[]) {
     }
 
     terrain.Initialize();
-
-    ////auto truss_mesh = chrono_types::make_shared<ChModelFileShape>();
-    ////truss_mesh->SetFilename(GetChronoDataFile("vehicle/gator/gator_chassis.obj"));
-    ////patch->GetGroundBody()->AddVisualShape(truss_mesh, ChFrame<>(ChVector<>(-10, -2, 3)));
 
     // ------------------------------------------------------------------------------
     // Create the vehicle run-time visualization interface and the interactive driver
