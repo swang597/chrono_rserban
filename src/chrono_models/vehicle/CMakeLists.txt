@@ -62,6 +62,48 @@ set(CVM_GWAGON_FILES
 )
 source_group("gwagon" FILES ${CVM_GWAGON_FILES})
 
+set(CVM_WVP_FILES
+    wvp/WVP.cpp
+    wvp/WVP.h
+    wvp/WVP_BrakeSimple.cpp
+    wvp/WVP_BrakeSimple.h
+    wvp/WVP_Chassis.cpp
+    wvp/WVP_Chassis.h
+    wvp/WVP_DoubleWishbone.cpp
+    wvp/WVP_DoubleWishbone.h
+    wvp/WVP_Driveline4WD.cpp
+    wvp/WVP_Driveline4WD.h
+    wvp/WVP_FialaTire.cpp
+    wvp/WVP_FialaTire.h
+    wvp/WVP_PitmanArm.cpp
+    wvp/WVP_PitmanArm.h
+    wvp/WVP_PitmanArmShafts.cpp
+    wvp/WVP_PitmanArmShafts.h
+    wvp/WVP_RigidTire.cpp
+    wvp/WVP_RigidTire.h
+    wvp/WVP_Vehicle.cpp
+    wvp/WVP_Vehicle.h
+    wvp/WVP_Wheel.cpp
+    wvp/WVP_Wheel.h
+    wvp/WVP_EngineShafts.cpp
+    wvp/WVP_EngineShafts.h
+    wvp/WVP_AutomaticTransmissionShafts.cpp
+    wvp/WVP_AutomaticTransmissionShafts.h
+    wvp/WVP_EngineSimpleMap.cpp
+    wvp/WVP_EngineSimpleMap.h
+    wvp/WVP_AutomaticTransmissionSimpleMap.cpp
+    wvp/WVP_AutomaticTransmissionSimpleMap.h
+    wvp/WVP_SimpleDriveline.cpp
+    wvp/WVP_SimpleDriveline.h
+    wvp/WVP_FollowerDataDriver.cpp
+    wvp/WVP_FollowerDataDriver.h
+    wvp/WVP_Pac89Tire.cpp
+    wvp/WVP_Pac89Tire.h
+    wvp/WVP_TMeasyTire.cpp
+    wvp/WVP_TMeasyTire.h
+)
+source_group("wvp" FILES ${CVM_WVP_FILES})
+
 set(CVM_HMMWV_SUSPENSION_FILES
     hmmwv/suspension/HMMWV_DoubleWishbone.cpp
     hmmwv/suspension/HMMWV_DoubleWishbone.h
@@ -904,7 +946,8 @@ set(LIBRARIES ChronoEngine ChronoEngine_vehicle)
 
 add_library(ChronoModels_vehicle SHARED
     ${CVM_COMMON_FILES}
-    ${CVM_GWAGON_FILES}    
+    ${CVM_GWAGON_FILES}
+    ${CVM_WVP_FILES}      
     ${CVM_HMMWV_FILES}
     ${CVM_FEDA_FILES}
     ${CVM_FMTV_FILES}

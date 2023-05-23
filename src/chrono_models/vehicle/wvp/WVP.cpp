@@ -88,7 +88,9 @@ void WVP::Initialize() {
     }
 
     // Create and initialize the powertrain system
-    auto powertrain = chrono_types::make_shared<WVP_SimpleMapPowertrain>();
+    auto engine = chrono_types::make_shared<WVP_EngineSimpleMap>();
+    auto transmission = chrono_types::make_shared<WVP_AutomaticTransmissionSimpleMap>();
+    auto powertrain = chrono_types::make_shared<ChPowertrainAssembly>(engine, transmission);
     m_vehicle->InitializePowertrain(powertrain);
 
     // Create the tires and set parameters depending on type.

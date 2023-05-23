@@ -63,6 +63,10 @@ class CH_MODELS_API WVP_SimpleDriveline : public ChDrivelineWV {
     /// Get the motor torque to be applied to the specified spindle.
     virtual double GetSpindleTorque(int axle, VehicleSide side) const override;
 
+    /// Return the output driveline speed of the driveshaft.
+    /// This represents the output from the driveline subsystem that is passed to the transmission subsystem.
+    virtual double GetOutputDriveshaftSpeed() const override { return m_driveshaft_speed; }
+
   private:
     /// he front torque fraction [0,1].
     double m_frontTorqueFraction = 0.5;
@@ -78,6 +82,8 @@ class CH_MODELS_API WVP_SimpleDriveline : public ChDrivelineWV {
     bool m_diffLockCenter = false;
     bool m_diffLockFront = false;
     bool m_diffLockRear = false;
+
+    double m_driveshaft_speed;  ///< output to transmisson
 
     std::shared_ptr<ChShaft> m_front_left;
     std::shared_ptr<ChShaft> m_front_right;

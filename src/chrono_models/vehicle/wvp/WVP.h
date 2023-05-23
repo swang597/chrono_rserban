@@ -25,10 +25,12 @@
 
 #include "chrono_models/ChApiModels.h"
 #include "chrono_models/vehicle/wvp/WVP_Vehicle.h"
-#include "chrono_models/vehicle/wvp/WVP_SimpleMapPowertrain.h"
+#include "chrono_models/vehicle/wvp/WVP_EngineSimpleMap.h"
+#include "chrono_models/vehicle/wvp/WVP_AutomaticTransmissionSimpleMap.h"
+#include "chrono_models/vehicle/wvp/WVP_EngineShafts.h"
+#include "chrono_models/vehicle/wvp/WVP_AutomaticTransmissionShafts.h"
 #include "chrono_models/vehicle/wvp/WVP_FialaTire.h"
 #include "chrono_models/vehicle/wvp/WVP_Pac89Tire.h"
-#include "chrono_models/vehicle/wvp/WVP_Powertrain.h"
 #include "chrono_models/vehicle/wvp/WVP_RigidTire.h"
 #include "chrono_models/vehicle/wvp/WVP_TMeasyTire.h"
 
