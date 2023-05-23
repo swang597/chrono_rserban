@@ -217,7 +217,8 @@ int main(int argc, char* argv[]) {
     m113.SetTrackShoeType(TrackShoeType::SINGLE_PIN);
     m113.SetDrivelineType(DrivelineTypeTV::SIMPLE);
     m113.SetBrakeType(BrakeType::SIMPLE);
-    m113.SetPowertrainType(PowertrainModelType::SIMPLE_CVT);
+    m113.SetEngineType(EngineModelType::SIMPLE_MAP);
+    m113.SetTransmissionType(TransmissionModelType::SIMPLE_MAP);
     m113.SetChassisCollisionType(CollisionType::NONE);
 
     m113.SetChassisFixed(fix_chassis);
@@ -243,11 +244,11 @@ int main(int argc, char* argv[]) {
     ////ChDataDriver driver(m113.GetVehicle(), vehicle::GetDataFile("M113/driver/Acceleration.txt"));
 
     std::vector<ChDataDriver::Entry> driver_data;
-    driver_data.push_back({0.0, 0, 0.0, 0});
-    driver_data.push_back({0.5, 0, 0.0, 0});
-    driver_data.push_back({2.0, 0, 0.5, 0});
-    driver_data.push_back({3.0, 0, 0.8, 0});
-    driver_data.push_back({4.0, 0, 1.0, 0});
+    driver_data.push_back({0.0, 0, 0.0, 0, 0});
+    driver_data.push_back({0.5, 0, 0.0, 0, 0});
+    driver_data.push_back({2.0, 0, 0.5, 0, 0});
+    driver_data.push_back({3.0, 0, 0.8, 0, 0});
+    driver_data.push_back({4.0, 0, 1.0, 0, 0});
     ChDataDriver driver(m113.GetVehicle(), driver_data);
 
     driver.Initialize();

@@ -88,7 +88,7 @@ class RigidTerrainStep : public ChTerrain {
 
     void CreateBox(std::shared_ptr<ChMaterialSurface> mat,
                    ChVector<> center,
-                   ChVector<> hsize,
+                   ChVector<> size,
                    bool tiled,
                    double max_tile_size);
 

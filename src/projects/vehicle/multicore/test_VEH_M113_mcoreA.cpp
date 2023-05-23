@@ -143,9 +143,8 @@ int main(int argc, char* argv[]) {
     TrackShoeType shoe_type = TrackShoeType::SINGLE_PIN;
     BrakeType brake_type = BrakeType::SIMPLE;
     DrivelineTypeTV driveline_type = DrivelineTypeTV::BDS;
-    PowertrainModelType powertrain_type = PowertrainModelType::SHAFTS;
-    ////DrivelineTypeTV driveline_type = DrivelineTypeTV::SIMPLE;
-    ////PowertrainModelType powertrain_type = PowertrainModelType::SIMPLE_CVT;
+    EngineModelType engine_type = EngineModelType::SHAFTS;
+    TransmissionModelType transmission_type = TransmissionModelType::SHAFTS;
 
     //// TODO
     if (shoe_type == TrackShoeType::DOUBLE_PIN)
@@ -155,7 +154,8 @@ int main(int argc, char* argv[]) {
     m113.SetTrackShoeType(shoe_type);
     m113.SetDrivelineType(driveline_type);
     m113.SetBrakeType(brake_type);
-    m113.SetPowertrainType(powertrain_type);
+    m113.SetEngineType(engine_type);
+    m113.SetTransmissionType(transmission_type);
     m113.SetChassisCollisionType(chassis_collision_type);
 
     m113.SetChassisFixed(fix_chassis);
@@ -265,11 +265,11 @@ int main(int argc, char* argv[]) {
     ////driver.SetGains(2, 5, 5);
 
     std::vector<ChDataDriver::Entry> driver_data;
-    driver_data.push_back({0.0, 0, 0.0, 0});
-    driver_data.push_back({0.5, 0, 0.0, 0});
-    driver_data.push_back({2.0, 0, 0.5, 0});
-    driver_data.push_back({3.0, 0, 0.8, 0});
-    driver_data.push_back({4.0, 0, 1.0, 0});
+    driver_data.push_back({0.0, 0, 0.0, 0, 0});
+    driver_data.push_back({0.5, 0, 0.0, 0, 0});
+    driver_data.push_back({2.0, 0, 0.5, 0, 0});
+    driver_data.push_back({3.0, 0, 0.8, 0, 0});
+    driver_data.push_back({4.0, 0, 1.0, 0, 0});
     ChDataDriver driver(m113.GetVehicle(), driver_data);
 
     driver.Initialize();

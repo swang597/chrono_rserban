@@ -123,7 +123,7 @@ void CreateContainer(ChSystem* system, float mu_g, float coh_g) {
 
     // Attention: collision family for ground should be >= 5 (first values used in Chrono::Vehicle)
     ground->GetCollisionModel()->SetFamily(5);
-    ground->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(WheeledCollisionFamily::TIRES);
+    ground->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(WheeledCollisionFamily::TIRE);
 
     // Bottom box
     utils::AddBoxGeometry(ground.get(), material, ChVector<>(hdimX, hdimY, hthick), ChVector<>(0, 0, -hthick),

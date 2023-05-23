@@ -25,8 +25,8 @@
 #include "chrono_vehicle/tracked_vehicle/ChTrackedVehicle.h"
 #include "chrono_vehicle/tracked_vehicle/track_assembly/ChTrackAssemblySegmented.h"
 
-#include "chrono_models/vehicle/m113/M113_TrackShoeDoublePin.h"
-#include "chrono_models/vehicle/m113/M113_TrackShoeSinglePin.h"
+#include "chrono_models/vehicle/m113/track_shoe/M113_TrackShoeDoublePin.h"
+#include "chrono_models/vehicle/m113/track_shoe/M113_TrackShoeSinglePin.h"
 
 using namespace chrono;
 using namespace chrono::irrlicht;

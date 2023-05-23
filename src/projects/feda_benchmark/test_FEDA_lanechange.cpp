@@ -294,8 +294,9 @@ VisualizationType suspension_vis_type = VisualizationType::PRIMITIVES;
 VisualizationType steering_vis_type = VisualizationType::PRIMITIVES;
 VisualizationType wheel_vis_type = VisualizationType::NONE;
 
-// Type of powertrain model (SHAFTS, SIMPLE, SIMPLE_CVT)
-PowertrainModelType powertrain_model = PowertrainModelType::SHAFTS;
+// Type of powertrain model (SHAFTS, SIMPLE_MAP)
+EngineModelType engine_model = EngineModelType::SHAFTS;
+TransmissionModelType transmision_model = TransmissionModelType::SHAFTS;
 
 // Drive type (FWD, RWD, or AWD)
 DrivelineTypeWV drive_type = DrivelineTypeWV::AWD;

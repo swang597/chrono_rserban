@@ -52,7 +52,7 @@
 #include "chrono_vehicle/wheeled_vehicle/ChWheel.h"
 
 #include "chrono_models/vehicle/hmmwv/HMMWV_Wheel.h"
-#include "chrono_models/vehicle/hmmwv/HMMWV_TMeasyTire.h"
+#include "chrono_models/vehicle/hmmwv/tire/HMMWV_TMeasyTire.h"
 
 #include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 
@@ -109,8 +109,7 @@ MechanismISO::MechanismISO(ChSystem* sys) : m_sys(sys) {
     m_sys->AddBody(ground);
     ground->SetBodyFixed(true);
     {
-        auto box = chrono_types::make_shared<ChBoxShape>();
-        box->GetBoxGeometry().SetLengths(ChVector<>(10, 2, 0.2));
+        auto box = chrono_types::make_shared<ChBoxShape>(20, 4, 0.4);
         ground->AddVisualShape(box, ChFrame<>(ChVector<>(0, 0, -0.1)));
     }
 
@@ -122,11 +121,8 @@ MechanismISO::MechanismISO(ChSystem* sys) : m_sys(sys) {
     m_spindle->SetPos(ChVector<>(0, 0, wheel_init_height));
     m_spindle->SetWvel_loc(ChVector<>(0, +wheel_init_omega, 0));  // for the wheel to move in positive X
     {
-        auto cyl = chrono_types::make_shared<ChCylinderShape>();
-        cyl->GetCylinderGeometry().rad = 0.1;
-        cyl->GetCylinderGeometry().p1 = ChVector<>(0, -0.1, 0);
-        cyl->GetCylinderGeometry().p2 = ChVector<>(0, +0.1, 0);
-        m_spindle->AddVisualShape(cyl);
+        auto cyl = chrono_types::make_shared<ChCylinderShape>(0.1, 0.2);
+        m_spindle->AddVisualShape(cyl, ChFrame<>(VNULL, Q_from_AngX(CH_C_PI_2)));
     }
 
     // Connect spindle to ground.
@@ -280,8 +276,7 @@ MechanismYUP::MechanismYUP(ChSystem* sys) : m_sys(sys) {
     m_sys->AddBody(ground);
     ground->SetBodyFixed(true);
     {
-        auto box = chrono_types::make_shared<ChBoxShape>();
-        box->GetBoxGeometry().SetLengths(ChVector<>(10, 0.2, 2));
+        auto box = chrono_types::make_shared<ChBoxShape>(20, 0.4, 4);
         ground->AddVisualShape(box, ChFrame<>(ChVector<>(0, -0.1, 0)));
     }
 
@@ -291,10 +286,7 @@ MechanismYUP::MechanismYUP(ChSystem* sys) : m_sys(sys) {
     m_spindle->SetPos(ChVector<>(0, wheel_init_height, 0));
     m_spindle->SetWvel_loc(ChVector<>(0, 0, -wheel_init_omega));  // for the wheel to move in positive X
     {
-        auto cyl = chrono_types::make_shared<ChCylinderShape>();
-        cyl->GetCylinderGeometry().rad = 0.1;
-        cyl->GetCylinderGeometry().p1 = ChVector<>(0, 0, -0.1);
-        cyl->GetCylinderGeometry().p2 = ChVector<>(0, 0, +0.1);
+        auto cyl = chrono_types::make_shared<ChCylinderShape>(0.1, 0.2);
         m_spindle->AddVisualShape(cyl);
     }
 

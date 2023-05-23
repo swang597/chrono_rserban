@@ -47,7 +47,8 @@ using namespace chrono::vehicle::hmmwv;
 // =============================================================================
 
 // Type of powertrain model (SHAFTS, SIMPLE)
-PowertrainModelType powertrain_model = PowertrainModelType::SHAFTS;
+EngineModelType engine_model = EngineModelType::SHAFTS;
+TransmissionModelType transmission_model = TransmissionModelType::SHAFTS;
 
 // Drive type (FWD, RWD, or AWD)
 DrivelineTypeWV drive_type = DrivelineTypeWV::AWD;
@@ -89,7 +90,8 @@ int main(int argc, char* argv[]) {
     my_hmmwv.SetChassisCollisionType(CollisionType::NONE);
     my_hmmwv.SetChassisFixed(false);
     my_hmmwv.SetInitPosition(ChCoordsys<>(ChVector<>(-180, 0, 0.6), QUNIT));
-    my_hmmwv.SetPowertrainType(powertrain_model);
+    my_hmmwv.SetEngineType(engine_model);
+    my_hmmwv.SetTransmissionType(transmission_model);
     my_hmmwv.SetDriveType(drive_type);
     my_hmmwv.UseTierodBodies(true);
     my_hmmwv.SetSteeringType(SteeringTypeWV::PITMAN_ARM);
@@ -171,8 +173,8 @@ int main(int argc, char* argv[]) {
 
         double time = my_hmmwv.GetSystem()->GetChTime();
         double speed = my_hmmwv.GetVehicle().GetSpeed();
-        double engine_torque = my_hmmwv.GetPowertrain()->GetMotorTorque();
-        double engine_speed = my_hmmwv.GetPowertrain()->GetMotorSpeed();
+        double engine_torque = my_hmmwv.GetVehicle().GetEngine()->GetOutputMotorshaftTorque();
+        double engine_speed = my_hmmwv.GetVehicle().GetEngine()->GetMotorSpeed();
         double throttle = driver_inputs.m_throttle;
         double fx = my_hmmwv.GetVehicle().GetWheel(0, LEFT)->GetTire()->ReportTireForce(&terrain).force.x() +
                     my_hmmwv.GetVehicle().GetWheel(0, RIGHT)->GetTire()->ReportTireForce(&terrain).force.x() +

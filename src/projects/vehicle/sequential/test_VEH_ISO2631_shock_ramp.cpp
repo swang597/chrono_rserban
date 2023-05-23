@@ -31,13 +31,14 @@
 #include "chrono_vehicle/ChVehicleModelData.h"
 
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"
-#include "chrono_vehicle/powertrain/SimplePowertrain.h"
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 #include "chrono_vehicle/wheeled_vehicle/vehicle/WheeledVehicle.h"
 #include "chrono_vehicle/wheeled_vehicle/ChWheeledVehicleVisualSystemIrrlicht.h"
 
 #include "chrono_vehicle/wheeled_vehicle/tire/FialaTire.h"
 #include "chrono_vehicle/wheeled_vehicle/tire/TMeasyTire.h"
+
+#include "chrono_vehicle/utils/ChUtilsJSON.h"
 
 // =============================================================================
 
@@ -49,7 +50,8 @@ using namespace chrono::vehicle;
 std::string vehicle_file("hmmwv/vehicle/HMMWV_Vehicle.json");
 
 // JSON file for powertrain (simple)
-std::string simplepowertrain_file("generic/powertrain/SimplePowertrain.json");
+std::string engine_file("generic/powertrain/EmgineSimpleMap.json");
+std::string transmission_file("generic/powertrain/AutomaticTransmissionSimpleMap.json");
 
 // JSON files tire models
 std::string tmeasy_tire_file("hmmwv/tire/HMMWV_TMeasy_converted.json");
@@ -146,7 +148,9 @@ int main(int argc, char* argv[]) {
     RigidTerrain terrain(vehicle.GetSystem(), vehicle::GetDataFile(rigidterrain_file));
 
     // Create and initialize the powertrain system
-    auto powertrain = chrono_types::make_shared<SimplePowertrain>(vehicle::GetDataFile(simplepowertrain_file));
+    auto engine = ReadEngineJSON(vehicle::GetDataFile(engine_file));
+    auto transmission = ReadTransmissionJSON(vehicle::GetDataFile(transmission_file));
+    auto powertrain = chrono_types::make_shared<ChPowertrainAssembly>(engine, transmission);
     vehicle.InitializePowertrain(powertrain);
 
     // Create and initialize the tires

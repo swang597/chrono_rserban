@@ -27,7 +27,7 @@
 #include "chrono_vehicle/driver/ChInteractiveDriverIRR.h"
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"
 
-#include "chrono_vehicle/powertrain/ChSimpleCVTPowertrain.h"
+#include "chrono_vehicle/powertrain/ChEngineSimpleMap.h"
 
 #include "chrono_vehicle/terrain/ObsModTerrain.h"
 #include "chrono_vehicle/output/ChVehicleOutputASCII.h"
@@ -166,14 +166,16 @@ int main(int argc, char* argv[]) {
                 ////TrackShoeType shoe_type = TrackShoeType::SINGLE_PIN;
                 ////DrivelineTypeTV driveline_type = DrivelineTypeTV::SIMPLE;
                 BrakeType brake_type = BrakeType::SIMPLE;
-                PowertrainModelType powertrain_type = PowertrainModelType::SIMPLE_CVT;
+                EngineModelType engine_type = EngineModelType::SIMPLE_MAP;
+                TransmissionModelType transmission_type = TransmissionModelType::SIMPLE_MAP;
 
                 Marder marder;
                 marder.SetContactMethod(contact_method);
                 ////marder.SetTrackShoeType(shoe_type);
                 ////marder.SetDrivelineType(driveline_type);
                 marder.SetBrakeType(brake_type);
-                marder.SetPowertrainType(powertrain_type);
+                marder.SetEngineType(engine_type);
+                marder.SetTransmissionType(transmission_type);
                 marder.SetChassisCollisionType(chassis_collision_type);
 
                 ////marder.SetChassisFixed(true);
@@ -448,8 +450,9 @@ int main(int argc, char* argv[]) {
                     double speed = marder.GetVehicle().GetSpeed();
                     double xpos = marder.GetVehicle().GetPos().x();
                     double yerr = marder.GetVehicle().GetPos().y();
-                    double eTorque = avg.Add(
-                        std::static_pointer_cast<ChSimpleCVTPowertrain>(marder.GetPowertrain())->GetMotorTorque());
+                    double eTorque =
+                        avg.Add(std::static_pointer_cast<ChEngineSimpleMap>(marder.GetVehicle().GetEngine())
+                                    ->GetOutputMotorshaftTorque());
                     engineForce.push_back(eTorque * effRadius / gear_ratio);
 
                     kurs << time << "\t" << xpos << "\t" << yerr << "\t" << speed << "\t"

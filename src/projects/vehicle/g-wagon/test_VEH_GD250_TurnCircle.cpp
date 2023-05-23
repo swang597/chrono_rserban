@@ -64,7 +64,8 @@ VisualizationType tire_vis_type = VisualizationType::MESH;
 CollisionType chassis_collision_type = CollisionType::NONE;
 
 // Type of powertrain model (SHAFTS, SIMPLE)
-PowertrainModelType powertrain_model = PowertrainModelType::SIMPLE_MAP;
+EngineModelType engine_model = EngineModelType::SIMPLE_MAP;
+TransmissionModelType transmission_model = TransmissionModelType::SIMPLE_MAP;
 
 // Drive type (FWD, RWD, or AWD)
 DrivelineTypeWV drive_type = DrivelineTypeWV::AWD;
@@ -126,7 +127,8 @@ int main(int argc, char* argv[]) {
     my_gd250.SetKinematicMode(false);
     my_gd250.SetLowRangeDriveline(false);
     my_gd250.SetInitPosition(ChCoordsys<>(initLoc, initRot));
-    //my_gd250.SetPowertrainType(powertrain_model);
+    //my_gd250.SetEngineType(engine_model);
+    //my_gd250.SetTransmissionType(transmission_model);
     //my_gd250.SetDriveType(drive_type);
     my_gd250.SetBrakeType(brake_type);
     my_gd250.SetTireType(tire_model);

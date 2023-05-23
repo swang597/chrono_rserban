@@ -140,12 +140,13 @@ int main(int argc, char* argv[]) {
     m113.SetChassisFixed(false);
     m113.SetTrackShoeType(TrackShoeType::SINGLE_PIN);
     m113.SetDrivelineType(DrivelineTypeTV::SIMPLE);
-    m113.SetPowertrainType(PowertrainModelType::SIMPLE_MAP);
+    m113.SetEngineType(EngineModelType::SIMPLE_MAP);
+    m113.SetTransmissionType(TransmissionModelType::SIMPLE_MAP);
 
     m113.SetInitPosition(ChCoordsys<>(initLoc, initRot));
     m113.Initialize();
     auto& vehicle = m113.GetVehicle();
-    auto powertrain = m113.GetPowertrain();
+    auto engine = vehicle.GetEngine();
 
     // Set visualization type for subsystems
     m113.SetChassisVisualizationType(vis_type);
@@ -230,11 +231,10 @@ int main(int argc, char* argv[]) {
     m113.GetSystem()->AddBody(ground1);
 
     ground1->GetCollisionModel()->ClearModel();
-    ground1->GetCollisionModel()->AddBox(material, 0.5 * rigidLength, 0.5 * terrainWidth, 0.5 * depth,
+    ground1->GetCollisionModel()->AddBox(material, rigidLength, terrainWidth, depth,
                                          ChVector<>(0, 0, -0.5 * depth));
 
-    auto box1 = chrono_types::make_shared<ChBoxShape>();
-    box1->GetBoxGeometry().Size = ChVector<>(0.5 * rigidLength, 0.5 * terrainWidth, 0.5 * depth);
+    auto box1 = chrono_types::make_shared<ChBoxShape>(rigidLength, terrainWidth, depth);
     ground1->AddVisualShape(box1, ChFrame<>(ChVector<>(0, 0, -0.5 * depth)));
     ground1->GetCollisionModel()->BuildModel();
 
@@ -247,11 +247,10 @@ int main(int argc, char* argv[]) {
     m113.GetSystem()->AddBody(ground2);
 
     ground2->GetCollisionModel()->ClearModel();
-    ground2->GetCollisionModel()->AddBox(material, 0.5 * rigidLength, 0.5 * terrainWidth, 0.5 * depth,
+    ground2->GetCollisionModel()->AddBox(material, rigidLength, terrainWidth, depth,
                                          ChVector<>(0, 0, -0.5 * depth));
 
-    auto box2 = chrono_types::make_shared<ChBoxShape>();
-    box2->GetBoxGeometry().Size = ChVector<>(0.5 * rigidLength, 0.5 * terrainWidth, 0.5 * depth);
+    auto box2 = chrono_types::make_shared<ChBoxShape>(rigidLength, terrainWidth, depth);
     ground2->AddVisualShape(box1, ChFrame<>(ChVector<>(0, 0, -0.5 * depth)));
     ground2->GetCollisionModel()->BuildModel();
 
@@ -269,8 +268,7 @@ int main(int argc, char* argv[]) {
 
     obstacle->GetCollisionModel()->ClearModel();
     obstacle->GetCollisionModel()->AddSphere(material, 3.0);
-    auto ball = chrono_types::make_shared<ChSphereShape>();
-    ball->GetSphereGeometry().rad = 3.0;
+    auto ball = chrono_types::make_shared<ChSphereShape>(3.0);
     obstacle->AddVisualShape(ball);
     obstacle->GetCollisionModel()->BuildModel();
 

@@ -627,7 +627,7 @@ double CreateContainer(ChSystem* system,  // containing system
 
     // Attention: collision family for ground should be >= 5 (first values used in Chrono::Vehicle)
     ground->GetCollisionModel()->SetFamily(5);
-    ground->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(WheeledCollisionFamily::TIRES);
+    ground->GetCollisionModel()->SetFamilyMaskNoCollisionWithFamily(WheeledCollisionFamily::TIRE);
 
     // Bottom box
     utils::AddBoxGeometry(ground.get(), material, ChVector<>(hdimX, hdimY, hthick), ChVector<>(0, 0, -hthick),
@@ -766,7 +766,8 @@ HMMWV_Full* CreateVehicle(ChSystem* system, double vertical_offset) {
     hmmwv->SetChassisFixed(false);
     hmmwv->SetInitPosition(ChCoordsys<>(initLoc + ChVector<>(0, 0, vertical_offset), initRot));
     hmmwv->SetInitFwdVel(initSpeed);
-    hmmwv->SetPowertrainType(PowertrainModelType::SIMPLE_MAP);
+    hmmwv->SetEngineType(EngineModelType::SIMPLE_MAP);
+    hmmwv->SetTransmissionType(TransmissionModelType::SIMPLE_MAP);
     hmmwv->SetDriveType(DrivelineTypeWV::AWD);
     hmmwv->SetTireType(TireModelType::RIGID);
 

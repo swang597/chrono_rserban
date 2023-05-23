@@ -141,14 +141,16 @@ int main(int argc, char* argv[]) {
         ////TrackShoeType shoe_type = TrackShoeType::SINGLE_PIN;
         ////DrivelineTypeTV driveline_type = DrivelineTypeTV::SIMPLE;
         BrakeType brake_type = BrakeType::SIMPLE;
-        PowertrainModelType powertrain_type = PowertrainModelType::SIMPLE_CVT;
+        EngineModelType engine_type = EngineModelType::SIMPLE_MAP;
+        TransmissionModelType transmission_type = TransmissionModelType::SIMPLE_MAP;
 
         Marder marder;
         marder.SetContactMethod(contact_method);
         ////marder.SetTrackShoeType(shoe_type);
         ////marder.SetDrivelineType(driveline_type);
         marder.SetBrakeType(brake_type);
-        marder.SetPowertrainType(powertrain_type);
+        marder.SetEngineType(engine_type);
+        marder.SetTransmissionType(transmission_type);
         marder.SetChassisCollisionType(chassis_collision_type);
 
         ////marder.SetChassisFixed(true);
@@ -493,13 +495,10 @@ void AddFixedObstacles(ChSystem* system, double xpos, double radius) {
     obstacle->SetCollide(true);
 
     // Visualization
-    auto shape = chrono_types::make_shared<ChCylinderShape>();
-    shape->GetCylinderGeometry().p1 = ChVector<>(0, -length * 0.5, 0);
-    shape->GetCylinderGeometry().p2 = ChVector<>(0, length * 0.5, 0);
-    shape->GetCylinderGeometry().rad = radius;
+    auto shape = chrono_types::make_shared<ChCylinderShape>(radius, length);
     shape->SetColor(ChColor(1, 1, 1));
     shape->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 10, 10);
-    obstacle->AddVisualShape(shape);
+    obstacle->AddVisualShape(shape, ChFrame<>(VNULL, Q_from_AngX(CH_C_PI_2)));
 
     // Contact
     ChContactMaterialData minfo;
@@ -536,8 +535,7 @@ void AddFallingObjects(ChSystem* system) {
     ball->GetCollisionModel()->AddSphere(obst_mat, radius);
     ball->GetCollisionModel()->BuildModel();
 
-    auto sphere = chrono_types::make_shared<ChSphereShape>();
-    sphere->GetSphereGeometry().rad = radius;
+    auto sphere = chrono_types::make_shared<ChSphereShape>(radius);
     sphere->SetTexture(GetChronoDataFile("textures/bluewhite.png"));
     ball->AddVisualShape(sphere);
 

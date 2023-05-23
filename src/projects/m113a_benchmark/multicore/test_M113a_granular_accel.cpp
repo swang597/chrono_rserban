@@ -432,12 +432,15 @@ int main(int argc, char* argv[]) {
     m113.SetChassisFixed(true);
     m113.SetTrackShoeType(TrackShoeType::SINGLE_PIN);
     m113.SetDrivelineType(DrivelineTypeTV::SIMPLE);
-    m113.SetPowertrainType(PowertrainModelType::SIMPLE_MAP);
+    m113.SetEngineType(EngineModelType::SIMPLE_MAP);
+    m113.SetTransmissionType(TransmissionModelType::SIMPLE_MAP);
 
     m113.SetInitPosition(ChCoordsys<>(initLoc + ChVector<>(0.0, 0.0, vertical_offset), initRot));
     m113.Initialize();
     auto& vehicle = m113.GetVehicle();
-    auto powertrain = m113.GetPowertrain();
+    auto engine = vehicle.GetEngine();
+    auto transmission = vehicle.GetTransmission();
+    auto driveline = vehicle.GetDriveline();
 
     // Set visualization type for subsystems
     vehicle.SetChassisVisualizationType(VisualizationType::PRIMITIVES);
@@ -516,8 +519,8 @@ int main(int argc, char* argv[]) {
         csv << time << driver_inputs.m_steering << driver_inputs.m_throttle << driver_inputs.m_braking;
         csv << vehicle.GetTrackAssembly(LEFT)->GetSprocket()->GetAxleSpeed()
             << vehicle.GetTrackAssembly(RIGHT)->GetSprocket()->GetAxleSpeed();
-        csv << powertrain->GetMotorSpeed() << powertrain->GetMotorTorque();
-        csv << powertrain->GetOutputTorque() << m113.GetDriveline()->GetDriveshaftSpeed();
+        csv << engine->GetMotorSpeed() << engine->GetOutputMotorshaftTorque();
+        csv << transmission->GetOutputDriveshaftTorque() << driveline->GetOutputDriveshaftSpeed();
         // Chassis Position & Velocity
         csv << m113.GetChassis()->GetPos().x() << m113.GetChassis()->GetPos().y() << m113.GetChassis()->GetPos().z();
         csv << vel_CG.x() << vel_CG.y() << vel_CG.z();

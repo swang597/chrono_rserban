@@ -84,7 +84,8 @@ int main(int argc, char* argv[]) {
 
     cout << "Create vehicle..." << endl;
     std::string vehicle_json = "Polaris/Polaris.json";
-    std::string powertrain_json = "Polaris/Polaris_SimpleMapPowertrain.json";
+    std::string engine_json = "Polaris/Polaris_EngineSimpleMap.json";
+    std::string transmission_json = "Polaris/Polaris_AutomaticTransmisionSimpleMap.json";
     std::string tire_json = "Polaris/Polaris_RigidTire.json";
 
     // Create and initialize the vehicle
@@ -97,7 +98,9 @@ int main(int argc, char* argv[]) {
     vehicle.SetWheelVisualizationType(VisualizationType::MESH);
 
     // Create and initialize the powertrain system
-    auto powertrain = ReadPowertrainJSON(vehicle::GetDataFile(powertrain_json));
+    auto engine = ReadEngineJSON(vehicle::GetDataFile(engine_json));
+    auto transmission = ReadTransmissionJSON(vehicle::GetDataFile(transmission_json));
+    auto powertrain = chrono_types::make_shared<ChPowertrainAssembly>(engine, transmission);
     vehicle.InitializePowertrain(powertrain);
 
     // Create and initialize the tires

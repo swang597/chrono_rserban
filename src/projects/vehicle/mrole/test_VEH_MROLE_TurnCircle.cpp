@@ -64,7 +64,8 @@ VisualizationType tire_vis_type = VisualizationType::MESH;
 CollisionType chassis_collision_type = CollisionType::NONE;
 
 // Type of powertrain model (SHAFTS, SIMPLE)
-PowertrainModelType powertrain_model = PowertrainModelType::SIMPLE_CVT;
+EngineModelType engine_type = EngineModelType::SIMPLE_MAP;
+TransmissionModelType transmission_type = TransmissionModelType::SIMPLE_MAP;
 
 // Drive type (FWD, RWD, or AWD)
 DrivelineTypeWV drive_type = DrivelineTypeWV::SIMPLE_XWD;
@@ -124,7 +125,8 @@ int main(int argc, char* argv[]) {
     my_mrole.SetChassisCollisionType(chassis_collision_type);
     my_mrole.SetChassisFixed(false);
     my_mrole.SetInitPosition(ChCoordsys<>(initLoc, initRot));
-    my_mrole.SetPowertrainType(powertrain_model);
+    my_mrole.SetEngineType(engine_type);
+    my_mrole.SetTransmissionType(transmission_type);
     my_mrole.SetDriveType(drive_type);
     my_mrole.SetBrakeType(brake_type);
     my_mrole.SetTireType(tire_model);

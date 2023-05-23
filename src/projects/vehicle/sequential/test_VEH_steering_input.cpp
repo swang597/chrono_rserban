@@ -31,6 +31,8 @@
 
 #include "chrono/utils/ChUtilsInputOutput.h"
 
+#include "chrono_vehicle/ChVehicleGeometry.h"
+
 #include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
@@ -137,24 +139,9 @@ int main(int argc, char* argv[]) {
     auto pI = link->TransformPointParentToLocal(ChVector<>(0.129, -0.325, 0));       // S location of revsph
     auto pTP = link->TransformPointParentToLocal(ChVector<>(0.195, 0.448, 0.035));   // tierod loc (Pitman arm side)
     auto pTI = link->TransformPointParentToLocal(ChVector<>(0.195, -0.448, 0.035));  // tierod loc (idler side)
-    {
-        auto cyl = chrono_types::make_shared<ChCylinderShape>();
-        cyl->GetCylinderGeometry().p1 = pP;
-        cyl->GetCylinderGeometry().p2 = pI;
-        cyl->GetCylinderGeometry().rad = link_radius;
-        link->AddVisualShape(cyl);
-        auto cyl_P = chrono_types::make_shared<ChCylinderShape>();
-        cyl_P->GetCylinderGeometry().p1 = pP;
-        cyl_P->GetCylinderGeometry().p2 = pTP;
-        cyl_P->GetCylinderGeometry().rad = link_radius;
-        link->AddVisualShape(cyl_P);
-        auto cyl_I = chrono_types::make_shared<ChCylinderShape>();
-        cyl_I->GetCylinderGeometry().p1 = pI;
-        cyl_I->GetCylinderGeometry().p2 = pTI;
-        cyl_I->GetCylinderGeometry().rad = link_radius;
-        cyl_I->SetColor(ChColor(0.2f, 0.7f, 0.7f));
-        link->AddVisualShape(cyl_I);
-    }
+    vehicle::ChVehicleGeometry::AddVisualizationCylinder(link, pP, pI, link_radius);
+    vehicle::ChVehicleGeometry::AddVisualizationCylinder(link, pP, pTP, link_radius);
+    vehicle::ChVehicleGeometry::AddVisualizationCylinder(link, pI, pTI, link_radius);
 
     // Markers on steering link (at tie-rod connections)
     auto markerP = chrono_types::make_shared<ChMarker>();
@@ -178,14 +165,7 @@ int main(int argc, char* argv[]) {
 
     auto pC = arm->TransformPointParentToLocal(ChVector<>(0, 0.249, 0));      // rev joint loc
     auto pL = arm->TransformPointParentToLocal(ChVector<>(0.129, 0.249, 0));  // univ joint loc
-    {
-        auto cyl = chrono_types::make_shared<ChCylinderShape>();
-        cyl->GetCylinderGeometry().p1 = pC;
-        cyl->GetCylinderGeometry().p2 = pL;
-        cyl->GetCylinderGeometry().rad = arm_radius;
-        cyl->SetColor(ChColor(0.7f, 0.7f, 0.2f));
-        arm->AddVisualShape(cyl);
-    }
+    vehicle::ChVehicleGeometry::AddVisualizationCylinder(arm, pC, pL, arm_radius);
 
     // -------------
     // Create joints

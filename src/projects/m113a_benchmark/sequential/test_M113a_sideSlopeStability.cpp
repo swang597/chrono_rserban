@@ -117,12 +117,13 @@ int main(int argc, char* argv[]) {
     m113.SetChassisFixed(false);
     m113.SetTrackShoeType(TrackShoeType::SINGLE_PIN);
     m113.SetDrivelineType(DrivelineTypeTV::SIMPLE);
-    m113.SetPowertrainType(PowertrainModelType::SIMPLE_MAP);
+    m113.SetEngineType(EngineModelType::SIMPLE_MAP);
+    m113.SetTransmissionType(TransmissionModelType::SIMPLE_MAP);
 
     m113.SetInitPosition(ChCoordsys<>(initLoc, initRot));
     m113.Initialize();
     auto& vehicle = m113.GetVehicle();
-    auto powertrain = m113.GetPowertrain();
+    auto engine = vehicle.GetEngine();
 
     // Set visualization type for subsystems
     m113.SetChassisVisualizationType(vis_type);

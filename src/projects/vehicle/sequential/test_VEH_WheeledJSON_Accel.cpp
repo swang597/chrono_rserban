@@ -34,11 +34,11 @@
 #include "chrono_vehicle/wheeled_vehicle/vehicle/WheeledVehicle.h"
 #include "chrono_vehicle/wheeled_vehicle/ChWheeledVehicleVisualSystemIrrlicht.h"
 
-#include "chrono_models/vehicle/hmmwv/HMMWV_FialaTire.h"
-#include "chrono_models/vehicle/hmmwv/HMMWV_Pac89Tire.h"
-#include "chrono_models/vehicle/hmmwv/HMMWV_Pac02Tire.h"
-#include "chrono_models/vehicle/hmmwv/HMMWV_RigidTire.h"
-#include "chrono_models/vehicle/hmmwv/HMMWV_TMeasyTire.h"
+#include "chrono_models/vehicle/hmmwv/tire/HMMWV_FialaTire.h"
+#include "chrono_models/vehicle/hmmwv/tire/HMMWV_Pac89Tire.h"
+#include "chrono_models/vehicle/hmmwv/tire/HMMWV_Pac02Tire.h"
+#include "chrono_models/vehicle/hmmwv/tire/HMMWV_RigidTire.h"
+#include "chrono_models/vehicle/hmmwv/tire/HMMWV_TMeasyTire.h"
 
 #ifdef CHRONO_PARDISO_MKL
     #include "chrono_pardisomkl/ChSolverPardisoMKL.h"
@@ -60,7 +60,8 @@ std::string vehicle_json = "generic/vehicle/Vehicle_RigidRigidSuspension.json";
 
 // Powertrain JSON specification
 bool add_powertrain = false;
-std::string powertrain_json = "hmmwv/powertrain/HMMWV_ShaftsPowertrain.json";
+std::string engine_json = "hmmwv/powertrain/HMMWV_EngineShafts.json";
+std::string transmission_json = "hmmwv/powertrain/HMMWV_AutomaticTransmissionShafts.json";
 
 // Type of tire model (RIGID, RIGID_MESH, FIALA, PAC89, PAC02, TMEASY)
 TireModelType tire_model = TireModelType::TMEASY;
@@ -183,7 +184,9 @@ int main(int argc, char* argv[]) {
 
     // Create and initialize the powertrain system
     if (add_powertrain) {
-        auto powertrain = ReadPowertrainJSON(vehicle::GetDataFile(powertrain_json));
+        auto engine = ReadEngineJSON(vehicle::GetDataFile(engine_json));
+        auto transmission = ReadTransmissionJSON(vehicle::GetDataFile(transmission_json));
+        auto powertrain = chrono_types::make_shared<ChPowertrainAssembly>(engine, transmission);
         vehicle.InitializePowertrain(powertrain);
     }
 

@@ -31,7 +31,6 @@
 #include "chrono_vehicle/ChVehicleModelData.h"
 
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"
-#include "chrono_vehicle/powertrain/SimplePowertrain.h"
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 #include "chrono_vehicle/terrain/CRGTerrain.h"
 

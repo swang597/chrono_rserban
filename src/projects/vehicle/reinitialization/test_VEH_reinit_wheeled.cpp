@@ -143,7 +143,8 @@ int main(int argc, char* argv[]) {
     veh.SetChassisFixed(false);
     veh.SetChassisCollisionType(CollisionType::NONE);
     veh.SetInitPosition(ChCoordsys<>(ChVector<>(0, 0, 1.0), QUNIT));
-    veh.SetPowertrainType(PowertrainModelType::SHAFTS);
+    veh.SetEngineType(EngineModelType::SHAFTS);
+    veh.SetTransmissionType(TransmissionModelType::SHAFTS);
     veh.SetTireType(TireModelType::PAC02);
     veh.SetTireStepSize(step_size);
     

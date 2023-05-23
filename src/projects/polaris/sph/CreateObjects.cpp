@@ -115,19 +115,17 @@ chrono::ChCoordsys<> CreateTerrain(ChSystem& sys,
     }
 
     // Ramp dimensions and orientation
-    double hlen = ramp_length / 2;
-    double hwidth = 2;
-    double hheight = 0.5;
+    double width = 4;
+    double height = 1;
     auto ramp_rot = Q_from_AngX(banking) * Q_from_AngY(-slope);
-    auto ramp_loc = ramp_rot.Rotate(ChVector<>(-hlen, 0, -hheight));
+    auto ramp_loc = ramp_rot.Rotate(ChVector<>(-ramp_length / 2, 0, -height / 2));
 
     // Create visual and collision shapes
     auto trimesh = chrono_types::make_shared<geometry::ChTriangleMeshConnected>();
     trimesh->LoadWavefrontMesh(vehicle::GetDataFile(terrain_dir + "/mesh.obj"), true, false);
 
     if (create_ramp) {
-        auto box = chrono_types::make_shared<ChBoxShape>();
-        box->GetBoxGeometry().Size = ChVector<>(hlen, hwidth, hheight);
+        auto box = chrono_types::make_shared<ChBoxShape>(ramp_length, width, height);
         body->AddVisualShape(box, ChFrame<>(ramp_loc, ramp_rot));
     }
 
@@ -144,7 +142,7 @@ chrono::ChCoordsys<> CreateTerrain(ChSystem& sys,
 
     body->GetCollisionModel()->ClearModel();
     if (create_ramp) {
-        body->GetCollisionModel()->AddBox(mat, hlen, hwidth, hheight, ramp_loc, ramp_rot);
+        body->GetCollisionModel()->AddBox(mat, ramp_length, width, height, ramp_loc, ramp_rot);
     }
     if (terrain_mesh_contact) {
         body->GetCollisionModel()->AddTriangleMesh(mat, trimesh, true, false, VNULL, ChMatrix33<>(1), 0.01);
@@ -217,8 +215,7 @@ std::shared_ptr<ChBody> CreateSentinel(ChSystem& sys, const ChCoordsys<>& init_p
     body->SetPos(init_pos.pos);
     sys.AddBody(body);
 
-    auto box = chrono_types::make_shared<ChSphereShape>();
-    box->GetSphereGeometry().rad = 0.1;
+    auto box = chrono_types::make_shared<ChSphereShape>(0.1);
     body->AddVisualShape(box, ChFrame<>());
 
     return body;
@@ -226,8 +223,8 @@ std::shared_ptr<ChBody> CreateSentinel(ChSystem& sys, const ChCoordsys<>& init_p
 
 std::shared_ptr<WheeledVehicle> CreateVehicle(ChSystem& sys, const ChCoordsys<>& init_pos) {
     std::string vehicle_json = "Polaris/Polaris.json";
-    ////std::string powertrain_json = "Polaris/Polaris_SimplePowertrain.json";
-    std::string powertrain_json = "Polaris/Polaris_SimpleMapPowertrain.json";
+    std::string engine_json = "Polaris/Polaris_EngineSimpleMap.json";
+    std::string transmission_json = "Polaris/Polaris_AutomaticTransmisionSimpleMap.json";
     std::string tire_json = "Polaris/Polaris_RigidTire.json";
 
     // Create and initialize the vehicle
@@ -240,7 +237,9 @@ std::shared_ptr<WheeledVehicle> CreateVehicle(ChSystem& sys, const ChCoordsys<>&
     vehicle->SetWheelVisualizationType(VisualizationType::MESH);
 
     // Create and initialize the powertrain system
-    auto powertrain = ReadPowertrainJSON(vehicle::GetDataFile(powertrain_json));
+    auto engine = ReadEngineJSON(vehicle::GetDataFile(engine_json));
+    auto transmission = ReadTransmissionJSON(vehicle::GetDataFile(transmission_json));
+    auto powertrain = chrono_types::make_shared<ChPowertrainAssembly>(engine, transmission);
     vehicle->InitializePowertrain(powertrain);
 
     // Create and initialize the tires

@@ -26,7 +26,8 @@
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 #include "chrono_vehicle/tracked_vehicle/ChTrackedVehicleVisualSystemIrrlicht.h"
 
-#include "chrono_models/vehicle/m113/M113_SimpleCVTPowertrain.h"
+#include "chrono_models/vehicle/m113/powertrain/M113_EngineSimpleMap.h"
+#include "chrono_models/vehicle/m113/powertrain/M113_AutomaticTransmissionSimpleMap.h"
 #include "chrono_models/vehicle/m113/M113_Vehicle.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
@@ -80,7 +81,9 @@ int main(int argc, char* argv[]) {
     vehicle.GetDriveline()->SetGyrationMode(true);
 
     // Create and initialize the powertrain system
-    auto powertrain = chrono_types::make_shared<M113_SimpleCVTPowertrain>("Powertrain");
+    auto engine = chrono_types::make_shared<M113_EngineSimpleMap>("engine");
+    auto transmission = chrono_types::make_shared<M113_AutomaticTransmissionSimpleMap>("transmission");
+    auto powertrain = chrono_types::make_shared<ChPowertrainAssembly>(engine, transmission);
     vehicle.InitializePowertrain(powertrain);
 
     // Create the terrain

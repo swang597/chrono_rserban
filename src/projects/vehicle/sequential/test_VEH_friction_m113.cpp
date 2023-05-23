@@ -28,7 +28,8 @@
 #include "chrono_vehicle/tracked_vehicle/ChTrackedVehicleVisualSystemIrrlicht.h"
 #include "chrono_vehicle/utils/ChVehiclePath.h"
 
-#include "chrono_models/vehicle/m113/M113_SimpleCVTPowertrain.h"
+#include "chrono_models/vehicle/m113/powertrain/M113_EngineSimpleMap.h"
+#include "chrono_models/vehicle/m113/powertrain/M113_AutomaticTransmissionSimpleMap.h"
 #include "chrono_models/vehicle/m113/M113_Vehicle.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
@@ -76,8 +77,12 @@ int main(int argc, char* argv[]) {
     vehicle_1.SetRoadWheelVisualizationType(VisualizationType::PRIMITIVES);
     vehicle_1.SetTrackShoeVisualizationType(VisualizationType::PRIMITIVES);
 
-    auto powertrain_1 = chrono_types::make_shared<M113_SimpleCVTPowertrain>("Powertrain1");
-    vehicle_1.InitializePowertrain(powertrain_1);
+    {
+        auto engine = chrono_types::make_shared<M113_EngineSimpleMap>("engine");
+        auto transmission = chrono_types::make_shared<M113_AutomaticTransmissionSimpleMap>("transmission");
+        auto powertrain = chrono_types::make_shared<ChPowertrainAssembly>(engine, transmission);
+        vehicle_1.InitializePowertrain(powertrain);
+    }
 
     ChContactMaterialData minfo_1;
     minfo_1.mu = friction_1;
@@ -106,8 +111,12 @@ int main(int argc, char* argv[]) {
     vehicle_2.SetRoadWheelVisualizationType(VisualizationType::PRIMITIVES);
     vehicle_2.SetTrackShoeVisualizationType(VisualizationType::PRIMITIVES);
 
-    auto powertrain_2 = chrono_types::make_shared<M113_SimpleCVTPowertrain>("Powertrain2");
-    vehicle_2.InitializePowertrain(powertrain_2);
+    {
+        auto engine = chrono_types::make_shared<M113_EngineSimpleMap>("engine");
+        auto transmission = chrono_types::make_shared<M113_AutomaticTransmissionSimpleMap>("transmission");
+        auto powertrain = chrono_types::make_shared<ChPowertrainAssembly>(engine, transmission);
+        vehicle_2.InitializePowertrain(powertrain);
+    }
 
     ChContactMaterialData minfo_2;
     minfo_2.mu = friction_2;

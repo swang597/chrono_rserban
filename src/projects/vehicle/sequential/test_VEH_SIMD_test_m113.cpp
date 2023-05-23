@@ -79,7 +79,10 @@ int main(int argc, char* argv[]) {
     }
     m113.GetSystem()->SetNumThreads(1, 8, 1);
 
-    auto powertrain = ReadPowertrainJSON(vehicle::GetDataFile("M113/powertrain/M113_SimpleCVTPowertrain.json"));
+    auto engine = ReadEngineJSON(vehicle::GetDataFile("M113/powertrain/M113_EngineSimpleMap.json"));
+    auto transmission =
+        ReadTransmissionJSON(vehicle::GetDataFile("M113/powertrain/M113_AutomaticTransmissionSimpleMap.json"));
+    auto powertrain = chrono_types::make_shared<ChPowertrainAssembly>(engine, transmission);
     m113.InitializePowertrain(powertrain);
 
     // ------------------------------------------------

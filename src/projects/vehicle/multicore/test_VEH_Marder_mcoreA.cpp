@@ -138,11 +138,13 @@ int main(int argc, char* argv[]) {
 
     CollisionType chassis_collision_type = CollisionType::NONE;
     BrakeType brake_type = BrakeType::SIMPLE;
-    PowertrainModelType powertrain_type = PowertrainModelType::SIMPLE_CVT;
+    EngineModelType engine_type = EngineModelType::SIMPLE_MAP;
+    TransmissionModelType transmission_type = TransmissionModelType::SIMPLE_MAP;
 
     Marder marder(system.get());
     marder.SetBrakeType(brake_type);
-    marder.SetPowertrainType(powertrain_type);
+    marder.SetEngineType(engine_type);
+    marder.SetTransmissionType(transmission_type);
     marder.SetChassisCollisionType(chassis_collision_type);
 
     ////marder.SetChassisFixed(true);

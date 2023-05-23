@@ -348,9 +348,9 @@ int main(int argc, char* argv[]) {
             std::cout << time << std::endl;
 
             csv << driver_inputs.m_throttle;
-            csv << wvp.GetVehicle().GetPowertrain()->GetMotorSpeed();
+            csv << wvp.GetVehicle().GetEngine()->GetMotorSpeed();
             csv << wvp.GetVehicle().GetSpeed();
-            csv << wvp.GetVehicle().GetPowertrain()->GetMotorTorque();
+            csv << wvp.GetVehicle().GetEngine()->GetOutputMotorshaftTorque();
 
             for (int axle = 0; axle < 2; axle++) {
                 csv << wvp.GetVehicle().GetSpindleAngVel(axle, LEFT);

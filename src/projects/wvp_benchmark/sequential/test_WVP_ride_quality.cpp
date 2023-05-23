@@ -346,8 +346,8 @@ int main(int argc, char* argv[]) {
             std::cout << time << std::endl;
             csv << time;
             csv << driver_inputs.m_throttle;
-            csv << wvp.GetVehicle().GetPowertrain()->GetMotorSpeed();
-            csv << wvp.GetVehicle().GetPowertrain()->GetCurrentTransmissionGear();
+            csv << wvp.GetVehicle().GetEngine()->GetMotorSpeed();
+            csv << wvp.GetVehicle().GetTransmission()->GetCurrentGear();
             for (int axle = 0; axle < 2; axle++) {
                 csv << wvp.GetVehicle().GetDriveline()->GetSpindleTorque(axle, LEFT);
                 csv << wvp.GetVehicle().GetDriveline()->GetSpindleTorque(axle, RIGHT);
@@ -367,7 +367,7 @@ int main(int argc, char* argv[]) {
                 }
             }
 
-            csv << wvp.GetVehicle().GetPowertrain()->GetMotorTorque();
+            csv << wvp.GetVehicle().GetEngine()->GetOutputMotorshaftTorque();
 
             csv << std::endl;
         }

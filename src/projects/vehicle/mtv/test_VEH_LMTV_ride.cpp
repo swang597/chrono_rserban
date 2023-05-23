@@ -354,8 +354,8 @@ int main(int argc, char* argv[]) {
             // std::cout << time << std::endl;
             csv << time;
             csv << driver_inputs.m_throttle;
-            csv << lmtv.GetVehicle().GetPowertrain()->GetMotorSpeed();
-            csv << lmtv.GetVehicle().GetPowertrain()->GetCurrentTransmissionGear();
+            csv << lmtv.GetVehicle().GetEngine()->GetMotorSpeed();
+            csv << lmtv.GetVehicle().GetTransmission()->GetCurrentGear();
             for (int axle = 0; axle < 2; axle++) {
                 csv << lmtv.GetVehicle().GetDriveline()->GetSpindleTorque(axle, LEFT);
                 csv << lmtv.GetVehicle().GetDriveline()->GetSpindleTorque(axle, RIGHT);
@@ -376,7 +376,7 @@ int main(int argc, char* argv[]) {
                 }
             }
 
-            csv << lmtv.GetVehicle().GetPowertrain()->GetMotorTorque();
+            csv << lmtv.GetVehicle().GetEngine()->GetOutputMotorshaftTorque();
 
             csv << std::endl;
         }

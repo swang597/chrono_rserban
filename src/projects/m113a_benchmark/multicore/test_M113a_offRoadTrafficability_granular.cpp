@@ -503,12 +503,13 @@ int main(int argc, char* argv[]) {
     m113.SetChassisFixed(true);
     m113.SetTrackShoeType(TrackShoeType::SINGLE_PIN);
     m113.SetDrivelineType(DrivelineTypeTV::SIMPLE);
-    m113.SetPowertrainType(PowertrainModelType::SIMPLE_MAP);
+    m113.SetEngineType(EngineModelType::SIMPLE_MAP);
+    m113.SetTransmissionType(TransmissionModelType::SIMPLE_MAP);
 
     m113.SetInitPosition(ChCoordsys<>(initLoc, initRot));
     m113.Initialize();
     auto& vehicle = m113.GetVehicle();
-    auto powertrain = m113.GetPowertrain();
+    auto engine = vehicle.GetEngine();
 
     // Control steering type (enable crossdrive capability).
     m113.GetDriveline()->SetGyrationMode(true);
@@ -533,15 +534,11 @@ int main(int argc, char* argv[]) {
 
     slipRig->GetCollisionModel()->ClearModel();
 
-    auto box = chrono_types::make_shared<ChBoxShape>();
-    box->GetBoxGeometry().Size = ChVector<>(.2, .1, .1);
+    auto box = chrono_types::make_shared<ChBoxShape>(0.4, 0.2, 0.2);
     slipRig->AddVisualShape(box);
 
-    auto cyl = chrono_types::make_shared<ChCylinderShape>();
-    cyl->GetCylinderGeometry().p1 = ChVector<>(0, 0, 0);
-    cyl->GetCylinderGeometry().p2 = ChVector<>(0, 0, -.2);
-    cyl->GetCylinderGeometry().rad = .05;
-    slipRig->AddVisualShape(cyl);
+    auto cyl = chrono_types::make_shared<ChCylinderShape>(0.05, 0.2);
+    slipRig->AddVisualShape(cyl, ChFrame<>(ChVector<>(0, 0, -0.1)));
 
     slipRig->GetCollisionModel()->BuildModel();
 

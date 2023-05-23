@@ -101,12 +101,13 @@ int main(int argc, char* argv[]) {
     m113.SetChassisFixed(false);
     m113.SetTrackShoeType(TrackShoeType::SINGLE_PIN);
     m113.SetDrivelineType(DrivelineTypeTV::SIMPLE);
-    m113.SetPowertrainType(PowertrainModelType::SIMPLE_MAP);
+    m113.SetEngineType(EngineModelType::SIMPLE_MAP);
+    m113.SetTransmissionType(TransmissionModelType::SIMPLE_MAP);
 
     m113.SetInitPosition(ChCoordsys<>(ChVector<>(0.0, 0.0, 1.0), QUNIT));
     m113.Initialize();
     auto& vehicle = m113.GetVehicle();
-    auto powertrain = m113.GetPowertrain();
+    auto engine = vehicle.GetEngine();
 
     // Set visualization type for subsystems
     vehicle.SetChassisVisualizationType(vis_type);
@@ -295,7 +296,7 @@ int main(int argc, char* argv[]) {
             csv << time << steering_input << throttle_input << braking_input;
             csv << vehicle.GetTrackAssembly(LEFT)->GetSprocket()->GetAxleSpeed()
                 << vehicle.GetTrackAssembly(RIGHT)->GetSprocket()->GetAxleSpeed();
-            csv << vehicle.GetPowertrain()->GetMotorSpeed() << vehicle.GetPowertrain()->GetMotorTorque();
+            csv << vehicle.GetEngine()->GetMotorSpeed() << vehicle.GetEngine()->GetOutputMotorshaftTorque();
 
             // Chassis CG position and local acceleration (raw and filtered)
             csv << vehicle.GetCOMFrame().GetPos() << acc_CG;
@@ -333,8 +334,8 @@ int main(int argc, char* argv[]) {
 
         // Collect output data from sub-systems
         DriverInputs driver_inputs = driver.GetInputs();
-        powertrain_torque = vehicle.GetPowertrain()->GetOutputTorque();
-        driveshaft_speed = vehicle.GetDriveline()->GetDriveshaftSpeed();
+        powertrain_torque = vehicle.GetTransmission()->GetOutputDriveshaftTorque();
+        driveshaft_speed = vehicle.GetDriveline()->GetOutputDriveshaftSpeed();
         vehicle.GetTrackShoeStates(LEFT, shoe_states_left);
         vehicle.GetTrackShoeStates(RIGHT, shoe_states_right);
 
@@ -392,12 +393,9 @@ void AddHalfround(ChSystem* system, double radius, double obstacle_distance) {
     obstacle->SetCollide(true);
 
     // Visualization
-    auto shape = chrono_types::make_shared<ChCylinderShape>();
-    shape->GetCylinderGeometry().p1 = ChVector<>(obstacle_distance, -length * 0.5, 0);
-    shape->GetCylinderGeometry().p2 = ChVector<>(obstacle_distance, length * 0.5, 0);
-    shape->GetCylinderGeometry().rad = radius;
+    auto shape = chrono_types::make_shared<ChCylinderShape>(radius, length);
     shape->SetColor(ChColor(1, 1, 1));
-    obstacle->AddVisualShape(shape);
+    obstacle->AddVisualShape(shape, ChFrame<>(ChVector<>(obstacle_distance, 0, 0), Q_from_AngX(CH_C_PI_2)));
 
     obstacle->GetVisualShape(0)->SetTexture(vehicle::GetDataFile("terrain/textures/tile4.jpg"), 10, 10);
 

@@ -73,7 +73,8 @@ int main(int argc, char* argv[]) {
     // Create and initialize the vehicle
     HMMWV_Full hmmwv(&sys);
     hmmwv.SetInitPosition(ChCoordsys<>(ChVector<>(-90, 0, 0.7), QUNIT));
-    hmmwv.SetPowertrainType(PowertrainModelType::SHAFTS);
+    hmmwv.SetEngineType(EngineModelType::SHAFTS);
+    hmmwv.SetTransmissionType(TransmissionModelType::SHAFTS);
     hmmwv.SetDriveType(DrivelineTypeWV::RWD);
     hmmwv.SetTireType(tire_model);
     hmmwv.SetTireStepSize(tire_step_size);

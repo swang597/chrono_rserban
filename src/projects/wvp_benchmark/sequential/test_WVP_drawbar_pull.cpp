@@ -173,12 +173,9 @@ int main(int argc, char* argv[]) {
     ground->SetCollide(false);
     wvp.GetSystem()->AddBody(ground);
     {
-        auto cyl = chrono_types::make_shared<ChCylinderShape>();
-        cyl->GetCylinderGeometry().rad = 0.02;
-        cyl->GetCylinderGeometry().p1 = ChVector<>(-terrainLength / 2, 0, rigLoc.z());
-        cyl->GetCylinderGeometry().p2 = ChVector<>(+terrainLength / 2, 0, rigLoc.z());
+        auto cyl = chrono_types::make_shared<ChCylinderShape>(0.02, terrainLength);
         cyl->SetColor(ChColor(0.2f, 0.3f, 0.6f));
-        ground->AddVisualShape(cyl);
+        ground->AddVisualShape(cyl, ChFrame<>(ChVector<>(0, 0, rigLoc.z()), Q_from_AngY(CH_C_PI_2)));
     }
 
     auto rig = std::shared_ptr<ChBody>(wvp.GetSystem()->NewBody());
@@ -189,8 +186,7 @@ int main(int argc, char* argv[]) {
     rig->SetCollide(false);
     wvp.GetSystem()->AddBody(rig);
     {
-        auto box = chrono_types::make_shared<ChBoxShape>();
-        box->GetBoxGeometry().SetLengths(ChVector<>(1, 0.4, 0.4));
+        auto box = chrono_types::make_shared<ChBoxShape>(2, 0.8, 0.8);
         rig->AddVisualShape(box);
     }
 

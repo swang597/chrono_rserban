@@ -444,9 +444,9 @@ int main(int argc, char* argv[]) {
                 ofile_sim << endl;
 
                 ofile_frc << system->GetChTime() << del;
-                ofile_frc << wvp->GetVehicle().GetPowertrain()->GetMotorSpeed() << del;
+                ofile_frc << wvp->GetVehicle().GetEngine()->GetMotorSpeed() << del;
                 ofile_frc << wvp->GetVehicle().GetSpeed() << del;
-                ofile_frc << wvp->GetVehicle().GetPowertrain()->GetMotorTorque() << del;
+                ofile_frc << wvp->GetVehicle().GetEngine()->GetOutputMotorshaftTorque() << del;
 
                 for (int axle = 0; axle < 2; axle++) {
                     auto avelL = wvp->GetVehicle().GetSpindleAngVel(axle, LEFT);

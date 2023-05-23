@@ -73,17 +73,16 @@ void RigidTerrainSlope::Initialize(std::shared_ptr<ChMaterialSurface> mat,
     m_ground->GetCollisionModel()->ClearModel();
 
     {
-        m_ground->GetCollisionModel()->AddBox(mat, sizeX / 2, sizeY / 2, depth / 2,
+        m_ground->GetCollisionModel()->AddBox(mat, sizeX, sizeY, depth,
                                               ChVector<>(-sizeX / 2, 0, height1 - depth / 2));
-        auto box = chrono_types::make_shared<ChBoxShape>();
-        box->GetBoxGeometry().Size = ChVector<>(sizeX / 2, sizeY / 2, depth / 2);
+        auto box = chrono_types::make_shared<ChBoxShape>(sizeX, sizeY, depth);
         m_ground->AddVisualShape(box, ChFrame<>(ChVector<>(-sizeX / 2, 0, height1 - depth / 2)));
     }
 
     {
-        double hx = (m_run / std::cos(m_angle)) / 2;
-        double hy = sizeY / 2;
-        double hz = depth / 2;
+        double dim_x = m_run / std::cos(m_angle);
+        double dim_y = sizeY;
+        double dim_z = depth;
 
         double x = (m_run + depth * std::sin(m_angle)) / 2;
         double y = 0;
@@ -91,18 +90,16 @@ void RigidTerrainSlope::Initialize(std::shared_ptr<ChMaterialSurface> mat,
 
         ChMatrix33<> rot(-m_angle, ChVector<>(0, 1, 0));
 
-        m_ground->GetCollisionModel()->AddBox(mat, hx, hy, hz, ChVector<>(x, y, z), rot);
+        m_ground->GetCollisionModel()->AddBox(mat, dim_x, dim_y, dim_z, ChVector<>(x, y, z), rot);
 
-        auto box = chrono_types::make_shared<ChBoxShape>();
-        box->GetBoxGeometry().Size = ChVector<>(hx, hy, hz);
+        auto box = chrono_types::make_shared<ChBoxShape>(dim_x, dim_y, dim_z);
         m_ground->AddVisualShape(box, ChFrame<>(ChVector<>(x, y, z), rot));
     }
 
     {
-        m_ground->GetCollisionModel()->AddBox(mat, sizeX / 2, sizeY / 2, depth / 2,
+        m_ground->GetCollisionModel()->AddBox(mat, sizeX, sizeY, depth,
                                               ChVector<>(m_run + sizeX / 2, 0, height2 - depth / 2));
-        auto box = chrono_types::make_shared<ChBoxShape>();
-        box->GetBoxGeometry().Size = ChVector<>(sizeX / 2, sizeY / 2, depth / 2);
+        auto box = chrono_types::make_shared<ChBoxShape>(sizeX, sizeY, depth);
         m_ground->AddVisualShape(box, ChFrame<>(ChVector<>(m_run + sizeX / 2, 0, height2 - depth / 2)));
     }
 

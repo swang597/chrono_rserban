@@ -257,7 +257,7 @@ void CreateSolidPhase(ChSystemNSC& sysMBS, ChSystemFsi& sysFSI, const ChVector<>
     sysMBS.Add(box);
 
     // Fluid-Solid Coupling at the walls via BCE particles
-    sysFSI.AddContainerBCE(box, ChFrame<>(), box_dims + ChVector<>(0, 0, box_dims.z()), ChVector<int>(2, 0, -1));
+    sysFSI.AddBoxContainerBCE(box, ChFrame<>(), 2.0 * box_dims + ChVector<>(0, 0, 2.0 * box_dims.z()), ChVector<int>(2, 0, -1));
 
     // --------------------------
     // Construct the M113 vehicle
@@ -267,7 +267,8 @@ void CreateSolidPhase(ChSystemNSC& sysMBS, ChSystemFsi& sysFSI, const ChVector<>
     track->SetTrackShoeType(TrackShoeType::SINGLE_PIN);
     track->SetBrakeType(BrakeType::SIMPLE);
     // track->SetDrivelineType(DrivelineTypeTV::BDS);
-    track->SetPowertrainType(PowertrainModelType::SIMPLE_CVT);
+    track->SetEngineType(EngineModelType::SIMPLE_MAP);
+    track->SetTransmissionType(TransmissionModelType::SIMPLE_MAP);
     track->SetChassisCollisionType(CollisionType::NONE);
 
     // Initialize the vehicle at the specified position
@@ -372,9 +373,8 @@ void AddWall(std::shared_ptr<ChBody> body,
              const ChVector<>& dim,
              std::shared_ptr<ChMaterialSurface> mat,
              const ChVector<>& loc) {
-    body->GetCollisionModel()->AddBox(mat, dim.x(), dim.y(), dim.z(), loc);
-    auto box = chrono_types::make_shared<ChBoxShape>();
-    box->GetBoxGeometry().Size = dim;
+    body->GetCollisionModel()->AddBox(mat, 2 * dim.x(), 2 * dim.y(), 2 * dim.z(), loc);
+    auto box = chrono_types::make_shared<ChBoxShape>(2 * dim.x(), 2 * dim.y(), 2 * dim.z());
     body->AddVisualShape(box, ChFrame<>(loc));
 }
 

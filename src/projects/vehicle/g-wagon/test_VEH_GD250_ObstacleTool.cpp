@@ -27,7 +27,6 @@
 #include "chrono_vehicle/driver/ChInteractiveDriverIRR.h"
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"
 
-#include "chrono_vehicle/powertrain/ChSimpleCVTPowertrain.h"
 #include "chrono_vehicle/terrain/ObsModTerrain.h"
 #include "chrono_vehicle/output/ChVehicleOutputASCII.h"
 
@@ -164,7 +163,8 @@ int main(int argc, char* argv[]) {
                 CollisionType chassis_collision_type = CollisionType::NONE;
                 DrivelineTypeWV driveline_type = DrivelineTypeWV::AWD8;
                 BrakeType brake_type = BrakeType::SIMPLE;
-                PowertrainModelType powertrain_type = PowertrainModelType::SIMPLE_CVT;
+                EngineModelType engine_type = EngineModelType::SIMPLE_MAP;
+                TransmissionModelType transmission_type = TransmissionModelType::SIMPLE_MAP;
 
                 GD250 gd250;
                 gd250.SetContactMethod(contact_method);
@@ -387,8 +387,9 @@ int main(int argc, char* argv[]) {
                     double yerr = gd250.GetVehicle().GetPos().y();
                     kurs << time << "\t" << xpos << "\t" << yerr << "\t" << speed << "\t" << std::endl;
                     if (xpos >= -1.0 && xpos <= xpos_max) {
-                        double eTorque = avg.Add(
-                            std::static_pointer_cast<ChSimpleCVTPowertrain>(gd250.GetPowertrain())->GetMotorTorque());
+                        double eTorque =
+                            avg.Add(std::static_pointer_cast<ChEngineSimpleMap>(gd250.GetVehicle().GetEngine())
+                                        ->GetOutputMotorshaftTorque());
                         engineForce.push_back(eTorque * effRadius / gear_ratio);
                         for (size_t i = 0; i < bellyPts.size(); i++) {
                             ChVector<> p = gd250.GetVehicle().GetPointLocation(bellyPts[i]);

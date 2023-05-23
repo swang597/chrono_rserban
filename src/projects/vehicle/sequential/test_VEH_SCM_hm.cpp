@@ -58,12 +58,9 @@ int main(int argc, char* argv[]) {
     mrigidbody->GetCollisionModel()->BuildModel();
     mrigidbody->SetCollide(true);
 
-    auto cyl_shape = chrono_types::make_shared<ChCylinderShape>();
-    cyl_shape->GetCylinderGeometry().rad = radius;
-    cyl_shape->GetCylinderGeometry().p1 = ChVector<>(0, +width / 2, 0);
-    cyl_shape->GetCylinderGeometry().p2 = ChVector<>(0, -width / 2, 0);
+    auto cyl_shape = chrono_types::make_shared<ChCylinderShape>(radius, width);
     cyl_shape->SetColor(ChColor(0.3f, 0.3f, 0.3f));
-    mrigidbody->AddVisualShape(cyl_shape);
+    mrigidbody->AddVisualShape(cyl_shape, ChFrame<>(VNULL, Q_from_AngX(CH_C_PI_2)));
 
     auto motor = chrono_types::make_shared<ChLinkMotorRotationAngle>();
     motor->SetSpindleConstraint(ChLinkMotorRotation::SpindleConstraint::OLDHAM);

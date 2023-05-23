@@ -172,12 +172,14 @@ int main(int argc, char* argv[]) {
     m113.SetChassisFixed(false);
     m113.SetTrackShoeType(TrackShoeType::SINGLE_PIN);
     m113.SetDrivelineType(DrivelineTypeTV::SIMPLE);
-    m113.SetPowertrainType(PowertrainModelType::SIMPLE_MAP);
+    m113.SetEngineType(EngineModelType::SIMPLE_MAP);
+    m113.SetTransmissionType(TransmissionModelType::SIMPLE_MAP);
 
     m113.SetInitPosition(ChCoordsys<>(initLoc, initRot));
     m113.Initialize();
     auto& vehicle = m113.GetVehicle();
-    auto powertrain = m113.GetPowertrain();
+    auto engine = vehicle.GetEngine();
+    auto transmission = vehicle.GetTransmission();
 
     // Set visualization type for subsystems
     m113.SetChassisVisualizationType(vis_type);
@@ -329,11 +331,10 @@ int main(int argc, char* argv[]) {
     m113.GetSystem()->AddBody(ground1);
 
     ground1->GetCollisionModel()->ClearModel();
-    ground1->GetCollisionModel()->AddBox(ground_mat, 0.5 * terrainLength, 0.5 * terrainWidth, 0.5 * depth,
+    ground1->GetCollisionModel()->AddBox(ground_mat, terrainLength, terrainWidth, depth,
                                          ChVector<>(0, 0, -0.5 * depth));
 
-    auto box1 = chrono_types::make_shared<ChBoxShape>();
-    box1->GetBoxGeometry().Size = ChVector<>(0.5 * terrainLength, 0.5 * terrainWidth, 0.5 * depth);
+    auto box1 = chrono_types::make_shared<ChBoxShape>(terrainLength, terrainWidth, depth);
     ground1->AddVisualShape(box1, ChFrame<>(ChVector<>(0, 0, -0.5 * depth)));
     ground1->GetCollisionModel()->BuildModel();
 
@@ -346,11 +347,10 @@ int main(int argc, char* argv[]) {
     m113.GetSystem()->AddBody(ground2);
 
     ground2->GetCollisionModel()->ClearModel();
-    ground2->GetCollisionModel()->AddBox(ground_mat, 0.5 * terrainLength, 0.5 * terrainWidth, 0.5 * depth,
+    ground2->GetCollisionModel()->AddBox(ground_mat, terrainLength, terrainWidth, depth,
                                          ChVector<>(0, 0, -0.5 * depth));
 
-    auto box2 = chrono_types::make_shared<ChBoxShape>();
-    box2->GetBoxGeometry().Size = ChVector<>(0.5 * terrainLength, 0.5 * terrainWidth, 0.5 * depth);
+    auto box2 = chrono_types::make_shared<ChBoxShape>(terrainLength, terrainWidth, depth);
     ground2->AddVisualShape(box1, ChFrame<>(ChVector<>(0, 0, -0.5 * depth)));
     ground2->GetCollisionModel()->BuildModel();
 
@@ -369,15 +369,11 @@ int main(int argc, char* argv[]) {
 
         slipRig->GetCollisionModel()->ClearModel();
 
-        auto box = chrono_types::make_shared<ChBoxShape>();
-        box->GetBoxGeometry().Size = ChVector<>(.2, .1, .1);
+        auto box = chrono_types::make_shared<ChBoxShape>(0.4, 0.2, 0.2);
         slipRig->AddVisualShape(box);
 
-        auto cyl = chrono_types::make_shared<ChCylinderShape>();
-        cyl->GetCylinderGeometry().p1 = ChVector<>(0, 0, 0);
-        cyl->GetCylinderGeometry().p2 = ChVector<>(0, 0, -.2);
-        cyl->GetCylinderGeometry().rad = .05;
-        slipRig->AddVisualShape(cyl);
+        auto cyl = chrono_types::make_shared<ChCylinderShape>(0.05, 0.2);
+        slipRig->AddVisualShape(cyl, ChFrame<>(ChVector<>(0, 0, -0.1), QUNIT));
 
         slipRig->GetCollisionModel()->BuildModel();
 
@@ -538,7 +534,7 @@ int main(int argc, char* argv[]) {
 
         // Forward Mode
         if (m113.GetChassis()->GetPos().x() > traversalLength && !performBrakingManeuver) {
-            if (!controlSlip) powertrain->SetDriveMode(ChPowertrain::DriveMode::REVERSE);
+            if (!controlSlip) transmission->SetDriveMode(ChTransmission::DriveMode::REVERSE);
             if (goingForward) {
                 performBrakingManeuver = true;
                 goingForward = false;
@@ -551,7 +547,7 @@ int main(int argc, char* argv[]) {
         // Reverse mode
         if (m113.GetChassis()->GetPos().x() < -traversalLength && !performBrakingManeuver) {
             if (!controlSlip)
-                powertrain->SetDriveMode(ChPowertrain::DriveMode::FORWARD);
+                transmission->SetDriveMode(ChTransmission::DriveMode::FORWARD);
             if (!goingForward) {
                 performBrakingManeuver = true;
                 goingForward = true;

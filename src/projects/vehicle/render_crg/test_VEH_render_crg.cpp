@@ -73,7 +73,8 @@ int main(int argc, char* argv[]) {
     my_hmmwv.SetContactMethod(ChContactMethod::SMC);
     my_hmmwv.SetChassisFixed(false);
     my_hmmwv.SetInitPosition(ChCoordsys<>(ChVector<>(2, 0, 0.5), QUNIT));
-    my_hmmwv.SetPowertrainType(PowertrainModelType::SHAFTS);
+    my_hmmwv.SetEngineType(EngineModelType::SHAFTS);
+    my_hmmwv.SetTransmissionType(TransmissionModelType::SHAFTS);
     my_hmmwv.SetDriveType(DrivelineTypeWV::RWD);
     my_hmmwv.SetTireType(tire_model);
     my_hmmwv.SetTireStepSize(tire_step_size);

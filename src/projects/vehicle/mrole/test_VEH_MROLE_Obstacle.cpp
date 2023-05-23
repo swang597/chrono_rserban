@@ -25,7 +25,8 @@
 #include "chrono_vehicle/driver/ChInteractiveDriverIRR.h"
 #include "chrono_vehicle/driver/ChPathFollowerDriver.h"
 
-#include "chrono_vehicle/powertrain/ChSimpleCVTPowertrain.h"
+#include "chrono_vehicle/powertrain/ChEngineSimpleMap.h"
+
 #include "chrono_vehicle/terrain/ObsModTerrain.h"
 #include "chrono_vehicle/output/ChVehicleOutputASCII.h"
 
@@ -123,12 +124,14 @@ int main(int argc, char* argv[]) {
     CollisionType chassis_collision_type = CollisionType::NONE;
     DrivelineTypeWV driveline_type = DrivelineTypeWV::AWD8;
     BrakeType brake_type = BrakeType::SIMPLE;
-    PowertrainModelType powertrain_type = PowertrainModelType::SIMPLE_CVT;
+    EngineModelType engine_type = EngineModelType::SIMPLE_MAP;
+    TransmissionModelType transmission_type = TransmissionModelType::SIMPLE_MAP;
 
     mrole_Full mrole;
     mrole.SetContactMethod(contact_method);
     mrole.SetBrakeType(brake_type);
-    mrole.SetPowertrainType(powertrain_type);
+    mrole.SetEngineType(engine_type);
+    mrole.SetTransmissionType(transmission_type);
     mrole.SetDriveType(driveline_type);
     mrole.SetChassisCollisionType(chassis_collision_type);
     mrole.SetTireType(tire_model);
@@ -353,8 +356,8 @@ int main(int argc, char* argv[]) {
         double yerr = mrole.GetVehicle().GetPos().y();
         kurs << time << "\t" << xpos << "\t" << yerr << "\t" << speed << "\t" << std::endl;
         if (xpos >= -1.0 && xpos <= xpos_max) {
-            double eTorque =
-                avg.Add(std::static_pointer_cast<ChSimpleCVTPowertrain>(mrole.GetPowertrain())->GetMotorTorque());
+            double eTorque = avg.Add(std::static_pointer_cast<ChEngineSimpleMap>(mrole.GetVehicle().GetEngine())
+                                         ->GetOutputMotorshaftTorque());
             engineForce.push_back(eTorque * effRadius / gear_ratio);
             for (size_t i = 0; i < bellyPts.size(); i++) {
                 ChVector<> p = mrole.GetVehicle().GetPointLocation(bellyPts[i]);

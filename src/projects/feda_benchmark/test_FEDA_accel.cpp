@@ -54,8 +54,9 @@ VisualizationType suspension_vis_type = VisualizationType::PRIMITIVES;
 VisualizationType steering_vis_type = VisualizationType::PRIMITIVES;
 VisualizationType wheel_vis_type = VisualizationType::NONE;
 
-// Type of powertrain model (SHAFTS, SIMPLE, SIMPLE_CVT)
-PowertrainModelType powertrain_model = PowertrainModelType::SHAFTS;
+// Type of powertrain model (SHAFTS, SIMPLE_MAP)
+EngineModelType engine_model = EngineModelType::SHAFTS;
+TransmissionModelType transmision_model = TransmissionModelType::SHAFTS;
 
 // Drive type (FWD, RWD, or AWD)
 DrivelineTypeWV drive_type = DrivelineTypeWV::AWD;
@@ -184,7 +185,7 @@ int main(int argc, char* argv[]) {
 
         double speed = speed_filter.Add(my_feda.GetVehicle().GetSpeed());
         double dist = terrainLength / 2.0 + my_feda.GetVehicle().GetPos().x();
-        int gear_pos = my_feda.GetPowertrain()->GetCurrentTransmissionGear();
+        int gear_pos = my_feda.GetTransmission()->GetCurrentGear();
         if (!done) {
             speed_recorder.AddPoint(time, speed);
             dist_recorder.AddPoint(time, dist);
