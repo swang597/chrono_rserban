@@ -46,9 +46,6 @@ TireModelType tire_model = TireModelType::FIALA;
 double step_size = 2e-3;
 double tire_step_size = 1e-3;
 
-// Debug logging
-double debug_fps = 50;
-
 // Output directories
 const std::string out_dir = "../DLC_TIRE_TEST";
 
@@ -146,17 +143,9 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    utils::CSV_writer csv("\t");
-    csv.stream().setf(std::ios::scientific | std::ios::showpos);
-    csv.stream().precision(6);
-
     // ---------------
     // Simulation loop
     // ---------------
-
-    // Number of simulation steps between miscellaneous events
-    double debug_step_size = 1 / debug_fps;
-    int debug_steps = (int)std::ceil(debug_step_size / step_size);
 
     // Initialize simulation frame counter and simulation time
     int sim_frame = 0;
@@ -185,23 +174,6 @@ int main(int argc, char* argv[]) {
         vis->Render();
         vis->EndScene();
 
-        // Debug logging
-        if (sim_frame % debug_steps == 0) {
-            csv << time;
-            csv << FR_tire->GetSlipAngle() << FR_tire->GetCamberAngle() << FR_tire->GetLongitudinalSlip();
-            switch (tire_model) {
-                case TireModelType::TMEASY:
-                    csv << FR_TMeasy->GetSlipAngle_internal() << FR_TMeasy->GetCamberAngle_internal()
-                        << FR_TMeasy->GetLongitudinalSlip_internal();
-                    break;
-                case TireModelType::FIALA:
-                    csv << FR_Fiala->GetSlipAngle_internal() << FR_Fiala->GetCamberAngle_internal()
-                        << FR_Fiala->GetLongitudinalSlip_internal();
-                    break;
-            }
-            csv << std::endl;
-        }
-
         // Update modules (process inputs from other modules)
         driver.Synchronize(time);
         terrain.Synchronize(time);
@@ -218,8 +190,6 @@ int main(int argc, char* argv[]) {
         sim_frame++;
 
     }
-
-    csv.write_to_file(out_dir + "/" + outfile);
 
     return 0;
 }

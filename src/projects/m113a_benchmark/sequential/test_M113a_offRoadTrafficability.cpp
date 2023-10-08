@@ -179,7 +179,7 @@ int main(int argc, char* argv[]) {
     m113.Initialize();
     auto& vehicle = m113.GetVehicle();
     auto engine = vehicle.GetEngine();
-    auto transmission = vehicle.GetTransmission();
+    auto transmission = std::static_pointer_cast<ChAutomaticTransmission>(vehicle.GetTransmission());
 
     // Set visualization type for subsystems
     m113.SetChassisVisualizationType(vis_type);
@@ -534,7 +534,7 @@ int main(int argc, char* argv[]) {
 
         // Forward Mode
         if (m113.GetChassis()->GetPos().x() > traversalLength && !performBrakingManeuver) {
-            if (!controlSlip) transmission->SetDriveMode(ChTransmission::DriveMode::REVERSE);
+            if (!controlSlip) transmission->SetDriveMode(ChAutomaticTransmission::DriveMode::REVERSE);
             if (goingForward) {
                 performBrakingManeuver = true;
                 goingForward = false;
@@ -547,7 +547,7 @@ int main(int argc, char* argv[]) {
         // Reverse mode
         if (m113.GetChassis()->GetPos().x() < -traversalLength && !performBrakingManeuver) {
             if (!controlSlip)
-                transmission->SetDriveMode(ChTransmission::DriveMode::FORWARD);
+                transmission->SetDriveMode(ChAutomaticTransmission::DriveMode::FORWARD);
             if (!goingForward) {
                 performBrakingManeuver = true;
                 goingForward = true;

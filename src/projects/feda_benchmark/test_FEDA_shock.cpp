@@ -172,7 +172,6 @@ int main(int argc, char* argv[]) {
     my_feda.SetInitPosition(ChCoordsys<>(ChVector<>(start_pos + 1, 0, 0.5), QUNIT));
     my_feda.SetTireType(tire_model);
     my_feda.SetTireStepSize(tire_step_size);
-    my_feda.SetTirePressureLevel(1);
     my_feda.SetRideHeight_ObstacleCrossing();
     my_feda.SetDamperMode(theDamperMode);
     my_feda.SetTireCollisionType(ChTire::CollisionType::ENVELOPE);

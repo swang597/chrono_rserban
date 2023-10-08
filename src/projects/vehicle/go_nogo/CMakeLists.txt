@@ -29,7 +29,7 @@ ENDIF()
 SET(PROGRAMS
     test_VEH_gonogo_hmmwv
     test_VEH_gonogo_hmmwv_mp
-    test_VEH_gonogo_wvp_mp
+    #test_VEH_gonogo_wvp_mp
 )
 
 SET(COMMON_FILES

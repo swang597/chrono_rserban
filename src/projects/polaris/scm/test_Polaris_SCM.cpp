@@ -191,8 +191,9 @@ int main(int argc, char* argv[]) {
         // Output tire forces
         csv << time;
         for (int i = 0; i < 4; i++) {
-            const auto& tfrc = terrain.GetContactForce(wheels[i]->GetSpindle());
-            csv << tfrc.force << tfrc.moment;
+            ChVector<> force, moment;
+            const auto& tfrc = terrain.GetContactForceBody(wheels[i]->GetSpindle(), force, moment);
+            csv << force << moment;
         }
         csv << endl;
         num_times++;
