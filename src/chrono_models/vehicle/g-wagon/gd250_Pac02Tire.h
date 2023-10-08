@@ -36,15 +36,10 @@ class CH_MODELS_API GD250_Pac02Tire : public ChPac02Tire {
     GD250_Pac02Tire(const std::string& name);
     ~GD250_Pac02Tire() {}
 
-    virtual double GetNormalStiffnessForce(double depth) const override;
-    virtual double GetNormalDampingForce(double depth, double velocity) const override {
-        return m_PacCoeff.Kz * velocity;
-    }
-
     virtual double GetTireMass() const override { return m_mass; }
     virtual ChVector<> GetTireInertia() const override { return m_inertia; }
 
-    virtual double GetVisualizationWidth() const override { return m_PacCoeff.width; }
+    virtual double GetVisualizationWidth() const override { return m_par.WIDTH; }
 
     virtual void SetPac02Params() override;
 
