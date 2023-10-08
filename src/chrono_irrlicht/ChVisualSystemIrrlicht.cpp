@@ -84,6 +84,20 @@ ChVisualSystemIrrlicht::ChVisualSystemIrrlicht()
         capsuleMesh->grab();
 }
 
+ChVisualSystemIrrlicht::ChVisualSystemIrrlicht(ChSystem* sys, const ChVector<>& camera_pos, const ChVector<>& camera_targ)
+    : ChVisualSystemIrrlicht()
+{
+    AttachSystem(sys);
+    SetWindowSize(800, 600);
+    SetWindowTitle("Chrono::Engine");
+    Initialize();
+
+    AddLogo();
+    AddSkyBox();
+    AddTypicalLights();
+    AddCamera(camera_pos, camera_targ);
+}
+
 ChVisualSystemIrrlicht::~ChVisualSystemIrrlicht() {
     if (sphereMesh)
         sphereMesh->drop();
@@ -219,6 +233,10 @@ void ChVisualSystemIrrlicht::Initialize() {
 bool ChVisualSystemIrrlicht::Run() {
     assert(!m_systems.empty());
     return m_device->run();
+}
+
+void ChVisualSystemIrrlicht::Quit() {
+    m_device->closeDevice();
 }
 
 void ChVisualSystemIrrlicht::OnSetup(ChSystem* sys) {
@@ -427,6 +445,11 @@ void ChVisualSystemIrrlicht::SetModalSpeed(double val) {
     m_gui->modal_speed = val;
     if (m_gui->initialized)
         m_gui->SetModalSpeed(val);
+}
+
+void ChVisualSystemIrrlicht::SetModalModesMax(int maxModes) {
+    if (m_gui->initialized)
+        m_gui->SetModalModesMax(maxModes);
 }
 
 // -----------------------------------------------------------------------------
@@ -766,8 +789,8 @@ static void SetVisualMaterial(ISceneNode* node, std::shared_ptr<ChVisualShape> s
         // Use default material
         node->getMaterial(0) = *default_material;
     } else {
-        assert((irr::u32)shape->GetNumMaterials() == node->getMaterialCount());
-        for (int i = 0; i < shape->GetNumMaterials(); i++)
+        assert((irr::u32)shape->GetNumMaterials() >= node->getMaterialCount());
+        for (int i = 0; i < node->getMaterialCount(); i++)
             node->getMaterial(i) =
                 tools::ToIrrlichtMaterial(shape->GetMaterial(i), node->getSceneManager()->getVideoDriver());
     }
@@ -807,6 +830,7 @@ void ChVisualSystemIrrlicht::PopulateIrrNode(ISceneNode* node,
                 mchildnode->setPosition(shape_m4.getTranslation());
                 mchildnode->setRotation(shape_m4.getRotationDegrees());
 
+                SetVisualMaterial(mchildnode, shape);
                 mchildnode->setMaterialFlag(video::EMF_BACK_FACE_CULLING, true);
             }
         } else if (auto trimesh = std::dynamic_pointer_cast<ChTriangleMeshShape>(shape)) {

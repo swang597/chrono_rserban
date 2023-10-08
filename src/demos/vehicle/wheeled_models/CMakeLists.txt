@@ -12,6 +12,8 @@ endif()
 
 set(DEMOS
     demo_VEH_CityBus
+    demo_VEH_FEDA_SSC
+    demo_VEH_Duro
     demo_VEH_Gator
     demo_VEH_HMMWV
     demo_VEH_HMMWV_Accel
@@ -60,8 +62,6 @@ if(ENABLE_MODULE_IRRLICHT)
 endif()
 
 if(ENABLE_MODULE_VSG)
-    set(CMAKE_CXX_STANDARD 17)
-
     include_directories(${CH_VSG_INCLUDES})
     list(APPEND LIBS "ChronoEngine_vsg")
     list(APPEND LIBS "ChronoEngine_vehicle_vsg")
@@ -77,6 +77,10 @@ endif()
 if(ENABLE_MODULE_MUMPS)
     include_directories(${CH_MUMPS_INCLUDES})
     list(APPEND LIBS "ChronoEngine_mumps")
+endif()
+
+if(ENABLE_MODULE_POSTPROCESS)
+    list(APPEND LIBS "ChronoEngine_postprocess")
 endif()
 
 #--------------------------------------------------------------

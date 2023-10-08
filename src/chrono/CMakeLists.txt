@@ -787,9 +787,12 @@ source_group(timestepper FILES
 
 set(ChronoEngine_motion_functions_SOURCES
     motion_functions/ChFunction_Base.cpp
+	motion_functions/ChFunction_BSpline.cpp
     motion_functions/ChFunction_Const.cpp
     motion_functions/ChFunction_ConstAcc.cpp
+	motion_functions/ChFunction_Cycloidal.cpp
     motion_functions/ChFunction_Derive.cpp
+    motion_functions/ChFunction_DoubleS.cpp
     motion_functions/ChFunction_Fillet3.cpp
     motion_functions/ChFunction_Integrate.cpp
     motion_functions/ChFunction_Matlab.cpp
@@ -822,9 +825,12 @@ set(ChronoEngine_motion_functions_SOURCES
 set(ChronoEngine_motion_functions_HEADERS
     motion_functions/ChFunction.h
     motion_functions/ChFunction_Base.h
+	motion_functions/ChFunction_BSpline.h
     motion_functions/ChFunction_Const.h
     motion_functions/ChFunction_ConstAcc.h
+	motion_functions/ChFunction_Cycloidal.h
     motion_functions/ChFunction_Derive.h
+    motion_functions/ChFunction_DoubleS.h
     motion_functions/ChFunction_Fillet3.h
     motion_functions/ChFunction_Integrate.h
     motion_functions/ChFunction_Matlab.h
@@ -1226,9 +1232,6 @@ set(ChronoEngine_utils_SOURCES
     utils/ChProfiler.cpp
     utils/ChFilters.cpp
     utils/ChCompositeInertia.cpp
-    utils/ChParserOpenSim.cpp
-    utils/ChParserAdams.cpp
-    utils/ChAdamsTokenizer.yy.cpp
     utils/ChConvexHull.cpp
     utils/ChSocket.cpp
     )
@@ -1245,8 +1248,6 @@ set(ChronoEngine_utils_HEADERS
     utils/ChProfiler.h
     utils/ChFilters.h
     utils/ChCompositeInertia.h
-    utils/ChParserOpenSim.h
-    utils/ChParserAdams.h
     utils/ChConvexHull.h
     utils/ChSocket.h
 )
@@ -1269,6 +1270,17 @@ set(ChronoEngine_tiny_obj_FILES
 
 source_group(utils\\tiny_obj FILES
     ${ChronoEngine_tiny_obj_FILES})
+
+# LibSTL Group
+
+set(ChronoEngine_libstl_FILES
+  ../chrono_thirdparty/libstl/stlfile.c
+  ../chrono_thirdparty/libstl/stlfile.h
+)
+
+source_group(utils\\libstl FILES
+    ${ChronoEngine_libstl_FILES})
+
 
 # Collect all source and header files for the ChronoEngine library
 
@@ -1320,7 +1332,8 @@ set(ChronoEngine_FILES
     ${ChronoEngine_utils_SOURCES}
     ${ChronoEngine_utils_HEADERS}
     ${ChronoEngine_tiny_obj_FILES}
-    )
+    ${ChronoEngine_libstl_FILES}
+)
 
 # Add the 'socket' library to the linking, depending on platform.
 IF(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
@@ -1363,7 +1376,7 @@ else()
 endif()
 
 # Add the ChronoEngine library to the project
-add_library(ChronoEngine SHARED ${ChronoEngine_FILES})
+add_library(ChronoEngine ${ChronoEngine_FILES})
 
 target_link_libraries(ChronoEngine ${OPENMP_LIBRARIES} ${CH_SOCKET_LIB})
 if (UNIX)
@@ -1371,7 +1384,7 @@ if (UNIX)
 endif()
 
 # Set some custom properties of this target
-set_target_properties(ChronoEngine PROPERTIES LINK_FLAGS "${CH_LINKERFLAG_SHARED}")
+set_target_properties(ChronoEngine PROPERTIES LINK_FLAGS "${CH_LINKERFLAG_LIB}")
 
 target_compile_definitions(ChronoEngine PRIVATE "CH_API_COMPILE")
 target_compile_definitions(ChronoEngine PRIVATE "CH_IGNORE_DEPRECATED")

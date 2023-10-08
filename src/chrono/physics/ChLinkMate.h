@@ -37,7 +37,7 @@ namespace chrono {
 ///     free/locked translational/rotational DOF by default;
 /// In ChLinkMate class, the X axis is considered as the
 ///     free/locked translational/rotational DOF by default,
-///     except ChLinkMateRotation where the Z axis is set as 
+///     except ChLinkMateRevolute where the Z axis is set as 
 ///     the default rotation axis again.
 
 class ChApi ChLinkMate : public ChLink {
@@ -50,10 +50,10 @@ class ChApi ChLinkMate : public ChLink {
     virtual ChLinkMate* Clone() const override { return new ChLinkMate(*this); }
 
     /// Method to allow serialization of transient data to archives.
-    virtual void ArchiveOUT(ChArchiveOut& marchive) override;
+    virtual void ArchiveOut(ChArchiveOut& marchive) override;
 
     /// Method to allow deserialization of transient data from archives.
-    virtual void ArchiveIN(ChArchiveIn& marchive) override;
+    virtual void ArchiveIn(ChArchiveIn& marchive) override;
 };
 
 CH_CLASS_VERSION(ChLinkMate, 0)
@@ -101,7 +101,7 @@ class ChApi ChLinkMateGeneric : public ChLinkMate {
     ChVector<> GetLagrangeMultiplier_f() { return gamma_f; }
 
     /// Get the rotational Lagrange multipliers, expressed in a ghost frame determined by the
-    /// projection matrix (this->P) for \rho_F1(F2)
+    /// projection matrix (this->P) for rho_F1(F2)
     ChVector<> GetLagrangeMultiplier_m() { return gamma_m; }
 
     bool IsConstrainedX() const { return c_x; }
@@ -227,10 +227,10 @@ class ChApi ChLinkMateGeneric : public ChLinkMate {
     //
 
     /// Method to allow serialization of transient data to archives.
-    virtual void ArchiveOUT(ChArchiveOut& marchive) override;
+    virtual void ArchiveOut(ChArchiveOut& marchive) override;
 
     /// Method to allow deserialization of transient data from archives.
-    virtual void ArchiveIN(ChArchiveIn& marchive) override;
+    virtual void ArchiveIn(ChArchiveIn& marchive) override;
 
   protected:
     void SetupLinkMask();
@@ -308,10 +308,10 @@ class ChApi ChLinkMatePlane : public ChLinkMateGeneric {
     virtual void Update(double mtime, bool update_assets = true) override;
 
     /// Method to allow serialization of transient data to archives.
-    virtual void ArchiveOUT(ChArchiveOut& marchive) override;
+    virtual void ArchiveOut(ChArchiveOut& marchive) override;
 
     /// Method to allow deserialization of transient data from archives.
-    virtual void ArchiveIN(ChArchiveIn& marchive) override;
+    virtual void ArchiveIn(ChArchiveIn& marchive) override;
 };
 
 CH_CLASS_VERSION(ChLinkMatePlane, 0)
@@ -350,10 +350,10 @@ class ChApi ChLinkMateCoaxial : public ChLinkMateGeneric {
                             ) override;
 
     /// Method to allow serialization of transient data to archives.
-    virtual void ArchiveOUT(ChArchiveOut& marchive) override;
+    virtual void ArchiveOut(ChArchiveOut& marchive) override;
 
     /// Method to allow deserialization of transient data from archives.
-    virtual void ArchiveIN(ChArchiveIn& marchive) override;
+    virtual void ArchiveIn(ChArchiveIn& marchive) override;
 };
 
 CH_CLASS_VERSION(ChLinkMateCoaxial, 0)
@@ -361,14 +361,14 @@ CH_CLASS_VERSION(ChLinkMateCoaxial, 0)
 // -----------------------------------------------------------------------------
 
 /// Mate constraint of revolute type.
-/// The two revolute axes are the X axes of the two frames.
+/// The two revolute axes are the Z axes of the two frames.
 
 class ChApi ChLinkMateRevolute : public ChLinkMateGeneric {
   protected:
     bool flipped;
 
   public:
-    ChLinkMateRevolute() : ChLinkMateGeneric(true, true, true, false, true, true), flipped(false) {}
+    ChLinkMateRevolute() : ChLinkMateGeneric(true, true, true, true, true, false), flipped(false) {}
     ChLinkMateRevolute(const ChLinkMateRevolute& other);
     virtual ~ChLinkMateRevolute() {}
 
@@ -381,23 +381,11 @@ class ChApi ChLinkMateRevolute : public ChLinkMateGeneric {
     void SetFlipped(bool doflip);
     bool IsFlipped() const { return flipped; }
 
-    /// Specialized initialization for revolute mate, given the two bodies to be connected, two points, two directions
-    /// (each expressed in body or abs. coordinates). These two directions are the X axes of slave frame F1 and master
-    /// frame F2
-    virtual void Initialize(std::shared_ptr<ChBodyFrame> mbody1,  ///< first body to link
-                            std::shared_ptr<ChBodyFrame> mbody2,  ///< second body to link
-                            bool pos_are_relative,                ///< true: following pos. are relative to bodies
-                            ChVector<> mpt1,                      ///< point on slave axis 1 (rel. or abs.)
-                            ChVector<> mpt2,                      ///< point on master axis 2 (rel. or abs.)
-                            ChVector<> mdir1,                     ///< direction of slave axis 1 (rel. or abs.)
-                            ChVector<> mdir2                      ///< direction of master axis 2 (rel. or abs.)
-                            ) override;
-
     /// Method to allow serialization of transient data to archives.
-    virtual void ArchiveOUT(ChArchiveOut& marchive) override;
+    virtual void ArchiveOut(ChArchiveOut& marchive) override;
 
     /// Method to allow deserialization of transient data from archives.
-    virtual void ArchiveIN(ChArchiveIn& marchive) override;
+    virtual void ArchiveIn(ChArchiveIn& marchive) override;
 };
 
 CH_CLASS_VERSION(ChLinkMateRevolute, 0)
@@ -438,10 +426,10 @@ class ChApi ChLinkMatePrismatic : public ChLinkMateGeneric {
                             ) override;
 
     /// Method to allow serialization of transient data to archives.
-    virtual void ArchiveOUT(ChArchiveOut& marchive) override;
+    virtual void ArchiveOut(ChArchiveOut& marchive) override;
 
     /// Method to allow deserialization of transient data from archives.
-    virtual void ArchiveIN(ChArchiveIn& marchive) override;
+    virtual void ArchiveIn(ChArchiveIn& marchive) override;
 };
 
 CH_CLASS_VERSION(ChLinkMatePrismatic, 0)
@@ -511,10 +499,10 @@ class ChApi ChLinkMateXdistance : public ChLinkMateGeneric {
     virtual void Update(double mtime, bool update_assets = true) override;
 
     /// Method to allow serialization of transient data to archives.
-    virtual void ArchiveOUT(ChArchiveOut& marchive) override;
+    virtual void ArchiveOut(ChArchiveOut& marchive) override;
 
     /// Method to allow deserialization of transient data from archives.
-    virtual void ArchiveIN(ChArchiveIn& marchive) override;
+    virtual void ArchiveIn(ChArchiveIn& marchive) override;
 };
 
 CH_CLASS_VERSION(ChLinkMateXdistance, 0)
@@ -554,10 +542,10 @@ class ChApi ChLinkMateParallel : public ChLinkMateGeneric {
                             ) override;
 
     /// Method to allow serialization of transient data to archives.
-    virtual void ArchiveOUT(ChArchiveOut& marchive) override;
+    virtual void ArchiveOut(ChArchiveOut& marchive) override;
 
     /// Method to allow deserialization of transient data from archives.
-    virtual void ArchiveIN(ChArchiveIn& marchive) override;
+    virtual void ArchiveIn(ChArchiveIn& marchive) override;
 };
 
 CH_CLASS_VERSION(ChLinkMateParallel, 0)
@@ -598,10 +586,10 @@ class ChApi ChLinkMateOrthogonal : public ChLinkMateGeneric {
     virtual void Update(double mtime, bool update_assets = true) override;
 
     /// Method to allow serialization of transient data to archives.
-    virtual void ArchiveOUT(ChArchiveOut& marchive) override;
+    virtual void ArchiveOut(ChArchiveOut& marchive) override;
 
     /// Method to allow deserialization of transient data from archives.
-    virtual void ArchiveIN(ChArchiveIn& marchive) override;
+    virtual void ArchiveIn(ChArchiveIn& marchive) override;
 };
 
 CH_CLASS_VERSION(ChLinkMateOrthogonal, 0)

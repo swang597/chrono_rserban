@@ -149,9 +149,6 @@ if(ENABLE_MODULE_VSG)
     find_package(vsg REQUIRED)
     find_package(vsgImGui REQUIRED)
     find_package(vsgXchange REQUIRED)
-    
-    # set the use of C++17 here as VSG requires it
-    set(CMAKE_CXX_STANDARD 17)
 endif()
 
 # ----------------------------------------------------------------------------
@@ -258,10 +255,14 @@ set(CV_POVERTRAIN_FILES
     powertrain/ChAutomaticTransmissionSimpleMap.cpp
     powertrain/ChAutomaticTransmissionShafts.h
     powertrain/ChAutomaticTransmissionShafts.cpp
+    powertrain/ChManualTransmissionShafts.h
+    powertrain/ChManualTransmissionShafts.cpp
     powertrain/AutomaticTransmissionSimpleMap.h
     powertrain/AutomaticTransmissionSimpleMap.cpp
     powertrain/AutomaticTransmissionShafts.h
     powertrain/AutomaticTransmissionShafts.cpp
+    powertrain/ManualTransmissionShafts.h
+    powertrain/ManualTransmissionShafts.cpp
 )
 source_group("powertrain" FILES ${CV_POVERTRAIN_FILES})
 
@@ -536,8 +537,6 @@ set(CV_WV_TIRE_FILES
     wheeled_vehicle/tire/ChRigidTire.cpp
     wheeled_vehicle/tire/ChForceElementTire.h
     wheeled_vehicle/tire/ChForceElementTire.cpp
-    wheeled_vehicle/tire/ChPac02Tire.h
-    wheeled_vehicle/tire/ChPac02Tire.cpp
     wheeled_vehicle/tire/ChPac89Tire.h
     wheeled_vehicle/tire/ChPac89Tire.cpp
     wheeled_vehicle/tire/ChFialaTire.h
@@ -554,14 +553,12 @@ set(CV_WV_TIRE_FILES
     wheeled_vehicle/tire/ChReissnerTire.cpp
     wheeled_vehicle/tire/ChFEATire.h
     wheeled_vehicle/tire/ChFEATire.cpp
-    wheeled_vehicle/tire/ChMFTire.h
-    wheeled_vehicle/tire/ChMFTire.cpp
+    wheeled_vehicle/tire/ChPac02Tire.h
+    wheeled_vehicle/tire/ChPac02Tire.cpp
 
 
     wheeled_vehicle/tire/RigidTire.h
     wheeled_vehicle/tire/RigidTire.cpp
-    wheeled_vehicle/tire/Pac02Tire.h
-    wheeled_vehicle/tire/Pac02Tire.cpp
     wheeled_vehicle/tire/Pac89Tire.h
     wheeled_vehicle/tire/Pac89Tire.cpp
     wheeled_vehicle/tire/FialaTire.h
@@ -580,8 +577,8 @@ set(CV_WV_TIRE_FILES
     wheeled_vehicle/tire/ANCFToroidalTire.cpp
     wheeled_vehicle/tire/ReissnerToroidalTire.h
     wheeled_vehicle/tire/ReissnerToroidalTire.cpp
-    wheeled_vehicle/tire/MFTire.h
-    wheeled_vehicle/tire/MFTire.cpp
+    wheeled_vehicle/tire/Pac02Tire.h
+    wheeled_vehicle/tire/Pac02Tire.cpp
 
 )
 source_group("wheeled_vehicle\\tire" FILES ${CV_WV_TIRE_FILES})
@@ -879,7 +876,7 @@ source_group("utils\\stb" FILES ${CV_STB_FILES})
 
 set(CXX_FLAGS ${CH_CXX_FLAGS})
 set(COMPILE_DEFS "CH_API_COMPILE_VEHICLE")
-set(LINK_FLAGS ${CH_LINKERFLAG_SHARED})
+set(LINK_FLAGS ${CH_LINKERFLAG_LIB})
 set(LIBRARIES "ChronoEngine")
 
 if(HDF5_FOUND)
@@ -891,6 +888,7 @@ endif()
 if(HAVE_OPENCRG)
     include_directories(${OpenCRG_INCLUDE_DIR})
     list(APPEND LIBRARIES ${OpenCRG_LIBRARY})
+    set(CHRONO_OPENCRG_INCLUDES "${OpenCRG_INCLUDE_DIR}" PARENT_SCOPE)
 endif()
 
 if(ENABLE_MODULE_FSI)
@@ -898,7 +896,7 @@ if(ENABLE_MODULE_FSI)
   list(APPEND LIBRARIES ChronoEngine_fsi)
 endif()
 
-add_library(ChronoEngine_vehicle SHARED
+add_library(ChronoEngine_vehicle
 #
     ${CV_BASE_FILES}
     ${CV_CHASSIS_FILES}
@@ -941,7 +939,7 @@ message(STATUS "Add ChronoEngine_vehicle library")
 
 set_target_properties(ChronoEngine_vehicle PROPERTIES
                       COMPILE_FLAGS "${CXX_FLAGS}"
-                      LINK_FLAGS "${CH_LINKERFLAG_SHARED}")
+                      LINK_FLAGS "${CH_LINKERFLAG_LIB}")
 
 target_compile_definitions(ChronoEngine_vehicle PRIVATE "CH_API_COMPILE_VEHICLE")
 target_compile_definitions(ChronoEngine_vehicle PRIVATE "CH_IGNORE_DEPRECATED")
@@ -968,7 +966,7 @@ if(ENABLE_MODULE_IRRLICHT)
     list(APPEND LIBRARIES ChronoEngine_vehicle)
     list(APPEND LIBRARIES ChronoEngine_irrlicht) 
 
-    add_library(ChronoEngine_vehicle_irrlicht SHARED
+    add_library(ChronoEngine_vehicle_irrlicht
         ${CVIRR_FILES}
         ${CVIRR_WV_FILES}
         ${CVIRR_TV_FILES}
@@ -978,11 +976,12 @@ if(ENABLE_MODULE_IRRLICHT)
         target_include_directories(ChronoEngine_vehicle_irrlicht PUBLIC ${CH_IRRKLANG_INCLUDES})
         list(APPEND LIBRARIES ${IRRKLANG_LIBRARY})
         set(CH_IRRLICHT_INCLUDES ${CH_IRRLICHT_INCLUDES} ${CH_IRRKLANG_INCLUDES} PARENT_SCOPE)
+        set(CH_IRRKLANG_INCLUDES "${CH_IRRKLANG_INCLUDES}" PARENT_SCOPE)
     endif()
     
     set_target_properties(ChronoEngine_vehicle_irrlicht PROPERTIES
                           COMPILE_FLAGS "${CXX_FLAGS}"
-                          LINK_FLAGS "${CH_LINKERFLAG_SHARED}")
+                          LINK_FLAGS "${CH_LINKERFLAG_LIB}")
     
     target_compile_definitions(ChronoEngine_vehicle_irrlicht PRIVATE "CH_API_COMPILE_VEHICLE")
     target_compile_definitions(ChronoEngine_vehicle_irrlicht PRIVATE "CH_IGNORE_DEPRECATED")
@@ -1006,7 +1005,7 @@ if(ENABLE_MODULE_VSG)
     list(APPEND LIBRARIES ChronoEngine_vehicle)
     list(APPEND LIBRARIES ChronoEngine_vsg) 
     
-    add_library(ChronoEngine_vehicle_vsg SHARED
+    add_library(ChronoEngine_vehicle_vsg
         ${CVVSG_FILES}
         ${CVVSG_WV_FILES}
         ${CVVSG_TV_FILES}
@@ -1014,7 +1013,7 @@ if(ENABLE_MODULE_VSG)
     
     set_target_properties(ChronoEngine_vehicle_vsg PROPERTIES
                           COMPILE_FLAGS "${CXX_FLAGS}"
-                          LINK_FLAGS "${CH_LINKERFLAG_SHARED}")
+                          LINK_FLAGS "${CH_LINKERFLAG_LIB}")
     
     target_compile_definitions(ChronoEngine_vehicle_vsg PRIVATE "CH_API_COMPILE_VEHICLE")
     target_compile_definitions(ChronoEngine_vehicle_vsg PRIVATE "CH_IGNORE_DEPRECATED")
@@ -1038,13 +1037,13 @@ if(ENABLE_MODULE_OPENGL)
     list(APPEND LIBRARIES ChronoEngine_vehicle)
     list(APPEND LIBRARIES ChronoEngine_opengl) 
     
-    add_library(ChronoEngine_vehicle_opengl SHARED
+    add_library(ChronoEngine_vehicle_opengl
         ${CVGL_FILES}
     )
     
     set_target_properties(ChronoEngine_vehicle_opengl PROPERTIES
                           COMPILE_FLAGS "${CXX_FLAGS}"
-                          LINK_FLAGS "${CH_LINKERFLAG_SHARED}")
+                          LINK_FLAGS "${CH_LINKERFLAG_LIB}")
     
     target_compile_definitions(ChronoEngine_vehicle_opengl PRIVATE "CH_API_COMPILE_VEHICLE")
     target_compile_definitions(ChronoEngine_vehicle_opengl PRIVATE "CH_IGNORE_DEPRECATED")
@@ -1107,5 +1106,9 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
             "${PROJECT_BINARY_DIR}/bin/$<CONFIGURATION>")
       install(FILES "${OpenCRG_DLL}" DESTINATION bin)
     endif()
+
+  # Make variable visible from outside this directory
+  SET(CH_IRRKLANG_DLL "${CH_IRRKLANG_DLL}" PARENT_SCOPE)
+  SET(CH_OPENCRG_DLL "${OpenCRG_DLL}" PARENT_SCOPE)
 
 endif()

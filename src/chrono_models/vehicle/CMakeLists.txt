@@ -4,7 +4,7 @@
 # Cannot be used stand-alone (it is loaded by parent CMake configuration file)
 #=============================================================================
 
-message(STATUS "Models for the VEHICLE module...")
+message(STATUS "Vehicle models...")
 
 # ----------------------------------------------------------------------------
 # List the files in the Chrono_vehicle_models library
@@ -149,10 +149,10 @@ set(CVM_HMMWV_TIRE_FILES
     hmmwv/tire/HMMWV_RigidTire.h
     hmmwv/tire/HMMWV_FialaTire.cpp
     hmmwv/tire/HMMWV_FialaTire.h
-    hmmwv/tire/HMMWV_Pac89Tire.cpp
-    hmmwv/tire/HMMWV_Pac89Tire.h
     hmmwv/tire/HMMWV_Pac02Tire.cpp
     hmmwv/tire/HMMWV_Pac02Tire.h
+    hmmwv/tire/HMMWV_Pac89Tire.cpp
+    hmmwv/tire/HMMWV_Pac89Tire.h
     hmmwv/tire/HMMWV_TMeasyTire.cpp
     hmmwv/tire/HMMWV_TMeasyTire.h
     hmmwv/tire/HMMWV_TMsimpleTire.cpp
@@ -215,6 +215,10 @@ set(CVM_FEDA_FILES
     feda/FEDA_PitmanArm.h
     feda/FEDA_RigidTire.cpp
     feda/FEDA_RigidTire.h
+    feda/FEDA_TMeasyTire.cpp
+    feda/FEDA_TMeasyTire.h
+    feda/FEDA_TMsimpleTire.cpp
+    feda/FEDA_TMsimpleTire.h
     feda/FEDA_Vehicle.cpp
     feda/FEDA_Vehicle.h   
     feda/FEDA_Wheel.cpp
@@ -446,6 +450,8 @@ set(CVM_UNIMOG_FILES
 source_group("unimog" FILES ${CVM_UNIMOG_FILES})
 
 set(CVM_DURO_FILES
+    duro/Duro.h
+    duro/Duro.cpp
     duro/Duro_BrakeShafts.h
     duro/Duro_BrakeShafts.cpp
     duro/Duro_Chassis.h
@@ -468,6 +474,8 @@ set(CVM_DURO_FILES
     duro/Duro_ToeBarDeDionAxle.cpp
     duro/Duro_RigidTire.h
     duro/Duro_RigidTire.cpp
+    duro/Duro_Vehicle.h
+    duro/Duro_Vehicle.cpp
     duro/Duro_Wheel.h
     duro/Duro_Wheel.cpp
 )
@@ -944,7 +952,7 @@ source_group("kraz" FILES ${CVM_KRAZ_FILES})
 set(CXX_FLAGS ${CH_CXX_FLAGS})
 set(LIBRARIES ChronoEngine ChronoEngine_vehicle)
 
-add_library(ChronoModels_vehicle SHARED
+add_library(ChronoModels_vehicle
     ${CVM_COMMON_FILES}
     ${CVM_GWAGON_FILES}
     ${CVM_WVP_FILES}      
@@ -968,7 +976,7 @@ add_library(ChronoModels_vehicle SHARED
 
 set_target_properties(ChronoModels_vehicle PROPERTIES
                       COMPILE_FLAGS "${CXX_FLAGS}"
-                      LINK_FLAGS "${CH_LINKERFLAG_SHARED}")
+                      LINK_FLAGS "${CH_LINKERFLAG_LIB}")
 
 target_compile_definitions(ChronoModels_vehicle PRIVATE "CH_API_COMPILE_MODELS")
 target_compile_definitions(ChronoModels_vehicle PRIVATE "CH_IGNORE_DEPRECATED")

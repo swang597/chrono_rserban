@@ -48,15 +48,24 @@ class ChApi ChTriangleMeshConnected : public ChTriangleMesh {
     std::vector<ChVector<double>>& getCoordsNormals() { return m_normals; }
     std::vector<ChVector2<double>>& getCoordsUV() { return m_UV; }
     std::vector<ChColor>& getCoordsColors() { return m_colors; }
-
     std::vector<ChVector<int>>& getIndicesVertexes() { return m_face_v_indices; }
     std::vector<ChVector<int>>& getIndicesNormals() { return m_face_n_indices; }
     std::vector<ChVector<int>>& getIndicesUV() { return m_face_uv_indices; }
     std::vector<ChVector<int>>& getIndicesColors() { return m_face_col_indices; }
     std::vector<int>& getIndicesMaterials() { return m_face_mat_indices; }
 
-    std::vector<ChProperty*> getPropertiesPerVertex() { return m_properties_per_vertex; }
-    std::vector<ChProperty*> getPropertiesPerFace() { return m_properties_per_face; };
+    std::vector<ChProperty*>& getPropertiesPerVertex() { return m_properties_per_vertex; }
+    std::vector<ChProperty*>& getPropertiesPerFace() { return m_properties_per_face; };
+
+    const std::vector<ChVector<double>>& getCoordsVertices() const { return m_vertices; }
+    const std::vector<ChVector<double>>& getCoordsNormals() const { return m_normals; }
+    const std::vector<ChVector2<double>>& getCoordsUV() const { return m_UV; }
+    const std::vector<ChColor>& getCoordsColors() const { return m_colors; }
+    const std::vector<ChVector<int>>& getIndicesVertexes() const { return m_face_v_indices; }
+    const std::vector<ChVector<int>>& getIndicesNormals() const { return m_face_n_indices; }
+    const std::vector<ChVector<int>>& getIndicesUV() const { return m_face_uv_indices; }
+    const std::vector<ChVector<int>>& getIndicesColors() const { return m_face_col_indices; }
+    const std::vector<int>& getIndicesMaterials() const { return m_face_mat_indices; }
 
     /// Add a property as an array of data per-vertex. Deletion will be automatic at the end of mesh life.
     /// Warning: mprop.data.size() must be equal to m_vertices.size().  Cost: allocation and a data copy.
@@ -74,6 +83,14 @@ class ChApi ChTriangleMeshConnected : public ChTriangleMesh {
 
     /// Load a Wavefront OBJ file into this triangle mesh.
     bool LoadWavefrontMesh(const std::string& filename, bool load_normals = true, bool load_uv = false);
+
+    /// Create and return a ChTriangleMeshConnected from an STL file.
+    /// If an error occurrs during loading, an empty shared pointer is returned.
+    static std::shared_ptr<ChTriangleMeshConnected> CreateFromSTLFile(const std::string& filename,
+                                                                      bool load_normals = true);
+
+    /// Load an STL file into this triangle mesh.
+    bool LoadSTLMesh(const std::string& filename, bool load_normals = true);
 
     /// Write the specified meshes in a Wavefront .obj file
     static void WriteWavefront(const std::string& filename, const std::vector<ChTriangleMeshConnected>& meshes);
@@ -212,10 +229,10 @@ class ChApi ChTriangleMeshConnected : public ChTriangleMesh {
     virtual Type GetClassType() const override { return Type::TRIANGLEMESH_CONNECTED; }
 
     /// Method to allow serialization of transient data to archives.
-    virtual void ArchiveOUT(ChArchiveOut& marchive) override;
+    virtual void ArchiveOut(ChArchiveOut& marchive) override;
 
     /// Method to allow de-serialization of transient data from archives.
-    virtual void ArchiveIN(ChArchiveIn& marchive) override;
+    virtual void ArchiveIn(ChArchiveIn& marchive) override;
 
   public:
     std::vector<ChVector<double>> m_vertices;

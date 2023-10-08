@@ -25,10 +25,16 @@ set(PROGRAMS
 )
 
 if(ENABLE_MODULE_VEHICLE_MODELS)
-  set(PROGRAMS ${PRGRAMS}
-    demo_VEH_Cosim_WheeledVehicle
-    demo_VEH_Cosim_TrackedVehicle
+  set(PROGRAMS ${PROGRAMS}
+      demo_VEH_Cosim_WheeledVehicle
+      demo_VEH_Cosim_TrackedVehicle
   )
+
+  if(ENABLE_MODULE_FSI)
+    set(PROGRAMS ${PROGRAMS}
+        demo_VEH_Cosim_WheeledVehicle_SPH)
+  endif()
+
 endif()
 
 #if(ENABLE_MODULE_DISTRIBUTED)

@@ -29,6 +29,7 @@
 
 #include "chrono/physics/ChMaterialSurfaceNSC.h"
 #include "chrono/physics/ChMaterialSurfaceSMC.h"
+#include "chrono/fea/ChContactSurfaceMesh.h"
 #include "chrono/assets/ChTexture.h"
 #include "chrono/assets/ChBoxShape.h"
 #include "chrono/utils/ChConvexHull.h"
@@ -127,6 +128,11 @@ void SCMTerrain::WriteMesh(const std::string& filename) const {
     trimesh->WriteWavefront(filename, meshes);
 }
 
+// Enable/disable co-simulation mode.
+void SCMTerrain::SetCosimulationMode(bool val) {
+    m_loader->m_cosim_mode = val;
+}
+
 // Set properties of the SCM soil model.
 void SCMTerrain::SetSoilParameters(
     double Bekker_Kphi,    // Kphi, frictional modulus in Bekker model
@@ -183,8 +189,8 @@ void SCMTerrain::SetPlotType(DataPlotType plot_type, double min_val, double max_
 
 // Enable moving patch.
 void SCMTerrain::AddMovingPatch(std::shared_ptr<ChBody> body,
-                                          const ChVector<>& OOBB_center,
-                                          const ChVector<>& OOBB_dims) {
+                                const ChVector<>& OOBB_center,
+                                const ChVector<>& OOBB_dims) {
     SCMLoader::MovingPatchInfo pinfo;
     pinfo.m_body = body;
     pinfo.m_center = OOBB_center;
@@ -208,17 +214,22 @@ void SCMTerrain::Initialize(double sizeX, double sizeY, double delta) {
 
 // Initialize the terrain from a specified height map.
 void SCMTerrain::Initialize(const std::string& heightmap_file,
-                                      double sizeX,
-                                      double sizeY,
-                                      double hMin,
-                                      double hMax,
-                                      double delta) {
+                            double sizeX,
+                            double sizeY,
+                            double hMin,
+                            double hMax,
+                            double delta) {
     m_loader->Initialize(heightmap_file, sizeX, sizeY, hMin, hMax, delta);
 }
 
 // Initialize the terrain from a specified OBJ mesh file.
 void SCMTerrain::Initialize(const std::string& mesh_file, double delta) {
     m_loader->Initialize(mesh_file, delta);
+}
+
+// Initialize the terrain from a specified triangular mesh file.
+void SCMTerrain::Initialize(const geometry::ChTriangleMeshConnected& trimesh, double delta) {
+    m_loader->Initialize(trimesh, delta);
 }
 
 // Get the heights of modified grid nodes.
@@ -231,17 +242,28 @@ void SCMTerrain::SetModifiedNodes(const std::vector<NodeLevel>& nodes) {
     m_loader->SetModifiedNodes(nodes);
 }
 
-// Return the current cumulative contact force on the specified body (due to interaction with the SCM terrain).
-TerrainForce SCMTerrain::GetContactForce(std::shared_ptr<ChBody> body) const {
-    auto itr = m_loader->m_contact_forces.find(body.get());
-    if (itr != m_loader->m_contact_forces.end())
-        return itr->second;
+bool SCMTerrain::GetContactForceBody(std::shared_ptr<ChBody> body, ChVector<>& force, ChVector<>& torque) const {
+    auto itr = m_loader->m_body_forces.find(body.get());
+    if (itr == m_loader->m_body_forces.end()) {
+        force = VNULL;
+        torque = VNULL;
+        return false;
+    }
 
-    TerrainForce frc;
-    frc.point = body->GetPos();
-    frc.force = ChVector<>(0, 0, 0);
-    frc.moment = ChVector<>(0, 0, 0);
-    return frc;
+    force = itr->second.first;
+    torque = itr->second.second;
+    return true;
+}
+
+bool SCMTerrain::GetContactForceNode(std::shared_ptr<fea::ChNodeFEAbase> node, ChVector<>& force) const {
+    auto itr = m_loader->m_node_forces.find(node.get());
+    if (itr == m_loader->m_node_forces.end()) {
+        force = VNULL;
+        return false;
+    }
+
+    force = itr->second;
+    return true;
 }
 
 // Return the number of rays cast at last step.
@@ -287,6 +309,10 @@ double SCMTerrain::GetTimerVisUpdate() const {
     return 1e3 * m_loader->m_timer_visualization();
 }
 
+void SCMTerrain::SetBaseMeshLevel(double level) {
+    m_loader->m_base_height = level;
+}
+
 // Print timing and counter information for last step.
 void SCMTerrain::PrintStepStatistics(std::ostream& os) const {
     os << " Timers (ms):" << std::endl;
@@ -326,7 +352,7 @@ SCMContactableData::SCMContactableData(double area_ratio,
 // -----------------------------------------------------------------------------
 
 // Constructor.
-SCMLoader::SCMLoader(ChSystem* system, bool visualization_mesh) : m_soil_fun(nullptr) {
+SCMLoader::SCMLoader(ChSystem* system, bool visualization_mesh) : m_soil_fun(nullptr), m_base_height(-1000) {
     this->SetSystem(system);
 
     if (visualization_mesh) {
@@ -365,6 +391,8 @@ SCMLoader::SCMLoader(ChSystem* system, bool visualization_mesh) : m_soil_fun(nul
     m_test_offset_down = 0.5;
 
     m_moving_patch = false;
+
+    m_cosim_mode = false;
 }
 
 // Initialize the terrain as a flat grid
@@ -387,11 +415,11 @@ void SCMLoader::Initialize(double sizeX, double sizeY, double delta) {
 
 // Initialize the terrain from a specified height map.
 void SCMLoader::Initialize(const std::string& heightmap_file,
-                                   double sizeX,
-                                   double sizeY,
-                                   double hMin,
-                                   double hMax,
-                                   double delta) {
+                           double sizeX,
+                           double sizeY,
+                           double hMin,
+                           double hMax,
+                           double delta) {
     m_type = PatchType::HEIGHT_MAP;
 
     // Read the image file (request only 1 channel) and extract number of pixels.
@@ -481,12 +509,18 @@ bool calcBarycentricCoordinates(const ChVector<>& v1,
 }
 
 void SCMLoader::Initialize(const std::string& mesh_file, double delta) {
+    // Load triangular mesh
+    auto trimesh = geometry::ChTriangleMeshConnected::CreateFromWavefrontFile(mesh_file, true, true);
+
+    Initialize(*trimesh, delta);
+}
+
+void SCMLoader::Initialize(const geometry::ChTriangleMeshConnected& trimesh, double delta) {
     m_type = PatchType::TRI_MESH;
 
     // Load triangular mesh
-    auto trimesh = geometry::ChTriangleMeshConnected::CreateFromWavefrontFile(mesh_file, true, true);
-    const auto& vertices = trimesh->getCoordsVertices();
-    const auto& faces = trimesh->getIndicesVertexes();
+    const auto& vertices = trimesh.getCoordsVertices();
+    const auto& faces = trimesh.getIndicesVertexes();
 
     // Find x, y, and z ranges of vertex data
     auto minmaxX = std::minmax_element(begin(vertices), end(vertices),
@@ -515,7 +549,8 @@ void SCMLoader::Initialize(const std::string& mesh_file, double delta) {
     int nvy = 2 * m_ny + 1;                                   // number of grid vertices in Y direction
 
     // Loop over all mesh faces, project onto the x-y plane and set the height for all covered grid nodes.
-    m_heights = ChMatrixDynamic<>::Zero(nvx, nvy);
+    ////m_heights = ChMatrixDynamic<>::Zero(nvx, nvy);
+    m_heights = (minZ + m_base_height) * ChMatrixDynamic<>::Ones(nvx, nvy);
 
     int num_h_set = 0;
     double a1, a2, a3;
@@ -1035,7 +1070,8 @@ void SCMLoader::ComputeInternalForces() {
 
     // Reset the load list and map of contact forces
     this->GetLoadList().clear();
-    m_contact_forces.clear();
+    m_body_forces.clear();
+    m_node_forces.clear();
 
     // ---------------------
     // Update moving patches
@@ -1385,39 +1421,71 @@ void SCMLoader::ComputeInternalForces() {
             Ft = T * m_area * nr.tau;
         }
 
-        if (ChBody* rigidbody = dynamic_cast<ChBody*>(contactable)) {
+        if (ChBody* body = dynamic_cast<ChBody*>(contactable)) {
             // [](){} Trick: no deletion for this shared ptr, since 'rigidbody' was not a new ChBody()
             // object, but an already used pointer because mrayhit_result.hitModel->GetPhysicsItem()
             // cannot return it as shared_ptr, as needed by the ChLoadBodyForce:
-            std::shared_ptr<ChBody> srigidbody(rigidbody, [](ChBody*) {});
-            std::shared_ptr<ChLoadBodyForce> mload(new ChLoadBodyForce(srigidbody, Fn + Ft, false, point_abs, false));
-            this->Add(mload);
+            std::shared_ptr<ChBody> sbody(body, [](ChBody*) {});
+
+            if (!m_cosim_mode) {
+                std::shared_ptr<ChLoadBodyForce> mload(new ChLoadBodyForce(sbody, Fn + Ft, false, point_abs, false));
+                this->Add(mload);
+            }
 
             // Accumulate contact force for this rigid body.
             // The resultant force is assumed to be applied at the body COM.
             // All components of the generalized terrain force are expressed in the global frame.
-            auto itr = m_contact_forces.find(contactable);
-            if (itr == m_contact_forces.end()) {
-                // Create new entry and initialize generalized force.
-                ChVector<> force = Fn + Ft;
-                TerrainForce frc;
-                frc.point = srigidbody->GetPos();
-                frc.force = force;
-                frc.moment = Vcross(Vsub(point_abs, srigidbody->GetPos()), force);
-                m_contact_forces.insert(std::make_pair(contactable, frc));
+            ChVector<> force = Fn + Ft;
+            ChVector<> moment = Vcross(point_abs - sbody->GetPos(), force);
+
+            auto itr = m_body_forces.find(body);
+            if (itr == m_body_forces.end()) {
+                // Create new entry and initialize generalized force
+                auto frc = std::make_pair(force, moment);
+                m_body_forces.insert(std::make_pair(body, frc));
             } else {
-                // Update generalized force.
-                ChVector<> force = Fn + Ft;
-                itr->second.force += force;
-                itr->second.moment += Vcross(Vsub(point_abs, srigidbody->GetPos()), force);
+                // Update generalized force
+                itr->second.first += force;
+                itr->second.second += moment;
+            }
+        } else if (fea::ChContactTriangleXYZ* tri = dynamic_cast<fea::ChContactTriangleXYZ*>(contactable)) {
+            if (!m_cosim_mode) {
+                // [](){} Trick: no deletion for this shared ptr
+                std::shared_ptr<ChLoadableUV> stri(tri, [](ChLoadableUV*) {});
+                std::shared_ptr<ChLoad<ChLoaderForceOnSurface>> mload(new ChLoad<ChLoaderForceOnSurface>(stri));
+                mload->loader.SetForce(Fn + Ft);
+                mload->loader.SetApplication(0.5, 0.5);  //// TODO set UV, now just in middle
+                this->Add(mload);
+            }
+
+            // Accumulate contact forces for the nodes of this contact triangle.
+            ChVector<> force = Fn + Ft;
+
+            double s[3];
+            tri->ComputeUVfromP(point_abs, s[1], s[2]);
+            s[0] = 1 - s[1] - s[2];
+
+            for (int i = 0; i < 3; i++) {
+                auto node = tri->GetNode(i);
+                auto node_force = s[i] * force;
+                auto itr = m_node_forces.find(node.get());
+                if (itr == m_node_forces.end()) {
+                    // Create new entry and initialize force
+                    m_node_forces.insert(std::make_pair(node.get(), node_force));
+                } else {
+                    // Update force
+                    itr->second += node_force;
+                }
             }
         } else if (ChLoadableUV* surf = dynamic_cast<ChLoadableUV*>(contactable)) {
-            // [](){} Trick: no deletion for this shared ptr
-            std::shared_ptr<ChLoadableUV> ssurf(surf, [](ChLoadableUV*) {});
-            std::shared_ptr<ChLoad<ChLoaderForceOnSurface>> mload(new ChLoad<ChLoaderForceOnSurface>(ssurf));
-            mload->loader.SetForce(Fn + Ft);
-            mload->loader.SetApplication(0.5, 0.5);  //***TODO*** set UV, now just in middle
-            this->Add(mload);
+            if (!m_cosim_mode) {
+                // [](){} Trick: no deletion for this shared ptr
+                std::shared_ptr<ChLoadableUV> ssurf(surf, [](ChLoadableUV*) {});
+                std::shared_ptr<ChLoad<ChLoaderForceOnSurface>> mload(new ChLoad<ChLoaderForceOnSurface>(ssurf));
+                mload->loader.SetForce(Fn + Ft);
+                mload->loader.SetApplication(0.5, 0.5);  //// TODO set UV, now just in middle
+                this->Add(mload);
+            }
 
             // Accumulate contact forces for this surface.
             //// TODO

@@ -56,6 +56,9 @@ bool ChIrrEventReceiver::OnEvent(const irr::SEvent& event) {
             case irr::KEY_KEY_U:
                 m_gui->show_explorer = !m_gui->show_explorer;
                 return true;
+            case irr::KEY_SPACE:
+                m_gui->m_vis->SetUtilityFlag(!m_gui->m_vis->GetUtilityFlag());
+                return true;
             case irr::KEY_F8: {
                 GetLog() << "Saving system in JSON format to dump.json file \n";
                 ChStreamOutAsciiFile mfileo("dump.json");
@@ -68,6 +71,8 @@ bool ChIrrEventReceiver::OnEvent(const irr::SEvent& event) {
                 ChArchiveAsciiDump marchiveout2(mfileo2);
                 marchiveout2.SetUseVersions(false);
                 marchiveout2 << CHNVP(m_gui->m_system, "System");
+
+                return true;
             }
             case irr::KEY_F6:
                 GetLog() << "Saving system vector and matrices to dump_xxyy.dat files.\n";
@@ -249,9 +254,9 @@ void ChIrrGUI::Initialize(ChVisualSystemIrrlicht* vis) {
     auto g_tab2 = g_tabbed->addTab(L"Modal");
     auto g_tab3 = g_tabbed->addTab(L"Help");
 
-    g_textFPS = guienv->addStaticText(L"FPS", irr::core::rect<irr::s32>(10, 10, 200, 200), true, true, g_tab1);
+    g_textFPS = guienv->addStaticText(L"FPS", irr::core::rect<irr::s32>(10, 10, 200, 230), true, true, g_tab1);
 
-    g_labelcontacts = guienv->addComboBox(irr::core::rect<irr::s32>(10, 210, 200, 210 + 20), g_tab1, 9901);
+    g_labelcontacts = guienv->addComboBox(irr::core::rect<irr::s32>(10, 240, 200, 240 + 20), g_tab1, 9901);
     g_labelcontacts->addItem(L"Contact distances");
     g_labelcontacts->addItem(L"Contact force modulus");
     g_labelcontacts->addItem(L"Contact force (normal)");
@@ -262,7 +267,7 @@ void ChIrrGUI::Initialize(ChVisualSystemIrrlicht* vis) {
     g_labelcontacts->addItem(L"Do not print contact values");
     g_labelcontacts->setSelected(7);
 
-    g_drawcontacts = guienv->addComboBox(irr::core::rect<irr::s32>(10, 230, 200, 230 + 20), g_tab1, 9901);
+    g_drawcontacts = guienv->addComboBox(irr::core::rect<irr::s32>(10, 260, 200, 260 + 20), g_tab1, 9901);
     g_drawcontacts->addItem(L"Contact normals");
     g_drawcontacts->addItem(L"Contact distances");
     g_drawcontacts->addItem(L"Contact N forces");
@@ -270,7 +275,7 @@ void ChIrrGUI::Initialize(ChVisualSystemIrrlicht* vis) {
     g_drawcontacts->addItem(L"Do not draw contacts");
     g_drawcontacts->setSelected(4);
 
-    g_labellinks = guienv->addComboBox(irr::core::rect<irr::s32>(10, 250, 200, 250 + 20), g_tab1, 9923);
+    g_labellinks = guienv->addComboBox(irr::core::rect<irr::s32>(10, 280, 200, 280 + 20), g_tab1, 9923);
     g_labellinks->addItem(L"Link react.force modulus");
     g_labellinks->addItem(L"Link react.force X");
     g_labellinks->addItem(L"Link react.force Y");
@@ -282,29 +287,29 @@ void ChIrrGUI::Initialize(ChVisualSystemIrrlicht* vis) {
     g_labellinks->addItem(L"Do not print link values");
     g_labellinks->setSelected(8);
 
-    g_drawlinks = guienv->addComboBox(irr::core::rect<irr::s32>(10, 270, 200, 270 + 20), g_tab1, 9924);
+    g_drawlinks = guienv->addComboBox(irr::core::rect<irr::s32>(10, 300, 200, 300 + 20), g_tab1, 9924);
     g_drawlinks->addItem(L"Link reaction forces");
     g_drawlinks->addItem(L"Link reaction torques");
     g_drawlinks->addItem(L"Do not draw link vectors");
     g_drawlinks->setSelected(2);
 
     g_plot_aabb =
-        guienv->addCheckBox(false, irr::core::rect<irr::s32>(10, 300, 200, 300 + 15), g_tab1, 9914, L"Draw AABB");
+        guienv->addCheckBox(false, irr::core::rect<irr::s32>(10, 330, 200, 330 + 15), g_tab1, 9914, L"Draw AABB");
 
     g_plot_cogs =
-        guienv->addCheckBox(false, irr::core::rect<irr::s32>(10, 315, 200, 315 + 15), g_tab1, 9915, L"Draw COGs");
+        guienv->addCheckBox(false, irr::core::rect<irr::s32>(10, 345, 200, 345 + 15), g_tab1, 9915, L"Draw COGs");
 
-    g_plot_linkframes = guienv->addCheckBox(false, irr::core::rect<irr::s32>(10, 330, 200, 330 + 15), g_tab1, 9920,
+    g_plot_linkframes = guienv->addCheckBox(false, irr::core::rect<irr::s32>(10, 360, 200, 360 + 15), g_tab1, 9920,
                                             L"Draw link frames");
 
-    g_plot_collisionshapes = guienv->addCheckBox(false, irr::core::rect<irr::s32>(10, 345, 200, 345 + 15), g_tab1, 9902,
+    g_plot_collisionshapes = guienv->addCheckBox(false, irr::core::rect<irr::s32>(10, 375, 200, 375 + 15), g_tab1, 9902,
                                                  L"Draw collision shapes");
 
-    g_plot_convergence = guienv->addCheckBox(false, irr::core::rect<irr::s32>(10, 360, 200, 360 + 15), g_tab1, 9902,
+    g_plot_convergence = guienv->addCheckBox(false, irr::core::rect<irr::s32>(10, 390, 200, 390 + 15), g_tab1, 9902,
                                              L"Plot convergence");
 
-    guienv->addStaticText(L"Symbols scale", irr::core::rect<irr::s32>(130, 300, 200, 300 + 15), false, false, g_tab1);
-    g_symbolscale = guienv->addEditBox(L"", irr::core::rect<irr::s32>(170, 315, 200, 315 + 15), true, g_tab1, 9921);
+    guienv->addStaticText(L"Symbols scale", irr::core::rect<irr::s32>(130, 330, 200, 330 + 15), false, false, g_tab1);
+    g_symbolscale = guienv->addEditBox(L"", irr::core::rect<irr::s32>(170, 345, 200, 345 + 15), true, g_tab1, 9921);
     SetSymbolscale(symbolscale);
 
     // -- g_tab2
@@ -381,6 +386,14 @@ void ChIrrGUI::SetModalSpeed(double val) {
     g_modal_speed->setText(irr::core::stringw(message).c_str());
 }
 
+void ChIrrGUI::SetModalModesMax(int maxModes)
+{
+    int newMaxModes = std::max(maxModes, 1);
+    g_modal_mode_n->setMax(newMaxModes);
+    modal_mode_n = std::min(modal_mode_n, newMaxModes);
+    modal_phi = 0.0;
+}
+
 // -----------------------------------------------------------------------------
 
 void ChIrrGUI::DumpSystemMatrices() {
@@ -405,6 +418,8 @@ static void recurse_update_tree_node(ChValue* value, irr::gui::IGUITreeViewNode*
     int ni = 0;
     auto subnode = mnode->getFirstChild();
     for (auto j : mexplorer2.GetFetchResults()) {
+        if (!j->GetRawPtr())
+            continue;
         ++ni;
         if (!subnode) {
             subnode = mnode->addChildBack(L"_to_set_");
@@ -422,24 +437,24 @@ static void recurse_update_tree_node(ChValue* value, irr::gui::IGUITreeViewNode*
             jstr += irr::core::stringw(j->GetClassRegisteredName().c_str());
             jstr += L"] ";
         }
-        if (auto mydouble = j->PointerUpCast<double>()) {
+        if (j->GetTypeid() == std::type_index(typeid(double))) {
             jstr += " =";
-            auto stringval = std::to_string(*mydouble);
+            auto stringval = std::to_string(*static_cast<double*>(j->GetRawPtr()));
             jstr += irr::core::stringw(stringval.c_str());
         }
-        if (auto myfloat = j->PointerUpCast<float>()) {
+        if (j->GetTypeid() == std::type_index(typeid(float))) {
             jstr += " =";
-            auto stringval = std::to_string(*myfloat);
+            auto stringval = std::to_string(*static_cast<float*>(j->GetRawPtr()));
             jstr += irr::core::stringw(stringval.c_str());
         }
-        if (auto myint = j->PointerUpCast<int>()) {
+        if (j->GetTypeid() == std::type_index(typeid(int))) {
             jstr += " =";
-            auto stringval = std::to_string(*myint);
+            auto stringval = std::to_string(*static_cast<int*>(j->GetRawPtr()));
             jstr += irr::core::stringw(stringval.c_str());
         }
-        if (auto mybool = j->PointerUpCast<bool>()) {
+        if (j->GetTypeid() == std::type_index(typeid(bool))) {
             jstr += " =";
-            auto stringval = std::to_string(*mybool);
+            auto stringval = std::to_string(*static_cast<bool*>(j->GetRawPtr()));
             jstr += irr::core::stringw(stringval.c_str());
         }
         subnode->setText(jstr.c_str());
@@ -484,6 +499,8 @@ void ChIrrGUI::Render() {
     str += "\n  CPU Update time:  ";
     str += (int)(1000 * m_system->GetTimerUpdate());
     str += " ms";
+    str += "\n\nReal Time Factor: ";
+    str += m_system->GetRTF();
     str += "\n\nNum. active bodies:  ";
     str += m_system->GetNbodies();
     str += "\nNum. sleeping bodies:  ";

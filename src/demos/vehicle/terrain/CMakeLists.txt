@@ -12,13 +12,8 @@ if(ENABLE_MODULE_IRRLICHT OR ENABLE_MODULE_VSG)
     set(DEMOS ${DEMOS}
         demo_VEH_RigidTerrain_WheeledVehicle
         demo_VEH_SCMTerrain_WheeledVehicle
-    )
-endif()
-
-if(ENABLE_MODULE_IRRLICHT)
-    set(DEMOS ${DEMOS}  
-        demo_VEH_SCMTerrain_TrackedVehicle
         demo_VEH_SCMTerrain_RigidTire
+        demo_VEH_SCMTerrain_TrackedVehicle
     )
 endif()
 
@@ -31,6 +26,7 @@ endif()
 if(HAVE_OPENCRG AND ENABLE_MODULE_VSG)
     set(DEMOS ${DEMOS}
         demo_VEH_CRGTerrain_VSG
+        demo_VEH_FEDA_Road
     )
 endif()
 
@@ -45,6 +41,7 @@ if(ENABLE_MODULE_FSI AND (ENABLE_MODULE_OPENGL OR ENABLE_MODULE_VSG))
     set(DEMOS ${DEMOS}
         demo_VEH_SPHTerrain_Obstacles
         demo_VEH_SPHTerrain_WheeledVehicle
+        demo_VEH_SPHTerrain_TrackedVehicle
         demo_VEH_SPHTerrain_Viper
     )
 endif()
@@ -73,8 +70,6 @@ if(ENABLE_MODULE_IRRLICHT)
 endif()
 
 if(ENABLE_MODULE_VSG)
-    set(CMAKE_CXX_STANDARD 17)
-
     include_directories(${CH_VSG_INCLUDES})
     list(APPEND LIBS "ChronoEngine_vsg")
     list(APPEND LIBS "ChronoEngine_vehicle_vsg")
@@ -106,6 +101,10 @@ endif()
 if(ENABLE_MODULE_OPENGL)
     include_directories(${CH_OPENGL_INCLUDES})
     list(APPEND LIBS "ChronoEngine_opengl")
+endif()
+
+if(ENABLE_MODULE_POSTPROCESS)
+    list(APPEND LIBS "ChronoEngine_postprocess")
 endif()
 
 #--------------------------------------------------------------

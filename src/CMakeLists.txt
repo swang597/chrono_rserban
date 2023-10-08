@@ -20,63 +20,124 @@ if (POLICY CMP0074)
 endif()
 
 #-----------------------------------------------------------------------------
+# Choose to build either shared or static libraries as default
+#-----------------------------------------------------------------------------
+option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
+
+#-----------------------------------------------------------------------------
+# Optionally use static runtime library (MSVC only)
+#-----------------------------------------------------------------------------
+if (MSVC)
+    option(USE_MSVC_STATIC_RUNTIME "Compile with a multi-threaded statically-linked runtime library" OFF)
+    if (USE_MSVC_STATIC_RUNTIME)
+        message(STATUS "Enabling STATIC run-time library")
+        message(STATUS "  CMAKE_CXX_FLAGS (IN):          ${CMAKE_CXX_FLAGS}")
+        message(STATUS "  CMAKE_CXX_FLAGS_RELEASE (IN):  ${CMAKE_CXX_FLAGS_RELEASE}")
+        message(STATUS "  CMAKE_CXX_FLAGS_DEBUG (IN):    ${CMAKE_CXX_FLAGS_DEBUG}")
+
+        foreach(flag_var
+                CMAKE_C_FLAGS CMAKE_C_FLAGS_DEBUG CMAKE_C_FLAGS_RELEASE
+                CMAKE_C_FLAGS_MINSIZEREL CMAKE_C_FLAGS_RELWITHDEBINFO
+                CMAKE_CXX_FLAGS CMAKE_CXX_FLAGS_DEBUG CMAKE_CXX_FLAGS_RELEASE
+                CMAKE_CXX_FLAGS_MINSIZEREL CMAKE_CXX_FLAGS_RELWITHDEBINFO)
+          if(${flag_var} MATCHES "/MD")
+            string(REGEX REPLACE "/MD" "/MT" ${flag_var} "${${flag_var}}")
+          endif()
+          if(${flag_var} MATCHES "/MDd")
+            string(REGEX REPLACE "/MDd" "/MTd" ${flag_var} "${${flag_var}}")
+          endif()
+        endforeach(flag_var)
+
+        message(STATUS "  CMAKE_CXX_FLAGS (OUT):         ${CMAKE_CXX_FLAGS}")
+        message(STATUS "  CMAKE_CXX_FLAGS_RELEASE (OUT): ${CMAKE_CXX_FLAGS_RELEASE}")
+        message(STATUS "  CMAKE_CXX_FLAGS_DEBUG (OUT):   ${CMAKE_CXX_FLAGS_DEBUG}")
+    endif()
+endif()
+
+#-----------------------------------------------------------------------------
 # Collect compiler flags required to build the Chrono libraries
 #-----------------------------------------------------------------------------
 
 set(CH_C_FLAGS "${CMAKE_C_FLAGS}")
 set(CH_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 set(CH_LINKERFLAG_EXE "${CMAKE_EXE_LINKER_FLAGS}")
-set(CH_LINKERFLAG_SHARED "")
+set(CH_LINKERFLAG_LIB "")
 
 #-----------------------------------------------------------------------------
-# Enable C++11 support.  Check for C++14 support
+# Collect compiler flags required to build the Chrono libraries
+#-----------------------------------------------------------------------------
+if (NOT BUILD_SHARED_LIBS)
+  add_compile_definitions(CH_STATIC)
+endif()
+
+
+#-----------------------------------------------------------------------------
+# Check for C++14 and C++17 support
 #-----------------------------------------------------------------------------
 
 # Allow user to enforce strict C++11 standard
 option(CH_ENFORCE_CXX11 "Enforce strict C++11 standard" OFF)
 
-
-if (CH_ENFORCE_CXX11)
-	#  set(CH_CXX_FLAGS "${CH_CXX_FLAGS} ${CMAKE_CXX11_STANDARD_COMPILE_OPTION}")
-	set(CMAKE_CXX_STANDARD 11)
-else()
-	#  set(CH_CXX_FLAGS "${CH_CXX_FLAGS} ${CMAKE_CXX14_STANDARD_COMPILE_OPTION}")
-	set(CMAKE_CXX_STANDARD 14)
-endif()
-
 # This is a hack -- look for a more robust solution
 set(CH_CXX14 FALSE)
+set(CH_CXX17 FALSE)
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-  message(STATUS "GCC version:  ${CMAKE_CXX_COMPILER_VERSION}")
-  if(NOT CH_ENFORCE_CXX11 AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.9.9)
-    set(CH_CXX14 TRUE)
-  endif()
+    message(STATUS "GCC version:  ${CMAKE_CXX_COMPILER_VERSION}")
+    if(NOT CH_ENFORCE_CXX11 AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 4.9.9)
+      set(CH_CXX14 TRUE)
+    endif()
+    if(NOT CH_ENFORCE_CXX11 AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER 7.0.0)
+      set(CH_CXX17 TRUE)
+    endif()
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  message(STATUS "Clang version:  ${CMAKE_CXX_COMPILER_VERSION}")
-  if(NOT CH_ENFORCE_Cxx11 AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 3.4)
-    set(CH_CXX14 TRUE)
-  endif()
+    message(STATUS "Clang version:  ${CMAKE_CXX_COMPILER_VERSION}")
+    if(NOT CH_ENFORCE_CXX11 AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 3.4)
+      set(CH_CXX14 TRUE)
+    endif()
+    if(NOT CH_ENFORCE_CXX11 AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 7.0)
+      set(CH_CXX17 TRUE)
+    endif()
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-  message(STATUS "Visual Studio version:  ${MSVC_VERSION}")
-  if(NOT CH_ENFORCE_CXX11 AND MSVC_VERSION GREATER 1800)
-    set(CH_CXX14 TRUE)
-  endif()
+    message(STATUS "Visual Studio version:  ${MSVC_VERSION}")
+    if(NOT CH_ENFORCE_CXX11 AND MSVC_VERSION GREATER 1800)
+      set(CH_CXX14 TRUE)
+    endif()
+    if(NOT CH_ENFORCE_CXX11 AND MSVC_VERSION GREATER 1914)
+      set(CH_CXX17 TRUE)
+    endif()
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "PGI")
+    # CMake's standard support flags behave strangely with PGI compilers, don't trust them
+    set(CH_CXX_FLAGS "")
+    message(STATUS "PGI version: ${CMAKE_CXX_COMPILER_VERSION}")
+    if(NOT CH_ENFORCE_CXX11 AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 17.4)
+      message(STATUS "CMAKE_CXX14_STANDARD_COMPILE_OPTION can't be trusted for PGI, manually adding C++14 support")
+      set(CH_CXX_FLAGS "-std=c++14")
+      set(CH_CXX14 TRUE)
+    endif()
 endif()
-message(STATUS "Compiler supports C++14:  ${CH_CXX14}")
 
-# CMake's standard support flags behave strangely with PGI compilers, don't trust them
-if (CMAKE_CXX_COMPILER_ID MATCHES "PGI")
-  set(CH_CXX_FLAGS "")
-  message(STATUS "PGI version: ${CMAKE_CXX_COMPILER_VERSION}")
-  if(NOT CH_ENFORCE_CXX11 AND CMAKE_CXX_COMPILER_VERSION VERSION_GREATER_EQUAL 17.4)
-    message(STATUS "CMAKE_CXX14_STANDARD_COMPILE_OPTION can't be trusted for PGI, manually adding C++14 support")
-    set(CH_CXX14 TRUE)
-    set(CH_CXX_FLAGS "-std=c++14")
-  endif()
+if(CH_ENFORCE_CXX11)
+    message(STATUS "Enforce C++11")
+	  set(CMAKE_CXX_STANDARD 11)
+    set(CHRONO_CXX_STANDARD 11)
+else()
+    message(STATUS "C++14 compiler support:  ${CH_CXX14}")
+    message(STATUS "C++17 compiler support:  ${CH_CXX17}")
+
+    if(CH_CXX17)
+        set(CMAKE_CXX_STANDARD 17)
+        set(CHRONO_CXX_STANDARD 17)
+    elseif(CH_CXX14)
+        set(CMAKE_CXX_STANDARD 14)
+        set(CHRONO_CXX_STANDARD 14)
+    endif()
 endif()
 
+#-----------------------------------------------------------------------------
 # Allow user to enable whole program optimization (MSVC only)
+#-----------------------------------------------------------------------------
+
 if (MSVC)
   option(CH_WHOLE_PROG_OPT "Enable whole program optimization" OFF)
 
@@ -84,7 +145,7 @@ if (MSVC)
      set(CH_CXX_FLAGS "${CH_CXX_FLAGS} /GL")
      set(CH_C_FLAGS "${CH_C_FLAGS} /GL")
      set(CH_LINKERFLAG_EXE "${CH_LINKERFLAG_EXE} /LTCG")
-     set(CH_LINKERFLAG_SHARED "${CH_LINKERFLAG_SHARED} /LTCG")
+     set(CH_LINKERFLAG_LIB "${CH_LINKERFLAG_LIB} /LTCG")
      message(STATUS "Enabling whole program optimization...")
      message(STATUS "  Compiler flag: /GL")
      message(STATUS "  Linker flag: /LTGL")
@@ -335,7 +396,10 @@ if(CUDA_FOUND)
     set(CUDA_SEPARABLE_COMPILATION OFF)
   elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     set(CUDA_PROPAGATE_HOST_FLAGS OFF)
-    if(${CH_CXX14})
+    if(${CH_CXX17})
+      		set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -std c++17")
+      		set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -Xcompiler -std=c++17")
+    elseif(${CH_CXX14})
       		set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -std c++14")
       		set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -Xcompiler -std=c++14")
     else()
@@ -421,7 +485,7 @@ if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
         set(CH_CXX_FLAGS "${CH_CXX_FLAGS} -D_MINGW -D_WINDOWS")
         set(CH_C_FLAGS "${CH_C_FLAGS} -D_MINGW -D_WINDOWS")
         set(CH_LINKERFLAG_EXE "${CH_LINKERFLAG_EXE} -Wl,--enable-runtime-pseudo-reloc")
-        set(CH_LINKERFLAG_SHARED "${CH_LINKERFLAG_SHARED} -Wl,--export-all-symbols -Wl,--enable-auto-import -Wl,--enable-runtime-pseudo-reloc")
+        set(CH_LINKERFLAG_LIB "${CH_LINKERFLAG_LIB} -Wl,--export-all-symbols -Wl,--enable-auto-import -Wl,--enable-runtime-pseudo-reloc")
 
         if(CMAKE_SIZEOF_VOID_P MATCHES 8)
             set(CH_CXX_FLAGS "${CH_CXX_FLAGS} -m64")
@@ -432,7 +496,7 @@ endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(CH_LINKERFLAG_EXE "${CH_LINKERFLAG_EXE} -Wl,-no_compact_unwind")
-    set(CH_LINKERFLAG_SHARED "${CH_LINKERFLAG_SHARED} -Wl,-no_compact_unwind")
+    set(CH_LINKERFLAG_LIB "${CH_LINKERFLAG_LIB} -Wl,-no_compact_unwind")
 endif()
 
 # Compiler warning level and disbaled warnings
@@ -499,7 +563,7 @@ if(ENABLE_HDF5)
         if (HDF5_FOUND)
             set(HDF5_INCLUDE_DIRS ${HDF5_INCLUDE_DIR})
             set(HDF5_C_LIBRARIES ${HDF5_C_${LIB_TYPE}_LIBRARY})
-            set(HDF5_CXX_LIBRARIES ${HDF5_CXX_${LIB_TYPE}_LIBRARY)
+            set(HDF5_CXX_LIBRARIES ${HDF5_CXX_${LIB_TYPE}_LIBRARY})
         endif()
     endif()
 
@@ -530,14 +594,19 @@ endif()
 # Set the base compilation flags
 #-----------------------------------------------------------------------------
 
-message(STATUS "Compiler and linker flags:")
-message(STATUS "  C++ compiler flags: ${CH_CXX_FLAGS}")
-message(STATUS "  C compiler flags:   ${CH_C_FLAGS}")
-message(STATUS "  Linker flags:       ${CH_LINKERFLAG_EXE}")
-
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CH_CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} ${CH_CXX_FLAGS} -D_DEBUG -DDEBUG")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} ${CH_CXX_FLAGS} -DNDEBUG")
+
+message(STATUS "Compiler and linker flags:")
+message(STATUS "  CMAKE_CXX_FLAGS:         ${CMAKE_CXX_FLAGS}")
+message(STATUS "  CMAKE_CXX_FLAGS_DEBUG:   ${CMAKE_CXX_FLAGS_DEBUG}")
+message(STATUS "  CMAKE_CXX_FLAGS_RELEASE: ${CMAKE_CXX_FLAGS_RELEASE}")
+message(STATUS "  Linke flags LIB:         ${CH_LINKERFLAG_LIB}")
+message(STATUS "  Linke flags EXE:         ${CH_LINKERFLAG_EXE}")
+if(CUDA_FOUND)
+    message(STATUS "  CUDA flags:              ${CUDA_NVCC_FLAGS}")
+endif()
 
 # For Bullet to use 32 bit math
 add_definitions( "-DBP_USE_FIXEDPOINT_INT_32" )
@@ -640,6 +709,7 @@ include_directories(${CH_INCLUDES})
 
 # Add directories to build various optional modules.  Each module is supposed
 # to provide an option for enabling that particular module.
+add_subdirectory(chrono_parsers)
 add_subdirectory(chrono_pardisomkl)
 add_subdirectory(chrono_mumps)
 add_subdirectory(chrono_matlab)
@@ -656,14 +726,11 @@ add_subdirectory(chrono_fsi)
 add_subdirectory(chrono_gpu)
 add_subdirectory(chrono_distributed)
 add_subdirectory(chrono_vehicle)
+add_subdirectory(chrono_models)
 add_subdirectory(chrono_sensor)
 add_subdirectory(chrono_synchrono)
-add_subdirectory(chrono_pyparser)
 add_subdirectory(chrono_swig/chrono_python)
 add_subdirectory(chrono_swig/chrono_csharp)
-
-# Add directories for model libraries
-add_subdirectory(chrono_models)
 
 # Add directories for demo programs, unit test programs, and benchmark test programs.
 if(BUILD_DEMOS)
@@ -757,12 +824,6 @@ else()
   set(CHRONO_CASCADE "#undef CHRONO_CASCADE")
 endif()
 
-if(ENABLE_MODULE_MODAL)
-  set(CHRONO_MODAL "#define CHRONO_MODAL")
-else()
-  set(CHRONO_MODAL "#undef CHRONO_MODAL")
-endif()
-
 if(ENABLE_MODULE_COSIMULATION)
   set(CHRONO_COSIMULATION "#define CHRONO_COSIMULATION")
 else()
@@ -787,16 +848,10 @@ else()
   set(CHRONO_VSG "#undef CHRONO_VSG")
 endif()
 
-if(ENABLE_MODULE_MATLAB)
-  set(CHRONO_MATLAB "#define CHRONO_MATLAB")
+if(ENABLE_MODULE_MODAL)
+  set(CHRONO_MODAL "#define CHRONO_MODAL")
 else()
-  set(CHRONO_MATLAB "#undef CHRONO_MATLAB")
-endif()
-
-if(ENABLE_MODULE_PARDISO_MKL)
-  set(CHRONO_PARDISO_MKL "#define CHRONO_PARDISO_MKL")
-else()
-  set(CHRONO_PARDISO_MKL "#undef CHRONO_PARDISO_MKL")
+  set(CHRONO_MODAL "#undef CHRONO_MODAL")
 endif()
 
 if(ENABLE_MODULE_MUMPS)
@@ -815,6 +870,24 @@ if(ENABLE_MODULE_OPENGL)
   set(CHRONO_OPENGL "#define CHRONO_OPENGL")
 else()
   set(CHRONO_OPENGL "#undef CHRONO_OPENGL")
+endif()
+
+if(ENABLE_MODULE_MATLAB)
+  set(CHRONO_MATLAB "#define CHRONO_MATLAB")
+else()
+  set(CHRONO_MATLAB "#undef CHRONO_MATLAB")
+endif()
+
+if(ENABLE_MODULE_PARDISO_MKL)
+  set(CHRONO_PARDISO_MKL "#define CHRONO_PARDISO_MKL")
+else()
+  set(CHRONO_PARDISO_MKL "#undef CHRONO_PARDISO_MKL")
+endif()
+
+if(ENABLE_MODULE_PARSERS)
+  set(CHRONO_PARSERS "#define CHRONO_PARSERS")
+else()
+  set(CHRONO_PARSERS "#undef CHRONO_PARSERS")
 endif()
 
 if(ENABLE_MODULE_POSTPROCESS)
@@ -939,8 +1012,8 @@ set(CH_INCLUDE_DIRS ${CH_INCLUDE_DIRS} "${THRUST_INCLUDE_DIR}")
 set(CH_BINARY_DIR "${PROJECT_BINARY_DIR}")
 set(CH_DATA_DIR "${PROJECT_SOURCE_DIR}/data/")
 
-configure_file("${PROJECT_SOURCE_DIR}/cmake/ChronoConfig.cmake.in"
-               "${PROJECT_BINARY_DIR}/cmake/ChronoConfig.cmake"
+configure_file("${PROJECT_SOURCE_DIR}/cmake/chrono-config.cmake.in"
+               "${PROJECT_BINARY_DIR}/cmake/chrono-config.cmake"
                @ONLY)
 
 # For the INSTALL tree
@@ -958,8 +1031,8 @@ set(CH_INCLUDE_DIRS ${CH_INCLUDE_DIRS} "${THRUST_INCLUDE_DIR}")
 set(CH_BINARY_DIR ${CMAKE_INSTALL_PREFIX})
 set(CH_DATA_DIR "${CMAKE_INSTALL_PREFIX}/${CH_INSTALL_DATA}/")
 
-configure_file("${PROJECT_SOURCE_DIR}/cmake/ChronoConfig.cmake.in"
-               "${PROJECT_BINARY_DIR}/cmake/ChronoConfig.cmake.install"
+configure_file("${PROJECT_SOURCE_DIR}/cmake/chrono-config.cmake.in"
+               "${PROJECT_BINARY_DIR}/cmake/chrono-config.cmake.install"
                @ONLY)
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
@@ -968,6 +1041,6 @@ else()
     set(CH_CONFIG_INSTALL_PATH "lib/cmake/Chrono")
 endif()
 
-install(FILES "${PROJECT_BINARY_DIR}/cmake/ChronoConfig.cmake.install"
+install(FILES "${PROJECT_BINARY_DIR}/cmake/chrono-config.cmake.install"
         DESTINATION ${CH_CONFIG_INSTALL_PATH}
-        RENAME ChronoConfig.cmake)
+        RENAME chrono-config.cmake)
