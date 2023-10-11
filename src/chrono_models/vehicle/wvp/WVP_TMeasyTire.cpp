@@ -30,109 +30,68 @@ namespace wvp {
 // Static variables
 // -----------------------------------------------------------------------------
 
-const std::string WVP_TMeasyTire::m_meshFile_left = "wvp/wvp_tire_left.obj";
-const std::string WVP_TMeasyTire::m_meshFile_right = "wvp/wvp_tire_right.obj";
+const std::string WVP_TMeasyTire::m_meshFile_left = "feda/meshes/FEDA_tire_fine.obj";
+const std::string WVP_TMeasyTire::m_meshFile_right = "feda/meshes/FEDA_tire_fine.obj";
 
 const double WVP_TMeasyTire::m_mass = 71.1;
 const ChVector<> WVP_TMeasyTire::m_inertia(9.62, 16.84, 9.62);
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-WVP_TMeasyTire::WVP_TMeasyTire(const std::string& name) : ChTMeasyTire(name) {
-
-}
+WVP_TMeasyTire::WVP_TMeasyTire(const std::string& name) : ChTMeasyTire(name) {}
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 void WVP_TMeasyTire::SetTMeasyParams() {
-	// Set Handling Charecteristics as close as possible to Pacejka89 model data
-    
-    m_TMeasyCoeff.pn = GetTireMaxLoad(152)/2.0;
-    m_TMeasyCoeff.pn_max = 3.5 * m_TMeasyCoeff.pn;
+    std::vector<double> defl = {0,     0.005, 0.01,  0.015, 0.02,  0.025, 0.03,  0.035, 0.04,  0.045, 0.05,
+                                0.055, 0.06,  0.065, 0.07,  0.075, 0.08,  0.085, 0.09,  0.095, 0.1};
+    std::vector<double> frc = {0.00,     2004.06,  4242.26,  6688.46,  9316.51,  12100.25, 15013.54,
+                               18030.23, 21124.16, 24269.19, 27439.17, 30607.94, 33749.36, 36837.28,
+                               39845.54, 42748.00, 45518.51, 48130.91, 50559.06, 52776.81, 54758.00};
 
-    m_TMeasyCoeff.mu_0 = 0.8;
-    
-    // Set nonlinear vertical stiffness
-    std::vector<double> disp, force;
-    disp.push_back(0.01); force.push_back(3276.0);
-    disp.push_back(0.02); force.push_back(6729.0);
-    disp.push_back(0.03); force.push_back(10361.0);
-    disp.push_back(0.04); force.push_back(14171.0);
-    disp.push_back(0.05); force.push_back(18159.0);
-    disp.push_back(0.06); force.push_back(22325.0);
-    disp.push_back(0.07); force.push_back(26670.0);
-    disp.push_back(0.08); force.push_back(31192.0);
-    disp.push_back(0.09); force.push_back(35893.0);
-    disp.push_back(0.10); force.push_back(40772.0);
-    
-    SetVerticalStiffness(disp,force);
-    
-    SetRollingResistanceCoefficients(0.015,0.015);
-    
-    SetDynamicRadiusCoefficients(0.375,0.75);
-    
-    m_width 		  	 = 0.372;
-    m_unloaded_radius 	 = 1.096 / 2.0;
-    m_rim_radius        = 20.0 * 0.5 * 25.4 / 1000.0;
-    m_roundness         = 0.1;
-            
- 	// Simple damping model from single mass oscilator
-    double xi = 0.05; // tire damping ratio
-    
-	double C1 = 1000.0*sqrt(pow(m_a1,2)+4.0*m_a2*m_TMeasyCoeff.pn/1000);
-	double C2 = 1000.0*sqrt(pow(m_a1,2)+8.0*m_a2*m_TMeasyCoeff.pn/1000);
-	double CZM = (C1 + C2) / 2.0;
-	
-	m_TMeasyCoeff.dz 		 =  2.0 * xi * sqrt(CZM * WVP_TMeasyTire::m_mass);
-    m_TMeasyCoeff.cx        =  0.9 * CZM;
-	m_TMeasyCoeff.dx 		 =  2.0 * xi * sqrt(m_TMeasyCoeff.cx * WVP_TMeasyTire::m_mass);
-    m_TMeasyCoeff.cy        =  0.8 * CZM;
-	m_TMeasyCoeff.dy 		  =  2.0 * xi * sqrt(m_TMeasyCoeff.cy * WVP_TMeasyTire::m_mass);
-    
-	m_TMeasyCoeff.dfx0_pn    =  215.013101;
-	m_TMeasyCoeff.sxm_pn     =  0.139216;
-	m_TMeasyCoeff.fxm_pn     =  13.832671;
-	m_TMeasyCoeff.sxs_pn     =  0.500000;
-	m_TMeasyCoeff.fxs_pn     =  12.387002;
-	m_TMeasyCoeff.dfx0_p2n   =  615.071218;
-	m_TMeasyCoeff.sxm_p2n    =  0.112538;
-	m_TMeasyCoeff.fxm_p2n    =  24.576280;
-	m_TMeasyCoeff.sxs_p2n    =  0.800000;
-	m_TMeasyCoeff.fxs_p2n    =  22.079064;
-	m_TMeasyCoeff.dfy0_pn    =  168.715739;
-	m_TMeasyCoeff.sym_pn     =  0.258411;
-	m_TMeasyCoeff.fym_pn     =  13.038949;
-	m_TMeasyCoeff.sys_pn     =  0.800000;
-	m_TMeasyCoeff.fys_pn     =  12.387002;
-	m_TMeasyCoeff.dfy0_p2n   =  320.100587;
-	m_TMeasyCoeff.sym_p2n    =  0.238826;
-	m_TMeasyCoeff.fym_p2n    =  23.241121;
-	m_TMeasyCoeff.sys_p2n    =  1.000000;
-	m_TMeasyCoeff.fys_p2n    =  22.079064;
-	m_TMeasyCoeff.nto0_pn    =  0.160000;
-	m_TMeasyCoeff.synto0_pn  =  0.180000;
-	m_TMeasyCoeff.syntoE_pn  =  0.480000;
-	m_TMeasyCoeff.nto0_p2n   =  0.170000;
-	m_TMeasyCoeff.synto0_p2n =  0.160000;
-	m_TMeasyCoeff.syntoE_p2n =  0.500000;
-
-
-	if(CheckParameters()) { 
-		std::cout << "Parameter Set seems to be ok." << std::endl;
-	} else {
-		std::cout << "Badly formed parameter set." << std::endl;
-	}
-	
-	if(GetName().compare("FL") == 0) {
-		GenerateCharacteristicPlots("../");
-	}
+    // TMeasy settings
+    m_unloaded_radius = 1.0960 / 2;
+    m_width = 0.372;
+    m_rim_radius = 0.2858;
+    m_rolling_resistance = 0.015;
+    m_par.mu_0 = 0.8;
+    m_par.pn = 10837;
+    m_par.pn_max = 37929.5;
+    SetVerticalStiffness(defl,frc);
+    m_par.dz = 6188;
+    m_par.dfx0_pn = 89324.1244;
+    m_par.dfx0_p2n = 170911.0652;
+    m_par.fxm_pn = 10356.6344;
+    m_par.fxm_p2n = 20238.7957;
+    m_par.fxs_pn = 8598.812;
+    m_par.fxs_p2n = 16604.7647;
+    m_par.sxm_pn = 0.16807;
+    m_par.sxm_p2n = 0.13913;
+    m_par.sxs_pn = 0.66667;
+    m_par.sxs_p2n = 0.66667;
+    m_par.dfy0_pn = 141666.3303;
+    m_par.dfy0_p2n = 257131.1695;
+    m_par.fym_pn = 8351.7213;
+    m_par.fym_p2n = 15624.4596;
+    m_par.fys_pn = 8073.6063;
+    m_par.fys_p2n = 15157.9197;
+    m_par.sym_pn = 0.22834;
+    m_par.sym_p2n = 0.23905;
+    m_par.sys_pn = 1.0296;
+    m_par.sys_p2n = 1.0296;
+    m_par.nL0_pn = 0.178;
+    m_par.sq0_pn = 0.25117;
+    m_par.sqe_pn = 1.0296;
+    m_par.nL0_p2n = 0.19;
+    m_par.sq0_p2n = 0.26296;
+    m_par.sqe_p2n = 1.0296;
 }
 
 void WVP_TMeasyTire::GenerateCharacteristicPlots(const std::string& dirname) {
     // Write a plot file (gnuplot) to check the tire characteristics.
     // Inside gnuplot use the command load 'filename'
-    std::string filename = dirname + "/365_80R20_" + GetName() + ".gpl";
-    WritePlots(filename, "365/80R20 152K");
+    std::string filename = dirname + "365_65_R20_60psi" + GetName() + ".gpl";
+    WritePlots(filename, "365_65_R20_60psi");
 }
 
 // -----------------------------------------------------------------------------
@@ -151,6 +110,7 @@ void WVP_TMeasyTire::RemoveVisualizationAssets() {
     ChTMeasyTire::RemoveVisualizationAssets();
 }
 
-}  // end namespace wvp
+}  // namespace feda
 }  // end namespace vehicle
 }  // end namespace chrono
+

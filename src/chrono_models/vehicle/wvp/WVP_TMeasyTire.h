@@ -1,7 +1,7 @@
 // =============================================================================
 // PROJECT CHRONO - http://projectchrono.org
 //
-// Copyright (c) 2014 projectchrono.org
+// Copyright (c) 2023 projectchrono.org
 // All rights reserved.
 //
 // Use of this source code is governed by a BSD-style license that can be found
@@ -12,15 +12,12 @@
 // Authors: Rainer Gericke
 // =============================================================================
 //
-// WVP TMeasy tire subsystem
+// FEDA TMeasy tire subsystem, data converted from MFtire for 60 psi
 //
-// Updated: 2018-02-24
 // =============================================================================
 
 #ifndef WVP_TMEASY_TIRE_H
 #define WVP_TMEASY_TIRE_H
-
-#include "chrono/assets/ChTriangleMeshShape.h"
 
 #include "chrono_vehicle/wheeled_vehicle/tire/ChTMeasyTire.h"
 
@@ -33,9 +30,9 @@ namespace wvp {
 /// @addtogroup vehicle_models_wvp
 /// @{
 
-/// TMeasy tire model for the WVP vehicle.
+/// TMeasy tire model for the WVP
 class CH_MODELS_API WVP_TMeasyTire : public ChTMeasyTire {
-  public:
+   public:
     WVP_TMeasyTire(const std::string& name);
     ~WVP_TMeasyTire() {}
 
@@ -50,9 +47,10 @@ class CH_MODELS_API WVP_TMeasyTire : public ChTMeasyTire {
 
     void GenerateCharacteristicPlots(const std::string& dirname);
 
-  private:
+   private:
     static const double m_mass;
     static const ChVector<> m_inertia;
+
     ChFunction_Recorder m_stiffnessMap;
 
     static const std::string m_meshFile_left;
@@ -62,7 +60,7 @@ class CH_MODELS_API WVP_TMeasyTire : public ChTMeasyTire {
 
 /// @} vehicle_models_wvp
 
-}  // end namespace wvp
+}  // namespace wvp
 }  // end namespace vehicle
 }  // end namespace chrono
 
