@@ -39,8 +39,6 @@ set(CVM_GWAGON_FILES
     g-wagon/gd250_GAxle.h
     g-wagon/gd250_GAxleSimple.cpp
     g-wagon/gd250_GAxleSimple.h
-    g-wagon/gd250_Pac02Tire.cpp
-    g-wagon/gd250_Pac02Tire.h
     g-wagon/gd250_RigidTire.cpp
     g-wagon/gd250_RigidTire.h
     g-wagon/gd250_RotaryArm.cpp
@@ -954,8 +952,8 @@ set(LIBRARIES ChronoEngine ChronoEngine_vehicle)
 
 add_library(ChronoModels_vehicle
     ${CVM_COMMON_FILES}
-    #${CVM_GWAGON_FILES}
-    #${CVM_WVP_FILES}      
+    ${CVM_GWAGON_FILES}
+    ${CVM_WVP_FILES}      
     ${CVM_HMMWV_FILES}
     ${CVM_FEDA_FILES}
     ${CVM_FMTV_FILES}

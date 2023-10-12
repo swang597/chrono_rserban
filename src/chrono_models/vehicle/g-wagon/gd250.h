@@ -29,7 +29,6 @@
 #include "chrono_models/vehicle/g-wagon/gd250_AutomaticTransmissionSimpleMap.h"
 #include "chrono_models/vehicle/g-wagon/gd250_RigidTire.h"
 #include "chrono_models/vehicle/g-wagon/gd250_TMeasyTire.h"
-#include "chrono_models/vehicle/g-wagon/gd250_Pac02Tire.h"
 
 namespace chrono {
 namespace vehicle {
