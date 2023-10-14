@@ -16,6 +16,42 @@ set(CVM_COMMON_FILES
 )
 source_group("" FILES ${CVM_COMMON_FILES})
 
+set(CVM_GCLASS_FILES
+    gclass/base/ChRigidPanhardAxle.cpp
+    gclass/base/ChRigidPanhardAxle.h
+    gclass/base/ChToeBarRigidPanhardAxle.cpp
+    gclass/base/ChToeBarRigidPanhardAxle.h
+    gclass/GCLASS_AutomaticTransmissionSimpleMap.cpp
+    gclass/GCLASS_AutomaticTransmissionSimpleMap.h
+    gclass/GCLASS_BrakeShafts.cpp
+    gclass/GCLASS_BrakeShafts.h
+    gclass/GCLASS_BrakeSimple.cpp
+    gclass/GCLASS_BrakeSimple.h
+    gclass/GCLASS.cpp
+    gclass/GCLASS.h
+    gclass/GCLASS_Chassis.cpp
+    gclass/GCLASS_Chassis.h
+    gclass/GCLASS_Driveline4WD.cpp
+    gclass/GCLASS_Driveline4WD.h
+    gclass/GCLASS_EngineSimpleMap.cpp
+    gclass/GCLASS_EngineSimpleMap.h
+    gclass/GCLASS_FrontAxle.cpp
+    gclass/GCLASS_FrontAxle.h
+    gclass/GCLASS_RearAxle.cpp
+    gclass/GCLASS_RearAxle.h
+    gclass/GCLASS_RigidTire.cpp
+    gclass/GCLASS_RigidTire.h
+    gclass/GCLASS_RotaryArm.cpp
+    gclass/GCLASS_RotaryArm.h
+    gclass/GCLASS_TMeasyTire.cpp
+    gclass/GCLASS_TMeasyTire.h
+    gclass/GCLASS_Vehicle.cpp
+    gclass/GCLASS_Vehicle.h
+    gclass/GCLASS_Wheel.cpp
+    gclass/GCLASS_Wheel.h
+)
+source_group("gclass" FILES ${CVM_GCLASS_FILES})
+
 set(CVM_GWAGON_FILES
     g-wagon/base/ChGAxle.cpp
     g-wagon/base/ChGAxle.h
@@ -952,6 +988,7 @@ set(LIBRARIES ChronoEngine ChronoEngine_vehicle)
 
 add_library(ChronoModels_vehicle
     ${CVM_COMMON_FILES}
+    ${CVM_GCLASS_FILES}
     ${CVM_GWAGON_FILES}
     ${CVM_WVP_FILES}      
     ${CVM_HMMWV_FILES}
