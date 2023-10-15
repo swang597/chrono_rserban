@@ -63,8 +63,8 @@ GCLASS_Chassis::GCLASS_Chassis(const std::string& name, bool fixed, CollisionTyp
     m_geometry.m_has_primitives = true;
     m_geometry.m_vis_boxes.push_back(box1);
 
-    m_geometry.m_has_mesh = false;
-    m_geometry.m_vis_mesh_file = "gclass/GCLASS_Chassis.obj";
+    m_geometry.m_has_mesh = true;
+    m_geometry.m_vis_mesh_file = "gclass/gd250_Chassis.obj";
 
     m_geometry.m_has_collision = (chassis_collision_type != CollisionType::NONE);
     switch (chassis_collision_type) {

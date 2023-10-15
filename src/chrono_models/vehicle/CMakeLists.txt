@@ -29,8 +29,12 @@ set(CVM_GCLASS_FILES
     gclass/GCLASS_BrakeSimple.h
     gclass/GCLASS.cpp
     gclass/GCLASS.h
+    gclass/GCLASS_Long.cpp
+    gclass/GCLASS_Long.h
     gclass/GCLASS_Chassis.cpp
     gclass/GCLASS_Chassis.h
+    gclass/GCLASS_ChassisLong.cpp
+    gclass/GCLASS_ChassisLong.h
     gclass/GCLASS_Driveline4WD.cpp
     gclass/GCLASS_Driveline4WD.h
     gclass/GCLASS_EngineSimpleMap.cpp
@@ -47,6 +51,8 @@ set(CVM_GCLASS_FILES
     gclass/GCLASS_TMeasyTire.h
     gclass/GCLASS_Vehicle.cpp
     gclass/GCLASS_Vehicle.h
+    gclass/GCLASS_VehicleLong.cpp
+    gclass/GCLASS_VehicleLong.h
     gclass/GCLASS_Wheel.cpp
     gclass/GCLASS_Wheel.h
 )

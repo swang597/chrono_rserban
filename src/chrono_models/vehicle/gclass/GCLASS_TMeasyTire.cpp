@@ -32,11 +32,11 @@ namespace gclass {
 
 const double GCLASS_TMeasyTireFront::m_mass = 37.6;
 const ChVector<> GCLASS_TMeasyTireFront::m_inertia(3.84, 6.69, 3.84);
-const std::string GCLASS_TMeasyTireFront::m_meshFile = "uaz/uaz_tire.obj";
+const std::string GCLASS_TMeasyTireFront::m_meshFile = "gclass/gd250_tire.obj";
 
 const double GCLASS_TMeasyTireRear::m_mass = 37.6;
 const ChVector<> GCLASS_TMeasyTireRear::m_inertia(3.84, 6.69, 3.84);
-const std::string GCLASS_TMeasyTireRear::m_meshFile = "uaz/uaz_tire.obj";
+const std::string GCLASS_TMeasyTireRear::m_meshFile = "gclass/gd250_tire.obj";
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------

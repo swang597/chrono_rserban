@@ -39,7 +39,7 @@ const double GCLASS_Wheel::m_width = 0.1524;
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 GCLASS_Wheel::GCLASS_Wheel(const std::string& name) : ChWheel(name) {
-    m_vis_mesh_file = "uaz/uaz_rim.obj";
+    m_vis_mesh_file = "gclass/gd250_rim.obj";
 }
 
 }  // end namespace uaz
