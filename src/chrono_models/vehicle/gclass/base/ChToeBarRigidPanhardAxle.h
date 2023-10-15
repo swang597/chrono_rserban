@@ -42,7 +42,7 @@
 
 #include <vector>
 
-#include "chrono_vehicle/ChApiVehicle.h"
+#include "chrono_models/ChApiModels.h"
 #include "chrono_vehicle/wheeled_vehicle/ChSuspension.h"
 
 namespace chrono {
@@ -62,7 +62,7 @@ namespace vehicle {
 /// All point locations are assumed to be given for the left half of the
 /// suspension and will be mirrored (reflecting the y coordinates) to construct
 /// the right side.
-class CH_VEHICLE_API ChToeBarRigidPanhardAxle : public ChSuspension {
+class CH_MODELS_API ChToeBarRigidPanhardAxle : public ChSuspension {
    public:
     ChToeBarRigidPanhardAxle(const std::string& name  ///< [in] name of the subsystem
     );
