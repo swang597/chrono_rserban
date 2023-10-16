@@ -45,8 +45,9 @@ namespace vehicle {
 // -----------------------------------------------------------------------------
 // Static variables
 // -----------------------------------------------------------------------------
-const std::string ChRigidPanhardAxle::m_pointNames[] = {"SHOCK_A    ", "SHOCK_C    ", "SPRING_A   ", "SPRING_C   ",
-                                                      "SPINDLE    ", "PANHARD_A  ", "PANHARD_C  "};
+const std::string ChRigidPanhardAxle::m_pointNames[] = {"SHOCK_A    ", "SHOCK_C    ", "SPRING_A   ",
+                                                        "SPRING_C   ", "SPINDLE    ", "PANHARD_A  ",
+                                                        "PANHARD_C  ", "ANTIROLL_A ", "ANTIROLL_C "};
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
@@ -67,11 +68,11 @@ ChRigidPanhardAxle::~ChRigidPanhardAxle() {
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 void ChRigidPanhardAxle::Initialize(std::shared_ptr<ChChassis> chassis,
-                                  std::shared_ptr<ChSubchassis> subchassis,
-                                  std::shared_ptr<ChSteering> steering,
-                                  const ChVector<>& location,
-                                  double left_ang_vel,
-                                  double right_ang_vel) {
+                                    std::shared_ptr<ChSubchassis> subchassis,
+                                    std::shared_ptr<ChSteering> steering,
+                                    const ChVector<>& location,
+                                    double left_ang_vel,
+                                    double right_ang_vel) {
     ChSuspension::Initialize(chassis, subchassis, steering, location, left_ang_vel, right_ang_vel);
 
     m_parent = chassis;
@@ -103,6 +104,18 @@ void ChRigidPanhardAxle::Initialize(std::shared_ptr<ChChassis> chassis,
     // Calculate points for visualization of the Panhard rod
     m_panrodOuterA = suspension_to_abs.TransformPointLocalToParent(getLocation(PANHARD_A));
     m_panrodOuterC = suspension_to_abs.TransformPointLocalToParent(getLocation(PANHARD_C));
+
+    ChVector<> arbC_local(getLocation(ANTIROLL_C));
+    m_ptARBChassis[LEFT] = suspension_to_abs.TransformPointLocalToParent(arbC_local);
+    arbC_local.y() *= -1.0;
+    m_ptARBChassis[RIGHT] = suspension_to_abs.TransformPointLocalToParent(arbC_local);
+
+    ChVector<> arbA_local(getLocation(ANTIROLL_A));
+    m_ptARBAxle[LEFT] = suspension_to_abs.TransformPointLocalToParent(arbA_local);
+    arbA_local.y() *= -1.0;
+    m_ptARBAxle[RIGHT] = suspension_to_abs.TransformPointLocalToParent(arbA_local);
+
+    m_ptARBCenter = 0.5 * (m_ptARBChassis[LEFT] + m_ptARBChassis[RIGHT]);
 
     // Create and initialize the axle body.
     m_axleTubeBody = std::shared_ptr<ChBody>(chassis->GetBody()->GetSystem()->NewBody());
@@ -138,9 +151,9 @@ void ChRigidPanhardAxle::Initialize(std::shared_ptr<ChChassis> chassis,
     chassis->AddJoint(m_sphPanhardChassis);
 
     // connect the panhard rod to the axle tube
-    m_sphPanhardAxle =
-        chrono_types::make_shared<ChVehicleJoint>(ChVehicleJoint::Type::SPHERICAL, m_name + "_sphericalPanhardAxle",
-                                                  m_axleTubeBody, m_panhardRodBody, ChCoordsys<>(m_panrodOuterA, QUNIT));
+    m_sphPanhardAxle = chrono_types::make_shared<ChVehicleJoint>(ChVehicleJoint::Type::SPHERICAL,
+                                                                 m_name + "_sphericalPanhardAxle", m_axleTubeBody,
+                                                                 m_panhardRodBody, ChCoordsys<>(m_panrodOuterA, QUNIT));
     chassis->AddJoint(m_sphPanhardAxle);
 
     // Transform all hardpoints to absolute frame.
@@ -156,16 +169,18 @@ void ChRigidPanhardAxle::Initialize(std::shared_ptr<ChChassis> chassis,
     // Initialize left and right sides.
     std::shared_ptr<ChBody> scbeamL = (subchassis == nullptr) ? chassis->GetBody() : subchassis->GetBeam(LEFT);
     std::shared_ptr<ChBody> scbeamR = (subchassis == nullptr) ? chassis->GetBody() : subchassis->GetBeam(RIGHT);
-    InitializeSide(LEFT, chassis->GetBody(), scbeamL, m_pointsL, left_ang_vel);
-    InitializeSide(RIGHT, chassis->GetBody(), scbeamR, m_pointsR, right_ang_vel);
+    InitializeSide(LEFT, chassis, scbeamL, m_pointsL, left_ang_vel);
+    InitializeSide(RIGHT, chassis, scbeamR, m_pointsR, right_ang_vel);
 }
 
 void ChRigidPanhardAxle::InitializeSide(VehicleSide side,
-                                      std::shared_ptr<ChBodyAuxRef> chassis,
-                                      std::shared_ptr<ChBody> scbeam,
-                                      const std::vector<ChVector<>>& points,
-                                      double ang_vel) {
+                                        std::shared_ptr<ChChassis> chassis,
+                                        std::shared_ptr<ChBody> scbeam,
+                                        const std::vector<ChVector<>>& points,
+                                        double ang_vel) {
     std::string suffix = (side == LEFT) ? "_L" : "_R";
+
+    auto chassisBody = chassis->GetBody();
 
     // Unit vectors for orientation matrices.
     ChVector<> u;
@@ -175,7 +190,7 @@ void ChRigidPanhardAxle::InitializeSide(VehicleSide side,
 
     // Chassis orientation (expressed in absolute frame)
     // Recall that the suspension reference frame is aligned with the chassis.
-    ChQuaternion<> chassisRot = chassis->GetFrame_REF_to_abs().GetRot();
+    ChQuaternion<> chassisRot = chassisBody->GetFrame_REF_to_abs().GetRot();
 
     // Spindle orientation (based on camber and toe angles)
     double sign = (side == LEFT) ? -1 : +1;
@@ -201,7 +216,7 @@ void ChRigidPanhardAxle::InitializeSide(VehicleSide side,
     // Create and initialize the shock damper
     m_shock[side] = chrono_types::make_shared<ChLinkTSDA>();
     m_shock[side]->SetNameString(m_name + "_shock" + suffix);
-    m_shock[side]->Initialize(chassis, m_axleTubeBody, false, points[SHOCK_C], points[SHOCK_A]);
+    m_shock[side]->Initialize(chassis->GetBody(), m_axleTubeBody, false, points[SHOCK_C], points[SHOCK_A]);
     m_shock[side]->SetRestLength(getShockRestLength());
     m_shock[side]->RegisterForceFunctor(getShockForceFunctor());
     chassis->GetSystem()->AddLink(m_shock[side]);
@@ -226,6 +241,36 @@ void ChRigidPanhardAxle::InitializeSide(VehicleSide side,
     m_axle_to_spindle[side]->SetNameString(m_name + "_axle_to_spindle" + suffix);
     m_axle_to_spindle[side]->Initialize(m_axle[side], m_spindle[side], ChVector<>(0, -1, 0));
     chassis->GetSystem()->Add(m_axle_to_spindle[side]);
+    
+    m_arb[side] = std::shared_ptr<ChBody>(chassis->GetSystem()->NewBody());
+    m_arb[side]->SetNameString(m_name + "_arb" + suffix);
+    m_arb[side]->SetPos(0.5 * (points[ANTIROLL_C] + m_ptARBCenter));
+    m_arb[side]->SetRot(chassisRot);
+    m_arb[side]->SetMass(getARBMass());
+    m_arb[side]->SetInertiaXX(getARBInertia());
+    chassis->GetSystem()->AddBody(m_arb[side]);
+
+    if (side == LEFT) {
+        m_revARBChassis = chrono_types::make_shared<ChVehicleJoint>(
+            ChVehicleJoint::Type::REVOLUTE, m_name + "_revARBchassis", chassisBody, m_arb[side],
+            ChCoordsys<>(m_ptARBCenter, chassisRot * Q_from_AngAxis(CH_C_PI / 2.0, VECT_X)));
+        chassis->AddJoint(m_revARBChassis);
+    } else {
+        m_revARBLeftRight = chrono_types::make_shared<ChLinkLockRevolute>();
+        m_revARBLeftRight->SetNameString(m_name + "_revARBleftRight");
+        m_revARBLeftRight->Initialize(m_arb[LEFT], m_arb[RIGHT],
+                                      ChCoordsys<>(m_ptARBCenter, chassisRot * Q_from_AngAxis(CH_C_PI / 2.0, VECT_X)));
+        chassis->GetSystem()->AddLink(m_revARBLeftRight);
+
+        m_revARBLeftRight->GetForce_Rz().SetActive(1);
+        m_revARBLeftRight->GetForce_Rz().SetK(getARBStiffness());
+        m_revARBLeftRight->GetForce_Rz().SetR(getARBDamping());
+    }
+
+    m_slideARB[side] = chrono_types::make_shared<ChVehicleJoint>(
+        ChVehicleJoint::Type::POINTPLANE, m_name + "_revARBslide" + suffix, m_arb[side], m_axleTubeBody,
+        ChCoordsys<>(m_ptARBAxle[side], chassisRot * QUNIT));
+    chassis->AddJoint(m_slideARB[side]);
 }
 
 void ChRigidPanhardAxle::InitializeInertiaProperties() {
@@ -307,6 +352,15 @@ void ChRigidPanhardAxle::AddVisualizationAssets(VisualizationType vis) {
     AddVisualizationLink(m_panhardRodBody, m_panrodOuterA, m_panrodOuterC, getPanhardRodRadius(),
                          ChColor(0.5f, 0.7f, 0.3f));
 
+    AddVisualizationLink(m_arb[LEFT], m_ptARBAxle[LEFT], m_ptARBChassis[LEFT], getARBRadius(),
+                         ChColor(0.5f, 7.0f, 0.5f));
+    AddVisualizationLink(m_arb[LEFT], m_ptARBCenter, m_ptARBChassis[LEFT], getARBRadius(), ChColor(0.5f, 0.7f, 0.5f));
+
+    AddVisualizationLink(m_arb[RIGHT], m_ptARBAxle[RIGHT], m_ptARBChassis[RIGHT], getARBRadius(),
+                         ChColor(0.7f, 0.5f, 0.5f));
+    AddVisualizationLink(m_arb[RIGHT], m_ptARBCenter, m_ptARBChassis[RIGHT], getARBRadius(), ChColor(0.7f, 0.5f, 0.5f));
+
+
     // Add visualization for the springs and shocks
     m_spring[LEFT]->AddVisualShape(chrono_types::make_shared<ChSpringShape>(0.06, 150, 15));
     m_spring[RIGHT]->AddVisualShape(chrono_types::make_shared<ChSpringShape>(0.06, 150, 15));
@@ -329,10 +383,10 @@ void ChRigidPanhardAxle::RemoveVisualizationAssets() {
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 void ChRigidPanhardAxle::AddVisualizationLink(std::shared_ptr<ChBody> body,
-                                            const ChVector<> pt_1,
-                                            const ChVector<> pt_2,
-                                            double radius,
-                                            const ChColor& color) {
+                                              const ChVector<> pt_1,
+                                              const ChVector<> pt_2,
+                                              double radius,
+                                              const ChColor& color) {
     // Express hardpoint locations in body frame.
     ChVector<> p_1 = body->TransformPointParentToLocal(pt_1);
     ChVector<> p_2 = body->TransformPointParentToLocal(pt_2);

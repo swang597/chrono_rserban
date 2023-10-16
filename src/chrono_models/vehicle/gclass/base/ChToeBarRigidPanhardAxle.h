@@ -155,6 +155,8 @@ class CH_MODELS_API ChToeBarRigidPanhardAxle : public ChSuspension {
         DRAGLINK_C,   ///< draglink, chassis
         PANHARD_A,    ///< panhard rod, axle
         PANHARD_C,    ///< panhard rod, chassis
+        ANTIROLL_A,  ///< connector antirollbar on axle tube
+        ANTIROLL_C,  ///< connector antirollbar on chassis
         NUM_POINTS
     };
 
@@ -185,6 +187,8 @@ class CH_MODELS_API ChToeBarRigidPanhardAxle : public ChSuspension {
     virtual double getTierodMass() const = 0;
     /// Return the mass of the draglink body.
     virtual double getDraglinkMass() const = 0;
+    /// Return the mass of the SRB body.
+    virtual double getARBMass() const = 0;
 
     /// Return the radius of the axle tube body (visualization only).
     virtual double getAxleTubeRadius() const = 0;
@@ -194,6 +198,8 @@ class CH_MODELS_API ChToeBarRigidPanhardAxle : public ChSuspension {
     virtual double getTierodRadius() const = 0;
     /// Return the radius of the draglink body (visualization only).
     virtual double getDraglinkRadius() const = 0;
+    /// Return the radius of the ARB body (visualization only).
+    virtual double getARBRadius() const = 0;
 
     /// Return the moments of inertia of the axle tube body.
     virtual const ChVector<>& getAxleTubeInertia() const = 0;
@@ -205,7 +211,15 @@ class CH_MODELS_API ChToeBarRigidPanhardAxle : public ChSuspension {
     virtual const ChVector<>& getTierodInertia() const = 0;
     /// Return the moments of inertia of the draglink body.
     virtual const ChVector<>& getDraglinkInertia() const = 0;
+    /// Return the moments of inertia of the ARB body.
+    virtual const ChVector<>& getARBInertia() const = 0;
 
+    /// Return the striffness of the ARB system.
+    virtual double getARBStiffness() const = 0;
+    
+    /// Return the striffness of the ARB system.
+    virtual double getARBDamping() const = 0;
+    
     /// Return the mass of the Panhard tube body.
     virtual double getPanhardRodMass() const = 0;
 
@@ -235,6 +249,7 @@ class CH_MODELS_API ChToeBarRigidPanhardAxle : public ChSuspension {
     std::shared_ptr<ChBody> m_draglinkBody;    ///< handles to the draglink body
     std::shared_ptr<ChBody> m_knuckleBody[2];  ///< handles to the knuckle bodies (L/R)
     std::shared_ptr<ChBody> m_panhardRodBody;  ///< handles to the panhard rod body
+    std::shared_ptr<ChBody> m_arb[2];       ///< handles to the antiroll bar bodies
 
     std::shared_ptr<ChLinkLockPlanePlane> m_axleTubeGuide;     ///< allows translation Y,Z and rotation X
     std::shared_ptr<ChLinkLockSpherical> m_sphericalTierod;    ///< knuckle-tierod spherical joint (left)
@@ -244,6 +259,10 @@ class CH_MODELS_API ChToeBarRigidPanhardAxle : public ChSuspension {
     std::shared_ptr<ChLinkLockRevolute> m_revoluteKingpin[2];  ///< knuckle-axle tube revolute joints (L/R)
     std::shared_ptr<ChVehicleJoint> m_sphPanhardAxle;
     std::shared_ptr<ChVehicleJoint> m_sphPanhardChassis;
+
+    std::shared_ptr<ChVehicleJoint> m_revARBChassis;
+    std::shared_ptr<ChLinkLockRevolute> m_revARBLeftRight;
+    std::shared_ptr<ChVehicleJoint> m_slideARB[2];
 
     std::shared_ptr<ChLinkTSDA> m_shock[2];   ///< handles to the spring links (L/R)
     std::shared_ptr<ChLinkTSDA> m_spring[2];  ///< handles to the shock links (L/R)
@@ -265,11 +284,16 @@ class CH_MODELS_API ChToeBarRigidPanhardAxle : public ChSuspension {
     ChVector<> m_panrodOuterA;
     ChVector<> m_panrodOuterC;
 
+    // Points for antiroll bar visualization
+    ChVector<> m_ptARBAxle[2];
+    ChVector<> m_ptARBChassis[2];
+    ChVector<> m_ptARBCenter;
+
     // Left or right knuckle is actuated by draglink?
     bool m_left_knuckle_steers;
 
     void InitializeSide(VehicleSide side,
-                        std::shared_ptr<ChBodyAuxRef> chassis,
+                        std::shared_ptr<ChChassis> chassis,
                         const std::vector<ChVector<>>& points,
                         double ang_vel);
 

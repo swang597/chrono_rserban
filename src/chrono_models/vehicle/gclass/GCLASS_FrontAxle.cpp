@@ -37,6 +37,7 @@ const double GCLASS_FrontAxle::m_knuckleMass = 10.0;
 const double GCLASS_FrontAxle::m_tierodMass  = 5.0;
 const double GCLASS_FrontAxle::m_draglinkMass = 5.0;
 const double GCLASS_FrontAxle::m_panhardRodMass = 10.0;
+const double GCLASS_FrontAxle::m_arbMass = 5.0;
 
 const double GCLASS_FrontAxle::m_axleTubeRadius = 0.0476;
 const double GCLASS_FrontAxle::m_spindleRadius = 0.10;
@@ -45,6 +46,10 @@ const double GCLASS_FrontAxle::m_knuckleRadius = 0.05;
 const double GCLASS_FrontAxle::m_tierodRadius = 0.02;
 const double GCLASS_FrontAxle::m_draglinkRadius = 0.02;
 const double GCLASS_FrontAxle::m_panhardRodRadius = 0.03;
+const double GCLASS_FrontAxle::m_arbRadius = 0.025;
+
+const double GCLASS_FrontAxle::m_arbStiffness = 1000.0;
+const double GCLASS_FrontAxle::m_arbDamping = 10.0;
 
 const ChVector<> GCLASS_FrontAxle::m_axleTubeInertia(22.21, 0.0775, 22.21);
 const ChVector<> GCLASS_FrontAxle::m_spindleInertia(0.04117, 0.07352, 0.04117);
@@ -52,6 +57,7 @@ const ChVector<> GCLASS_FrontAxle::m_knuckleInertia(0.1, 0.1, 0.1);
 const ChVector<> GCLASS_FrontAxle::m_tierodInertia(1.0, 0.1, 1.0);
 const ChVector<> GCLASS_FrontAxle::m_draglinkInertia(0.1, 1.0, 0.1);
 const ChVector<> GCLASS_FrontAxle::m_panhardRodInertia(1.0, 0.04, 1.0);
+const ChVector<> GCLASS_FrontAxle::m_arbInertia(0.04, 1.0, 1.0);
 
 const double GCLASS_FrontAxle::m_springDesignLength = 0.3;
 const double GCLASS_FrontAxle::m_springCoefficient = 94748.2022504578;
@@ -219,6 +225,10 @@ const ChVector<> GCLASS_FrontAxle::getLocation(PointId which) {
             return ChVector<>(0.1, -0.44, 0.0);
         case PANHARD_C:
             return ChVector<>(0.1, 0.44, 0.0);
+        case ANTIROLL_A:
+            return ChVector<>(0.0, 0.35, -0.05);
+        case ANTIROLL_C:
+            return ChVector<>(-0.4, 0.35, -0.05);
         default:
             return ChVector<>(0, 0, 0);
     }

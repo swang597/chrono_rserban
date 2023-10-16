@@ -47,17 +47,23 @@ class CH_MODELS_API GCLASS_RearAxle : public ChRigidPanhardAxle {
     virtual double getAxleTubeMass() const override { return m_axleTubeMass; }
     virtual double getSpindleMass() const override { return m_spindleMass; }
     virtual double getPanhardRodMass() const override { return m_panhardRodMass; }
- 
+    virtual double getARBMass() const override { return m_arbMass; }
+
+    virtual double getARBStiffness() const override { return m_arb_stiffness; }
+    virtual double getARBDamping() const override { return m_arb_damping; }
+
     virtual double getAxleTubeRadius() const override { return m_axleTubeRadius; }
     virtual double getSpindleRadius() const override { return m_spindleRadius; }
     virtual double getSpindleWidth() const override { return m_spindleWidth; }
     virtual double getPanhardRodRadius() const override { return m_panhardRodRadius; }
+    virtual double getARBRadius() const override { return m_arbRadius; }
 
     virtual const ChVector<> getAxleTubeCOM() const override { return ChVector<>(0,0,0); }
 
     virtual const ChVector<>& getAxleTubeInertia() const override { return m_axleTubeInertia; }
     virtual const ChVector<>& getSpindleInertia() const override { return m_spindleInertia; }
     virtual const ChVector<>& getPanhardRodInertia() const override { return m_panhardRodInertia; }
+    virtual const ChVector<>& getARBInertia() const override { return m_arbInertia; }
 
     virtual double getAxleInertia() const override { return m_axleShaftInertia; }
     
@@ -76,15 +82,18 @@ class CH_MODELS_API GCLASS_RearAxle : public ChRigidPanhardAxle {
     static const double m_axleTubeMass;
     static const double m_spindleMass;
     static const double m_panhardRodMass;
-
+    static const double m_arbMass;
+ 
     static const double m_axleTubeRadius;
     static const double m_spindleRadius;
     static const double m_spindleWidth;
     static const double m_panhardRodRadius;
+    static const double m_arbRadius;
 
     static const ChVector<> m_axleTubeInertia;
     static const ChVector<> m_spindleInertia;
     static const ChVector<> m_panhardRodInertia;
+    static const ChVector<> m_arbInertia;
 
     static const double m_springCoefficient;
     static const double m_springRestLength;
@@ -95,6 +104,9 @@ class CH_MODELS_API GCLASS_RearAxle : public ChRigidPanhardAxle {
     static const double m_damperCoefficient;
     static const double m_damperDegressivityExpansion;
     static const double m_damperDegressivityCompression;
+    
+    static const double m_arb_stiffness;
+    static const double m_arb_damping;
 };
 
 /// @} vehicle_models_uaz

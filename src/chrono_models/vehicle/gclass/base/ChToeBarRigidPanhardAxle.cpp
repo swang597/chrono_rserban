@@ -47,9 +47,10 @@ namespace vehicle {
 // -----------------------------------------------------------------------------
 // Static variables
 // -----------------------------------------------------------------------------
-const std::string ChToeBarRigidPanhardAxle::m_pointNames[] = {"SHOCK_A    ", "SHOCK_C    ", "KNUCKLE_L  ", "KNUCKLE_U  ",
-                                                            "KNUCKLE_DRL", "SPRING_A   ", "SPRING_C   ", "TIEROD_C   ",
-                                                            "TIEROD_K   ", "SPINDLE    ", "KNUCKLE_CM ", "PANHARD_A  ", "PANHARD_C  "};
+const std::string ChToeBarRigidPanhardAxle::m_pointNames[] = {
+    "SHOCK_A    ", "SHOCK_C    ", "KNUCKLE_L  ", "KNUCKLE_U  ", "KNUCKLE_DRL",
+    "SPRING_A   ", "SPRING_C   ", "TIEROD_C   ", "TIEROD_K   ", "SPINDLE    ",
+    "KNUCKLE_CM ", "PANHARD_A  ", "PANHARD_C  ", "ANTIROLL_A ", "ANTIROLL_C "};
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
@@ -79,11 +80,11 @@ ChToeBarRigidPanhardAxle::~ChToeBarRigidPanhardAxle() {
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 void ChToeBarRigidPanhardAxle::Initialize(std::shared_ptr<ChChassis> chassis,
-                                        std::shared_ptr<ChSubchassis> subchassis,
-                                        std::shared_ptr<ChSteering> steering,
-                                        const ChVector<>& location,
-                                        double left_ang_vel,
-                                        double right_ang_vel) {
+                                          std::shared_ptr<ChSubchassis> subchassis,
+                                          std::shared_ptr<ChSteering> steering,
+                                          const ChVector<>& location,
+                                          double left_ang_vel,
+                                          double right_ang_vel) {
     ChSuspension::Initialize(chassis, subchassis, steering, location, left_ang_vel, right_ang_vel);
 
     m_parent = chassis;
@@ -117,6 +118,18 @@ void ChToeBarRigidPanhardAxle::Initialize(std::shared_ptr<ChChassis> chassis,
     m_panrodOuterA = suspension_to_abs.TransformPointLocalToParent(getLocation(PANHARD_A));
     m_panrodOuterC = suspension_to_abs.TransformPointLocalToParent(getLocation(PANHARD_C));
 
+    ChVector<> arbC_local(getLocation(ANTIROLL_C));
+    m_ptARBChassis[LEFT] = suspension_to_abs.TransformPointLocalToParent(arbC_local);
+    arbC_local.y() *= -1.0;
+    m_ptARBChassis[RIGHT] = suspension_to_abs.TransformPointLocalToParent(arbC_local);
+
+    ChVector<> arbA_local(getLocation(ANTIROLL_A));
+    m_ptARBAxle[LEFT] = suspension_to_abs.TransformPointLocalToParent(arbA_local);
+    arbA_local.y() *= -1.0;
+    m_ptARBAxle[RIGHT] = suspension_to_abs.TransformPointLocalToParent(arbA_local);
+
+    m_ptARBCenter = 0.5 * (m_ptARBChassis[LEFT] + m_ptARBChassis[RIGHT]);
+
     // Create and initialize the axle body.
     m_axleTubeBody = std::shared_ptr<ChBody>(chassis->GetBody()->GetSystem()->NewBody());
     m_axleTubeBody->SetNameString(m_name + "_axleTube");
@@ -126,14 +139,6 @@ void ChToeBarRigidPanhardAxle::Initialize(std::shared_ptr<ChChassis> chassis,
     m_axleTubeBody->SetInertiaXX(getAxleTubeInertia());
     chassis->GetBody()->GetSystem()->AddBody(m_axleTubeBody);
 
-    /* Fix the axle body to the chassis
-    m_axleTubeGuide = chrono_types::make_shared<ChLinkLockRevolutePrismatic>();
-    m_axleTubeGuide->SetNameString(m_name + "_revolutePrismaticAxleTube");
-    const ChQuaternion<>& guideRot = chassis->GetBody()->GetFrame_REF_to_abs().GetRot();
-    m_axleTubeGuide->Initialize(chassis->GetBody(), m_axleTubeBody,
-                                ChCoordsys<>(axleCOM, guideRot * Q_from_AngY(CH_C_PI_2)));
-    chassis->GetBody()->GetSystem()->AddLink(m_axleTubeGuide);
-     */
     // Fix the axle body to the chassis
     m_axleTubeGuide = chrono_types::make_shared<ChLinkLockPlanePlane>();
     m_axleTubeGuide->SetNameString(m_name + "_planePlaneAxleTube");
@@ -159,9 +164,9 @@ void ChToeBarRigidPanhardAxle::Initialize(std::shared_ptr<ChChassis> chassis,
     chassis->AddJoint(m_sphPanhardChassis);
 
     // connect the panhard rod to the axle tube
-    m_sphPanhardAxle =
-        chrono_types::make_shared<ChVehicleJoint>(ChVehicleJoint::Type::SPHERICAL, m_name + "_sphericalPanhardAxle",
-                                                  m_axleTubeBody, m_panhardRodBody, ChCoordsys<>(m_panrodOuterA, QUNIT));
+    m_sphPanhardAxle = chrono_types::make_shared<ChVehicleJoint>(ChVehicleJoint::Type::SPHERICAL,
+                                                                 m_name + "_sphericalPanhardAxle", m_axleTubeBody,
+                                                                 m_panhardRodBody, ChCoordsys<>(m_panrodOuterA, QUNIT));
     chassis->AddJoint(m_sphPanhardAxle);
 
     // Calculate end points on the tierod body, expressed in the absolute frame
@@ -191,8 +196,8 @@ void ChToeBarRigidPanhardAxle::Initialize(std::shared_ptr<ChChassis> chassis,
     }
 
     // Initialize left and right sides.
-    InitializeSide(LEFT, chassis->GetBody(), m_pointsL, left_ang_vel);
-    InitializeSide(RIGHT, chassis->GetBody(), m_pointsR, right_ang_vel);
+    InitializeSide(LEFT, chassis, m_pointsL, left_ang_vel);
+    InitializeSide(RIGHT, chassis, m_pointsR, right_ang_vel);
 
     // Create connection to steering mechanism
     std::shared_ptr<ChBody> tierod_body = (steering == nullptr) ? chassis->GetBody() : steering->GetSteeringLink();
@@ -263,10 +268,12 @@ void ChToeBarRigidPanhardAxle::Initialize(std::shared_ptr<ChChassis> chassis,
 }
 
 void ChToeBarRigidPanhardAxle::InitializeSide(VehicleSide side,
-                                            std::shared_ptr<ChBodyAuxRef> chassis,
-                                            const std::vector<ChVector<>>& points,
-                                            double ang_vel) {
+                                              std::shared_ptr<ChChassis> chassis,
+                                              const std::vector<ChVector<>>& points,
+                                              double ang_vel) {
     std::string suffix = (side == LEFT) ? "_L" : "_R";
+
+    auto chassisBody = chassis->GetBody();
 
     // Unit vectors for orientation matrices.
     ChVector<> u;
@@ -276,7 +283,7 @@ void ChToeBarRigidPanhardAxle::InitializeSide(VehicleSide side,
 
     // Chassis orientation (expressed in absolute frame)
     // Recall that the suspension reference frame is aligned with the chassis.
-    ChQuaternion<> chassisRot = chassis->GetFrame_REF_to_abs().GetRot();
+    ChQuaternion<> chassisRot = chassisBody->GetFrame_REF_to_abs().GetRot();
 
     // Spindle orientation (based on camber and toe angles)
     double sign = (side == LEFT) ? -1 : +1;
@@ -328,7 +335,8 @@ void ChToeBarRigidPanhardAxle::InitializeSide(VehicleSide side,
     m_revoluteKingpin[side] = chrono_types::make_shared<ChLinkLockRevolute>();
     m_revoluteKingpin[side]->SetNameString(m_name + "_revoluteKingpin" + suffix);
     m_revoluteKingpin[side]->Initialize(
-        m_axleTubeBody, m_knuckleBody[side], ChCoordsys<>((points[KNUCKLE_U] + points[KNUCKLE_L]) / 2, rot.Get_A_quaternion()));
+        m_axleTubeBody, m_knuckleBody[side],
+        ChCoordsys<>((points[KNUCKLE_U] + points[KNUCKLE_L]) / 2, rot.Get_A_quaternion()));
     chassis->GetSystem()->AddLink(m_revoluteKingpin[side]);
 
     // Create and initialize the revolute joint between upright and spindle.
@@ -341,14 +349,14 @@ void ChToeBarRigidPanhardAxle::InitializeSide(VehicleSide side,
     // Create and initialize the spring/damper
     m_shock[side] = chrono_types::make_shared<ChLinkTSDA>();
     m_shock[side]->SetNameString(m_name + "_shock" + suffix);
-    m_shock[side]->Initialize(chassis, m_axleTubeBody, false, points[SHOCK_C], points[SHOCK_A]);
+    m_shock[side]->Initialize(chassis->GetBody(), m_axleTubeBody, false, points[SHOCK_C], points[SHOCK_A]);
     m_shock[side]->SetRestLength(getShockRestLength());
     m_shock[side]->RegisterForceFunctor(getShockForceFunctor());
     chassis->GetSystem()->AddLink(m_shock[side]);
 
     m_spring[side] = chrono_types::make_shared<ChLinkTSDA>();
     m_spring[side]->SetNameString(m_name + "_spring" + suffix);
-    m_spring[side]->Initialize(chassis, m_axleTubeBody, false, points[SPRING_C], points[SPRING_A]);
+    m_spring[side]->Initialize(chassis->GetBody(), m_axleTubeBody, false, points[SPRING_C], points[SPRING_A]);
     m_spring[side]->SetRestLength(getSpringRestLength());
     m_spring[side]->RegisterForceFunctor(getSpringForceFunctor());
     chassis->GetSystem()->AddLink(m_spring[side]);
@@ -365,6 +373,36 @@ void ChToeBarRigidPanhardAxle::InitializeSide(VehicleSide side,
     m_axle_to_spindle[side]->SetNameString(m_name + "_axle_to_spindle" + suffix);
     m_axle_to_spindle[side]->Initialize(m_axle[side], m_spindle[side], ChVector<>(0, -1, 0));
     chassis->GetSystem()->Add(m_axle_to_spindle[side]);
+    
+    m_arb[side] = std::shared_ptr<ChBody>(chassis->GetSystem()->NewBody());
+    m_arb[side]->SetNameString(m_name + "_arb" + suffix);
+    m_arb[side]->SetPos(0.5 * (points[ANTIROLL_C] + m_ptARBCenter));
+    m_arb[side]->SetRot(chassisRot);
+    m_arb[side]->SetMass(getARBMass());
+    m_arb[side]->SetInertiaXX(getARBInertia());
+    chassis->GetSystem()->AddBody(m_arb[side]);
+
+    if (side == LEFT) {
+        m_revARBChassis = chrono_types::make_shared<ChVehicleJoint>(
+            ChVehicleJoint::Type::REVOLUTE, m_name + "_revARBchassis", chassisBody, m_arb[side],
+            ChCoordsys<>(m_ptARBCenter, chassisRot * Q_from_AngAxis(CH_C_PI / 2.0, VECT_X)));
+        chassis->AddJoint(m_revARBChassis);
+    } else {
+        m_revARBLeftRight = chrono_types::make_shared<ChLinkLockRevolute>();
+        m_revARBLeftRight->SetNameString(m_name + "_revARBleftRight");
+        m_revARBLeftRight->Initialize(m_arb[LEFT], m_arb[RIGHT],
+                                      ChCoordsys<>(m_ptARBCenter, chassisRot * Q_from_AngAxis(CH_C_PI / 2.0, VECT_X)));
+        chassis->GetSystem()->AddLink(m_revARBLeftRight);
+
+        m_revARBLeftRight->GetForce_Rz().SetActive(1);
+        m_revARBLeftRight->GetForce_Rz().SetK(getARBStiffness());
+        m_revARBLeftRight->GetForce_Rz().SetR(getARBDamping());
+    }
+
+    m_slideARB[side] = chrono_types::make_shared<ChVehicleJoint>(
+        ChVehicleJoint::Type::POINTPLANE, m_name + "_revARBslide" + suffix, m_arb[side], m_axleTubeBody,
+        ChCoordsys<>(m_ptARBAxle[side], chassisRot * QUNIT));
+    chassis->AddJoint(m_slideARB[side]);
 }
 
 void ChToeBarRigidPanhardAxle::InitializeInertiaProperties() {
@@ -381,9 +419,11 @@ void ChToeBarRigidPanhardAxle::UpdateInertiaProperties() {
     utils::CompositeInertia composite;
     composite.AddComponent(m_spindle[LEFT]->GetFrame_COG_to_abs(), getSpindleMass(), inertiaSpindle);
     composite.AddComponent(m_spindle[RIGHT]->GetFrame_COG_to_abs(), getSpindleMass(), inertiaSpindle);
-    composite.AddComponent(m_axleTubeBody->GetFrame_COG_to_abs(), getAxleTubeMass(), ChMatrix33<>(getAxleTubeInertia()));
+    composite.AddComponent(m_axleTubeBody->GetFrame_COG_to_abs(), getAxleTubeMass(),
+                           ChMatrix33<>(getAxleTubeInertia()));
     composite.AddComponent(m_tierodBody->GetFrame_COG_to_abs(), getTierodMass(), ChMatrix33<>(getTierodInertia()));
-    composite.AddComponent(m_draglinkBody->GetFrame_COG_to_abs(), getDraglinkMass(), ChMatrix33<>(getDraglinkInertia()));
+    composite.AddComponent(m_draglinkBody->GetFrame_COG_to_abs(), getDraglinkMass(),
+                           ChMatrix33<>(getDraglinkInertia()));
     composite.AddComponent(m_knuckleBody[LEFT]->GetFrame_COG_to_abs(), getKnuckleMass(), inertiaKnuckle);
     composite.AddComponent(m_knuckleBody[RIGHT]->GetFrame_COG_to_abs(), getKnuckleMass(), inertiaKnuckle);
 
@@ -489,6 +529,15 @@ void ChToeBarRigidPanhardAxle::AddVisualizationAssets(VisualizationType vis) {
 
     AddVisualizationLink(m_tierodBody, m_tierodOuterL, m_tierodOuterR, getTierodRadius(), ChColor(0.7f, 0.7f, 0.7f));
 
+    AddVisualizationLink(m_arb[LEFT], m_ptARBAxle[LEFT], m_ptARBChassis[LEFT], getARBRadius(),
+                         ChColor(0.5f, 7.0f, 0.5f));
+    AddVisualizationLink(m_arb[LEFT], m_ptARBCenter, m_ptARBChassis[LEFT], getARBRadius(), ChColor(0.5f, 0.7f, 0.5f));
+
+    AddVisualizationLink(m_arb[RIGHT], m_ptARBAxle[RIGHT], m_ptARBChassis[RIGHT], getARBRadius(),
+                         ChColor(0.7f, 0.5f, 0.5f));
+    AddVisualizationLink(m_arb[RIGHT], m_ptARBCenter, m_ptARBChassis[RIGHT], getARBRadius(), ChColor(0.7f, 0.5f, 0.5f));
+
+
     if (m_left_knuckle_steers) {
         AddVisualizationLink(m_draglinkBody, m_pointsL[DRAGLINK_C], m_pointsL[KNUCKLE_DRL], getDraglinkRadius(),
                              ChColor(0.7f, 0.7f, 0.7f));
@@ -529,10 +578,10 @@ void ChToeBarRigidPanhardAxle::RemoveVisualizationAssets() {
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 void ChToeBarRigidPanhardAxle::AddVisualizationLink(std::shared_ptr<ChBody> body,
-                                                  const ChVector<> pt_1,
-                                                  const ChVector<> pt_2,
-                                                  double radius,
-                                                  const ChColor& color) {
+                                                    const ChVector<> pt_1,
+                                                    const ChVector<> pt_2,
+                                                    double radius,
+                                                    const ChColor& color) {
     // Express hardpoint locations in body frame.
     ChVector<> p_1 = body->TransformPointParentToLocal(pt_1);
     ChVector<> p_2 = body->TransformPointParentToLocal(pt_2);
@@ -542,10 +591,10 @@ void ChToeBarRigidPanhardAxle::AddVisualizationLink(std::shared_ptr<ChBody> body
 }
 
 void ChToeBarRigidPanhardAxle::AddVisualizationKnuckle(std::shared_ptr<ChBody> knuckle,
-                                                     const ChVector<> pt_U,
-                                                     const ChVector<> pt_L,
-                                                     const ChVector<> pt_T,
-                                                     double radius) {
+                                                       const ChVector<> pt_U,
+                                                       const ChVector<> pt_L,
+                                                       const ChVector<> pt_T,
+                                                       double radius) {
     static const double threshold2 = 1e-6;
 
     // Express hardpoint locations in body frame.

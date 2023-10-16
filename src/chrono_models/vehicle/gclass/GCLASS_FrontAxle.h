@@ -49,6 +49,7 @@ class CH_MODELS_API GCLASS_FrontAxle : public ChToeBarRigidPanhardAxle {
     virtual double getTierodMass() const override { return m_tierodMass; }
     virtual double getDraglinkMass() const override { return m_draglinkMass; }
     virtual double getPanhardRodMass() const override { return m_panhardRodMass; }
+    virtual double getARBMass() const override { return m_arbMass; }
 
     virtual double getAxleTubeRadius() const override { return m_axleTubeRadius; }
     virtual double getSpindleRadius() const override { return m_spindleRadius; }
@@ -57,6 +58,7 @@ class CH_MODELS_API GCLASS_FrontAxle : public ChToeBarRigidPanhardAxle {
     virtual double getTierodRadius() const override { return m_tierodRadius; }
     virtual double getDraglinkRadius() const override { return m_draglinkRadius; }
     virtual double getPanhardRodRadius() const override { return m_panhardRodRadius; }
+    virtual double getARBRadius() const override { return m_arbRadius; }
 
     virtual const ChVector<> getAxleTubeCOM() const override { return ChVector<>(0,0,0); }
 
@@ -66,9 +68,13 @@ class CH_MODELS_API GCLASS_FrontAxle : public ChToeBarRigidPanhardAxle {
     virtual const ChVector<>& getTierodInertia() const override { return m_tierodInertia; }
     virtual const ChVector<>& getDraglinkInertia() const override { return m_draglinkInertia; }
     virtual const ChVector<>& getPanhardRodInertia() const override { return m_panhardRodInertia; }
+    virtual const ChVector<>& getARBInertia() const override { return m_arbInertia; }
+
+    virtual double getARBStiffness() const override { return m_arbStiffness; }
+    virtual double getARBDamping() const override { return m_arbDamping; }
 
     virtual double getAxleInertia() const override { return m_axleShaftInertia; }
-    
+
     virtual double getSpringRestLength() const override { return m_springRestLength; }
     /// Return the functor object for spring force.
     virtual std::shared_ptr<ChLinkTSDA::ForceFunctor> getSpringForceFunctor() const override { return m_springForceCB; }
@@ -87,6 +93,7 @@ class CH_MODELS_API GCLASS_FrontAxle : public ChToeBarRigidPanhardAxle {
     static const double m_tierodMass;
     static const double m_draglinkMass;
     static const double m_panhardRodMass;
+    static const double m_arbMass;
 
     static const double m_axleTubeRadius;
     static const double m_spindleRadius;
@@ -95,6 +102,7 @@ class CH_MODELS_API GCLASS_FrontAxle : public ChToeBarRigidPanhardAxle {
     static const double m_tierodRadius;
     static const double m_draglinkRadius;
     static const double m_panhardRodRadius;
+    static const double m_arbRadius;
 
     static const ChVector<> m_axleTubeInertia;
     static const ChVector<> m_spindleInertia;
@@ -102,12 +110,16 @@ class CH_MODELS_API GCLASS_FrontAxle : public ChToeBarRigidPanhardAxle {
     static const ChVector<> m_tierodInertia;
     static const ChVector<> m_draglinkInertia;
     static const ChVector<> m_panhardRodInertia;
+    static const ChVector<> m_arbInertia;
 
     static const double m_springCoefficient;
     static const double m_springRestLength;
     static const double m_springDesignLength;
     static const double m_springMinLength;
     static const double m_springMaxLength;
+
+    static const double m_arbStiffness;
+    static const double m_arbDamping;
 
     static const double m_damperCoefficient;
     static const double m_damperDegressivityExpansion;

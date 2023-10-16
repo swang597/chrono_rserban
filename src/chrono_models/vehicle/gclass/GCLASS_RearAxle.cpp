@@ -34,15 +34,21 @@ namespace gclass {
 const double GCLASS_RearAxle::m_axleTubeMass = 124.0;
 const double GCLASS_RearAxle::m_spindleMass = 14.705;
 const double GCLASS_RearAxle::m_panhardRodMass = 10.0;
+const double GCLASS_RearAxle::m_arbMass = 5.0;
 
 const double GCLASS_RearAxle::m_axleTubeRadius = 0.0476;
 const double GCLASS_RearAxle::m_spindleRadius = 0.10;
 const double GCLASS_RearAxle::m_spindleWidth = 0.06;
 const double GCLASS_RearAxle::m_panhardRodRadius = 0.03;
+const double GCLASS_RearAxle::m_arbRadius = 0.025;
 
 const ChVector<> GCLASS_RearAxle::m_axleTubeInertia(22.21, 0.0775, 22.21);
 const ChVector<> GCLASS_RearAxle::m_spindleInertia(0.04117, 0.07352, 0.04117);
 const ChVector<> GCLASS_RearAxle::m_panhardRodInertia(1.0, 0.04, 1.0);
+const ChVector<> GCLASS_RearAxle::m_arbInertia(0.5, 0.02, 0.5);
+
+const double GCLASS_RearAxle::m_arb_stiffness = 1000.0;
+const double GCLASS_RearAxle::m_arb_damping = 10.0;
 
 const double GCLASS_RearAxle::m_springDesignLength = 0.3;
 const double GCLASS_RearAxle::m_springCoefficient = 102643.885771329;
@@ -199,6 +205,10 @@ const ChVector<> GCLASS_RearAxle::getLocation(PointId which) {
             return ChVector<>(-0.1, -0.5142, 0.0);
         case PANHARD_C:
             return ChVector<>(-0.1, 0.5142, 0.0);
+        case ANTIROLL_A:
+            return ChVector<>(0.0, 0.4, -0.05);
+        case ANTIROLL_C:
+            return ChVector<>(0.4, 0.4, -0.05);
         default:
             return ChVector<>(0, 0, 0);
     }
