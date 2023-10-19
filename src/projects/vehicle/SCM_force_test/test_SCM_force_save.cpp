@@ -16,6 +16,8 @@
 //
 // =============================================================================
 
+#include <limits>
+
 #include "test_SCM_force.h"
 
 // -----------------------------------------------------------------------------
@@ -95,17 +97,19 @@ int main(int argc, char* argv[]) {
         vis->EndScene();
 #endif
 
+        // Time at *beginning* of step
+        double time = sys.GetChTime();
+
         // Advance system dynamics
         sys.DoStepDynamics(time_step);
         viper->Update();
 
-        double time = sys.GetChTime();
-
-        // Save SCM terrain forces that were applied over the previous step
+        // Save SCM terrain forces that were applied during the *previous* step
         SCM_forces << time << "    ";
         for (int i = 0; i < 4; i++) {
             terrain->GetContactForceBody(wheels[i], wheelContFList_F, wheelContFList_M);
-            SCM_forces << wheelContFList_F << "  " << wheelContFList_M << "    ";
+            SCM_forces << std::setprecision(20) << wheelContFList_F << "  "
+                       << wheelContFList_M << "    ";
         }
         SCM_forces << endl;
 
