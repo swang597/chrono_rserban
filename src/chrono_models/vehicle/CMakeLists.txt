@@ -21,86 +21,36 @@ set(CVM_GCLASS_FILES
     gclass/base/ChRigidPanhardAxle.h
     gclass/base/ChToeBarRigidPanhardAxle.cpp
     gclass/base/ChToeBarRigidPanhardAxle.h
-    gclass/GCLASS_AutomaticTransmissionSimpleMap.cpp
-    gclass/GCLASS_AutomaticTransmissionSimpleMap.h
-    gclass/GCLASS_BrakeShafts.cpp
-    gclass/GCLASS_BrakeShafts.h
-    gclass/GCLASS_BrakeSimple.cpp
-    gclass/GCLASS_BrakeSimple.h
-    gclass/GCLASS.cpp
-    gclass/GCLASS.h
-    gclass/GCLASS_Long.cpp
-    gclass/GCLASS_Long.h
-    gclass/GCLASS_Chassis.cpp
-    gclass/GCLASS_Chassis.h
-    gclass/GCLASS_ChassisLong.cpp
-    gclass/GCLASS_ChassisLong.h
-    gclass/GCLASS_Driveline4WD.cpp
-    gclass/GCLASS_Driveline4WD.h
-    gclass/GCLASS_EngineSimpleMap.cpp
-    gclass/GCLASS_EngineSimpleMap.h
-    gclass/GCLASS_FrontAxle.cpp
-    gclass/GCLASS_FrontAxle.h
-    gclass/GCLASS_RearAxle.cpp
-    gclass/GCLASS_RearAxle.h
-    gclass/GCLASS_RigidTire.cpp
-    gclass/GCLASS_RigidTire.h
-    gclass/GCLASS_RotaryArm.cpp
-    gclass/GCLASS_RotaryArm.h
-    gclass/GCLASS_TMeasyTire.cpp
-    gclass/GCLASS_TMeasyTire.h
-    gclass/GCLASS_Vehicle.cpp
-    gclass/GCLASS_Vehicle.h
-    gclass/GCLASS_VehicleLong.cpp
-    gclass/GCLASS_VehicleLong.h
-    gclass/GCLASS_Wheel.cpp
-    gclass/GCLASS_Wheel.h
+    gclass/G500_AutomaticTransmissionSimpleMap.cpp
+    gclass/G500_AutomaticTransmissionSimpleMap.h
+    gclass/G500_BrakeShafts.cpp
+    gclass/G500_BrakeShafts.h
+    gclass/G500_BrakeSimple.cpp
+    gclass/G500_BrakeSimple.h
+    gclass/G500.cpp
+    gclass/G500.h
+    gclass/G500_Chassis.cpp
+    gclass/G500_Chassis.h
+    gclass/G500_Driveline4WD.cpp
+    gclass/G500_Driveline4WD.h
+    gclass/G500_EngineSimpleMap.cpp
+    gclass/G500_EngineSimpleMap.h
+    gclass/G500_FrontAxle.cpp
+    gclass/G500_FrontAxle.h
+    gclass/G500_RearAxle.cpp
+    gclass/G500_RearAxle.h
+    gclass/G500_RigidTire.cpp
+    gclass/G500_RigidTire.h
+    gclass/G500_RotaryArm.cpp
+    gclass/G500_RotaryArm.h
+    gclass/G500_TMeasyTire.cpp
+    gclass/G500_TMeasyTire.h
+    gclass/G500_Vehicle.cpp
+    gclass/G500_Vehicle.h
+    gclass/G500_Wheel.cpp
+    gclass/G500_Wheel.h
 )
 source_group("gclass" FILES ${CVM_GCLASS_FILES})
-
-set(CVM_GWAGON_FILES
-    g-wagon/base/ChGAxle.cpp
-    g-wagon/base/ChGAxle.h
-    g-wagon/base/ChGAxleSimple.cpp
-    g-wagon/base/ChGAxleSimple.h
-    g-wagon/base/ChToeBarGAxle.cpp
-    g-wagon/base/ChToeBarGAxle.h
-    g-wagon/base/ChToeBarGAxleSimple.cpp
-    g-wagon/base/ChToeBarGAxleSimple.h
-    g-wagon/gd250.cpp
-    g-wagon/gd250.h
-    g-wagon/gd250_BrakeShafts.cpp
-    g-wagon/gd250_BrakeShafts.h
-    g-wagon/gd250_BrakeSimple.cpp
-    g-wagon/gd250_BrakeSimple.h
-    g-wagon/gd250_Chassis.cpp
-    g-wagon/gd250_Chassis.h
-    g-wagon/gd250_Driveline4WD.cpp
-    g-wagon/gd250_Driveline4WD.h
-    g-wagon/gd250_GAxle.cpp
-    g-wagon/gd250_GAxle.h
-    g-wagon/gd250_GAxleSimple.cpp
-    g-wagon/gd250_GAxleSimple.h
-    g-wagon/gd250_RigidTire.cpp
-    g-wagon/gd250_RigidTire.h
-    g-wagon/gd250_RotaryArm.cpp
-    g-wagon/gd250_RotaryArm.h
-    g-wagon/gd250_EngineSimpleMap.cpp
-    g-wagon/gd250_EngineSimpleMap.h    
-    g-wagon/gd250_AutomaticTransmissionSimpleMap.cpp
-    g-wagon/gd250_AutomaticTransmissionSimpleMap.h
-    g-wagon/gd250_TMeasyTire.cpp
-    g-wagon/gd250_TMeasyTire.h
-    g-wagon/gd250_ToeBarGAxle.cpp
-    g-wagon/gd250_ToeBarGAxle.h
-    g-wagon/gd250_ToeBarGAxleSimple.cpp
-    g-wagon/gd250_ToeBarGAxleSimple.h
-    g-wagon/gd250_Vehicle.cpp
-    g-wagon/gd250_Vehicle.h
-    g-wagon/gd250_Wheel.cpp
-    g-wagon/gd250_Wheel.h
-)
-source_group("gwagon" FILES ${CVM_GWAGON_FILES})
 
 set(CVM_WVP_FILES
     wvp/WVP.cpp
@@ -995,7 +945,6 @@ set(LIBRARIES ChronoEngine ChronoEngine_vehicle)
 add_library(ChronoModels_vehicle
     ${CVM_COMMON_FILES}
     ${CVM_GCLASS_FILES}
-    ${CVM_GWAGON_FILES}
     ${CVM_WVP_FILES}      
     ${CVM_HMMWV_FILES}
     ${CVM_FEDA_FILES}

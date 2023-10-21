@@ -374,23 +374,23 @@ void ChToeBarRigidPanhardAxle::InitializeSide(VehicleSide side,
     m_axle_to_spindle[side]->Initialize(m_axle[side], m_spindle[side], ChVector<>(0, -1, 0));
     chassis->GetSystem()->Add(m_axle_to_spindle[side]);
     
-    m_arb[side] = std::shared_ptr<ChBody>(chassis->GetSystem()->NewBody());
-    m_arb[side]->SetNameString(m_name + "_arb" + suffix);
-    m_arb[side]->SetPos(0.5 * (points[ANTIROLL_C] + m_ptARBCenter));
-    m_arb[side]->SetRot(chassisRot);
-    m_arb[side]->SetMass(getARBMass());
-    m_arb[side]->SetInertiaXX(getARBInertia());
-    chassis->GetSystem()->AddBody(m_arb[side]);
+    m_arbBody[side] = std::shared_ptr<ChBody>(chassis->GetSystem()->NewBody());
+    m_arbBody[side]->SetNameString(m_name + "_arb" + suffix);
+    m_arbBody[side]->SetPos(0.5 * (points[ANTIROLL_C] + m_ptARBCenter));
+    m_arbBody[side]->SetRot(chassisRot);
+    m_arbBody[side]->SetMass(getARBMass());
+    m_arbBody[side]->SetInertiaXX(getARBInertia());
+    chassis->GetSystem()->AddBody(m_arbBody[side]);
 
     if (side == LEFT) {
         m_revARBChassis = chrono_types::make_shared<ChVehicleJoint>(
-            ChVehicleJoint::Type::REVOLUTE, m_name + "_revARBchassis", chassisBody, m_arb[side],
+            ChVehicleJoint::Type::REVOLUTE, m_name + "_revARBchassis", chassisBody, m_arbBody[side],
             ChCoordsys<>(m_ptARBCenter, chassisRot * Q_from_AngAxis(CH_C_PI / 2.0, VECT_X)));
         chassis->AddJoint(m_revARBChassis);
     } else {
         m_revARBLeftRight = chrono_types::make_shared<ChLinkLockRevolute>();
         m_revARBLeftRight->SetNameString(m_name + "_revARBleftRight");
-        m_revARBLeftRight->Initialize(m_arb[LEFT], m_arb[RIGHT],
+        m_revARBLeftRight->Initialize(m_arbBody[LEFT], m_arbBody[RIGHT],
                                       ChCoordsys<>(m_ptARBCenter, chassisRot * Q_from_AngAxis(CH_C_PI / 2.0, VECT_X)));
         chassis->GetSystem()->AddLink(m_revARBLeftRight);
 
@@ -400,7 +400,7 @@ void ChToeBarRigidPanhardAxle::InitializeSide(VehicleSide side,
     }
 
     m_slideARB[side] = chrono_types::make_shared<ChVehicleJoint>(
-        ChVehicleJoint::Type::POINTPLANE, m_name + "_revARBslide" + suffix, m_arb[side], m_axleTubeBody,
+        ChVehicleJoint::Type::POINTPLANE, m_name + "_revARBslide" + suffix, m_arbBody[side], m_axleTubeBody,
         ChCoordsys<>(m_ptARBAxle[side], chassisRot * QUNIT));
     chassis->AddJoint(m_slideARB[side]);
 }
@@ -529,13 +529,13 @@ void ChToeBarRigidPanhardAxle::AddVisualizationAssets(VisualizationType vis) {
 
     AddVisualizationLink(m_tierodBody, m_tierodOuterL, m_tierodOuterR, getTierodRadius(), ChColor(0.7f, 0.7f, 0.7f));
 
-    AddVisualizationLink(m_arb[LEFT], m_ptARBAxle[LEFT], m_ptARBChassis[LEFT], getARBRadius(),
+    AddVisualizationLink(m_arbBody[LEFT], m_ptARBAxle[LEFT], m_ptARBChassis[LEFT], getARBRadius(),
                          ChColor(0.5f, 7.0f, 0.5f));
-    AddVisualizationLink(m_arb[LEFT], m_ptARBCenter, m_ptARBChassis[LEFT], getARBRadius(), ChColor(0.5f, 0.7f, 0.5f));
+    AddVisualizationLink(m_arbBody[LEFT], m_ptARBCenter, m_ptARBChassis[LEFT], getARBRadius(), ChColor(0.5f, 0.7f, 0.5f));
 
-    AddVisualizationLink(m_arb[RIGHT], m_ptARBAxle[RIGHT], m_ptARBChassis[RIGHT], getARBRadius(),
+    AddVisualizationLink(m_arbBody[RIGHT], m_ptARBAxle[RIGHT], m_ptARBChassis[RIGHT], getARBRadius(),
                          ChColor(0.7f, 0.5f, 0.5f));
-    AddVisualizationLink(m_arb[RIGHT], m_ptARBCenter, m_ptARBChassis[RIGHT], getARBRadius(), ChColor(0.7f, 0.5f, 0.5f));
+    AddVisualizationLink(m_arbBody[RIGHT], m_ptARBCenter, m_ptARBChassis[RIGHT], getARBRadius(), ChColor(0.7f, 0.5f, 0.5f));
 
 
     if (m_left_knuckle_steers) {

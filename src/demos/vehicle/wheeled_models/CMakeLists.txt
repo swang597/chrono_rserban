@@ -21,7 +21,6 @@ set(DEMOS
     demo_VEH_HMMWV9
     demo_VEH_UAZBUS
     demo_VEH_U401
-    demo_VEH_GD250
     demo_VEH_G500
     demo_VEH_WheeledGeneric
     demo_VEH_WheeledJSON

@@ -27,7 +27,7 @@
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 
-#include "chrono_models/vehicle/gclass/GCLASS_Long.h"
+#include "chrono_models/vehicle/gclass/G500.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 
@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
     // --------------
 
     // Create the vehicle, set parameters, and initialize
-    GCLASS_Long gclass;
+    G500 gclass;
     gclass.SetContactMethod(ChContactMethod::SMC);
     gclass.SetChassisFixed(false);
     gclass.SetInitPosition(ChCoordsys<>(initLoc, initRot));
