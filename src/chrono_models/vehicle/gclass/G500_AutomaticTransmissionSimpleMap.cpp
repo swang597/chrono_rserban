@@ -30,21 +30,25 @@ G500_AutomaticTransmissionSimpleMap::G500_AutomaticTransmissionSimpleMap(const s
     : ChAutomaticTransmissionSimpleMap(name) {}
 
 void G500_AutomaticTransmissionSimpleMap::SetGearRatios(std::vector<double>& fwd, double& rev) {
-    rev = -1.0 / 5.224;
+    rev = -1.0 / 8.0;
 
-    fwd.push_back(1.0 / 4.124 / 1.94);
-    fwd.push_back(1.0 / 4.124);
-    fwd.push_back(1.0 / 2.641);
-    fwd.push_back(1.0 / 1.58);
+    fwd.push_back(1.0 / 8.92);
+    fwd.push_back(1.0 / 5.4);
+    fwd.push_back(1.0 / 3.75);
+    fwd.push_back(1.0 / 2.73);
+    fwd.push_back(1.0 / 2.02);
+    fwd.push_back(1.0 / 1.67);
     fwd.push_back(1.0);
 }
 
 void G500_AutomaticTransmissionSimpleMap::SetShiftPoints(std::vector<std::pair<double, double>>& shift_bands) {
-    shift_bands.push_back(std::pair<double, double>(1000 * rpm2rads, 3000 * rpm2rads));
-    shift_bands.push_back(std::pair<double, double>(1000 * rpm2rads, 3700 * rpm2rads));
-    shift_bands.push_back(std::pair<double, double>(1000 * rpm2rads, 3700 * rpm2rads));
-    shift_bands.push_back(std::pair<double, double>(1000 * rpm2rads, 3700 * rpm2rads));
-    shift_bands.push_back(std::pair<double, double>(1000 * rpm2rads, 3700 * rpm2rads));
+    shift_bands.push_back(std::pair<double, double>(1200 * rpm2rads, 4000 * rpm2rads));
+    shift_bands.push_back(std::pair<double, double>(1200 * rpm2rads, 5500 * rpm2rads));
+    shift_bands.push_back(std::pair<double, double>(1200 * rpm2rads, 5500 * rpm2rads));
+    shift_bands.push_back(std::pair<double, double>(1200 * rpm2rads, 5500 * rpm2rads));
+    shift_bands.push_back(std::pair<double, double>(1200 * rpm2rads, 5500 * rpm2rads));
+    shift_bands.push_back(std::pair<double, double>(1200 * rpm2rads, 5500 * rpm2rads));
+    shift_bands.push_back(std::pair<double, double>(1200 * rpm2rads, 5700 * rpm2rads));
 }
 
 }  // namespace uaz
