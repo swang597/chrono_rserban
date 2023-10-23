@@ -100,8 +100,13 @@ void RigidPanhardAxle::Create(const rapidjson::Document& d) {
     assert(d.HasMember("Anti Roll Bar"));
     assert(d["Anti Roll Bar"].IsObject());
 
-    m_arbMass = d[""]["Mass"].GetDouble();
-    m_arbRadius = d[""]["Radius"].GetDouble();
+    m_arbMass = d["Anti Roll Bar"]["Mass"].GetDouble();
+    m_arbInertia = ReadVectorJSON(d["Anti Roll Bar"]["Inertia"]);
+    m_arbRadius = d["Anti Roll Bar"]["Radius"].GetDouble();
+    m_points[PANHARD_A] = ReadVectorJSON(d["Anti Roll Bar"]["Location Axle"]);
+    m_points[PANHARD_C] = ReadVectorJSON(d["Anti Roll Bar"]["Location Chassis"]);
+    m_arbStiffness = d["Anti Roll Bar"]["Rotational Stiffness"].GetDouble();
+    m_arbDamping = d["Anti Roll Bar"]["Rotational Damping"].GetDouble();
 
     // Read spring data and create force callback
     assert(d.HasMember("Spring"));

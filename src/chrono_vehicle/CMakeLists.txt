@@ -529,6 +529,8 @@ set(CV_WV_SUSPENSION_FILES
     wheeled_vehicle/suspension/GenericWheeledSuspension.cpp
     wheeled_vehicle/suspension/RigidPanhardAxle.cpp
     wheeled_vehicle/suspension/RigidPanhardAxle.h
+    wheeled_vehicle/suspension/ToeBarRigidPanhardAxle.cpp
+    wheeled_vehicle/suspension/ToeBarRigidPanhardAxle.h
 )
 source_group("wheeled_vehicle\\suspension" FILES ${CV_WV_SUSPENSION_FILES})
 

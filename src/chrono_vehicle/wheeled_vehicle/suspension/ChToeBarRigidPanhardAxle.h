@@ -64,7 +64,7 @@ class CH_VEHICLE_API ChToeBarRigidPanhardAxle : public ChSuspension {
     virtual ~ChToeBarRigidPanhardAxle();
 
     /// Get the name of the vehicle subsystem template.
-    virtual std::string GetTemplateName() const override { return "ToeBarLeafspringAxle"; }
+    virtual std::string GetTemplateName() const override { return "ToeBarRigidPanhardAxle"; }
 
     /// Specify whether or not this suspension can be steered.
     virtual bool IsSteerable() const final override { return true; }

@@ -45,6 +45,8 @@ class CH_VEHICLE_API RigidPanhardAxle : public ChRigidPanhardAxle {
     /// Return the radius of the spindle body (visualization only).
     virtual double getSpindleRadius() const override { return m_spindleRadius; }
     virtual double getARBRadius() const override { return m_arbRadius; }
+    /// Return the radius of the panhard rod body (visualization only).
+    virtual double getPanhardRodRadius() const override { return m_panhardRodRadius; }
 
     /// Return the width of the spindle body (visualization only).
     virtual double getSpindleWidth() const override { return m_spindleWidth; }
@@ -54,12 +56,8 @@ class CH_VEHICLE_API RigidPanhardAxle : public ChRigidPanhardAxle {
     /// Return the mass of the spindle body.
     virtual double getSpindleMass() const override { return m_spindleMass; }
     virtual double getARBMass() const override { return m_arbMass; }
-
     /// Return the mass of the Panhard tube body.
     virtual double getPanhardRodMass() const override { return m_panhardRodMass; }
-
-    /// Return the radius of the panhard rod body (visualization only).
-    virtual double getPanhardRodRadius() const override { return m_panhardRodRadius; }
 
     /// Return the radius of the axle tube body (visualization only).
     virtual double getAxleTubeRadius() const override { return m_axleTubeRadius; }
@@ -85,6 +83,9 @@ class CH_VEHICLE_API RigidPanhardAxle : public ChRigidPanhardAxle {
     /// Return the functor object for shock force.
     virtual std::shared_ptr<ChLinkTSDA::ForceFunctor> getShockForceFunctor() const override { return m_shockForceCB; }
 
+    virtual double getARBStiffness() const override { return m_arbStiffness; }
+    virtual double getARBDamping() const override { return m_arbDamping; }
+
   private:
     virtual const ChVector<> getLocation(PointId which) override { return m_points[which]; }
 
@@ -92,6 +93,9 @@ class CH_VEHICLE_API RigidPanhardAxle : public ChRigidPanhardAxle {
 
     std::shared_ptr<ChLinkTSDA::ForceFunctor> m_springForceCB;
     std::shared_ptr<ChLinkTSDA::ForceFunctor> m_shockForceCB;
+
+    double m_arbStiffness;
+    double m_arbDamping;
 
     ChVector<> m_points[NUM_POINTS];
 
