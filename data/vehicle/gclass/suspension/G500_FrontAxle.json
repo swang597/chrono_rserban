@@ -73,19 +73,19 @@
 
   "Spring":
   {
-    "Location Chassis":             [0.0, 0.5142, 0.2476],
+    "Location Chassis":             [0.0, 0.5142, 0.3476],
     "Location Axle":                [0.0, 0.5142, 0.0476],
-    "Spring Coefficient":           102643.885771329,
-    "Free Length":                  0.2621225507207084,
-    "Minimum Length":               0.28,
-    "Maximum Length":               0.12
+    "Spring Coefficient":           94748.2022504578,
+    "Free Length":                  0.362,
+    "Minimum Length":               0.22,
+    "Maximum Length":               0.38
   },
 
   "Shock":
   {
     "Location Chassis":             [-0.3648,  0.4193, 0.4298],
     "Location Axle":                [-0.125, 0.441, -0.0507],
-    "Damping Coefficient":          16336.2817986669,
+    "Damping Coefficient":          15079.644737231,
     "Degressivity Compression":     3,
     "Degressivity Expansion":       1
   },

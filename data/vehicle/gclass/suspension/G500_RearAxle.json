@@ -45,12 +45,12 @@
 
   "Spring":
   {
-    "Location Chassis":             [0.0, 0.5142, 0.2476],
+    "Location Chassis":             [0.0, 0.5142, 0.3476],
     "Location Axle":                [0.0, 0.5142, 0.0476],
     "Spring Coefficient":           102643.885771329,
-    "Free Length":                  0.2621225507207084,
-    "Minimum Length":               0.28,
-    "Maximum Length":               0.12
+    "Free Length":                  0.3621225507207084,
+    "Minimum Length":               0.22,
+    "Maximum Length":               0.38
   },
 
   "Shock":

@@ -146,6 +146,7 @@ void ToeBarRigidPanhardAxle::Create(const rapidjson::Document& d) {
     assert(d["Spring"].IsObject());
     m_points[SPRING_C] = ReadVectorJSON(d["Spring"]["Location Chassis"]);
     m_points[SPRING_A] = ReadVectorJSON(d["Spring"]["Location Axle"]);
+    m_springRestLength = d["Spring"]["Free Length"].GetDouble();
     m_springForceCB = ReadTSDAFunctorJSON(d["Spring"], m_springRestLength);
 
     // Read shock data and create force callback
