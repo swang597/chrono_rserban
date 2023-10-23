@@ -78,8 +78,8 @@ namespace artcar {}
 /// namespace for the Kraz truck vehicle model
 namespace kraz {}
 
-/// namespace for the G-Wagon offroad vehicle models
-        namespace gwagon {}
+/// namespace for the Mercedes G500 vehicle model
+namespace gclass {}
 
 /// @} vehicle_models
 

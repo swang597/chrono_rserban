@@ -186,7 +186,7 @@ class G500_Model : public Vehicle_Model {
     virtual std::string TransmissionJSON() const override {
         return "gclass/powertrain/G500_AutomaticTransmissionSimpleMap.json";
     }
-    virtual double CameraDistance() const override { return 6.0; }
+    virtual double CameraDistance() const override { return 10.0; }
     virtual ChContactMethod ContactMethod() const override { return ChContactMethod::SMC; }
 };
 
@@ -300,13 +300,13 @@ class UT_Model : public Trailer_Model {
 ChVisualSystem::Type vis_type = ChVisualSystem::Type::VSG;
 
 // Current vehicle model selection
-// auto vehicle_model = HMMWV_Model();
+auto vehicle_model = HMMWV_Model();
 // auto vehicle_model = Sedan_Model();
 // auto vehicle_model = Audi_Model();
 // auto vehicle_model = Polaris_Model();
 // auto vehicle_model = VW_Microbus_Model();
 // auto vehicle_model = UAZ_Model();
-auto vehicle_model = G500_Model();
+// auto vehicle_model = G500_Model();
 // auto vehicle_model = CityBus_Model();
 // auto vehicle_model = MAN_Model();
 // auto vehicle_model = MTV_Model();
