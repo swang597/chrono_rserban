@@ -45,6 +45,7 @@ class CH_VEHICLE_API RigidPanhardAxle : public ChRigidPanhardAxle {
     virtual const ChVector<> getAxleTubeCOM() const override { return m_axleTubeCOM; }
     /// Return the radius of the spindle body (visualization only).
     virtual double getSpindleRadius() const override { return m_spindleRadius; }
+    virtual double getARBRadius() const override { return m_arbRadius; }
 
     /// Return the width of the spindle body (visualization only).
     virtual double getSpindleWidth() const override { return m_spindleWidth; }
@@ -53,6 +54,13 @@ class CH_VEHICLE_API RigidPanhardAxle : public ChRigidPanhardAxle {
     virtual double getAxleTubeMass() const override { return m_axleTubeMass; }
     /// Return the mass of the spindle body.
     virtual double getSpindleMass() const override { return m_spindleMass; }
+    virtual double getARBMass() const override { return m_arbMass; }
+    
+    /// Return the mass of the Panhard tube body.
+    virtual double getPanhardRodMass() const override { return m_panhardRodMass; }
+
+    /// Return the radius of the panhard rod body (visualization only).
+    virtual double getPanhardRodRadius() const override { return m_panhardRodRadius; }
 
     /// Return the radius of the axle tube body (visualization only).
     virtual double getAxleTubeRadius() const override { return m_axleTubeRadius; }
@@ -61,6 +69,8 @@ class CH_VEHICLE_API RigidPanhardAxle : public ChRigidPanhardAxle {
     virtual const ChVector<>& getAxleTubeInertia() const override { return m_axleTubeInertia; }
     /// Return the moments of inertia of the spindle body.
     virtual const ChVector<>& getSpindleInertia() const override { return m_spindleInertia; }
+    virtual const ChVector<>& getARBInertia() const override { return m_arbInertia; }
+    virtual const ChVector<>& getPanhardRodInertia() const override { return m_panhardRodInertia; }
 
     /// Return the inertia of the axle shaft.
     virtual double getAxleInertia() const override { return m_axleInertia; }
@@ -95,11 +105,13 @@ class CH_VEHICLE_API RigidPanhardAxle : public ChRigidPanhardAxle {
     double m_spindleMass;
     double m_axleTubeMass;
     double m_panhardRodMass;
+    double m_arbMass;
 
     double m_spindleRadius;
     double m_spindleWidth;
     double m_axleTubeRadius;
     double m_panhardRodRadius;
+    double m_arbRadius;
 
     double m_springRestLength;
     double m_shockRestLength;
@@ -108,6 +120,7 @@ class CH_VEHICLE_API RigidPanhardAxle : public ChRigidPanhardAxle {
     ChVector<> m_spindleInertia;
     ChVector<> m_axleTubeInertia;
     ChVector<> m_panhardRodInertia;
+    ChVector<> m_arbInertia;
     ChVector<> m_axleTubeCOM;
 };
 
