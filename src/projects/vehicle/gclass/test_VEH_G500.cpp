@@ -12,7 +12,7 @@
 // Authors: Rainer Gericke
 // =============================================================================
 //
-// Demo program for Mercedes GD250 simulation.
+// Demo program for G500 simulation.
 //
 // The vehicle reference frame has Z up, X towards the front of the vehicle, and
 // Y pointing to the left.
@@ -23,14 +23,11 @@
 #include "chrono/utils/ChUtilsInputOutput.h"
 #include "chrono/utils/ChFilters.h"
 
-#include "chrono/solver/ChSolver.h"
-#include "chrono/timestepper/ChTimestepper.h"
-
 #include "chrono_vehicle/ChConfigVehicle.h"
 #include "chrono_vehicle/ChVehicleModelData.h"
 #include "chrono_vehicle/terrain/RigidTerrain.h"
 
-#include "chrono_models/vehicle/gclass/GCLASS.h"
+#include "chrono_models/vehicle/gclass/G500.h"
 
 #include "chrono_thirdparty/filesystem/path.h"
 
@@ -60,7 +57,7 @@ ChVector<> initLoc(0, 0, 0.5);
 ChQuaternion<> initRot(1, 0, 0, 0);
 
 // Visualization type for vehicle parts (PRIMITIVES, MESH, or NONE)
-VisualizationType chassis_vis_type = VisualizationType::NONE;
+VisualizationType chassis_vis_type = VisualizationType::MESH;
 VisualizationType suspension_vis_type = VisualizationType::PRIMITIVES;
 VisualizationType steering_vis_type = VisualizationType::PRIMITIVES;
 VisualizationType wheel_vis_type = VisualizationType::MESH;
@@ -83,7 +80,7 @@ double tend = 15;
 double render_step_size = 1.0 / 50;  // FPS = 50
 
 // Output directories
-const std::string out_dir = GetChronoOutputPath() + "GD250";
+const std::string out_dir = GetChronoOutputPath() + "G500";
 const std::string pov_dir = out_dir + "/POVRAY";
 bool povray_output = false;
 
@@ -97,22 +94,16 @@ int main(int argc, char* argv[]) {
     // Create systems
     // --------------
 
-    bool useKinematicAxles = false;
-    
     // Create the vehicle, set parameters, and initialize
-    GCLASS gclass;
+    G500 gclass;
     gclass.SetContactMethod(ChContactMethod::SMC);
     gclass.SetChassisFixed(false);
     gclass.SetInitPosition(ChCoordsys<>(initLoc, initRot));
     gclass.SetTireType(tire_model);
     gclass.SetTireStepSize(tire_step_size);
     gclass.SetInitFwdVel(0.0);
-    gclass.SetKinematicMode(useKinematicAxles);
     gclass.Initialize();
-    if(!useKinematicAxles) {
-        gclass.GetSystem()->SetSolverType(ChSolver::Type::SPARSE_QR);
-        gclass.GetSystem()->SetTimestepperType(ChTimestepper::Type::EULER_IMPLICIT);
-    }
+
     gclass.SetChassisVisualizationType(chassis_vis_type);
     gclass.SetSuspensionVisualizationType(suspension_vis_type);
     gclass.SetSteeringVisualizationType(steering_vis_type);
@@ -159,7 +150,7 @@ int main(int argc, char* argv[]) {
 #ifdef CHRONO_IRRLICHT
             // Create the vehicle Irrlicht interface
             auto vis_irr = chrono_types::make_shared<ChWheeledVehicleVisualSystemIrrlicht>();
-            vis_irr->SetWindowTitle("GD250 Demo");
+            vis_irr->SetWindowTitle("UAZBUS Demo");
             vis_irr->SetChaseCamera(trackPoint, 6.0, 0.5);
             vis_irr->Initialize();
             vis_irr->AddLightDirectional();
@@ -184,7 +175,7 @@ int main(int argc, char* argv[]) {
 #ifdef CHRONO_VSG
             // Create the vehicle VSG interface
             auto vis_vsg = chrono_types::make_shared<ChWheeledVehicleVisualSystemVSG>();
-            vis_vsg->SetWindowTitle("GD250 Demo");
+            vis_vsg->SetWindowTitle("Gator Demo");
             vis_vsg->AttachVehicle(&gclass.GetVehicle());
             vis_vsg->SetChaseCamera(trackPoint, 6.0, 0.5);
             vis_vsg->SetWindowSize(ChVector2<int>(1000, 600));
@@ -233,8 +224,6 @@ int main(int argc, char* argv[]) {
     int render_steps = (int)std::ceil(render_step_size / step_size);
     int step_number = 0;
     int render_frame = 0;
-
-    double maxKingpinAngle = 0.0;
 
     gclass.GetVehicle().EnableRealtime(true);
     utils::ChRunningAverage RTF_filter(50);

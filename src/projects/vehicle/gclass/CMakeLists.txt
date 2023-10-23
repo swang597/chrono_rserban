@@ -12,17 +12,7 @@ endif()
 
 set(PROGRAMS
     test_VEH_G500
-    #test_VEH_GD250
-    #test_VEH_GD250_ObstacleTool
-    #test_VEH_GD250_Ride
-    #test_VEH_GD250_TurnCircle
 )
-
-if (HAVE_OPENCRG)
-    set(PROGRAMS ${PROGRAMS}
-        #test_VEH_GD250_Shock
-    )
-endif()
 
 #--------------------------------------------------------------
 # Include directories, compiler flags, libraries
