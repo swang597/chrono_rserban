@@ -136,8 +136,8 @@ void ToeBarRigidPanhardAxle::Create(const rapidjson::Document& d) {
     m_arbMass = d["Anti Roll Bar"]["Mass"].GetDouble();
     m_arbInertia = ReadVectorJSON(d["Anti Roll Bar"]["Inertia"]);
     m_arbRadius = d["Anti Roll Bar"]["Radius"].GetDouble();
-    m_points[PANHARD_A] = ReadVectorJSON(d["Anti Roll Bar"]["Location Axle"]);
-    m_points[PANHARD_C] = ReadVectorJSON(d["Anti Roll Bar"]["Location Chassis"]);
+    m_points[ANTIROLL_A] = ReadVectorJSON(d["Anti Roll Bar"]["Location Axle"]);
+    m_points[ANTIROLL_C] = ReadVectorJSON(d["Anti Roll Bar"]["Location Chassis"]);
     m_arbStiffness = d["Anti Roll Bar"]["Rotational Stiffness"].GetDouble();
     m_arbDamping = d["Anti Roll Bar"]["Rotational Damping"].GetDouble();
 
@@ -146,7 +146,6 @@ void ToeBarRigidPanhardAxle::Create(const rapidjson::Document& d) {
     assert(d["Spring"].IsObject());
     m_points[SPRING_C] = ReadVectorJSON(d["Spring"]["Location Chassis"]);
     m_points[SPRING_A] = ReadVectorJSON(d["Spring"]["Location Axle"]);
-    m_springRestLength = d["Spring"]["Free Length"].GetDouble();
     m_springForceCB = ReadTSDAFunctorJSON(d["Spring"], m_springRestLength);
 
     // Read shock data and create force callback

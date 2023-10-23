@@ -55,8 +55,8 @@
 
   "Shock":
   {
-    "Location Chassis":             [-0.3648,  0.4193, 0.4298],
-    "Location Axle":                [-0.125, 0.441, -0.0507],
+    "Location Chassis":             [0.20, 0.5142, 0.347],
+    "Location Axle":                [0.125, 0.5842, -0.0507],
     "Damping Coefficient":          16336.2817986669,
     "Degressivity Compression":     3,
     "Degressivity Expansion":       1
