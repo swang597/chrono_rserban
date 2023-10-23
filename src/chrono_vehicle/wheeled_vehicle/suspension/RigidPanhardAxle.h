@@ -1,7 +1,7 @@
 // =============================================================================
 // PROJECT CHRONO - http://projectchrono.org
 //
-// Copyright (c) 2014 projectchrono.org
+// Copyright (c) 2023 projectchrono.org
 // All rights reserved.
 //
 // Use of this source code is governed by a BSD-style license that can be found
@@ -12,7 +12,7 @@
 // Authors: Rainer Gericke, Radu Serban
 // =============================================================================
 //
-// solid Panhard axle suspension constructed with data from file.
+// Solid Panhard axle suspension constructed with data from file.
 //
 // =============================================================================
 
@@ -20,24 +20,23 @@
 #define RIGID_PANHARD_AXLE_H
 
 #include "chrono_vehicle/ChApiVehicle.h"
-#include "chrono_models/vehicle/gclass/base/ChRigidPanhardAxle.h"
+#include "chrono_vehicle/wheeled_vehicle/suspension/ChRigidPanhardAxle.h"
 #include "chrono_thirdparty/rapidjson/document.h"
 
 namespace chrono {
 namespace vehicle {
-namespace gclass {
 
 /// @addtogroup vehicle_wheeled_suspension
 /// @{
 
-/// Leaf-spring solid axle suspension constructed with data from file.
+/// Solid Panhard axle suspension constructed with data from file.
 class CH_VEHICLE_API RigidPanhardAxle : public ChRigidPanhardAxle {
-   public:
+  public:
     RigidPanhardAxle(const std::string& filename);
     RigidPanhardAxle(const rapidjson::Document& d);
     ~RigidPanhardAxle();
 
-   protected:
+  protected:
     virtual double getCamberAngle() const override { return m_camber_angle; }
     virtual double getToeAngle() const override { return m_toe_angle; }
 
@@ -55,7 +54,7 @@ class CH_VEHICLE_API RigidPanhardAxle : public ChRigidPanhardAxle {
     /// Return the mass of the spindle body.
     virtual double getSpindleMass() const override { return m_spindleMass; }
     virtual double getARBMass() const override { return m_arbMass; }
-    
+
     /// Return the mass of the Panhard tube body.
     virtual double getPanhardRodMass() const override { return m_panhardRodMass; }
 
@@ -86,7 +85,7 @@ class CH_VEHICLE_API RigidPanhardAxle : public ChRigidPanhardAxle {
     /// Return the functor object for shock force.
     virtual std::shared_ptr<ChLinkTSDA::ForceFunctor> getShockForceFunctor() const override { return m_shockForceCB; }
 
-   private:
+  private:
     virtual const ChVector<> getLocation(PointId which) override { return m_points[which]; }
 
     virtual void Create(const rapidjson::Document& d) override;
@@ -126,7 +125,6 @@ class CH_VEHICLE_API RigidPanhardAxle : public ChRigidPanhardAxle {
 
 /// @} vehicle_wheeled_suspension
 
-}  // namespace gclass
 }  // end namespace vehicle
 }  // end namespace chrono
 

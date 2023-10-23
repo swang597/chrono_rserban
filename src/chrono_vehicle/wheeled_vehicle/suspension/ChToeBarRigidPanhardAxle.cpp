@@ -1,7 +1,7 @@
 // =============================================================================
 // PROJECT CHRONO - http://projectchrono.org
 //
-// Copyright (c) 2014 projectchrono.org
+// Copyright (c) 2023 projectchrono.org
 // All rights reserved.
 //
 // Use of this source code is governed by a BSD-style license that can be found
@@ -12,16 +12,11 @@
 // Authors: Rainer Gericke, Radu Serban
 // =============================================================================
 //
-// Base class for a steerable leaf-spring solid axle suspension.
+// Base class for a steerable solid Panhard axle suspension.
 //
-// This class is meant for modelling a very simple steerable solid leafspring
-// axle. The guiding function of leafspring is modelled by a ChLinkLockRevolutePrismatic
-// joint, it allows vertical movement and tilting of the axle tube but no elasticity.
-// The spring function of the leafspring is modelled by a vertical spring element.
-// Tie up of the leafspring is not possible with this approach, as well as the
-// characteristic kinematics along wheel travel. The roll center and roll stability
-// is met well, if spring track is defined correctly. The class has been designed
-// for maximum easyness and numerical efficiency.
+// This class is meant for modelling a very simple steerable solid Panhard
+// axle. The guiding function is modelled by a ChLinkLockRevolutePrismatic joint
+// which allows vertical movement and tilting of the axle tube but no elasticity.
 //
 // This axle subsystem works with the ChRotaryArm steering subsystem.
 //
@@ -39,7 +34,7 @@
 #include "chrono/assets/ChCylinderShape.h"
 #include "chrono/assets/ChPointPointShape.h"
 
-#include "chrono_models/vehicle/gclass/base/ChToeBarRigidPanhardAxle.h"
+#include "chrono_vehicle/wheeled_vehicle/suspension/ChToeBarRigidPanhardAxle.h"
 
 namespace chrono {
 namespace vehicle {
@@ -373,7 +368,7 @@ void ChToeBarRigidPanhardAxle::InitializeSide(VehicleSide side,
     m_axle_to_spindle[side]->SetNameString(m_name + "_axle_to_spindle" + suffix);
     m_axle_to_spindle[side]->Initialize(m_axle[side], m_spindle[side], ChVector<>(0, -1, 0));
     chassis->GetSystem()->Add(m_axle_to_spindle[side]);
-    
+
     m_arbBody[side] = std::shared_ptr<ChBody>(chassis->GetSystem()->NewBody());
     m_arbBody[side]->SetNameString(m_name + "_arb" + suffix);
     m_arbBody[side]->SetPos(0.5 * (points[ANTIROLL_C] + m_ptARBCenter));
@@ -531,12 +526,13 @@ void ChToeBarRigidPanhardAxle::AddVisualizationAssets(VisualizationType vis) {
 
     AddVisualizationLink(m_arbBody[LEFT], m_ptARBAxle[LEFT], m_ptARBChassis[LEFT], getARBRadius(),
                          ChColor(0.5f, 7.0f, 0.5f));
-    AddVisualizationLink(m_arbBody[LEFT], m_ptARBCenter, m_ptARBChassis[LEFT], getARBRadius(), ChColor(0.5f, 0.7f, 0.5f));
+    AddVisualizationLink(m_arbBody[LEFT], m_ptARBCenter, m_ptARBChassis[LEFT], getARBRadius(),
+                         ChColor(0.5f, 0.7f, 0.5f));
 
     AddVisualizationLink(m_arbBody[RIGHT], m_ptARBAxle[RIGHT], m_ptARBChassis[RIGHT], getARBRadius(),
                          ChColor(0.7f, 0.5f, 0.5f));
-    AddVisualizationLink(m_arbBody[RIGHT], m_ptARBCenter, m_ptARBChassis[RIGHT], getARBRadius(), ChColor(0.7f, 0.5f, 0.5f));
-
+    AddVisualizationLink(m_arbBody[RIGHT], m_ptARBCenter, m_ptARBChassis[RIGHT], getARBRadius(),
+                         ChColor(0.7f, 0.5f, 0.5f));
 
     if (m_left_knuckle_steers) {
         AddVisualizationLink(m_draglinkBody, m_pointsL[DRAGLINK_C], m_pointsL[KNUCKLE_DRL], getDraglinkRadius(),

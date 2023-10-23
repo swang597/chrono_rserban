@@ -1,7 +1,7 @@
 // =============================================================================
 // PROJECT CHRONO - http://projectchrono.org
 //
-// Copyright (c) 2014 projectchrono.org
+// Copyright (c) 2023 projectchrono.org
 // All rights reserved.
 //
 // Use of this source code is governed by a BSD-style license that can be found
@@ -12,20 +12,19 @@
 // Authors: Rainer Gericke, Radu Serban
 // =============================================================================
 //
-// solid panhard axle suspension constructed with data from file.
+// Solid panhard axle suspension constructed with data from file.
 //
 // =============================================================================
 
 #include <cstdio>
 
-#include "chrono_models/vehicle/gclass/base/RigidPanhardAxle.h"
+#include "chrono_vehicle/wheeled_vehicle/suspension/RigidPanhardAxle.h"
 #include "chrono_vehicle/utils/ChUtilsJSON.h"
 
 using namespace rapidjson;
 
 namespace chrono {
 namespace vehicle {
-namespace gclass {
 
 // -----------------------------------------------------------------------------
 // Construct a solid axle suspension using data from the specified JSON
@@ -90,7 +89,7 @@ void RigidPanhardAxle::Create(const rapidjson::Document& d) {
     // Read Panhard Rod data
     assert(d.HasMember("Panhard Rod"));
     assert(d["Panhard Rod"].IsObject());
-    
+
     m_panhardRodMass = d["Panhard Rod"]["Mass"].GetDouble();
     m_panhardRodRadius = d["Panhard Rod"]["Radius"].GetDouble();
     m_panhardRodInertia = ReadVectorJSON(d["Panhard Rod"]["Inertia"]);
@@ -103,7 +102,7 @@ void RigidPanhardAxle::Create(const rapidjson::Document& d) {
 
     m_arbMass = d[""]["Mass"].GetDouble();
     m_arbRadius = d[""]["Radius"].GetDouble();
-    
+
     // Read spring data and create force callback
     assert(d.HasMember("Spring"));
     assert(d["Spring"].IsObject());
@@ -124,6 +123,5 @@ void RigidPanhardAxle::Create(const rapidjson::Document& d) {
     m_axleInertia = d["Axle"]["Inertia"].GetDouble();
 }
 
-}  // namespace gclass
 }  // end namespace vehicle
 }  // end namespace chrono

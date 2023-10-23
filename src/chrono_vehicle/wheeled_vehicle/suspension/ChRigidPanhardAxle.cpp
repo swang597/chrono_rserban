@@ -12,16 +12,11 @@
 // Authors: Rainer Gericke, Radu Serban
 // =============================================================================
 //
-// Base class for a leaf-spring solid axle suspension.
+// Base class for a solid Panhard axle suspension.
 //
-// This class is meant for modelling a very simple nonsteerable solid leafspring
-// axle. The guiding function of leafspring is modelled by a ChLinkLockRevolutePrismatic
-// joint, it allows vertical movement and tilting of the axle tube but no elasticity.
-// The spring function of the leafspring is modelled by a vertical spring element.
-// Tie up of the leafspring is not possible with this approach, as well as the
-// characteristic kinematics along wheel travel. The roll center and roll stability
-// is met well, if spring track is defined correctly. The class has been designed
-// for maximum easyness and numerical efficiency.
+// This class is meant for modelling a very simple nonsteerable solid Panhard
+// axle. The guiding function is modelled by a ChLinkLockRevolutePrismatic joint
+// which allows vertical movement and tilting of the axle tube but no elasticity.
 //
 // The suspension subsystem is modeled with respect to a right-handed frame,
 // with X pointing towards the front, Y to the left, and Z up (ISO standard).
@@ -37,7 +32,7 @@
 #include "chrono/assets/ChCylinderShape.h"
 #include "chrono/assets/ChPointPointShape.h"
 
-#include "chrono_models/vehicle/gclass/base/ChRigidPanhardAxle.h"
+#include "chrono_vehicle/wheeled_vehicle/suspension/ChRigidPanhardAxle.h"
 
 namespace chrono {
 namespace vehicle {
@@ -241,7 +236,7 @@ void ChRigidPanhardAxle::InitializeSide(VehicleSide side,
     m_axle_to_spindle[side]->SetNameString(m_name + "_axle_to_spindle" + suffix);
     m_axle_to_spindle[side]->Initialize(m_axle[side], m_spindle[side], ChVector<>(0, -1, 0));
     chassis->GetSystem()->Add(m_axle_to_spindle[side]);
-    
+
     m_arb[side] = std::shared_ptr<ChBody>(chassis->GetSystem()->NewBody());
     m_arb[side]->SetNameString(m_name + "_arb" + suffix);
     m_arb[side]->SetPos(0.5 * (points[ANTIROLL_C] + m_ptARBCenter));
@@ -359,7 +354,6 @@ void ChRigidPanhardAxle::AddVisualizationAssets(VisualizationType vis) {
     AddVisualizationLink(m_arb[RIGHT], m_ptARBAxle[RIGHT], m_ptARBChassis[RIGHT], getARBRadius(),
                          ChColor(0.7f, 0.5f, 0.5f));
     AddVisualizationLink(m_arb[RIGHT], m_ptARBCenter, m_ptARBChassis[RIGHT], getARBRadius(), ChColor(0.7f, 0.5f, 0.5f));
-
 
     // Add visualization for the springs and shocks
     m_spring[LEFT]->AddVisualShape(chrono_types::make_shared<ChSpringShape>(0.06, 150, 15));

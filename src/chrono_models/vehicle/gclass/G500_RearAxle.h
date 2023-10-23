@@ -19,7 +19,7 @@
 #ifndef G500_REAR_AXLE_H
 #define G500_REAR_AXLE_H
 
-#include "chrono_models/vehicle/gclass/base/ChRigidPanhardAxle.h"
+#include "chrono_vehicle/wheeled_vehicle/suspension/ChRigidPanhardAxle.h"
 
 #include "chrono_models/ChApiModels.h"
 

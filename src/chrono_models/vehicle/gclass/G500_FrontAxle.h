@@ -19,7 +19,7 @@
 #ifndef G500_FRONT_AXLE_H
 #define G500_FRONT_AXLE_H
 
-#include "chrono_models/vehicle/gclass/base/ChToeBarRigidPanhardAxle.h"
+#include "chrono_vehicle/wheeled_vehicle/suspension/ChToeBarRigidPanhardAxle.h"
 
 #include "chrono_models/ChApiModels.h"
 

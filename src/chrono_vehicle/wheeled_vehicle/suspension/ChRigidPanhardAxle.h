@@ -12,17 +12,11 @@
 // Authors: Rainer Gericke, Radu Serban
 // =============================================================================
 //
-// Base class for a leaf-spring solid axle suspension.
-// Derived from ChSuspension, but still an abstract base class.
+// Base class for a solid Panhard axle suspension.
 //
-// This class is meant for modelling a very simple nonsteerable solid leafspring
-// axle. The guiding function of leafspring is modelled by a ChLinkLockRevolutePrismatic
-// joint, it allows vertical movement and tilting of the axle tube but no elasticity.
-// The spring function of the leafspring is modelled by a vertical spring element.
-// Tie up of the leafspring is not possible with this approach, as well as the
-// characteristic kinematics along wheel travel. The roll center and roll stability
-// is met well, if spring track is defined correctly. The class has been designed
-// for maximum easyness and numerical efficiency.
+// This class is meant for modelling a very simple nonsteerable solid Panhard
+// axle. The guiding function is modelled by a ChLinkLockRevolutePrismatic joint
+// which allows vertical movement and tilting of the axle tube but no elasticity.
 //
 // The suspension subsystem is modeled with respect to a right-handed frame,
 // with X pointing towards the front, Y to the left, and Z up (ISO standard).
@@ -40,7 +34,7 @@
 
 #include <vector>
 
-#include "chrono_models/ChApiModels.h"
+#include "chrono_vehicle/ChApiVehicle.h"
 #include "chrono_vehicle/wheeled_vehicle/ChSuspension.h"
 
 namespace chrono {
@@ -49,7 +43,7 @@ namespace vehicle {
 /// @addtogroup vehicle_wheeled_suspension
 /// @{
 
-/// Base class for a leaf-spring solid axle suspension.
+/// Base class for a solid Panhard axle suspension.
 /// Derived from ChSuspension, but still an abstract base class.
 ///
 /// The suspension subsystem is modeled with respect to a right-handed frame,
@@ -60,8 +54,8 @@ namespace vehicle {
 /// All point locations are assumed to be given for the left half of the
 /// suspension and will be mirrored (reflecting the y coordinates) to construct
 /// the right side.
-class CH_MODELS_API ChRigidPanhardAxle : public ChSuspension {
-   public:
+class CH_VEHICLE_API ChRigidPanhardAxle : public ChSuspension {
+  public:
     ChRigidPanhardAxle(const std::string& name  ///< [in] name of the subsystem
     );
 
@@ -144,7 +138,7 @@ class CH_MODELS_API ChRigidPanhardAxle : public ChSuspension {
 
     void LogHardpointLocations(const ChVector<>& ref, bool inches = false);
 
-   protected:
+  protected:
     /// Identifiers for the various hardpoints.
     enum PointId {
         SHOCK_A,     ///< shock, axle
@@ -222,7 +216,7 @@ class CH_MODELS_API ChRigidPanhardAxle : public ChSuspension {
     std::shared_ptr<ChLinkTSDA> m_shock[2];   ///< handles to the spring links (L/R)
     std::shared_ptr<ChLinkTSDA> m_spring[2];  ///< handles to the shock links (L/R)
 
-   private:
+  private:
     // Hardpoint absolute locations
     std::vector<ChVector<>> m_pointsL;
     std::vector<ChVector<>> m_pointsR;

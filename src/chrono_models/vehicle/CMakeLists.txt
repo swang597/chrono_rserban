@@ -17,12 +17,6 @@ set(CVM_COMMON_FILES
 source_group("" FILES ${CVM_COMMON_FILES})
 
 set(CVM_GCLASS_FILES
-    gclass/base/ChRigidPanhardAxle.cpp
-    gclass/base/ChRigidPanhardAxle.h
-    gclass/base/ChToeBarRigidPanhardAxle.cpp
-    gclass/base/ChToeBarRigidPanhardAxle.h
-    gclass/base/RigidPanhardAxle.cpp
-    gclass/base/RigidPanhardAxle.h
     gclass/G500_AutomaticTransmissionSimpleMap.cpp
     gclass/G500_AutomaticTransmissionSimpleMap.h
     gclass/G500_BrakeShafts.cpp
