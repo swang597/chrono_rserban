@@ -85,7 +85,7 @@ int main(int argc, char* argv[]) {
     cout << "Create vehicle..." << endl;
     std::string vehicle_json = "Polaris/Polaris.json";
     std::string engine_json = "Polaris/Polaris_EngineSimpleMap.json";
-    std::string transmission_json = "Polaris/Polaris_AutomaticTransmisionSimpleMap.json";
+    std::string transmission_json = "Polaris/Polaris_AutomaticTransmissionSimpleMap.json";
     std::string tire_json = "Polaris/Polaris_RigidTire.json";
 
     // Create and initialize the vehicle

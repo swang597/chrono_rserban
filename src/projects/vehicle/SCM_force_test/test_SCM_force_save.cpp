@@ -17,6 +17,7 @@
 // =============================================================================
 
 #include <limits>
+#include <iomanip>
 
 #include "test_SCM_force.h"
 
