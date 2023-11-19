@@ -12,7 +12,7 @@
 // Authors: Radu Serban, Asher Elmquist
 // =============================================================================
 //
-// WVP full vehicle model...
+// Sedan full vehicle model.
 //
 // =============================================================================
 
@@ -23,6 +23,15 @@
 #include "chrono_vehicle/ChVehicleModelData.h"
 
 #include "chrono_models/vehicle/wvp/WVP_Vehicle.h"
+#include "chrono_models/vehicle/wvp/WVP_BrakeSimple.h"
+#include "chrono_models/vehicle/wvp/WVP_BrakeShafts.h"
+#include "chrono_models/vehicle/wvp/WVP_Chassis.h"
+#include "chrono_models/vehicle/wvp/WVP_DoubleWishboneFront.h"
+#include "chrono_models/vehicle/wvp/WVP_DoubleWishboneRear.h"
+#include "chrono_models/vehicle/wvp/WVP_Driveline4WD.h"
+//#include "chrono_models/vehicle/sedan/Sedan_MultiLink.h"
+#include "chrono_models/vehicle/wvp/WVP_RackPinion.h"
+#include "chrono_models/vehicle/wvp/WVP_Wheel.h"
 
 namespace chrono {
 namespace vehicle {
@@ -31,36 +40,24 @@ namespace wvp {
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
 WVP_Vehicle::WVP_Vehicle(const bool fixed,
-                         SteeringTypeWV steering_model,
-                         ChContactMethod contact_method,
-                         CollisionType chassis_collision_type)
+                             BrakeType brake_type,
+                             ChContactMethod contact_method,
+                             CollisionType chassis_collision_type)
     : ChWheeledVehicle("WVP", contact_method), m_omega({0, 0, 0, 0}) {
-    Create(fixed, steering_model, chassis_collision_type);
+    Create(fixed, brake_type, chassis_collision_type);
 }
 
 WVP_Vehicle::WVP_Vehicle(ChSystem* system,
-                         const bool fixed,
-                         SteeringTypeWV steering_model,
-                         CollisionType chassis_collision_type)
+                             const bool fixed,
+                             BrakeType brake_type,
+                             CollisionType chassis_collision_type)
     : ChWheeledVehicle("WVP", system), m_omega({0, 0, 0, 0}) {
-    Create(fixed, steering_model, chassis_collision_type);
+    Create(fixed, brake_type, chassis_collision_type);
 }
 
-void WVP_Vehicle::Create(bool fixed, SteeringTypeWV steering_model, CollisionType chassis_collision_type) {
+void WVP_Vehicle::Create(bool fixed, BrakeType brake_type, CollisionType chassis_collision_type) {
     // Create the chassis subsystem
     m_chassis = chrono_types::make_shared<WVP_Chassis>("Chassis", fixed, chassis_collision_type);
-
-    // Create the steering subsystem
-    m_steerings.resize(1);
-    switch (steering_model) {
-        case SteeringTypeWV::PITMAN_ARM:
-            m_steerings[0] = chrono_types::make_shared<WVP_PitmanArm>("Steering");
-            break;
-        case SteeringTypeWV::PITMAN_ARM_SHAFTS:
-            m_steerings[0] = chrono_types::make_shared<WVP_PitmanArmShafts>("Steering", false);
-            ////m_steerings[0] = chrono_types::make_shared<WVP_PitmanArmShafts>("Steering", true);
-            break;
-    }
 
     // Create the axle subsystems
     m_axles.resize(2);
@@ -77,14 +74,27 @@ void WVP_Vehicle::Create(bool fixed, SteeringTypeWV steering_model, CollisionTyp
     m_axles[1]->m_wheels[0] = chrono_types::make_shared<WVP_Wheel>("Wheel_RL");
     m_axles[1]->m_wheels[1] = chrono_types::make_shared<WVP_Wheel>("Wheel_RR");
 
-    m_axles[0]->m_brake_left = chrono_types::make_shared<WVP_BrakeSimple>("Brake_FL");
-    m_axles[0]->m_brake_right = chrono_types::make_shared<WVP_BrakeSimple>("Brake_FR");
-    m_axles[1]->m_brake_left = chrono_types::make_shared<WVP_BrakeSimple>("Brake_RL");
-    m_axles[1]->m_brake_right = chrono_types::make_shared<WVP_BrakeSimple>("Brake_RR");
+    switch (brake_type) {
+        case BrakeType::SIMPLE:
+            m_axles[0]->m_brake_left = chrono_types::make_shared<WVP_BrakeSimple>("Brake_FL");
+            m_axles[0]->m_brake_right = chrono_types::make_shared<WVP_BrakeSimple>("Brake_FR");
+            m_axles[1]->m_brake_left = chrono_types::make_shared<WVP_BrakeSimple>("Brake_RL");
+            m_axles[1]->m_brake_right = chrono_types::make_shared<WVP_BrakeSimple>("Brake_RR");
+            break;
+        case BrakeType::SHAFTS:
+            m_axles[0]->m_brake_left = chrono_types::make_shared<WVP_BrakeShafts>("Brake_FL");
+            m_axles[0]->m_brake_right = chrono_types::make_shared<WVP_BrakeShafts>("Brake_FR");
+            m_axles[1]->m_brake_left = chrono_types::make_shared<WVP_BrakeShafts>("Brake_RL");
+            m_axles[1]->m_brake_right = chrono_types::make_shared<WVP_BrakeShafts>("Brake_RR");
+            break;
+    }
+
+    // Create the steering subsystem
+    m_steerings.resize(1);
+    m_steerings[0] = chrono_types::make_shared<WVP_RackPinion>("Steering");
 
     // Create the driveline
     m_driveline = chrono_types::make_shared<WVP_Driveline4WD>("Driveline");
-    // m_driveline = chrono_types::make_shared<WVP_SimpleDriveline>("Driveline");
 }
 
 WVP_Vehicle::~WVP_Vehicle() {}
@@ -97,23 +107,18 @@ void WVP_Vehicle::Initialize(const ChCoordsys<>& chassisPos, double chassisFwdVe
 
     // Initialize the steering subsystem (specify the steering subsystem's frame relative to the chassis reference
     // frame).
-    ChVector<> offset = ChVector<>(0, 0, 0);
-    ChQuaternion<> rotation = Q_from_AngAxis(0, ChVector<>(0, 1, 0));
+    ChVector<> offset = ChVector<>(-0.3834, 0, 0.0292);
+    ChQuaternion<> rotation = ChQuaternion<>(1, 0, 0, 0);
     m_steerings[0]->Initialize(m_chassis, offset, rotation);
 
-    // Initialize the suspension subsystems (specify the suspension subsystems'
-    // frames relative to the chassis reference frame).
-    m_axles[0]->Initialize(m_chassis, nullptr, m_steerings[0], ChVector<>(0, 0, 0), ChVector<>(0), 0.0, m_omega[0],
-                           m_omega[1]);
-    m_axles[1]->Initialize(m_chassis, nullptr, nullptr, ChVector<>(-4.039, 0, 0), ChVector<>(0), 0.0, m_omega[2],
+    // Initialize the axle subsystems.
+    m_axles[0]->Initialize(m_chassis, nullptr, m_steerings[0], ChVector<>(0.0, 0, 0), ChVector<>(0), 0.0,
+                           m_omega[0], m_omega[1]);
+    m_axles[1]->Initialize(m_chassis, nullptr, nullptr, ChVector<>(-4.033, 0, 0), ChVector<>(0), 0.0, m_omega[2],
                            m_omega[3]);
 
-    // Initialize the driveline subsystem
-    std::vector<int> driven_susp_indexes(m_driveline->GetNumDrivenAxles());
-
-    driven_susp_indexes[0] = 0;
-    driven_susp_indexes[1] = 1;
-
+    // Initialize the driveline subsystem (FWD)
+    std::vector<int> driven_susp_indexes = {0,1};
     m_driveline->Initialize(m_chassis, m_axles, driven_susp_indexes);
 
     // Invoke base class method
@@ -206,6 +211,6 @@ void WVP_Vehicle::DebugLog(int what) {
     GetLog().SetNumFormat("%g");
 }
 
-}  // end namespace wvp
+}  // end namespace sedan
 }  // end namespace vehicle
 }  // end namespace chrono

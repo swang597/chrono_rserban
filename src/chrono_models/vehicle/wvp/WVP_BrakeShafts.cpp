@@ -9,18 +9,14 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Radu Serban, Justin Madsen, Asher Elmquist
+// Authors: Radu Serban
 // =============================================================================
 //
-// WVP wheel subsystem
+// WVP shafts-based brake model.
 //
 // =============================================================================
 
-#include <algorithm>
-
-#include "chrono_vehicle/ChVehicleModelData.h"
-#include "chrono_models/vehicle/wvp/WVP_Wheel.h"
-#include "chrono_thirdparty/filesystem/path.h"
+#include "chrono_models/vehicle/wvp/WVP_BrakeShafts.h"
 
 namespace chrono {
 namespace vehicle {
@@ -30,18 +26,13 @@ namespace wvp {
 // Static variables
 // -----------------------------------------------------------------------------
 
-const double WVP_Wheel::m_mass = 52.0;
-const ChVector<> WVP_Wheel::m_inertia(2.2170, 3.2794, 2.2170);
-
-const double WVP_Wheel::m_radius = 0.254;
-const double WVP_Wheel::m_width = 0.254;
+const double WVP_BrakeShafts::m_maxtorque = 4000;
+const double WVP_BrakeShafts::m_shaft_inertia = 0.4;
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-WVP_Wheel::WVP_Wheel(const std::string& name) : ChWheel(name) {
-    m_vis_mesh_file = "wvp/tire/WVP_Wheel.obj";
-}
+WVP_BrakeShafts::WVP_BrakeShafts(const std::string& name) : ChBrakeShafts(name) {}
 
-}  // end namespace sedan
+}  // namespace wvp
 }  // end namespace vehicle
 }  // end namespace chrono

@@ -2,14 +2,14 @@
 // PROJECT CHRONO - http://projectchrono.org
 //
 // Copyright (c) 2014 projectchrono.org
-// All right reserved.
+// All rights reserved.
 //
 // Use of this source code is governed by a BSD-style license that can be found
 // in the LICENSE file at the top level of the distribution and at
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Radu Serban, Asher Elmquist
+// Authors: Radu Serban
 // =============================================================================
 //
 // WVP chassis subsystem.
@@ -30,13 +30,19 @@ namespace chrono {
 namespace vehicle {
 namespace wvp {
 
-/// WVP chassis subsystem.
+/// @addtogroup vehicle_models_hmmwv
+/// @{
+
+/// HMMWV chassis subsystem.
 class CH_MODELS_API WVP_Chassis : public ChRigidChassis {
   public:
     WVP_Chassis(const std::string& name,
-                bool fixed = false,
-                CollisionType chassis_collision_type = CollisionType::NONE);
+                  bool fixed = false,
+                  CollisionType chassis_collision_type = CollisionType::NONE);
     ~WVP_Chassis() {}
+
+    /// Get the location (in the local frame of this chassis) of the connection to a rear chassis.
+    virtual const ChVector<> GetLocalPosRearConnector() const override { return m_connector_rear_loc; }
 
     /// Get the local driver position and orientation.
     /// This is a coordinate system relative to the chassis reference frame.
@@ -53,10 +59,13 @@ class CH_MODELS_API WVP_Chassis : public ChRigidChassis {
     static const ChVector<> m_body_inertiaXX;
     static const ChVector<> m_body_inertiaXY;
     static const ChVector<> m_body_COM_loc;
+    static const ChVector<> m_connector_rear_loc;
     static const ChCoordsys<> m_driverCsys;
 };
 
-}  // end namespace wvp
+/// @} vehicle_models_hmmwv
+
+}  // end namespace hmmwv
 }  // end namespace vehicle
 }  // end namespace chrono
 

@@ -9,17 +9,17 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Alessandro Tasora, Asher Elmquist
+// Authors: Radu Serban
 // =============================================================================
 //
-// WVP simple brake models (front and rear).
+// WVP shafts-based brake model.
 //
 // =============================================================================
 
-#ifndef WVP_BRAKESIMPLE_H
-#define WVP_BRAKESIMPLE_H
+#ifndef WVP_BRAKE_SHAFTS_H
+#define WVP_BRAKE_SHAFTS_H
 
-#include "chrono_vehicle/wheeled_vehicle/brake/ChBrakeSimple.h"
+#include "chrono_vehicle/wheeled_vehicle/brake/ChBrakeShafts.h"
 
 #include "chrono_models/ChApiModels.h"
 
@@ -30,16 +30,18 @@ namespace wvp {
 /// @addtogroup vehicle_models_sedan
 /// @{
 
-/// Simple Sedan brake subsystem (torque applied directly to the spindle joint).
-class CH_MODELS_API WVP_BrakeSimple : public ChBrakeSimple {
+/// Shafts-based Sedan brake subsystem (uses a clutch between two shafts).
+class CH_MODELS_API WVP_BrakeShafts : public ChBrakeShafts {
    public:
-    WVP_BrakeSimple(const std::string& name);
-    virtual ~WVP_BrakeSimple() {}
+    WVP_BrakeShafts(const std::string& name);
+    ~WVP_BrakeShafts() {}
 
     virtual double GetMaxBrakingTorque() override { return m_maxtorque; }
+    virtual double GetShaftInertia() override { return m_shaft_inertia; }
 
    private:
     static const double m_maxtorque;
+    static const double m_shaft_inertia;
 };
 
 /// @} vehicle_models_sedan

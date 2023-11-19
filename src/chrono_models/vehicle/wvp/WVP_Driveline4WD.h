@@ -2,7 +2,7 @@
 // PROJECT CHRONO - http://projectchrono.org
 //
 // Copyright (c) 2014 projectchrono.org
-// All right reserved.
+// All rights reserved.
 //
 // Use of this source code is governed by a BSD-style license that can be found
 // in the LICENSE file at the top level of the distribution and at
@@ -27,8 +27,12 @@ namespace chrono {
 namespace vehicle {
 namespace wvp {
 
+/// @addtogroup vehicle_models_401
+/// @{
+
+/// Shafts-based 4-WD driveline for the UAZBUS vehicle.
 class CH_MODELS_API WVP_Driveline4WD : public ChShaftsDriveline4WD {
-  public:
+   public:
     WVP_Driveline4WD(const std::string& name);
     ~WVP_Driveline4WD() {}
 
@@ -45,7 +49,7 @@ class CH_MODELS_API WVP_Driveline4WD : public ChShaftsDriveline4WD {
     virtual double GetAxleDifferentialLockingLimit() const override { return m_axle_differential_locking_limit; }
     virtual double GetCentralDifferentialLockingLimit() const override { return m_central_differential_locking_limit; }
 
-  private:
+   private:
     // Shaft inertias.
     static const double m_central_differentialbox_inertia;
     static const double m_front_differentialbox_inertia;
@@ -63,7 +67,9 @@ class CH_MODELS_API WVP_Driveline4WD : public ChShaftsDriveline4WD {
     static const double m_central_differential_locking_limit;
 };
 
-}  // end namespace wvp
+/// @} vehicle_models_U401
+
+}  // namespace unimog
 }  // end namespace vehicle
 }  // end namespace chrono
 

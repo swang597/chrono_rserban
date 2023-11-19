@@ -9,46 +9,47 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Radu Serban, Mike Taylor, Asher Elmquist
+// Authors: Radu Serban, Asher Elmquist, Marcel Offermans
 // =============================================================================
 //
-// Simple engine model for the WVP vehicle based on torque-speed engine maps
+// Simple engine model for the WVP vehicle.
+// - based on torque-speed engine maps
+// - both power and torque limited
 //
 // =============================================================================
 
-#ifndef WVP_ENGINE_SIMPLEMAP_H
-#define WVP_ENGINE_SIMPLEMAP_H
+#ifndef WVP_ENGINESIMPLEMAP_H
+#define WVP_ENGINESIMPLEMAP_H
 
 #include "chrono_vehicle/powertrain/ChEngineSimpleMap.h"
-
 #include "chrono_models/ChApiModels.h"
 
 namespace chrono {
 namespace vehicle {
 namespace wvp {
 
-/// @addtogroup vehicle_models_wvp
+/// @addtogroup vehicle_models_sedan
 /// @{
 
-/// WVP simple speed-torque engine map subsystem.
+/// Simple Sedan powertrain subsystem (based on engine speed-torque maps).
 class CH_MODELS_API WVP_EngineSimpleMap : public ChEngineSimpleMap {
-  public:
-    WVP_EngineSimpleMap();
+   public:
+    WVP_EngineSimpleMap(const std::string& name);
 
     /// Specify maximum engine speed.
-    virtual double GetMaxEngineSpeed() override;
+    double GetMaxEngineSpeed() override;
 
     /// Set the engine speed-torque maps.
     /// A concrete class must add the speed-torque points to the provided maps,
     /// using the ChFunction_Recorder::AddPoint() function.
-    virtual void SetEngineTorqueMaps(ChFunction_Recorder& map0,  ///< [out] engine map at zero throttle
-                                     ChFunction_Recorder& mapF   ///< [out] engine map at full throttle
-                                     ) override;
+    void SetEngineTorqueMaps(ChFunction_Recorder& map0,  ///< [out] engine map at zero throttle
+                             ChFunction_Recorder& mapF   ///< [out] engine map at full throttle
+                             ) override;
 };
 
-/// @} vehicle_models_wvp
+/// @} vehicle_models_sedan
 
-}  // end namespace wvp
+}  // namespace wvp
 }  // end namespace vehicle
 }  // end namespace chrono
 

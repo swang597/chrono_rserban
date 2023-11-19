@@ -9,14 +9,7 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Radu Serban, Mike Taylor, Asher Elmquist
-// =============================================================================
-//
-// Automatic transmssion model for the WVP vehicle.
-// - both power and torque limited
-// - no torque converter
-// - simple gear-shifting model (in automatic mode)
-//
+// Authors: Radu Serban, Asher Elmquist, Marcel Offermans
 // =============================================================================
 
 #include "chrono_models/vehicle/wvp/WVP_AutomaticTransmissionSimpleMap.h"
@@ -26,21 +19,19 @@ namespace vehicle {
 namespace wvp {
 
 const double rpm2rads = CH_C_PI / 30;
-const double drive_eff = 0.5137; //based on auxillary power consumption and gearbox efficiencies
 
-WVP_AutomaticTransmissionSimpleMap::WVP_AutomaticTransmissionSimpleMap()
-    : ChAutomaticTransmissionSimpleMap("Transmission") {}
+WVP_AutomaticTransmissionSimpleMap::WVP_AutomaticTransmissionSimpleMap(const std::string& name)
+    : ChAutomaticTransmissionSimpleMap(name) {}
 
-void WVP_AutomaticTransmissionSimpleMap::SetGearRatios(std::vector<double>& fwd_gear_ratios,
-                                                       double& reverse_gear_ratio) {
-    reverse_gear_ratio = -0.2;
+void WVP_AutomaticTransmissionSimpleMap::SetGearRatios(std::vector<double>& fwd, double& rev) {
+    rev = -0.2;
 
-    fwd_gear_ratios.push_back(0.1708);  // 1st
-    fwd_gear_ratios.push_back(0.2791);  // 2nd
-    fwd_gear_ratios.push_back(0.4218);  // 3rd
-    fwd_gear_ratios.push_back(0.6223);  // 4th
-    fwd_gear_ratios.push_back(1.0173);  // 5th
-    fwd_gear_ratios.push_back(1.5361);  // 6th
+    fwd.push_back(0.1708);  // 1st
+    fwd.push_back(0.2791);  // 2nd
+    fwd.push_back(0.4218);  // 3rd
+    fwd.push_back(0.6223);  // 4th
+    fwd.push_back(1.0173);  // 5th
+    fwd.push_back(1.5361);  // 6th
 }
 
 void WVP_AutomaticTransmissionSimpleMap::SetShiftPoints(std::vector<std::pair<double, double>>& shift_bands) {
@@ -52,6 +43,6 @@ void WVP_AutomaticTransmissionSimpleMap::SetShiftPoints(std::vector<std::pair<do
     shift_bands.push_back(std::pair<double, double>(1000 * rpm2rads, 2700 * rpm2rads));
 }
 
-}  // end namespace wvp
+}  // namespace wvp
 }  // end namespace vehicle
 }  // end namespace chrono

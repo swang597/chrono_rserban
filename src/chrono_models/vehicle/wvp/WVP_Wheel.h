@@ -2,14 +2,14 @@
 // PROJECT CHRONO - http://projectchrono.org
 //
 // Copyright (c) 2014 projectchrono.org
-// All right reserved.
+// All rights reserved.
 //
 // Use of this source code is governed by a BSD-style license that can be found
 // in the LICENSE file at the top level of the distribution and at
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Radu Serban
+// Authors: Radu Serban, Justin Madsen, Asher Elmquist
 // =============================================================================
 //
 // WVP wheel subsystem
@@ -31,6 +31,10 @@ namespace chrono {
 namespace vehicle {
 namespace wvp {
 
+/// @addtogroup vehicle_models_sedan
+/// @{
+
+/// Sedan wheel (can be used on any axle, left or right).
 class CH_MODELS_API WVP_Wheel : public ChWheel {
   public:
     WVP_Wheel(const std::string& name);
@@ -48,7 +52,9 @@ class CH_MODELS_API WVP_Wheel : public ChWheel {
     static const ChVector<> m_inertia;
 };
 
-}  // end namespace wvp
+/// @} vehicle_models_sedan
+
+}  // end namespace sedan
 }  // end namespace vehicle
 }  // end namespace chrono
 

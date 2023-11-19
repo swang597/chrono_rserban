@@ -9,18 +9,14 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Radu Serban, Justin Madsen, Asher Elmquist
+// Authors: Radu Serban, Asher Elmquist
 // =============================================================================
 //
-// WVP wheel subsystem
+// WVP rack-pinion steering model.
 //
 // =============================================================================
 
-#include <algorithm>
-
-#include "chrono_vehicle/ChVehicleModelData.h"
-#include "chrono_models/vehicle/wvp/WVP_Wheel.h"
-#include "chrono_thirdparty/filesystem/path.h"
+#include "chrono_models/vehicle/wvp/WVP_RackPinion.h"
 
 namespace chrono {
 namespace vehicle {
@@ -30,17 +26,21 @@ namespace wvp {
 // Static variables
 // -----------------------------------------------------------------------------
 
-const double WVP_Wheel::m_mass = 52.0;
-const ChVector<> WVP_Wheel::m_inertia(2.2170, 3.2794, 2.2170);
+const double WVP_RackPinion::m_steeringLinkMass = 1.889;
+const ChVector<> WVP_RackPinion::m_steeringLinkInertia(.138, 0.00009, .138);
+const double WVP_RackPinion::m_steeringLinkCOM = 0;
+//const double WVP_RackPinion::m_steeringLinkLength = 0.896;
+const double WVP_RackPinion::m_steeringLinkLength = 0.25;
+const double WVP_RackPinion::m_steeringLinkRadius = 0.03;
 
-const double WVP_Wheel::m_radius = 0.254;
-const double WVP_Wheel::m_width = 0.254;
+const double WVP_RackPinion::m_pinionRadius = 0.03;
+
+const double WVP_RackPinion::m_maxAngle = 0.08 / 0.03;
+
 
 // -----------------------------------------------------------------------------
 // -----------------------------------------------------------------------------
-WVP_Wheel::WVP_Wheel(const std::string& name) : ChWheel(name) {
-    m_vis_mesh_file = "wvp/tire/WVP_Wheel.obj";
-}
+WVP_RackPinion::WVP_RackPinion(const std::string& name) : ChRackPinion(name) {}
 
 }  // end namespace sedan
 }  // end namespace vehicle

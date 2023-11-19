@@ -9,53 +9,47 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Radu Serban, Mike Taylor, Asher Elmquist
+// Authors: Radu Serban, Asher Elmquist, Marcel Offermans
 // =============================================================================
 //
-// Automatic transmssion model for the WVP vehicle.
-// - both power and torque limited
+// Simple automatic transmission model for the Sedan vehicle.
 // - no torque converter
 // - simple gear-shifting model (in automatic mode)
 //
 // =============================================================================
 
-#ifndef WVP_AUTOMATIC_TRANSMISSION_SIMPLEMAP_H
-#define WVP_AUTOMATIC_TRANSMISSION_SIMPLEMAP_H
+#ifndef WVP_AUTOMATICTRANSMISSIONSIMPLEMAP_H
+#define WVP_AUTOMATICTRANSMISSIONSIMPLEMAP_H
 
 #include "chrono_vehicle/powertrain/ChAutomaticTransmissionSimpleMap.h"
-
 #include "chrono_models/ChApiModels.h"
 
 namespace chrono {
 namespace vehicle {
 namespace wvp {
 
-/// @addtogroup vehicle_models_wvp
+/// @addtogroup vehicle_models_sedan
 /// @{
 
-/// WVP automatic transmission model template based on a simple gear-shifting model.
+/// Simple Sedan automatic transmission subsystem.
 class CH_MODELS_API WVP_AutomaticTransmissionSimpleMap : public ChAutomaticTransmissionSimpleMap {
   public:
-    WVP_AutomaticTransmissionSimpleMap();
+    WVP_AutomaticTransmissionSimpleMap(const std::string& name);
 
-    /// Set the gears, i.e. the transmission ratios of the various gears.
-    /// A concrete class must populate the vector of forward gear ratios, ordered as 1st, 2nd, etc.
-    /// and provide a value for the single reverse gear ratio.
-    virtual void SetGearRatios(std::vector<double>& fwd_gear_ratios,  ///< [out] list of forward gear ratios
-                               double& reverse_gear_ratio             ///< [out] single reverse gear ratio
-                               ) override;
+    /// Set the transmission gear ratios (one or more forward gear ratios and a single reverse gear ratio).
+    void SetGearRatios(std::vector<double>& fwd, double& rev) override;
 
     /// Set the ideal shift points for automatic gear shifting.
     /// For each forward gear, specify a pair (min, max) with the minimum and
     /// maximum engine speed for shifting (down and up, respectively).
-    virtual void SetShiftPoints(
+    void SetShiftPoints(
         std::vector<std::pair<double, double>>& shift_bands  ///< [out] down-shift/up-shift points
         ) override;
 };
 
-/// @} vehicle_models_wvp
+/// @} vehicle_models_sedan
 
-}  // end namespace wvp
+}  // end namespace sedan
 }  // end namespace vehicle
 }  // end namespace chrono
 

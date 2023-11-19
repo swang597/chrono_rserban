@@ -9,11 +9,7 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Radu Serban, Mike Taylor, Asher Elmquist
-// =============================================================================
-//
-// Simple engine model for the WVP vehicle based on torque-speed engine maps
-//
+// Authors: Radu Serban, Asher Elmquist, Marcel Offermans
 // =============================================================================
 
 #include "chrono_models/vehicle/wvp/WVP_EngineSimpleMap.h"
@@ -23,9 +19,9 @@ namespace vehicle {
 namespace wvp {
 
 const double rpm2rads = CH_C_PI / 30;
-const double drive_eff = 0.5137; //based on auxillary power consumption and gearbox efficiencies
+const double drive_eff = 0.5137;  // based on auxillary power consumption and gearbox efficiencies
 
-WVP_EngineSimpleMap::WVP_EngineSimpleMap() : ChEngineSimpleMap("Engine") {}
+WVP_EngineSimpleMap::WVP_EngineSimpleMap(const std::string& name) : ChEngineSimpleMap(name) {}
 
 double WVP_EngineSimpleMap::GetMaxEngineSpeed() {
     return 2700 * rpm2rads;
@@ -44,19 +40,19 @@ void WVP_EngineSimpleMap::SetEngineTorqueMaps(ChFunction_Recorder& map0, ChFunct
     map0.AddPoint(2400 * rpm2rads, -100.0);
     map0.AddPoint(2700 * rpm2rads, -800.0);
 
-    mapF.AddPoint(-100 * rpm2rads, 806.7*drive_eff); //406.7
-    mapF.AddPoint(800 * rpm2rads, 817.9*drive_eff); //517.9
-    mapF.AddPoint(1000 * rpm2rads, 926.0*drive_eff);
-    mapF.AddPoint(1200 * rpm2rads, 1216.2*drive_eff);
-    mapF.AddPoint(1400 * rpm2rads, 1300.2*drive_eff);
-    mapF.AddPoint(1600 * rpm2rads, 1300.2*drive_eff);
-    mapF.AddPoint(1800 * rpm2rads, 1227.0*drive_eff);
-    mapF.AddPoint(2000 * rpm2rads, 1136.2*drive_eff);
-    mapF.AddPoint(2200 * rpm2rads, 1041.3*drive_eff);
+    mapF.AddPoint(-100 * rpm2rads, 806.7 * drive_eff);
+    mapF.AddPoint(800 * rpm2rads, 817.9 * drive_eff);
+    mapF.AddPoint(1000 * rpm2rads, 926.0 * drive_eff);
+    mapF.AddPoint(1200 * rpm2rads, 1216.2 * drive_eff);
+    mapF.AddPoint(1400 * rpm2rads, 1300.2 * drive_eff);
+    mapF.AddPoint(1600 * rpm2rads, 1300.2 * drive_eff);
+    mapF.AddPoint(1800 * rpm2rads, 1227.0 * drive_eff);
+    mapF.AddPoint(2000 * rpm2rads, 1136.2 * drive_eff);
+    mapF.AddPoint(2200 * rpm2rads, 1041.3 * drive_eff);
     mapF.AddPoint(2400 * rpm2rads, 0);
     mapF.AddPoint(2700 * rpm2rads, -200.0);
 }
 
-}  // end namespace wvp
+}  // namespace wvp
 }  // end namespace vehicle
 }  // end namespace chrono

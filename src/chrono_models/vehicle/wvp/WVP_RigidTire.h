@@ -2,14 +2,14 @@
 // PROJECT CHRONO - http://projectchrono.org
 //
 // Copyright (c) 2014 projectchrono.org
-// All right reserved.
+// All rights reserved.
 //
 // Use of this source code is governed by a BSD-style license that can be found
 // in the LICENSE file at the top level of the distribution and at
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Radu Serban
+// Authors: Radu Serban, Asher Elmquist
 // =============================================================================
 //
 // WVP rigid tire subsystem
@@ -19,8 +19,6 @@
 #ifndef WVP_RIGID_TIRE_H
 #define WVP_RIGID_TIRE_H
 
-#include "chrono/assets/ChTriangleMeshShape.h"
-
 #include "chrono_vehicle/wheeled_vehicle/tire/ChRigidTire.h"
 
 #include "chrono_models/ChApiModels.h"
@@ -29,8 +27,12 @@ namespace chrono {
 namespace vehicle {
 namespace wvp {
 
+/// @addtogroup vehicle_models_sedan
+/// @{
+
+/// Rigid tire model for the Sedan vehicle.
 class CH_MODELS_API WVP_RigidTire : public ChRigidTire {
-  public:
+   public:
     WVP_RigidTire(const std::string& name, bool use_mesh = false);
     ~WVP_RigidTire() {}
 
@@ -39,7 +41,7 @@ class CH_MODELS_API WVP_RigidTire : public ChRigidTire {
     virtual double GetTireMass() const override { return m_mass; }
     virtual ChVector<> GetTireInertia() const override { return m_inertia; }
 
-  private:
+   private:
     virtual void CreateContactMaterial(ChContactMethod contact_method) override;
     virtual void AddVisualizationAssets(VisualizationType vis) override;
     virtual void RemoveVisualizationAssets() override final;
@@ -53,7 +55,9 @@ class CH_MODELS_API WVP_RigidTire : public ChRigidTire {
     std::shared_ptr<ChTriangleMeshShape> m_trimesh_shape;
 };
 
-}  // end namespace wvp
+/// @} vehicle_models_sedan
+
+}  // namespace wvp
 }  // end namespace vehicle
 }  // end namespace chrono
 

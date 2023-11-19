@@ -9,10 +9,10 @@
 // http://projectchrono.org/license-chrono.txt.
 //
 // =============================================================================
-// Authors: Radu Serban
+// Authors: Radu Serban, Asher Elmquist
 // =============================================================================
 //
-// Wrapper classes for modeling an entire WVP vehicle assembly
+// Wrapper classes for modeling an entire Sedan vehicle assembly
 // (including the vehicle itself, the powertrain, and the tires).
 //
 // =============================================================================
@@ -25,19 +25,23 @@
 
 #include "chrono_models/ChApiModels.h"
 #include "chrono_models/vehicle/wvp/WVP_Vehicle.h"
-#include "chrono_models/vehicle/wvp/WVP_EngineSimpleMap.h"
 #include "chrono_models/vehicle/wvp/WVP_AutomaticTransmissionSimpleMap.h"
-#include "chrono_models/vehicle/wvp/WVP_EngineShafts.h"
-#include "chrono_models/vehicle/wvp/WVP_AutomaticTransmissionShafts.h"
-#include "chrono_models/vehicle/wvp/WVP_FialaTire.h"
-#include "chrono_models/vehicle/wvp/WVP_Pac89Tire.h"
+#include "chrono_models/vehicle/wvp/WVP_EngineSimpleMap.h"
 #include "chrono_models/vehicle/wvp/WVP_RigidTire.h"
 #include "chrono_models/vehicle/wvp/WVP_TMeasyTire.h"
+#include "chrono_models/vehicle/wvp/WVP_TMsimpleTire.h"
+#include "chrono_models/vehicle/wvp/WVP_Pac89Tire.h"
 
 namespace chrono {
 namespace vehicle {
 namespace wvp {
 
+/// @addtogroup vehicle_models_sedan
+/// @{
+
+/// Definition of the sedan assembly.
+/// This class encapsulates a concrete wheeled vehicle model with parameters corresponding to
+/// a typical passenger, the powertrain model, and the 4 tires.
 class CH_MODELS_API WVP {
   public:
     WVP();
@@ -50,10 +54,8 @@ class CH_MODELS_API WVP {
     void SetChassisFixed(bool val) { m_fixed = val; }
     void SetChassisCollisionType(CollisionType val) { m_chassisCollisionType = val; }
 
+    void SetBrakeType(BrakeType brake_type) { m_brake_type = brake_type; }
     void SetTireType(TireModelType val) { m_tireType = val; }
-    void SetTireCollisionType(ChTire::CollisionType collision_type) { m_tire_collision_type = collision_type; }
-
-    void setSteeringType(SteeringTypeWV val) { m_steeringType = val; }
 
     void SetInitPosition(const ChCoordsys<>& pos) { m_initPos = pos; }
     void SetInitFwdVel(double fwdVel) { m_initFwdVel = fwdVel; }
@@ -61,7 +63,7 @@ class CH_MODELS_API WVP {
 
     void SetTireStepSize(double step_size) { m_tire_step_size = step_size; }
 
-    void DisconnectPowertrain() { m_powertrain_connected = false; }
+    void EnableBrakeLocking(bool lock) { m_brake_locking = lock; }
 
     ChSystem* GetSystem() const { return m_vehicle->GetSystem(); }
     ChWheeledVehicle& GetVehicle() const { return *m_vehicle; }
@@ -70,13 +72,15 @@ class CH_MODELS_API WVP {
 
     void Initialize();
 
+    void LockAxleDifferential(int axle, bool lock) { m_vehicle->LockAxleDifferential(axle, lock); }
+
     void SetAerodynamicDrag(double Cd, double area, double air_density);
 
     void SetChassisVisualizationType(VisualizationType vis) { m_vehicle->SetChassisVisualizationType(vis); }
     void SetSuspensionVisualizationType(VisualizationType vis) { m_vehicle->SetSuspensionVisualizationType(vis); }
     void SetSteeringVisualizationType(VisualizationType vis) { m_vehicle->SetSteeringVisualizationType(vis); }
     void SetWheelVisualizationType(VisualizationType vis) { m_vehicle->SetWheelVisualizationType(vis); }
-    void SetTireVisualizationType(VisualizationType vis);
+    void SetTireVisualizationType(VisualizationType vis) { m_vehicle->SetTireVisualizationType(vis); }
 
     void Synchronize(double time, const DriverInputs& driver_inputs, const ChTerrain& terrain);
     void Advance(double step);
@@ -85,16 +89,18 @@ class CH_MODELS_API WVP {
     void DebugLog(int what) { m_vehicle->DebugLog(what); }
 
   protected:
+    ChSystem* m_system;
+    WVP_Vehicle* m_vehicle;
+
     ChContactMethod m_contactMethod;
     CollisionType m_chassisCollisionType;
     bool m_fixed;
+    bool m_brake_locking;
 
+    BrakeType m_brake_type;
     TireModelType m_tireType;
-    ChTire::CollisionType m_tire_collision_type;
- 
-    double m_tire_step_size;
 
-    SteeringTypeWV m_steeringType;
+    double m_tire_step_size;
 
     ChCoordsys<> m_initPos;
     double m_initFwdVel;
@@ -105,16 +111,14 @@ class CH_MODELS_API WVP {
     double m_area;
     double m_air_density;
 
-    bool m_powertrain_connected;
-
-    ChSystem* m_system;
-    WVP_Vehicle* m_vehicle;
-
     double m_tire_mass;
 };
 
-}  // end namespace wvp
+/// @} vehicle_models_sedan
+
+}  // end namespace sedan
 }  // end namespace vehicle
 }  // end namespace chrono
 
 #endif
+
