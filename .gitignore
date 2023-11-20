@@ -102,3 +102,11 @@ build_chrono_website.sh
 .htaccess
 refman.pdf
 src/chrono_granular/DoxyGenDocs/
+##---------------------------------------------------
+## Shu
+##---------------------------------------------------
+.gitignore
+build*/
+Img*/
+*.mp4
+Model*/

@@ -129,7 +129,11 @@ class CH_VEHICLE_API ChTireTestRig {
     /// Initialize the rig system.
     /// It is the user's responsibility to set the operation mode and motion functions in a consistent way.
     void Initialize(Mode mode);
-
+    void Initialize(Mode mode, double terrain_grid); //Shu
+    // void Initialize(Mode mode, double sizeX, double terrain_grid); //Shu
+    void Initialize(Mode mode, const std::string& heightmap_file,
+            double sizeX, double sizeY, double hMin, double hMax, double terrain_grid, double terrain_initX, double terrain_initH); //Shu
+    
     /// Get suggested collision settings.
     /// These values are meaningful only when using granular terrain and Chrono::Multicore.
     void GetSuggestedCollisionSettings(
@@ -192,7 +196,14 @@ class CH_VEHICLE_API ChTireTestRig {
     void CreateMechanism(Mode mode);
 
     void CreateTerrain();
+    void CreateTerrain(double terrain_grid); //Shu
+    void CreateTerrain(const std::string& heightmap_file,
+            double sizeX, double sizeY, double hMin, double hMax, double terrain_grid, double terrain_initX, double terrain_initH); //Shu
     void CreateTerrainSCM();
+    void CreateTerrainSCM(double terrain_grid); //Shu
+    void CreateTerrainSCM(const std::string& heightmap_file,
+            double sizeX, double sizeY, double hMin, double hMax, double terrain_grid, double terrain_initX, double terrain_initH); //Shu
+
     void CreateTerrainRigid();
     void CreateTerrainGranular();
 
