@@ -218,6 +218,116 @@ void ChTireTestRig::Initialize(Mode mode) {
     m_slip_lock->SetMotion_ang(chrono_types::make_shared<DelayedFun>(m_sa_fun, m_time_delay));
 }
 
+// void ChTireTestRig::Initialize(Mode mode, bool createTerrain) {
+//     CreateMechanism(mode);
+//     if(createTerrain){
+//         CreateTerrain();
+//     }
+
+//     if (mode != Mode::TEST)
+//         return;
+
+//     if (m_long_slip_constant) {
+//         // Override motion functions to enforce specified constant longitudinal slip
+//         m_ls_fun = chrono_types::make_shared<LinSpeedFunction>(m_base_speed);
+//         m_rs_fun = chrono_types::make_shared<RotSpeedFunction>(m_long_slip, m_base_speed, m_tire->GetRadius());
+//     }
+
+//     struct DelayedFun : public ChFunction {
+//         DelayedFun() : m_fun(nullptr), m_delay(0) {}
+//         DelayedFun(std::shared_ptr<ChFunction> fun, double delay) : m_fun(fun), m_delay(delay) {}
+//         virtual DelayedFun* Clone() const override { return new DelayedFun(); }
+//         virtual double Get_y(double x) const override {
+//             if (x < m_delay)
+//                 return 0;
+//             return m_fun->Get_y(x - m_delay);
+//         }
+//         std::shared_ptr<ChFunction> m_fun;
+//         double m_delay;
+//     };
+
+//     if (m_ls_actuated)
+//         m_lin_motor->SetSpeedFunction(chrono_types::make_shared<DelayedFun>(m_ls_fun, m_time_delay));
+
+//     if (m_rs_actuated)
+//         m_rot_motor->SetSpeedFunction(chrono_types::make_shared<DelayedFun>(m_rs_fun, m_time_delay));
+
+//     m_slip_lock->SetMotion_ang(chrono_types::make_shared<DelayedFun>(m_sa_fun, m_time_delay));
+// }
+
+
+// Shu
+void ChTireTestRig::Initialize(Mode mode, double terrain_grid) {
+    CreateMechanism(mode);
+    CreateTerrain(terrain_grid);
+
+    if (mode != Mode::TEST)
+        return;
+
+    if (m_long_slip_constant) {
+        // Override motion functions to enforce specified constant longitudinal slip
+        m_ls_fun = chrono_types::make_shared<LinSpeedFunction>(m_base_speed);
+        m_rs_fun = chrono_types::make_shared<RotSpeedFunction>(m_long_slip, m_base_speed, m_tire->GetRadius());
+    }
+
+    struct DelayedFun : public ChFunction {
+        DelayedFun() : m_fun(nullptr), m_delay(0) {}
+        DelayedFun(std::shared_ptr<ChFunction> fun, double delay) : m_fun(fun), m_delay(delay) {}
+        virtual DelayedFun* Clone() const override { return new DelayedFun(); }
+        virtual double Get_y(double x) const override {
+            if (x < m_delay)
+                return 0;
+            return m_fun->Get_y(x - m_delay);
+        }
+        std::shared_ptr<ChFunction> m_fun;
+        double m_delay;
+    };
+
+    if (m_ls_actuated)
+        m_lin_motor->SetSpeedFunction(chrono_types::make_shared<DelayedFun>(m_ls_fun, m_time_delay));
+
+    if (m_rs_actuated)
+        m_rot_motor->SetSpeedFunction(chrono_types::make_shared<DelayedFun>(m_rs_fun, m_time_delay));
+
+    m_slip_lock->SetMotion_ang(chrono_types::make_shared<DelayedFun>(m_sa_fun, m_time_delay));
+}
+
+// Shu
+void ChTireTestRig::Initialize(Mode mode, const std::string& heightmap_file,
+            double sizeX, double sizeY, double hMin, double hMax, double terrain_grid, double terrain_initX, double terrain_initH) {
+    CreateMechanism(mode);
+    CreateTerrain(heightmap_file, sizeX, sizeY, hMin, hMax, terrain_grid, terrain_initX, terrain_initH);
+
+    if (mode != Mode::TEST)
+        return;
+
+    if (m_long_slip_constant) {
+        // Override motion functions to enforce specified constant longitudinal slip
+        m_ls_fun = chrono_types::make_shared<LinSpeedFunction>(m_base_speed);
+        m_rs_fun = chrono_types::make_shared<RotSpeedFunction>(m_long_slip, m_base_speed, m_tire->GetRadius());
+    }
+
+    struct DelayedFun : public ChFunction {
+        DelayedFun() : m_fun(nullptr), m_delay(0) {}
+        DelayedFun(std::shared_ptr<ChFunction> fun, double delay) : m_fun(fun), m_delay(delay) {}
+        virtual DelayedFun* Clone() const override { return new DelayedFun(); }
+        virtual double Get_y(double x) const override {
+            if (x < m_delay)
+                return 0;
+            return m_fun->Get_y(x - m_delay);
+        }
+        std::shared_ptr<ChFunction> m_fun;
+        double m_delay;
+    };
+
+    if (m_ls_actuated)
+        m_lin_motor->SetSpeedFunction(chrono_types::make_shared<DelayedFun>(m_ls_fun, m_time_delay));
+
+    if (m_rs_actuated)
+        m_rot_motor->SetSpeedFunction(chrono_types::make_shared<DelayedFun>(m_rs_fun, m_time_delay));
+
+    m_slip_lock->SetMotion_ang(chrono_types::make_shared<DelayedFun>(m_sa_fun, m_time_delay));
+}
 // -----------------------------------------------------------------------------
 
 void ChTireTestRig::Advance(double step) {
@@ -232,6 +342,23 @@ void ChTireTestRig::Advance(double step) {
     // Advance state
     m_terrain->Advance(step);
     m_tire->Advance(step);
+    m_system->DoStepDynamics(step);
+}
+
+// -----------------------------------------------------------------------------
+
+void ChTireTestRig::Advance_ML(double step) {
+    double time = m_system->GetChTime();
+
+    // Synchronize subsystems
+    // m_terrain->Synchronize(time);
+    // m_tire->Synchronize(time, *m_terrain.get());
+    m_spindle_body->Empty_forces_accumulators();
+    m_wheel->Synchronize();
+
+    // Advance state
+    // m_terrain->Advance(step);
+    // m_tire->Advance(step);
     m_system->DoStepDynamics(step);
 }
 
@@ -410,6 +537,47 @@ void ChTireTestRig::CreateTerrain() {
     }
 }
 
+// Shu
+void ChTireTestRig::CreateTerrain(double terrain_grid) {
+    switch (m_terrain_type) {
+        case TerrainType::SCM:
+            CreateTerrainSCM(terrain_grid);
+            break;
+        case TerrainType::RIGID:
+            CreateTerrainRigid();
+            break;
+        case TerrainType::GRANULAR:
+            CreateTerrainGranular();
+            break;
+        default:
+            break;
+    }
+}
+
+// Shu    
+void ChTireTestRig::CreateTerrain(const std::string& heightmap_file,
+            double sizeX, double sizeY, double hMin, double hMax, double terrain_grid, double terrain_initX, double terrain_initH) {
+    //Shu
+    std::cout << "CreateTerrain: heightmap_file:" << heightmap_file << std::endl;
+    switch (m_terrain_type) {
+        case TerrainType::SCM:
+            CreateTerrainSCM(heightmap_file, sizeX, sizeY, hMin, hMax, terrain_grid, terrain_initX, terrain_initH);
+            std::cout << "CreateTerrain: SCM" << std::endl; //Shu
+            break;
+        case TerrainType::RIGID:
+            CreateTerrainRigid();
+            std::cout << "CreateTerrain: RIGID" << std::endl; //Shu
+            break;
+        case TerrainType::GRANULAR:
+            CreateTerrainGranular();
+            std::cout << "CreateTerrain: GRANULAR" << std::endl; //Shu
+            break;
+        default:
+            std::cout << "CreateTerrain: default" << std::endl; //Shu
+            break;
+    }
+}
+
 void ChTireTestRig::CreateTerrainSCM() {
     ChVector<> location(m_params_SCM.length / 2 - 2 * m_tire->GetRadius(), m_terrain_offset, m_terrain_height);
 
@@ -417,7 +585,7 @@ void ChTireTestRig::CreateTerrainSCM() {
     double damping = 3e4;    // Damping coefficient (Pa*s/m)
 
     // Mesh divisions
-    double delta = 0.125;  // initial SCM grid spacing
+    double delta = 0.125; //5e-3; // initial SCM grid spacing
 
     auto terrain = chrono_types::make_shared<vehicle::SCMTerrain>(m_system);
     terrain->SetPlane(ChCoordsys<>(location));
@@ -426,6 +594,51 @@ void ChTireTestRig::CreateTerrainSCM() {
                                E_elastic, damping);
     terrain->SetPlotType(vehicle::SCMTerrain::PLOT_SINKAGE, 0, 0.05);
     terrain->Initialize(m_params_SCM.length, m_params_SCM.width, delta);
+    terrain->AddMovingPatch(m_chassis_body, ChVector<>(0, 0, 0),
+                            ChVector<>(2 * m_tire->GetRadius(), 1.0, 2 * m_tire->GetRadius()));
+
+    m_terrain = terrain;
+}
+
+// Shu
+void ChTireTestRig::CreateTerrainSCM(double terrain_grid) {
+    ChVector<> location(m_params_SCM.length / 2 - 2 * m_tire->GetRadius(), m_terrain_offset, m_terrain_height);
+
+    double E_elastic = 2e8;  // Elastic stiffness (Pa/m), before plastic yeld
+    double damping = 3e4;    // Damping coefficient (Pa*s/m)
+
+    // Mesh divisions
+    double delta = terrain_grid; //5e-3; // initial SCM grid spacing
+
+    auto terrain = chrono_types::make_shared<vehicle::SCMTerrain>(m_system);
+    terrain->SetPlane(ChCoordsys<>(location));
+    terrain->SetSoilParameters(m_params_SCM.Bekker_Kphi, m_params_SCM.Bekker_Kc, m_params_SCM.Bekker_n,            //
+                               m_params_SCM.Mohr_cohesion, m_params_SCM.Mohr_friction, m_params_SCM.Janosi_shear,  //
+                               E_elastic, damping);
+    terrain->SetPlotType(vehicle::SCMTerrain::PLOT_SINKAGE, 0, 0.05);
+    terrain->Initialize(m_params_SCM.length, m_params_SCM.width, delta);
+    terrain->AddMovingPatch(m_chassis_body, ChVector<>(0, 0, 0),
+                            ChVector<>(2 * m_tire->GetRadius(), 1.0, 2 * m_tire->GetRadius()));
+
+    m_terrain = terrain;
+}
+
+// Shu
+void ChTireTestRig::CreateTerrainSCM(const std::string& heightmap_file,
+    double sizeX, double sizeY, double hMin, double hMax, double delta, double terrain_initX, double terrain_initH) {
+
+    ChVector<> location(terrain_initX, m_terrain_offset, terrain_initH);
+
+    double E_elastic = 2e8;  // Elastic stiffness (Pa/m), before plastic yeld
+    double damping = 3e4;    // Damping coefficient (Pa*s/m)
+
+    auto terrain = chrono_types::make_shared<vehicle::SCMTerrain>(m_system);
+    terrain->SetPlane(ChCoordsys<>(location));
+    terrain->SetSoilParameters(m_params_SCM.Bekker_Kphi, m_params_SCM.Bekker_Kc, m_params_SCM.Bekker_n,            //
+                               m_params_SCM.Mohr_cohesion, m_params_SCM.Mohr_friction, m_params_SCM.Janosi_shear,  //
+                               E_elastic, damping);
+    terrain->SetPlotType(vehicle::SCMTerrain::PLOT_SINKAGE, 0, 0.05);
+    terrain->Initialize(heightmap_file, sizeX, sizeY, hMin, hMax, delta);
     terrain->AddMovingPatch(m_chassis_body, ChVector<>(0, 0, 0),
                             ChVector<>(2 * m_tire->GetRadius(), 1.0, 2 * m_tire->GetRadius()));
 

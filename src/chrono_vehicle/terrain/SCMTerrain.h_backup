@@ -607,8 +607,6 @@ class CH_VEHICLE_API SCMLoader : public ChLoadContainer {
     int m_num_contact_patches;
     int m_num_erosion_nodes;
 
-    // std::vector<std::shared_ptr<ChBodyAuxRef>> m_wheels;  //Shu
-
     friend class SCMTerrain;
 };
 

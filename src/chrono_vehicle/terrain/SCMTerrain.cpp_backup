@@ -1479,37 +1479,20 @@ void SCMLoader::ComputeInternalForces() {
     }  // end loop on ray hits
 
     // Create loads for bodies and nodes to apply the accumulated terrain force/torque for each of them
-    int count = 0; //Shu
     if (!m_cosim_mode) {
         for (const auto& f : m_body_forces) {
             std::shared_ptr<ChBody> sbody(f.first, [](ChBody*) {});
             auto force_load =
                 chrono_types::make_shared<ChLoadBodyForce>(sbody, f.second.first, false, sbody->GetPos(), false);
             auto torque_load = chrono_types::make_shared<ChLoadBodyTorque>(sbody, f.second.second, false);
-            //Shu:20240221: 
-            // if(std::abs(sbody->GetPos_dt()[0]) < 1e-3){
-            
-            // if(std::abs(sbody->GetPos()[0]) < 1.09){ 
-                // fix Vx & Wy when t=1.5, x=1.097 
-            
-            if(std::abs(sbody->GetPos()[0]) < 0.109){ 
-                // fix Wy time =  1.5 x= 0.109764; time =  1.495 x= 0.10869
-                Add(force_load); //Shu
-                Add(torque_load); //Shu
-                // std::cout << count <<",pos:"<< sbody->GetPos() << ",vx:" << sbody->GetPos_dt() << ",m_body_forces=" << f.second.first << std::endl; //Shu
-            }
-            count++; //Shu
-
-            // Add(force_load); //Shu
-            // Add(torque_load); //Shu
-            //Shu:20240221.
+            Add(force_load);
+            Add(torque_load);
         }
 
         for (const auto& f : m_node_forces) {
             std::cout << f.second << std::endl;
             auto force_load = chrono_types::make_shared<ChLoadXYZnode>(f.first, f.second);
-            Add(force_load); //Shu
-            // std::cout << "m_node_forces=" << f.second << std::endl;//Shu
+            Add(force_load);
         }
     }
 
