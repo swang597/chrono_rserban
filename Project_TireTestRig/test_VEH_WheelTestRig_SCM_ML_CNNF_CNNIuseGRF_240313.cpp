@@ -155,10 +155,21 @@ class TerrainForceLoader : public ChLoadContainer {
         m_F_min_max = loadFromTxt(fn_dataPT + "F_min_max_p1.txt");
         m_Vec_min_max = loadFromTxt(fn_dataPT + "Vec_min_max_p1.txt");
         
+        std::string fn_dataPT_IGRF = "/home/swang597/Documents/Research/Project_heightmap/Data/gen_HM_by_GRF/Normalized_data_01/";
+        std::cout << "fn_dataPT_IGRF=" << fn_dataPT_IGRF << std::endl;
+        m_IGRFinit_min_max = loadFromTxt(fn_dataPT_IGRF + "HM_init_min_max.txt");
+        std::cout << "m_IGRFinit_min_max=" << m_IGRFinit_min_max << std::endl;
+        m_IGRFdefm_min_max = loadFromTxt(fn_dataPT_IGRF + "HM_defm_min_max.txt");
+        std::cout << "m_IGRFdefm_min_max=" << m_IGRFdefm_min_max << std::endl;
+        m_IGRFcenter_min_max = loadFromTxt(fn_dataPT_IGRF + "center_xyz_min_max.txt");
+        std::cout << "m_IGRFcenter_min_max=" << m_IGRFcenter_min_max << std::endl;
+
         std::cout << "Load normalized files, done." << std::endl;
         std::cout << "m_I_min_max=" << m_I_min_max << std::endl;
         std::cout << "m_F_min_max=" << m_F_min_max << std::endl;
         std::cout << "m_Vec_min_max=" << m_Vec_min_max << std::endl;
+        std::cout << "m_IGRFinit_min_max=" << m_IGRFinit_min_max << std::endl;
+        std::cout << "m_IGRFdefm_min_max=" << m_IGRFdefm_min_max << std::endl;
 
         if (!filesystem::path(m_output_folderpath).exists()) {
             std::filesystem::create_directory(m_output_folderpath);
@@ -178,7 +189,8 @@ class TerrainForceLoader : public ChLoadContainer {
         GetLoadList().clear();
         torch::Tensor inI_1chan, inV_ts, F_ts, outI; 
         torch::Tensor inI_1chan_nm, inV_ts_nm, inI_2chan_nm, outI_nm; 
-        std::vector<float> positions;
+        torch::Tensor inI_GRF_nm, inV_GRF_ts_nm, outI_GRF_nm; 
+        std::vector<float> positions, positions_GRF;
         m_wheel_state = m_wheel->GetState();
         // std::cout << "line 187" << std::endl;
         F_ts = torch::zeros({1,3}).to(torch::kFloat32);
@@ -239,7 +251,7 @@ class TerrainForceLoader : public ChLoadContainer {
             // *********** NN_I save HM to check HM:**********
             positions = {static_cast<float>(m_wheel_state.pos[0] + m_terrain_initLoc[0]), 
                         static_cast<float>(m_wheel_state.pos[1] + m_terrain_initLoc[1]), 
-                        static_cast<float>(m_wheel_state.pos[2])};
+                        static_cast<float>(m_wheel_state.pos[2] - m_terrain_initLoc[2])};
             // std::cout << "positions=" << positions << std::endl;
             torch::Tensor position_tensor = torch::tensor(positions);
             
@@ -252,13 +264,26 @@ class TerrainForceLoader : public ChLoadContainer {
             // if(std::abs(ChTime - 1.5) > 1e-5){
             if(m_wheel_state.pos[0] > 0.109){
                 inI_1chan = m_HM.get_local_heightmap(position_tensor, 96, 72);
-                inI_1chan_nm = (inI_1chan - m_I_min_max[0]) / (m_I_min_max[1] - m_I_min_max[0]);
                 write_output(m_output_folderpath + "NN_Iin_Tat" + std::to_string(ChTime) + ".txt", inI_1chan[0][0]);
                 write_output(m_output_folderpath + "NN_Iin_Tat" + std::to_string(ChTime) + "_pos.txt", position_tensor.unsqueeze(0));
+                // normliaze for NN_HMbyGRF: inI_GRF_nm, inV_GRF_ts_nm, outI_GRF_nm; 
+                inI_GRF_nm = (inI_1chan - m_IGRFinit_min_max[0]) / (m_IGRFinit_min_max[1] - m_IGRFinit_min_max[0]);
+                // std::cout << "inI_GRF_nm.shape=" << inI_GRF_nm.sizes() << std::endl;
+                positions_GRF = {static_cast<float>(0.48*0.5), 
+                        static_cast<float>(0.36*0.5), 
+                        static_cast<float>(m_wheel_state.pos[2] - m_terrain_initLoc[2])};
+                torch::Tensor position_tensor_GRF = torch::tensor(positions_GRF);
+                position_tensor_GRF = position_tensor_GRF.unsqueeze(0);
+                // std::cout << "positions_GRF=" << positions_GRF << std::endl;
+                // std::cout << "position_tensor_GRF.shape=" << position_tensor_GRF.sizes() << std::endl;
+
+                inV_GRF_ts_nm = (position_tensor_GRF - m_IGRFcenter_min_max[0]) / (m_IGRFcenter_min_max[1] - m_IGRFcenter_min_max[0]);
+                // std::cout << "inV_GRF_ts_nm.shape=" << outI_GRF_nm.sizes() << ",inV_GRF_ts_nm="<< inV_GRF_ts_nm << std::endl;
                 // update HM *************
                 // if(m_crt_frame % 10 == 0){
-                    outI_nm = m_model_runner_Img.runModel(inI_1chan_nm, inV_ts_nm);
-                    outI = outI_nm * (m_I_min_max[1] - m_I_min_max[0]) + m_I_min_max[0];
+                    outI_GRF_nm = m_model_runner_Img.runModel(inI_GRF_nm, inV_GRF_ts_nm);
+                    // std::cout << "outI_GRF_nm.shape=" << outI_GRF_nm.sizes() << std::endl;
+                    outI = outI_GRF_nm * (m_IGRFdefm_min_max[1] - m_IGRFdefm_min_max[0]) + m_IGRFdefm_min_max[0];
                     // std::cout << "outI done "<< std::endl;
                     m_HM.update_heightmap(position_tensor, outI);
                     // std::cout << "update_heightmap done "<< std::endl;
@@ -362,7 +387,8 @@ class TerrainForceLoader : public ChLoadContainer {
     // std::vector<std::array<ChVector<>, 4>> m_torques;
     TorchModelRunner m_model_runner_Img, m_model_runner_F;
     Heightmap m_HM;
-    torch::Tensor m_I_min_max, m_F_min_max, m_dF_min_max, m_Vec_min_max;
+    torch::Tensor m_I_min_max, m_F_min_max, m_Vec_min_max;
+    torch::Tensor m_IGRFinit_min_max, m_IGRFdefm_min_max, m_IGRFcenter_min_max;
     std::string m_output_folderpath;
     ChVector<> m_terrain_initLoc;
     // double m_terrain_initX, m_terrain_initY;
@@ -536,7 +562,7 @@ int main(int argc, char *argv[]) {
     // Hybrid_fixW_onlyNNF1Chan_dt
     // Hybrid_fixW_onlyNNF1Chan_expScale_dt
     // SCM_fixW_dt
-    const std::string out_dir = GetChronoOutputPath() + "Hybrid_fixW_NNINNF_noResetImg_dt" + std::to_string(dt) + "_terrGrid" +
+    const std::string out_dir = GetChronoOutputPath() + "Hybrid_fixW_CNNF_testCNNIuseGRF_dt" + std::to_string(dt) + "_terrGrid" +
                             std::to_string(terrain_grid) + "terrX" + std::to_string(terrain_initX) + "terrH" + 
                             std::to_string(terrain_initH)+ "normLoad" + std::to_string(normal_load);
 
@@ -692,7 +718,7 @@ int main(int argc, char *argv[]) {
     // std::string model_path = "/home/swang597/Documents/Research/chrono_fork_radu/project_TireTestRig/Model/Model_py2cpp_2stepNN_iDT1_img96by72_varKsize3333_largerHM_231208/";
     
     std::string folderpath_normlized = "/home/swang597/Documents/Research/chrono_fork_radu/project_TireTestRig/build_SCM_argVx/DEMO_OUTPUT/Dataset_train_96by72_2phase_varVx_I00V0_I01F0_240227/";
-    std::string model_path_Img0 = "/home/swang597/Documents/Research/Project_heightmap/Code/Pytorch_cpp_model/Model/Model_2stepNN_iDT1_img96by72_varKsize3333_varVx_I00V0_I01F0_240229/";
+    std::string model_path_Img0 = "/home/swang597/Documents/Research/Project_heightmap/Code/Pytorch_cpp_model/Model/Model_HMbyGRF_240313/";
     std::string model_path = "/home/swang597/Documents/Research/Project_heightmap/Code/Pytorch_cpp_model/Model/Model_2stepNN_iDT1_img96by72_varKsize3333_varVx_I00V0_I01F0_240227/";
     std::string model_path_Img;
     std::string model_path_F;

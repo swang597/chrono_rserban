@@ -334,6 +334,14 @@ void SCMTerrain::PrintStepStatistics(std::ostream& os) const {
     os << "   Number erosion nodes:    " << m_loader->m_num_erosion_nodes << std::endl;
 }
 
+//Shu:240325 add for time profiling
+/// Print timing and counter information for last step.
+void SCMTerrain::PrintAccumulateTimeProfiling(std::ostream& os) const {
+    // os << " Timers (ms):" << std::endl;
+    // os << "m_duration_computeF" << m_loader->m_duration_all.count() << std::endl;
+    os << m_loader->m_duration_all.count()<<",0.0,0.0" << std::endl;
+}
+
 // -----------------------------------------------------------------------------
 // Contactable user-data (contactable-soil parameters)
 // -----------------------------------------------------------------------------
@@ -1034,6 +1042,9 @@ static const std::vector<ChVector2<int>> neighbors4{
 
 // Reset the list of forces, and fills it with forces from a soil contact model.
 void SCMLoader::ComputeInternalForces() {
+    //Shu:240325 added
+    auto start_0 = std::chrono::high_resolution_clock::now();
+    //Shu.
     // Initialize list of modified visualization mesh vertices (use any externally modified vertices)
     std::vector<int> modified_vertices = m_external_modified_vertices;
     m_external_modified_vertices.clear();
@@ -1684,6 +1695,11 @@ void SCMLoader::ComputeInternalForces() {
     }
 
     m_timer_visualization.stop();
+
+    //Shu:240325
+    auto end_0 = std::chrono::high_resolution_clock::now();
+    m_duration_all += end_0 - start_0;
+    //Shu.
 }
 
 void SCMLoader::AddMaterialToNode(double amount, NodeRecord& nr) {

@@ -37,7 +37,7 @@
 #include "chrono_vehicle/ChSubsysDefs.h"
 #include "chrono_vehicle/ChTerrain.h"
 #include "chrono_vehicle/ChWorldFrame.h"
-
+#include <chrono> //Shu:240325 add for time profiling
 namespace chrono {
 namespace vehicle {
 
@@ -315,6 +315,11 @@ class CH_VEHICLE_API SCMTerrain : public ChTerrain {
     /// Print timing and counter information for last step.
     void PrintStepStatistics(std::ostream& os) const;
 
+    //Shu:240325 add for time profiling
+    /// Print timing and counter information for last step.
+    void PrintAccumulateTimeProfiling(std::ostream& os) const;
+    //Shu.
+    
     std::shared_ptr<SCMLoader> GetSCMLoader() const { return m_loader; }
 
     void SetBaseMeshLevel(double level);
@@ -375,6 +380,11 @@ class CH_VEHICLE_API SCMLoader : public ChLoadContainer {
     void Initialize(const geometry::ChTriangleMeshConnected& trimesh,  ///< [in] surface triangular mesh
                     double delta                                       ///< [in] grid spacing
     );
+
+    //Shu:240325 add for time profiling
+    // std::chrono::duration<double, std::milli> m_duration_all(0);
+    std::chrono::duration<double, std::milli> m_duration_all = std::chrono::duration<double, std::milli>::zero();
+
 
   private:
     // SCM patch type
@@ -607,6 +617,7 @@ class CH_VEHICLE_API SCMLoader : public ChLoadContainer {
     int m_num_contact_patches;
     int m_num_erosion_nodes;
 
+    
     // std::vector<std::shared_ptr<ChBodyAuxRef>> m_wheels;  //Shu
 
     friend class SCMTerrain;

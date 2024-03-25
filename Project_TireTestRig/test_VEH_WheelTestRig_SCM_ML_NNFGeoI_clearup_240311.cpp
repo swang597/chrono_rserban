@@ -47,6 +47,9 @@
 #include <iostream>
 #include <map>
 #include "cnpy.h"
+//Shu added
+#include <torch/torch.h>
+#include <chrono> // for time profiling
 
 #ifdef CHRONO_POSTPROCESS
     #include "chrono_postprocess/ChGnuPlot.h"
@@ -133,19 +136,136 @@ torch::Tensor loadFromTxt(const std::string& filePath) {
 
     return tensor;
 }
+// Shu-----------------------------------------------------------------------------
+// void applyWheelSinkage(torch::Tensor& heightMap, torch::Tensor wheelCenter, float radius, float width, float gridSize) {
+//     /*
+//     Adjust the height map to conform to the surface of a cylindrical wheel.
+//     :param heightMap: Original height map, expected to be a 1-1-nx-ny tensor.
+//     :param wheelCenter: Center of the wheel [cx, cy, cz], expected to be a 1D tensor.
+//     :param radius: Radius of the wheel.
+//     :param width: Width of the wheel.
+//     :param gridSize: The size of each grid in the height map.
+//     :return: void (Modified height map is the input heightMap itself).
+//     */
+//     // std::cout << "heightMap.sizes=" << heightMap.sizes() << std::endl;
+//     auto cx = heightMap.size(2) * 0.5 * gridSize;
+//     auto cy = heightMap.size(3) * 0.5 * gridSize;
+//     auto cz = wheelCenter[2].item<float>();
+    
+//     auto options = torch::TensorOptions().dtype(torch::kFloat32);
+//     // std::cout << "cx=" << cx << ", cy=" << cy << ", cz=" << cz << std::endl;
+//     // std::cout << "heightMap[50][30]="<< heightMap.index({50, 30}).item<float>() << std::endl;
+//     for (int i = 0; i < heightMap.size(2); ++i) {
+//         for (int j = 0; j < heightMap.size(3); ++j) {
+//             float distance_y = std::abs(j * gridSize - cy);
+//             // Check if the point is within the width of the wheel
+//             if (distance_y < width / 2) {
+//                 // Horizontal distance from the point to the wheel's center line in the x-direction
+//                 float distance_x = std::abs(i * gridSize - cx);
+//                 // Check if the point is within the radius of the wheel in the x-direction
+//                 if (distance_x < radius) {
+//                     // Calculate the height of the wheel's surface at this point
+//                     float wheel_surface_height = cz - std::sqrt(radius * radius - distance_x * distance_x);
+                    
+//                     // Set the height map at this point to the wheel's surface height,
+//                     // but not higher than the original height
+//                     // heightMap[i][j] = torch::min(heightMap[i][j], torch::tensor(wheel_surface_height, options));
+//                     auto current_height = heightMap.index({0, 0, i, j}).item<float>();
+//                     // std::cout << "wheel_surface_height=" << wheel_surface_height << ", current_height=" << current_height << std::endl;
+//                     if (wheel_surface_height < current_height) {
+//                         heightMap.index_put_({0, 0, i, j}, wheel_surface_height);
+//                         // std::cout << "wheel_surface_height=" << wheel_surface_height << ", current_height=" << current_height << std::endl;
+//                     }
+//                 }
+//             }
+//         }
+//     }
+// }
+// Shu-----------------------------------------------------------------------------
+void applyWheelSinkage(torch::Tensor& heightMap, torch::Tensor wheelCenter, float radius, float width, float gridSize) {
+    auto nx = heightMap.size(2);
+    auto ny = heightMap.size(3);
+    auto cx = (nx * 0.5) * gridSize;
+    auto cy = (ny * 0.5) * gridSize;
+    auto cz = wheelCenter[2].item<float>();
+
+    // Create meshgrid for x and y coordinates
+    auto x = torch::arange(0, nx, 1, torch::kFloat32) * gridSize;
+    auto y = torch::arange(0, ny, 1, torch::kFloat32) * gridSize;
+    auto xv = x.unsqueeze(1).expand({nx, ny});
+    auto yv = y.unsqueeze(0).expand({nx, ny});
+
+    // Calculate distances from the wheel center
+    auto distance_x = torch::abs(xv - cx);
+    auto distance_y = torch::abs(yv - cy);
+
+    // Mask for points within the wheel's width
+    auto within_width = distance_y < (width / 2);
+
+    // Mask for points within the wheel's radius
+    auto within_radius = distance_x < radius;
+
+    // Calculate wheel surface height
+    auto wheel_surface_height = cz - torch::sqrt(radius * radius - distance_x.pow(2));
+
+    // Mask for points where the wheel surface is below the current height
+    auto below_current_height = wheel_surface_height < heightMap.index({0, 0});
+
+    // Combine masks
+    auto mask = within_width & within_radius & below_current_height;
+
+    // Update heights
+    auto updated_heights = torch::where(mask, wheel_surface_height, heightMap.index({0, 0}));
+
+    // Apply updated heights to heightMap
+    heightMap.index_put_({0, 0}, updated_heights);
+}
+
+// // -----------------------------------------------------------------------------
+// struct GeometricDeformationLayer : torch::nn::Module {
+//     float wheel_radius, wheel_width, grid_size;
+
+//     GeometricDeformationLayer(float wheel_radius, float wheel_width, float grid_size)
+//         : wheel_radius(wheel_radius), wheel_width(wheel_width), grid_size(grid_size) {}
+
+//     torch::Tensor forward(torch::Tensor heightmap, torch::Tensor wheel_center, float wheel_center_height) {
+//         auto options = torch::TensorOptions().dtype(torch::kFloat32);
+
+//         auto x_coords = torch::arange(heightmap.size(2), options) * grid_size - wheel_center.index({0});
+//         auto y_coords = torch::arange(heightmap.size(3), options) * grid_size - wheel_center.index({1});
+//         auto grid = torch::meshgrid({x_coords, y_coords});
+//         auto x_grid = std::get<0>(grid);
+//         auto y_grid = std::get<1>(grid);
+
+//         auto dist_from_wheel_cx = torch::abs(x_grid);
+//         auto dist_from_wheel_cy = torch::abs(y_grid);
+
+//         auto within_wheel_y = dist_from_wheel_cy <= (wheel_width / 2 + grid_size);
+
+//         auto within_wheel_x = dist_from_wheel_cx <= wheel_radius;
+//         auto deformation = wheel_center_height - torch::sqrt(wheel_radius * wheel_radius - x_grid * x_grid);
+
+//         auto deformation_mask = within_wheel_y & within_wheel_x;
+//         auto new_heights = torch::where(deformation_mask, deformation, heightmap);
+
+//         heightmap = torch::minimum(heightmap, new_heights);
+
+//         return heightmap;
+//     }
+// };
 
 // Shu -----------------------------------------------------------------------------
-// auto terrain = chrono_types::make_shared<TerrainForceLoader>(folderpath_normlized,output_folderpath, wheel, model_runner_Img, model_runner_F, HM);
-// Load container to apply wheel forces and torques from data file
 class TerrainForceLoader : public ChLoadContainer {
   public:
     TerrainForceLoader(const std::string& input_folderpath, std::string& output_folderpath, 
     std::shared_ptr<hmmwv::HMMWV_Wheel> wheel, 
         TorchModelRunner model_runner_Img, TorchModelRunner model_runner_F, 
-        Heightmap HM, ChVector<> terrain_initLoc)
+        Heightmap HM, ChVector<> terrain_initLoc, float wheel_radius, float wheel_width, float heightmap_grid)
         : m_output_folderpath(output_folderpath), m_wheel(wheel), m_num_frames(10000), m_crt_frame(0), 
         m_model_runner_Img(model_runner_Img), m_model_runner_F(model_runner_F), 
-        m_HM(HM), m_terrain_initLoc(terrain_initLoc) {
+        m_HM(HM), m_terrain_initLoc(terrain_initLoc), 
+        m_wheel_radius(wheel_radius), m_wheel_width(wheel_width), m_heightmap_grid(heightmap_grid),
+        m_duration_Img(0), m_duration_F(0), m_duration_all(0){
         // ChVector<> location(terrain_initX, m_terrain_offset, terrain_initH);
         // Read normalized parameters
         std::string fn_dataPT = input_folderpath;
@@ -175,155 +295,52 @@ class TerrainForceLoader : public ChLoadContainer {
     // Apply forces to wheel bodies, at the beginning of each timestep.
     // Read HM from SCM dump hmap
     virtual void Setup() override {
+        auto start_0 = std::chrono::high_resolution_clock::now();
         GetLoadList().clear();
         torch::Tensor inI_1chan, inV_ts, F_ts, outI; 
         torch::Tensor inI_1chan_nm, inV_ts_nm, inI_2chan_nm, outI_nm; 
         std::vector<float> positions;
         m_wheel_state = m_wheel->GetState();
-        // std::cout << "line 187" << std::endl;
         F_ts = torch::zeros({1,3}).to(torch::kFloat32);
 
-        // std::cout << "line 189" << std::endl;
-        // std::string folder_HM_SCM = "/home/swang597/Documents/Research/chrono_fork_rserban/Project_TireTestRig/build_SCM_ML/DEMO_OUTPUT/SCM_fixW_dt.000500_terrGrid0.005000terrX-23.000000terrH-1.000000normLoad1000.000000/";
-        std::string folder_HM_SCM = m_output_folderpath.substr(0, m_output_folderpath.length() - 7) + '/';
-        std::string filename_hmap_I00;
-        // std::cout << "line 192" << std::endl;
-        // if(m_crt_frame % 10 == 0){
-            filename_hmap_I00 = folder_HM_SCM + "hmap_Pat" + std::to_string(ChTime) + "_Tat"+ std::to_string(ChTime) +".txt";
-            // std::cout << "line 191" << std::endl;
-            if(!std::filesystem::exists(filename_hmap_I00)){
-                std::cout << "File " << filename_hmap_I00 << " does not exist." << std::endl;
-                exit(1);
-            }
-            // std::cout << "line 196" << std::endl;
-            inI_1chan = loadFromTxt(filename_hmap_I00);
-            inI_1chan = inI_1chan - m_terrain_initLoc[2];
-            // std::cout << "max(inI_1chan)=" << inI_1chan.max().item() << ", min(inI_1chan)=" << inI_1chan.min().item() << std::endl;
-            inI_1chan_nm = (inI_1chan - m_I_min_max[0]) / (m_I_min_max[1] - m_I_min_max[0]);
-            // inI_1chan_nm = torch::clamp(inI_1chan_nm, 0.0, 1.0);
-            inI_1chan_nm = inI_1chan_nm.unsqueeze(0).unsqueeze(0);
-            // std::cout << "line 203" << std::endl;
-            inV_ts = torch::tensor({m_wheel_state.pos[2] - m_terrain_initLoc[2],
-                    m_wheel_state.lin_vel[0], m_wheel_state.lin_vel[2]
-                    }).to(torch::kFloat32);
-            // std::cout << "line 207" << std::endl;
-            inV_ts_nm = inV_ts;
-            // std::cout << "line 209" << std::endl;
-            for (int i = 0; i < m_Vec_min_max.size(1); i++){
-                auto diff = m_Vec_min_max[1][i] - m_Vec_min_max[0][i];
-                if(diff.item<double>() < 1e-6){
-                    inV_ts_nm[i] = 0.5;
-                } else {
-                    inV_ts_nm[i] = (inV_ts[i] - m_Vec_min_max[0][i]) / (m_Vec_min_max[1][i] - m_Vec_min_max[0][i]);
-                } 
-                // std::cout << "m_Vec_min_max["<< i<<"] = " << m_Vec_min_max[i][0].item() << ","<< m_Vec_min_max[i][1].item()  << std::endl;
-            }            
-            // std::cout << "inV_ts_nm=" << inV_ts_nm << std::endl;
-            
-            inV_ts_nm = inV_ts_nm.unsqueeze(0);
-            // std::cout << "line 220" << std::endl;
+    
+        // *********** NN_I save HM to check HM:**********
+        positions = {static_cast<float>(m_wheel_state.pos[0] + m_terrain_initLoc[0]), 
+                    static_cast<float>(m_wheel_state.pos[1] + m_terrain_initLoc[1]), 
+                    static_cast<float>(m_wheel_state.pos[2] - m_terrain_initLoc[2])};
+        torch::Tensor position_tensor = torch::tensor(positions);
 
-            write_output(m_output_folderpath + "xyz_t" + std::to_string(ChTime) + ".txt", torch::tensor({m_wheel_state.pos[0],
-                m_wheel_state.pos[1], m_wheel_state.pos[2]}).to(torch::kFloat32).unsqueeze(0));
-            write_output(m_output_folderpath + "Vec_t" + std::to_string(ChTime) + ".txt", inV_ts.unsqueeze(0));
-            write_output(m_output_folderpath + "Vecnm_t" + std::to_string(ChTime) + ".txt", inV_ts_nm);
-            // std::cout << "line 226" << std::endl;
-            at::Tensor F_ts_nm = m_model_runner_F.runModel(inI_1chan_nm, inV_ts_nm);
-            // std::cout << "line 228" << std::endl;
-            F_ts = F_ts_nm * (m_F_min_max[1] - m_F_min_max[0]) + m_F_min_max[0];
-            // std::cout << "F_ts = "<< F_ts <<",F_ts_nm="<< F_ts_nm << std::endl;
-            
-            write_output(m_output_folderpath + "F_t" + std::to_string(ChTime) + ".txt", F_ts);
-            write_output(m_output_folderpath + "Fnm_t" + std::to_string(ChTime) + ".txt", F_ts_nm);
+        // Load HM from Heightmap
+        inI_1chan = m_HM.get_local_heightmap(position_tensor, 96, 72);
+        inI_1chan_nm = (inI_1chan - m_I_min_max[0]) / (m_I_min_max[1] - m_I_min_max[0]);
+        // write_output(m_output_folderpath + "NN_Iin_Tat" + std::to_string(ChTime) + ".txt", inI_1chan[0][0]);
+        // write_output(m_output_folderpath + "NN_Iin_Tat" + std::to_string(ChTime) + "_pos.txt", position_tensor.unsqueeze(0));
+        inV_ts = torch::tensor({m_wheel_state.pos[2] - m_terrain_initLoc[2],
+                m_wheel_state.lin_vel[0], m_wheel_state.lin_vel[2]
+                }).to(torch::kFloat32);
+        // std::cout << "line 207" << std::endl;
+        inV_ts_nm = inV_ts;
+        // std::cout << "line 209" << std::endl;
+        for (int i = 0; i < m_Vec_min_max.size(1); i++){
+            auto diff = m_Vec_min_max[1][i] - m_Vec_min_max[0][i];
+            if(diff.item<double>() < 1e-6){
+                inV_ts_nm[i] = 0.5;
+            } else {
+                inV_ts_nm[i] = (inV_ts[i] - m_Vec_min_max[0][i]) / (m_Vec_min_max[1][i] - m_Vec_min_max[0][i]);
+            } 
+        }            
         
-            // *********** NN_I save HM to check HM:**********
-            positions = {static_cast<float>(m_wheel_state.pos[0] + m_terrain_initLoc[0]), 
-                        static_cast<float>(m_wheel_state.pos[1] + m_terrain_initLoc[1]), 
-                        static_cast<float>(m_wheel_state.pos[2])};
-            // std::cout << "positions=" << positions << std::endl;
-            torch::Tensor position_tensor = torch::tensor(positions);
-            
-            // update_heightmap using SCM HM every 20 frames, to test(avoid) the accumulate error
-            // if(m_crt_frame % 20 == 0){
-            //     m_HM.update_heightmap(position_tensor, inI_1chan.unsqueeze(0).unsqueeze(0));
-            //     printf("update_heightmap done\n");
-            // }
-
-            // if(std::abs(ChTime - 1.5) > 1e-5){
-            if(m_wheel_state.pos[0] > 0.109){
-                inI_1chan = m_HM.get_local_heightmap(position_tensor, 96, 72);
-                inI_1chan_nm = (inI_1chan - m_I_min_max[0]) / (m_I_min_max[1] - m_I_min_max[0]);
-                write_output(m_output_folderpath + "NN_Iin_Tat" + std::to_string(ChTime) + ".txt", inI_1chan[0][0]);
-                write_output(m_output_folderpath + "NN_Iin_Tat" + std::to_string(ChTime) + "_pos.txt", position_tensor.unsqueeze(0));
-                // update HM *************
-                // if(m_crt_frame % 10 == 0){
-                    outI_nm = m_model_runner_Img.runModel(inI_1chan_nm, inV_ts_nm);
-                    outI = outI_nm * (m_I_min_max[1] - m_I_min_max[0]) + m_I_min_max[0];
-                    // std::cout << "outI done "<< std::endl;
-                    m_HM.update_heightmap(position_tensor, outI);
-                    // std::cout << "update_heightmap done "<< std::endl;
-                    outI = m_HM.get_local_heightmap(position_tensor, 96+40, 72+40);
-                    write_output(m_output_folderpath + "NN_Iout_Tat" + std::to_string(ChTime) + ".txt", outI[0][0]);    
-                // }else{
-                //     outI = m_HM.get_local_heightmap(position_tensor, 96, 72);
-                //     write_output(m_output_folderpath + "NN_Iout_Tat" + std::to_string(ChTime) + ".txt", outI[0][0]);
-                // }
-                
-            }
-            else{
-                // std::cout << "line 262" << std::endl;
-                // inI
-                outI = m_HM.get_local_heightmap(position_tensor, 96, 72); // inI
-                write_output(m_output_folderpath + "NN_Iin_Tat" + std::to_string(ChTime) + ".txt", outI[0][0]);
-                write_output(m_output_folderpath + "NN_Iin_Tat" + std::to_string(ChTime) + "_pos.txt", position_tensor.unsqueeze(0));
-                // updata JM
-                // std::cout << "inI_1chan.size()=" << inI_1chan.size(0) << " " << inI_1chan.size(1)  << std::endl;
-                m_HM.update_heightmap(position_tensor, inI_1chan.unsqueeze(0).unsqueeze(0));
-                // std::cout << "update_heightmap done "<< std::endl;
-                // outI
-                outI = m_HM.get_local_heightmap(position_tensor, 96+40, 72+40);
-                write_output(m_output_folderpath + "NN_Iout_Tat" + std::to_string(ChTime) + ".txt", outI[0][0]);
-                
-            }
-
-            
-            // std::cout << "line 254" << std::endl;
-            // inI_1chan_nm = torch::clamp(inI_1chan_nm, 0.0, 1.0);
-            inV_ts = torch::tensor({m_wheel_state.pos[2] - m_terrain_initLoc[2] -1,
-                m_wheel_state.lin_vel[0], m_wheel_state.lin_vel[2]}).to(torch::kFloat32);
-            // std::cout << "line 259" << std::endl;
-            
-            inV_ts_nm = (inV_ts - m_Vec_min_max[0]) / (m_Vec_min_max[1] - m_Vec_min_max[0]);
-            // // if inV_ts_nm larger than 1, set it to 1; if smaller than 0, set it to 0
-            // inV_ts_nm = torch::clamp(inV_ts_nm, 0.0, 1.0);
-            // std::cout << "line 264" << std::endl;
-            
-            inV_ts_nm = inV_ts_nm.unsqueeze(0);
-            // std::cout << "inI_1chan.size()=" << inI_1chan[0][0].size(0) << " " << inI_1chan[0][0].size(1)  << std::endl;
-            
-            
-            // std::ofstream m_fp_I(m_output_folderpath + "NN_Iin_Tat" + std::to_string(ChTime) + "_pos.txt");
-            // for (int i = 0; i < position_tensor.size(0); ++i) {
-            //     m_fp_I << position_tensor[i].item<double>() << " ";
-            // }
-            // m_fp_I << std::endl;
-            // std::cout << "m_fp_I 1" << std::endl;
-            // for(int i = 0; i < positions.size(); i++){
-            //     m_fp_I << positions[i] << " ";
-            // }
-            // m_fp_I << std::endl;
-            // std::cout << "m_fp_I 2" << std::endl;
-            // m_fp_I << m_wheel_state.pos[0] + m_terrain_initLoc[0]<< " " 
-            //     << m_wheel_state.pos[1] + m_terrain_initLoc[1] << " " 
-            //     << m_wheel_state.pos[2] << std::endl;
-            // m_fp_I.close();
-            // std::cout << "m_fp_I done" << std::endl;
-            // std::cout << positions << std::endl;
-            
-            // NN_I save HM to check HM.
-
-        // }
-
+        inV_ts_nm = inV_ts_nm.unsqueeze(0);
+        auto start_F = std::chrono::high_resolution_clock::now();
+        at::Tensor F_ts_nm = m_model_runner_F.runModel(inI_1chan_nm, inV_ts_nm);
+        auto end_F = std::chrono::high_resolution_clock::now();
+        F_ts = F_ts_nm * (m_F_min_max[1] - m_F_min_max[0]) + m_F_min_max[0];
+        
+        // Update HM by Geometry compute applyWheelSinkage
+        auto start_I = std::chrono::high_resolution_clock::now();
+        applyWheelSinkage(inI_1chan, position_tensor, m_wheel_radius, m_wheel_width, m_heightmap_grid);
+        auto end_I = std::chrono::high_resolution_clock::now();
+        m_HM.update_heightmap(position_tensor, inI_1chan);
         
         // Hybrid 
         if(m_wheel_state.pos[0] > 0.109){
@@ -341,10 +358,21 @@ class TerrainForceLoader : public ChLoadContainer {
             // Add the load to the load container
             Add(force_load);
             Add(torque_load);
-
             
         }
-        
+        auto end_0 = std::chrono::high_resolution_clock::now();
+        m_duration_all += end_0 - start_0;
+        m_duration_F += end_F - start_F;
+        m_duration_Img += end_I - start_I;
+        if (m_crt_frame % 100 == 0){
+            // std::cout << "ChTime" << ChTime <<",m_duration_all=" << m_duration_all.count() 
+            // <<",m_duration_F=" << m_duration_F.count()  
+            // <<",m_duration_Img="<<m_duration_Img.count()  <<"ms"<< std::endl;
+            std::cout << ChTime <<"," << m_duration_all.count() 
+            <<"," << m_duration_F.count()  
+            <<","<<m_duration_Img.count() << std::endl;
+        }
+
         if (m_crt_frame < m_num_frames - 1)
             m_crt_frame++;
 
@@ -365,6 +393,8 @@ class TerrainForceLoader : public ChLoadContainer {
     torch::Tensor m_I_min_max, m_F_min_max, m_dF_min_max, m_Vec_min_max;
     std::string m_output_folderpath;
     ChVector<> m_terrain_initLoc;
+    float m_wheel_width, m_wheel_radius, m_heightmap_grid;
+    std::chrono::duration<double, std::milli> m_duration_Img, m_duration_F, m_duration_all;
     // double m_terrain_initX, m_terrain_initY;
     // std::ofstream m_fp_I, m_fp_dI, m_fp_Vec, m_fp_F;
 };
@@ -521,9 +551,11 @@ int main(int argc, char *argv[]) {
     double heightmap_cutoff_x_backward = 0.21; //0.24; // cylinder wheel radius 0.208
     double heightmap_cutoff_x_forward = 0.27; //0.18;
 
-    bool flag_heightmap_save = true;
+    float wheel_radius = 0.208, wheel_width = 0.256;
+
+    bool flag_heightmap_save = false; //true;
     bool flag_vis = true; //false;
-    bool flag_save_vedio = true; //false;
+    bool flag_save_vedio = false; // true; //false;
 
     int num_steps = int(time_tot/dt);
     int ndt_HM = int(dt_HM/dt);
@@ -536,7 +568,7 @@ int main(int argc, char *argv[]) {
     // Hybrid_fixW_onlyNNF1Chan_dt
     // Hybrid_fixW_onlyNNF1Chan_expScale_dt
     // SCM_fixW_dt
-    const std::string out_dir = GetChronoOutputPath() + "Hybrid_fixW_NNINNF_noResetImg_dt" + std::to_string(dt) + "_terrGrid" +
+    const std::string out_dir = GetChronoOutputPath() + "Hybrid_fixW_NNFGeoI_dt" + std::to_string(dt) + "_terrGrid" +
                             std::to_string(terrain_grid) + "terrX" + std::to_string(terrain_initX) + "terrH" + 
                             std::to_string(terrain_initH)+ "normLoad" + std::to_string(normal_load);
 
@@ -668,8 +700,8 @@ int main(int argc, char *argv[]) {
     // Heightmap HM = Heightmap::init_flat(wx, wy, delta);
     // static Heightmap init_bmp(const std::string& heightmap_file, float wx, float wy, float hMin, float hMax, float delta, std::vector<float> crop_times = {});
     Heightmap HM = Heightmap::init_bmp(heightmap_file, wx, wy, terrain_hMin, terrain_hMax, delta);
-    std::cout << "HM.get_global_heightmap().sizes()=" << HM.get_global_heightmap().sizes() << std::endl;
-    write_output(out_dir + "_HMbmp/NN_HM_global.txt", HM.get_global_heightmap()[0][0]);
+    // std::cout << "HM.get_global_heightmap().sizes()=" << HM.get_global_heightmap().sizes() << std::endl;
+    // write_output(out_dir + "_HMbmp/NN_HM_global.txt", HM.get_global_heightmap()[0][0]);
             
     // torch::Tensor Hloc = HM.get_local_heightmap(torch::tensor({0,0,0}), 120, 96);
     // std::cout << "Heightmap size: " << HM.get_global_heightmap().sizes() << std::endl;
@@ -708,7 +740,8 @@ int main(int argc, char *argv[]) {
     // std::cout << "wheel_body->GetPos()=" << wheel_body->GetPos() << std::endl;
     ChVector<> terrain_initLoc(-terrain_initX + 0.5*wx, -terrain_initY + 0.5*wy, terrain_initH);
     auto terrain_ML = chrono_types::make_shared<TerrainForceLoader>(folderpath_normlized,
-                        output_folderpath, wheel, model_runner_Img, model_runner_F, HM, terrain_initLoc);
+                        output_folderpath, wheel, model_runner_Img, model_runner_F, HM, terrain_initLoc,
+                        wheel_radius, wheel_width, heightmap_grid);
     std::cout << "TerrainForceLoader done." << std::endl;
     sys->Add(terrain_ML);
     std::cout << "Add terrain done." << std::endl;
@@ -827,7 +860,8 @@ int main(int argc, char *argv[]) {
 
     double time_offset = 2;
 
-    auto terrain_SCM = rig.GetTerrain();
+    // auto terrain_SCM = rig.GetTerrain();
+    auto terrain_SCM = std::dynamic_pointer_cast<chrono::vehicle::SCMTerrain>(rig.GetTerrain());
     // TerrainForce terrain_force;
     // TerrainForce terrain_force_loc;
 
@@ -843,8 +877,8 @@ int main(int argc, char *argv[]) {
     for (int istep = 0; istep < num_steps; istep++) {
         time = sys->GetChTime();
 
-        if (istep % 100 == 0)
-            std::cout << "Time: " << time << std::endl;
+        // if (istep % 100 == 0)
+        //     std::cout << "Time: " << time << std::endl;
         
         // if (time > time_offset) {
         // if (time > time_delay) {
@@ -881,6 +915,15 @@ int main(int argc, char *argv[]) {
 
         // std::cout << "line900" << std::endl;
         rig.Advance(step_size);
+        // terrain_SCM->PrintStepStatistics(std::cout); //print SCM step statistics
+        if(istep % 100 == 0){
+            std::cout << time <<",";
+            terrain_SCM->PrintAccumulateTimeProfiling(std::cout);
+        }
+        // terrain_SCM->m_duration_all
+        // auto duration_all = terrain_SCM->m_duration_all;
+        // std::cout << "terrain_SCM->m_duration_all" << duration_all.count() << " ms\n";
+
         //Shu
         // if(istep < 1000){
         //     rig.Advance(step_size);

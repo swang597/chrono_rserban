@@ -205,11 +205,23 @@ find_package(OpenCV REQUIRED)
 # target_link_options(test_VEH_WheelTestRig_SCM_ML_NNINNF_use1Chan_240229 PUBLIC ${CHRONO_LINKER_FLAGS})
 # target_link_libraries(test_VEH_WheelTestRig_SCM_ML_NNINNF_use1Chan_240229 ${CHRONO_LIBRARIES} cnpy torch c10 torch_cpu ${OpenCV_LIBS}) # Shu
 
-add_executable(test_VEH_WheelTestRig_SCM_ML_NNFGeoI_240308 test_VEH_WheelTestRig_SCM_ML_NNFGeoI_240308.cpp ${ML_UTILITY_PATH}TorchModelRunner.cpp ${ML_UTILITY_PATH}Heightmap.cpp)
-target_compile_definitions(test_VEH_WheelTestRig_SCM_ML_NNFGeoI_240308 PUBLIC "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\"") 
-target_compile_options(test_VEH_WheelTestRig_SCM_ML_NNFGeoI_240308 PUBLIC ${CHRONO_CXX_FLAGS})
-target_link_options(test_VEH_WheelTestRig_SCM_ML_NNFGeoI_240308 PUBLIC ${CHRONO_LINKER_FLAGS})
-target_link_libraries(test_VEH_WheelTestRig_SCM_ML_NNFGeoI_240308 ${CHRONO_LIBRARIES} cnpy torch c10 torch_cpu ${OpenCV_LIBS}) # Shu
+# add_executable(test_VEH_WheelTestRig_SCM_ML_CNNF_CNNIuseGRF_240313 test_VEH_WheelTestRig_SCM_ML_CNNF_CNNIuseGRF_240313.cpp ${ML_UTILITY_PATH}TorchModelRunner.cpp ${ML_UTILITY_PATH}Heightmap.cpp)
+# target_compile_definitions(test_VEH_WheelTestRig_SCM_ML_CNNF_CNNIuseGRF_240313 PUBLIC "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\"") 
+# target_compile_options(test_VEH_WheelTestRig_SCM_ML_CNNF_CNNIuseGRF_240313 PUBLIC ${CHRONO_CXX_FLAGS})
+# target_link_options(test_VEH_WheelTestRig_SCM_ML_CNNF_CNNIuseGRF_240313 PUBLIC ${CHRONO_LINKER_FLAGS})
+# target_link_libraries(test_VEH_WheelTestRig_SCM_ML_CNNF_CNNIuseGRF_240313 ${CHRONO_LIBRARIES} cnpy torch c10 torch_cpu ${OpenCV_LIBS}) # Shu
+
+# add_executable(test_VEH_WheelTestRig_SCM_ML_NNFGeoI_240308 test_VEH_WheelTestRig_SCM_ML_NNFGeoI_240308.cpp ${ML_UTILITY_PATH}TorchModelRunner.cpp ${ML_UTILITY_PATH}Heightmap.cpp)
+# target_compile_definitions(test_VEH_WheelTestRig_SCM_ML_NNFGeoI_240308 PUBLIC "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\"") 
+# target_compile_options(test_VEH_WheelTestRig_SCM_ML_NNFGeoI_240308 PUBLIC ${CHRONO_CXX_FLAGS})
+# target_link_options(test_VEH_WheelTestRig_SCM_ML_NNFGeoI_240308 PUBLIC ${CHRONO_LINKER_FLAGS})
+# target_link_libraries(test_VEH_WheelTestRig_SCM_ML_NNFGeoI_240308 ${CHRONO_LIBRARIES} cnpy torch c10 torch_cpu ${OpenCV_LIBS}) # Shu
+
+add_executable(test_VEH_WheelTestRig_SCM_ML_NNFGeoI_clearup_240311 test_VEH_WheelTestRig_SCM_ML_NNFGeoI_clearup_240311.cpp ${ML_UTILITY_PATH}TorchModelRunner.cpp ${ML_UTILITY_PATH}Heightmap.cpp)
+target_compile_definitions(test_VEH_WheelTestRig_SCM_ML_NNFGeoI_clearup_240311 PUBLIC "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\"") 
+target_compile_options(test_VEH_WheelTestRig_SCM_ML_NNFGeoI_clearup_240311 PUBLIC ${CHRONO_CXX_FLAGS})
+target_link_options(test_VEH_WheelTestRig_SCM_ML_NNFGeoI_clearup_240311 PUBLIC ${CHRONO_LINKER_FLAGS})
+target_link_libraries(test_VEH_WheelTestRig_SCM_ML_NNFGeoI_clearup_240311 ${CHRONO_LIBRARIES} cnpy torch c10 torch_cpu ${OpenCV_LIBS}) # Shu
 
 # add_executable(test_VEH_WheelTestRig_SCM_ML_HMreduce_240220 test_VEH_WheelTestRig_SCM_ML_HMreduce_240220.cpp ${ML_UTILITY_PATH}TorchModelRunner.cpp ${ML_UTILITY_PATH}Heightmap.cpp)
 # target_compile_definitions(test_VEH_WheelTestRig_SCM_ML_HMreduce_240220 PUBLIC "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\"") 
