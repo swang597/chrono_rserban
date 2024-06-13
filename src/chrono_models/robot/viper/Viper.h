@@ -139,6 +139,11 @@ class CH_MODELS_API ViperChassis : public ViperPart {
     ViperChassis(const std::string& name,                ///< part name
                  std::shared_ptr<ChMaterialSurface> mat  ///< contact material
     );
+    //Shu:240421
+    ViperChassis(const std::string& name,                ///< part name
+                 std::shared_ptr<ChMaterialSurface> mat,  ///< contact material
+                 double chassis_density                  ///< chassis density
+    ); //Shu.
     ~ViperChassis() {}
 
     /// Initialize the chassis at the specified (absolute) position.
@@ -203,7 +208,8 @@ class ViperDriver;
 class CH_MODELS_API Viper {
   public:
     Viper(ChSystem* system, ViperWheelType wheel_type = ViperWheelType::RealWheel);
-
+    Viper(ChSystem* system, double chassis_density, ViperWheelType wheel_type = ViperWheelType::RealWheel); //Shu:240421
+    
     ~Viper() {}
 
     /// Get the containing system.
@@ -290,6 +296,8 @@ class CH_MODELS_API Viper {
     /// Get total wheel mass.
     double GetWheelMass() const;
 
+
+
     /// Get drive motor function.
     /// This will return an empty pointer if the associated driver uses torque control.
     std::shared_ptr<ChFunction_Setpoint> GetDriveMotorFunc(ViperWheelID id) const { return m_drive_motor_funcs[id]; }
@@ -311,6 +319,7 @@ class CH_MODELS_API Viper {
   private:
     /// Create the rover parts.
     void Create(ViperWheelType wheel_type);
+    void Create(ViperWheelType wheel_type, double chassis_density);
 
     ChSystem* m_system;  ///< pointer to the Chrono system
 
@@ -340,7 +349,7 @@ class CH_MODELS_API Viper {
     std::shared_ptr<ChMaterialSurface> m_wheel_material;    ///< wheel contact material (shared across limbs)
 
     static const double m_max_steer_angle;  ///< maximum steering angle
-
+    
     friend class ViperDCMotorControl;
 };
 
@@ -396,6 +405,7 @@ class CH_MODELS_API ViperDriver {
 class CH_MODELS_API ViperDCMotorControl : public ViperDriver {
   public:
     ViperDCMotorControl();
+    ViperDCMotorControl(double torque_wheel,double ang_vel_wheel); 
     ~ViperDCMotorControl() {}
 
     /// Set motor stall torque for the specified wheel (default: 300).

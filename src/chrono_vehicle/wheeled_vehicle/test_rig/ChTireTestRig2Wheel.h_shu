@@ -24,8 +24,8 @@
 //
 // =============================================================================
 
-#ifndef CH_TIRE_TEST_RIG_H
-#define CH_TIRE_TEST_RIG_H
+#ifndef CH_TIRE_TEST_RIG_2WHEEL_H
+#define CH_TIRE_TEST_RIG_2WHEEL_H
 
 #include "chrono/physics/ChLinkLock.h"
 #include "chrono/physics/ChLinkMotorLinearSpeed.h"
@@ -40,7 +40,7 @@ namespace vehicle {
 /// @{
 
 /// Definition of a single-tire test rig.
-class CH_VEHICLE_API ChTireTestRig {
+class CH_VEHICLE_API ChTireTestRig2Wheel {
   public:
     /// Tire test rig operation mode.
     enum class Mode {
@@ -50,12 +50,12 @@ class CH_VEHICLE_API ChTireTestRig {
     };
 
     /// Construct a tire test rig within the specified system.
-    ChTireTestRig(std::shared_ptr<ChWheel> wheel,  ///< wheel subsystem
+    ChTireTestRig2Wheel(std::shared_ptr<ChWheel> wheel,  ///< wheel subsystem
                   std::shared_ptr<ChTire> tire,    ///< tire subsystem
                   ChSystem* system                 ///< containing mechanical system
     );
 
-    ~ChTireTestRig();
+    ~ChTireTestRig2Wheel();
 
     /// Set gravitational acceleration (default: 9.81 m/s2).
     void SetGravitationalAcceleration(double grav) { m_grav = grav; }
@@ -238,6 +238,7 @@ class CH_VEHICLE_API ChTireTestRig {
     std::shared_ptr<ChBody> m_chassis_body;  ///< "chassis" body which carries normal load
     std::shared_ptr<ChBody> m_slip_body;     ///< intermediate body for controlling slip angle
     std::shared_ptr<ChBody> m_spindle_body;  ///< wheel spindle body
+    std::shared_ptr<ChBody> m_spindle_body2;  ///< wheel spindle body2
 
     bool m_ls_actuated;                    ///< is linear spped actuated?
     bool m_rs_actuated;                    ///< is angular speed actuated?

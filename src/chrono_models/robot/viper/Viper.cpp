@@ -278,6 +278,14 @@ ViperChassis::ViperChassis(const std::string& name, std::shared_ptr<ChMaterialSu
     CalcMassProperties(165);
 }
 
+ViperChassis::ViperChassis(const std::string& name, std::shared_ptr<ChMaterialSurface> mat, 
+    double chassis_density)
+    : ViperPart(name, ChFrame<>(VNULL, QUNIT), mat, false) {
+    m_mesh_name = "viper_chassis";
+    m_color = ChColor(1.0f, 1.0f, 1.0f);
+    CalcMassProperties(chassis_density);
+}
+
 void ViperChassis::Initialize(ChSystem* system, const ChFrame<>& pos) {
     Construct(system);
 
@@ -381,6 +389,24 @@ Viper::Viper(ChSystem* system, ViperWheelType wheel_type) : m_system(system), m_
     Create(wheel_type);
 }
 
+//Shu:240421
+Viper::Viper(ChSystem* system, double chassis_density, ViperWheelType wheel_type) : m_system(system), m_chassis_fixed(false) {
+    // Set default collision model envelope commensurate with model dimensions.
+    // Note that an SMC system automatically sets envelope to 0.
+    auto contact_method = m_system->GetContactMethod();
+    if (contact_method == ChContactMethod::NSC) {
+        collision::ChCollisionModel::SetDefaultSuggestedEnvelope(0.01);
+        collision::ChCollisionModel::SetDefaultSuggestedMargin(0.005);
+    }
+
+    // Create the contact materials
+    m_default_material = DefaultContactMaterial(contact_method);
+    m_wheel_material = DefaultContactMaterial(contact_method);
+
+    Create(wheel_type, chassis_density);
+}
+//Shu.
+
 void Viper::Create(ViperWheelType wheel_type) {
     // create rover chassis
     m_chassis = chrono_types::make_shared<ViperChassis>("chassis", m_default_material);
@@ -449,6 +475,77 @@ void Viper::Create(ViperWheelType wheel_type) {
         m_drive_shafts[i] = chrono_types::make_shared<ChShaft>();
     }
 }
+
+//Shu:240421
+void Viper::Create(ViperWheelType wheel_type, double chassis_density) {
+    // create rover chassis
+    m_chassis = chrono_types::make_shared<ViperChassis>("chassis", m_default_material, chassis_density);
+
+    // initilize rover wheels
+    double wx = 0.5618 + 0.08;
+    double wy = 0.2067 + 0.32 + 0.0831;
+    double wz = 0.0;
+
+    m_wheels[V_LF] = chrono_types::make_shared<ViperWheel>("wheel_LF", ChFrame<>(ChVector<>(+wx, +wy, wz), QUNIT),
+                                                           m_wheel_material, wheel_type);
+    m_wheels[V_RF] = chrono_types::make_shared<ViperWheel>("wheel_RF", ChFrame<>(ChVector<>(+wx, -wy, wz), QUNIT),
+                                                           m_wheel_material, wheel_type);
+    m_wheels[V_LB] = chrono_types::make_shared<ViperWheel>("wheel_LB", ChFrame<>(ChVector<>(-wx, +wy, wz), QUNIT),
+                                                           m_wheel_material, wheel_type);
+    m_wheels[V_RB] = chrono_types::make_shared<ViperWheel>("wheel_RB", ChFrame<>(ChVector<>(-wx, -wy, wz), QUNIT),
+                                                           m_wheel_material, wheel_type);
+
+    m_wheels[V_LF]->m_mesh_xform = ChFrame<>(VNULL, Q_from_AngZ(CH_C_PI));
+    m_wheels[V_LB]->m_mesh_xform = ChFrame<>(VNULL, Q_from_AngZ(CH_C_PI));
+
+    // create rover upper and lower suspension arms
+    double cr_lx = 0.5618 + 0.08;
+    double cr_ly = 0.2067;  // + 0.32/2;
+    double cr_lz = 0.0525;
+
+    ChVector<> cr_rel_pos_lower[] = {
+        ChVector<>(+cr_lx, +cr_ly, -cr_lz),  // LF
+        ChVector<>(+cr_lx, -cr_ly, -cr_lz),  // RF
+        ChVector<>(-cr_lx, +cr_ly, -cr_lz),  // LB
+        ChVector<>(-cr_lx, -cr_ly, -cr_lz)   // RB
+    };
+
+    ChVector<> cr_rel_pos_upper[] = {
+        ChVector<>(+cr_lx, +cr_ly, cr_lz),  // LF
+        ChVector<>(+cr_lx, -cr_ly, cr_lz),  // RF
+        ChVector<>(-cr_lx, +cr_ly, cr_lz),  // LB
+        ChVector<>(-cr_lx, -cr_ly, cr_lz)   // RB
+    };
+
+    for (int i = 0; i < 4; i++) {
+        m_lower_arms[i] = chrono_types::make_shared<ViperLowerArm>("lower_arm", ChFrame<>(cr_rel_pos_lower[i], QUNIT),
+                                                                   m_default_material, i % 2);
+        m_upper_arms[i] = chrono_types::make_shared<ViperUpperArm>("upper_arm", ChFrame<>(cr_rel_pos_upper[i], QUNIT),
+                                                                   m_default_material, i % 2);
+    }
+
+    // create uprights
+    double sr_lx = 0.5618 + 0.08;
+    double sr_ly = 0.2067 + 0.32 + 0.0831;
+    double sr_lz = 0.0;
+    ChVector<> sr_rel_pos[] = {
+        ChVector<>(+sr_lx, +sr_ly, -sr_lz),  // LF
+        ChVector<>(+sr_lx, -sr_ly, -sr_lz),  // RF
+        ChVector<>(-sr_lx, +sr_ly, -sr_lz),  // LB
+        ChVector<>(-sr_lx, -sr_ly, -sr_lz)   // RB
+    };
+
+    for (int i = 0; i < 4; i++) {
+        m_uprights[i] = chrono_types::make_shared<ViperUpright>("upright", ChFrame<>(sr_rel_pos[i], QUNIT),
+                                                                m_default_material, i % 2);
+    }
+
+    // create drive shafts
+    for (int i = 0; i < 4; i++) {
+        m_drive_shafts[i] = chrono_types::make_shared<ChShaft>();
+    }
+}
+//Shu.
 
 void Viper::Initialize(const ChFrame<>& pos) {
     assert(m_driver);
@@ -699,11 +796,37 @@ void ViperDriver::SetLifting(double angle) {
 ViperDCMotorControl::ViperDCMotorControl()
     : m_stall_torque({300, 300, 300, 300}), m_no_load_speed({CH_C_PI, CH_C_PI, CH_C_PI, CH_C_PI}) {}
 
+ViperDCMotorControl::ViperDCMotorControl(double torque_wheel, double ang_vel_wheel)
+    : m_stall_torque({torque_wheel, torque_wheel, torque_wheel, torque_wheel}), 
+        m_no_load_speed({ang_vel_wheel, ang_vel_wheel, ang_vel_wheel, ang_vel_wheel}) {
+        std::cout << "*******torque_wheel: " << torque_wheel << std::endl;
+    }
+
+
+// void ViperDCMotorControl::Update(double time) {
+//     double speed_reading;
+//     double target_torque;
+//     for (int i = 0; i < 4; i++) {
+//         speed_reading = -viper->m_drive_shafts[i]->GetPos_dt();
+
+//         if (speed_reading > m_no_load_speed[i]) {
+//             target_torque = 0;
+//         } else if (speed_reading < 0) {
+//             target_torque = m_stall_torque[i];
+//         } else {
+//             target_torque = m_stall_torque[i] * ((m_no_load_speed[i] - speed_reading) / m_no_load_speed[i]);
+//         }
+//         
+//         viper->m_drive_shafts[i]->SetAppliedTorque(-target_torque);
+//     }
+// }
+
+//Shu:240421
 void ViperDCMotorControl::Update(double time) {
     double speed_reading;
     double target_torque;
     for (int i = 0; i < 4; i++) {
-        speed_reading = -viper->m_drive_shafts[i]->GetPos_dt();
+        speed_reading = viper->m_drive_shafts[i]->GetPos_dt();
 
         if (speed_reading > m_no_load_speed[i]) {
             target_torque = 0;
@@ -712,10 +835,11 @@ void ViperDCMotorControl::Update(double time) {
         } else {
             target_torque = m_stall_torque[i] * ((m_no_load_speed[i] - speed_reading) / m_no_load_speed[i]);
         }
-
-        viper->m_drive_shafts[i]->SetAppliedTorque(-target_torque);
+        // std::cout << "Viper.cpp*******speed_goal="<<m_no_load_speed[i] <<",speed_reading: " << speed_reading << ",target_T="<< target_torque<< std::endl;
+        viper->m_drive_shafts[i]->SetAppliedTorque(target_torque);
     }
 }
+//Shu.
 
 ViperSpeedDriver::ViperSpeedDriver(double time_ramp, double speed) : m_ramp(time_ramp), m_speed(speed) {}
 

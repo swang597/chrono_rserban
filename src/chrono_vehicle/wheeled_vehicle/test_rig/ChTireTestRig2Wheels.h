@@ -24,8 +24,8 @@
 //
 // =============================================================================
 
-#ifndef CH_TIRE_TEST_RIG_H
-#define CH_TIRE_TEST_RIG_H
+#ifndef CH_TIRE_TEST_RIG_2WHEELS_H
+#define CH_TIRE_TEST_RIG_2WHEELS_H
 
 #include "chrono/physics/ChLinkLock.h"
 #include "chrono/physics/ChLinkMotorLinearSpeed.h"
@@ -40,7 +40,7 @@ namespace vehicle {
 /// @{
 
 /// Definition of a single-tire test rig.
-class CH_VEHICLE_API ChTireTestRig {
+class CH_VEHICLE_API ChTireTestRig2Wheels {
   public:
     /// Tire test rig operation mode.
     enum class Mode {
@@ -50,18 +50,32 @@ class CH_VEHICLE_API ChTireTestRig {
     };
 
     /// Construct a tire test rig within the specified system.
-    ChTireTestRig(std::shared_ptr<ChWheel> wheel,  ///< wheel subsystem
+    // ChTireTestRig2Wheels(std::shared_ptr<ChWheel> wheel,  ///< wheel subsystem
+    //               std::shared_ptr<ChWheel> wheel2,  ///< wheel subsystem
+    //               std::shared_ptr<ChTire> tire,    ///< tire subsystem
+    //               std::shared_ptr<ChTire> tire2,    ///< tire subsystem
+    //               ChSystem* system                 ///< containing mechanical system
+    // );
+
+    /// Construct a tire test rig within the specified system.
+    ChTireTestRig2Wheels(std::shared_ptr<ChWheel> wheel,  ///< wheel subsystem
+                  std::shared_ptr<ChWheel> wheel2,  ///< wheel subsystem
                   std::shared_ptr<ChTire> tire,    ///< tire subsystem
+                  std::shared_ptr<ChTire> tire2,    ///< tire subsystem
+                  double dx_2wheels, double dy_2wheels, double dz_2wheels,  ///< relative position between 2 wheels
                   ChSystem* system                 ///< containing mechanical system
     );
 
-    ~ChTireTestRig();
+    ~ChTireTestRig2Wheels();
 
     /// Set gravitational acceleration (default: 9.81 m/s2).
     void SetGravitationalAcceleration(double grav) { m_grav = grav; }
 
     /// Set desired normal load (default: 1000 N).
-    void SetNormalLoad(double load) { m_normal_load = load; }
+    void SetNormalLoad(double load, double load2) { 
+        m_normal_load = load; 
+        m_normal_load2 = load2;
+    }
 
     /// Get the normal load.
     double GetNormalLoad(double load) const { return m_normal_load; }
@@ -155,6 +169,9 @@ class CH_VEHICLE_API ChTireTestRig {
     /// Get current carrier body position.
     const ChVector<>& GetPos() const { return m_carrier_body->GetPos(); }
 
+    /// Get current carrier body position.
+    const ChVector<>& GetPos2() const { return m_carrier_body2->GetPos(); }
+
     /// Get the current tire forces
     TerrainForce ReportTireForce() const;
 
@@ -225,6 +242,9 @@ class CH_VEHICLE_API ChTireTestRig {
     double m_total_mass;   ///< total sprung mass
     double m_time_delay;   ///< time delay before applying external load
 
+    double m_normal_load2;  ///< desired normal load
+    double m_total_mass2; // Shu: 2nd wheel
+
     TerrainType m_terrain_type;               ///< terrain type
     TerrainParamsSCM m_params_SCM;            ///< SCM soil parameters
     TerrainParamsRigid m_params_rigid;        ///< rigid terrain contact material properties
@@ -238,6 +258,17 @@ class CH_VEHICLE_API ChTireTestRig {
     std::shared_ptr<ChBody> m_chassis_body;  ///< "chassis" body which carries normal load
     std::shared_ptr<ChBody> m_slip_body;     ///< intermediate body for controlling slip angle
     std::shared_ptr<ChBody> m_spindle_body;  ///< wheel spindle body
+    // Shu: 2nd wheel
+    std::shared_ptr<ChWheel> m_wheel2;
+    std::shared_ptr<ChTire> m_tire2;
+    
+    // double m_terrain_offset2;
+    // double m_terrain_height2;
+
+    std::shared_ptr<chrono::ChBody> m_carrier_body2;
+    std::shared_ptr<chrono::ChBody> m_chassis_body2;
+    std::shared_ptr<chrono::ChBody> m_slip_body2;
+    std::shared_ptr<chrono::ChBody> m_spindle_body2;
 
     bool m_ls_actuated;                    ///< is linear spped actuated?
     bool m_rs_actuated;                    ///< is angular speed actuated?
@@ -252,6 +283,12 @@ class CH_VEHICLE_API ChTireTestRig {
     std::shared_ptr<ChLinkMotorLinearSpeed> m_lin_motor;    ///< carrier actuator
     std::shared_ptr<ChLinkMotorRotationSpeed> m_rot_motor;  ///< wheel actuator
     std::shared_ptr<ChLinkLockLock> m_slip_lock;            ///< slip angle actuator
+    // Shu: 2nd wheel
+    std::shared_ptr<chrono::ChLinkMotorLinearSpeed> m_lin_motor2;
+    std::shared_ptr<chrono::ChLinkMotorRotationSpeed> m_rot_motor2;
+    std::shared_ptr<ChLinkLockLock> m_slip_lock2;
+
+    double m_dx_2wheels, m_dy_2wheels, m_dz_2wheels;  ///< relative position of spindle w.r.t. carrier
 };
 
 /// @} vehicle_wheeled_test_rig

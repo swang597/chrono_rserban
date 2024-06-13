@@ -38,16 +38,6 @@
 
 #include "chrono_vehicle/terrain/SCMTerrain.h" //Shu added
 
-#include "TorchModelRunner.hpp"
-#include "Heightmap.hpp"
-#include <filesystem>
-#include <c10/core/Device.h>
-#include <c10/core/DeviceType.h>
-#include <torch/torch.h>
-#include <iostream>
-#include <map>
-#include "cnpy.h"
-
 #ifdef CHRONO_POSTPROCESS
     #include "chrono_postprocess/ChGnuPlot.h"
     #include "chrono_postprocess/ChBlender.h"
@@ -67,237 +57,30 @@ using namespace chrono::vsg3d;
 using namespace chrono;
 using namespace chrono::vehicle;
 
-// Shu-----------------------------------------------------------------------------
-// Function to write output
-bool write_output(const std::string& filename, const torch::Tensor& matrix, bool append = false) {
-    if (append == false && std::filesystem::exists(filename)) {
-        std::filesystem::remove(filename);
-    }
-    std::ofstream m_fp_I(filename, std::ios::app);
-    if (!m_fp_I) {
-        std::cerr << "Failed to open the file for writing." << std::endl;
-        return false;
-    }
+// -----------------------------------------------------------------------------
 
-    for (int i = 0; i < matrix.size(0); ++i) {
-        for (int j = 0; j < matrix.size(1); ++j) {
-            m_fp_I << matrix[i][j].item<float>() << " ";
-        }
-        m_fp_I << std::endl;
-    }
-    
-    return true;
-}
+// Contact formulation type (SMC or NSC)
+// ChContactMethod contact_method = ChContactMethod::NSC;
+ChContactMethod contact_method = ChContactMethod::SMC;
+
+// Run-time visualization system (IRRLICHT or VSG)
+ChVisualSystem::Type vis_type = ChVisualSystem::Type::VSG;
+
+// Tire model
+enum class TireType { RIGID, TMEASY, FIALA, PAC89, PAC02, ANCF4, ANCF8, ANCF_TOROIDAL, REISSNER };
+// TireType tire_type = TireType::TMEASY;
+TireType tire_type = TireType::RIGID;
+
+// Read from JSON specification file?
+bool use_JSON = true;
 
 
-// Shu-----------------------------------------------------------------------------
-// Function to load data from text file and return as torch::Tensor
-torch::Tensor loadFromTxt(const std::string& filePath) {
-    std::ifstream inFile(filePath);
-    if (inFile.fail()) {
-        throw std::runtime_error("Failed to open file: " + filePath);
-    }
-
-    std::string line;
-    std::vector<std::vector<float>> matrixData;
-
-    while (std::getline(inFile, line)) {
-        std::stringstream ss(line);
-        std::vector<float> rowData;
-        float value;
-        while (ss >> value) {
-            rowData.push_back(value);
-        }
-        matrixData.push_back(rowData);
-    }
-
-    // Deduce tensor dimensions
-    int64_t rows = static_cast<int64_t>(matrixData.size());
-    int64_t cols = (rows > 0) ? static_cast<int64_t>(matrixData[0].size()) : 0;
-
-    // Ensure that all rows have the same number of columns
-    for (const auto& row : matrixData) {
-        if (static_cast<int64_t>(row.size()) != cols) {
-            throw std::runtime_error("Inconsistent number of columns in the file.");
-        }
-    }
-
-    // Create and populate the tensor
-    torch::Tensor tensor = torch::empty({rows, cols}, torch::kFloat32);
-
-    for (int64_t i = 0; i < rows; ++i) {
-        for (int64_t j = 0; j < cols; ++j) {
-            tensor[i][j] = matrixData[i][j];
-        }
-    }
-
-    return tensor;
-}
-
-// Shu -----------------------------------------------------------------------------
-// auto terrain = chrono_types::make_shared<TerrainForceLoader>(folderpath_normlized,output_folderpath, wheel, model_runner_Img, model_runner_F, HM);
-// Load container to apply wheel forces and torques from data file
-class TerrainForceLoader : public ChLoadContainer {
-  public:
-    TerrainForceLoader(const std::string& input_folderpath, std::string& output_folderpath, 
-    std::shared_ptr<hmmwv::HMMWV_Wheel> wheel, 
-        TorchModelRunner model_runner_Img, TorchModelRunner model_runner_F, 
-        Heightmap HM, ChVector<> terrain_initLoc)
-        : m_output_folderpath(output_folderpath), m_wheel(wheel), m_num_frames(10000), m_crt_frame(0), 
-        m_model_runner_Img(model_runner_Img), m_model_runner_F(model_runner_F), 
-        m_HM(HM), m_terrain_initLoc(terrain_initLoc) {
-        // ChVector<> location(terrain_initX, m_terrain_offset, terrain_initH);
-        // Read normalized parameters
-        std::string fn_dataPT = input_folderpath;
-        std::cout << "fn_dataPT=" << fn_dataPT << std::endl;
-        
-        m_I_min_max = loadFromTxt(fn_dataPT + "I_min_max_p1.txt");
-        m_F_min_max = loadFromTxt(fn_dataPT + "F_min_max_p1.txt");
-        m_Vec_min_max = loadFromTxt(fn_dataPT + "Vec_min_max_p1.txt");
-        
-        std::cout << "Load normalized files, done." << std::endl;
-        std::cout << "m_I_min_max=" << m_I_min_max << std::endl;
-        std::cout << "m_F_min_max=" << m_F_min_max << std::endl;
-        std::cout << "m_Vec_min_max=" << m_Vec_min_max << std::endl;
-
-        if (!filesystem::path(m_output_folderpath).exists()) {
-            std::filesystem::create_directory(m_output_folderpath);
-        }
-        std::cout << "m_output_folderpath=" << m_output_folderpath << std::endl;
-        
-    }
-
-    ~TerrainForceLoader() { 
-        // m_fstream.close(); 
-    }
-
-
-    // Apply forces to wheel bodies, at the beginning of each timestep.
-    // Read HM from SCM dump hmap
-    virtual void Setup() override {
-        GetLoadList().clear();
-        torch::Tensor inI_1chan, inV_ts, F_ts, dI; 
-        torch::Tensor inI_1chan_nm, inV_ts_nm, inI_2chan_nm, dI_nm; 
-        std::vector<float> positions;
-        m_wheel_state = m_wheel->GetState();
-        // std::cout << "line 187" << std::endl;
-        F_ts = torch::zeros({1,3}).to(torch::kFloat32);
-        // std::cout << "line 189" << std::endl;
-        // std::string folder_HM_SCM = "/home/swang597/Documents/Research/chrono_fork_rserban/Project_TireTestRig/build_SCM_ML/DEMO_OUTPUT/SCM_fixW_dt.000500_terrGrid0.005000terrX-23.000000terrH-1.000000normLoad1000.000000/";
-        std::string folder_HM_SCM = m_output_folderpath.substr(0, m_output_folderpath.length() - 7) + '/';
-        std::string filename_hmap_I00;
-        // std::cout << "line 192" << std::endl;
-        // if(m_crt_frame % 10 == 0){
-            filename_hmap_I00 = folder_HM_SCM + "hmap_Pat" + std::to_string(ChTime) + "_Tat"+ std::to_string(ChTime) +".txt";
-            // std::cout << "line 191" << std::endl;
-            if(!std::filesystem::exists(filename_hmap_I00)){
-                std::cout << "File " << filename_hmap_I00 << " does not exist." << std::endl;
-                exit(1);
-            }
-            // std::cout << "line 196" << std::endl;
-            inI_1chan = loadFromTxt(filename_hmap_I00);
-            inI_1chan = inI_1chan - m_terrain_initLoc[2];
-            // std::cout << "max(inI_1chan)=" << inI_1chan.max().item() << ", min(inI_1chan)=" << inI_1chan.min().item() << std::endl;
-            inI_1chan_nm = (inI_1chan - m_I_min_max[0]) / (m_I_min_max[1] - m_I_min_max[0]);
-            // inI_1chan_nm = torch::clamp(inI_1chan_nm, 0.0, 1.0);
-            inI_1chan_nm = inI_1chan_nm.unsqueeze(0).unsqueeze(0);
-            // std::cout << "line 203" << std::endl;
-            inV_ts = torch::tensor({m_wheel_state.pos[2] - m_terrain_initLoc[2],
-                    m_wheel_state.lin_vel[0], m_wheel_state.lin_vel[2]
-                    }).to(torch::kFloat32);
-            // std::cout << "line 207" << std::endl;
-            inV_ts_nm = inV_ts;
-            // std::cout << "line 209" << std::endl;
-            for (int i = 0; i < m_Vec_min_max.size(1); i++){
-                auto diff = m_Vec_min_max[1][i] - m_Vec_min_max[0][i];
-                if(diff.item<double>() < 1e-6){
-                    inV_ts_nm[i] = 0.5;
-                } else {
-                    inV_ts_nm[i] = (inV_ts[i] - m_Vec_min_max[0][i]) / (m_Vec_min_max[1][i] - m_Vec_min_max[0][i]);
-                } 
-                // std::cout << "m_Vec_min_max["<< i<<"] = " << m_Vec_min_max[i][0].item() << ","<< m_Vec_min_max[i][1].item()  << std::endl;
-            }            
-            // std::cout << "inV_ts_nm=" << inV_ts_nm << std::endl;
-            
-            inV_ts_nm = inV_ts_nm.unsqueeze(0);
-            // std::cout << "line 220" << std::endl;
-
-            write_output(m_output_folderpath + "xyz_t" + std::to_string(ChTime) + ".txt", torch::tensor({m_wheel_state.pos[0],
-                m_wheel_state.pos[1], m_wheel_state.pos[2]}).to(torch::kFloat32).unsqueeze(0));
-            write_output(m_output_folderpath + "Vec_t" + std::to_string(ChTime) + ".txt", inV_ts.unsqueeze(0));
-            write_output(m_output_folderpath + "Vecnm_t" + std::to_string(ChTime) + ".txt", inV_ts_nm);
-            // std::cout << "line 226" << std::endl;
-            at::Tensor F_ts_nm = m_model_runner_F.runModel(inI_1chan_nm, inV_ts_nm);
-            // std::cout << "line 228" << std::endl;
-            F_ts = F_ts_nm * (m_F_min_max[1] - m_F_min_max[0]) + m_F_min_max[0];
-            // std::cout << "F_ts = "<< F_ts <<",F_ts_nm="<< F_ts_nm << std::endl;
-            
-            write_output(m_output_folderpath + "F_t" + std::to_string(ChTime) + ".txt", F_ts);
-            write_output(m_output_folderpath + "Fnm_t" + std::to_string(ChTime) + ".txt", F_ts_nm);
-        // }
-        
-        // Hybrid 
-        if(m_wheel_state.pos[0] > 0.109){
-            // fix Wy, time =  1.5 x= 0.109764; time =  1.495 x= 0.10869
-            // if Vz is out of range, enlarge the Fz
-            
-            // if(inV_ts_nm[0][2].item<double>() < 0.0 || inV_ts_nm[0][2].item<double>() > 1.0){
-            //     // Calculate the deviation from the range.
-            //     double deviation = (inV_ts_nm[0][2].item<double>() > 1) ? (inV_ts_nm[0][2].item<double>() - 1) : (-inV_ts_nm[0][2].item<double>());
-            //     // Apply logarithmic scaling based on the deviation.
-            //     // S = std::log10(1 + deviation * 10) + 1;
-            //     double S = exp(deviation*10);
-            //     std::cout << "Vz="<< inV_ts_nm[0][2].item<double>() <<" is out of range, need to enlarge by S="<< S << std::endl;
-            //     if(inV_ts_nm[0][2].item<double>() > 1.0){
-            //         F_ts[0][1] = 0;
-            //     }else{
-            //         F_ts[0][1] = 1500 * S;
-            //     }
-            // }
-            
-            if(inV_ts_nm[0][0].item<double>() > 1.0){
-                F_ts[0][0] = 0;
-                F_ts[0][1] = 0;
-                F_ts[0][2] = 0;
-            }
-
-            auto force_load = chrono_types::make_shared<ChLoadBodyForce>(m_wheel->GetSpindle(), ChVector<>(F_ts[0][0].item<double>(), 0.0, F_ts[0][1].item<double>()), false,
-                                                                        m_wheel_state.pos, false);
-            auto torque_load =
-                chrono_types::make_shared<ChLoadBodyTorque>(m_wheel->GetSpindle(), ChVector<>(0.0,F_ts[0][2].item<double>(),0.0), false);
-            // Add the load to the load container
-            Add(force_load);
-            Add(torque_load);
-        }
-        
-        if (m_crt_frame < m_num_frames - 1)
-            m_crt_frame++;
-
-        // Invoke base class method
-        ChLoadContainer::Update(ChTime, true);
-    }
-
-  private:
-    // std::ifstream m_fstream;
-    int m_num_frames;
-    int m_crt_frame;
-    std::shared_ptr<hmmwv::HMMWV_Wheel> m_wheel;
-    WheelState m_wheel_state;
-    // std::vector<std::array<ChVector<>, 4>> m_forces;
-    // std::vector<std::array<ChVector<>, 4>> m_torques;
-    TorchModelRunner m_model_runner_Img, m_model_runner_F;
-    Heightmap m_HM;
-    torch::Tensor m_I_min_max, m_dI_min_max, m_F_min_max, m_dF_min_max, m_Vec_min_max;
-    std::string m_output_folderpath;
-    ChVector<> m_terrain_initLoc;
-    // double m_terrain_initX, m_terrain_initY;
-    // std::ofstream m_fp_I, m_fp_dI, m_fp_Vec, m_fp_F;
-};
-
+bool gnuplot_output = true;
+bool blender_output = true;
 // -----------------------------------------------------------------------------            
 void SaveHeightmap(ChTerrain* terrain, double pos_x, double pos_y, double heightmap_grid, 
     double heightmap_cutoff_x_backward, double heightmap_cutoff_x_forward, double heightmap_cutoff_y_left, double heightmap_cutoff_y_right,
-    std::string out_dir, int istep_pos, int istep_cur, double dt, int nx = 96, int ny = 72){
+    std::string out_dir, int istep_pos, int istep_cur, double dt){
         // std::cout << "Save heightmap Pat time: " << istep_pos * dt << ", Tat " << istep_cur * dt << std::endl;
         std::vector<double> xVec, yVec;
         // Populate xVec and yVec with values
@@ -312,15 +95,6 @@ void SaveHeightmap(ChTerrain* terrain, double pos_x, double pos_y, double height
                 y += heightmap_grid) {
             yVec.push_back(y);
         }
-
-        while(xVec.size() > nx){
-            xVec.pop_back();
-            // std::cout << "xVec.size()=" << xVec.size() << std::endl;
-        }
-        while(yVec.size() > ny){
-            yVec.pop_back();
-            std::cout << "yVec.size()=" << yVec.size() << std::endl;
-        }   
 
         // Create a 2D Eigen matrix for the heightmap
         Eigen::MatrixXd hmap_matrix(xVec.size(), yVec.size());
@@ -344,8 +118,8 @@ void SaveHeightmap(ChTerrain* terrain, double pos_x, double pos_y, double height
         } else {
             std::cerr << "Unable to open file: " << HMfilename << std::endl;
         }
-}
 
+}
 // -----------------------------------------------------------------------------
 void SaveHeightmapBinary(ChTerrain* terrain, double pos_x, double pos_y, double heightmap_grid, 
     double heightmap_cutoff_x_backward, double heightmap_cutoff_x_forward, double heightmap_cutoff_y_left, double heightmap_cutoff_y_right,
@@ -391,52 +165,45 @@ void SaveHeightmapBinary(ChTerrain* terrain, double pos_x, double pos_y, double 
         } else {
             std::cerr << "Unable to open file: " << binaryFilename << std::endl;
         }
+        // Save the matrix to a file (assuming Eigen's IO)
+        // std::string HMfilename = out_dir + "/hmap_Pat" + std::to_string(istep_pos * dt) + "_Tat" + std::to_string(istep_cur * dt) + ".txt";
+        // std::ofstream file_HM(HMfilename, std::ios::trunc);
+
+        // // std::ofstream file(heightmapName.str());
+        // if (file_HM.is_open()) {
+        //     file_HM << hmap_matrix << std::endl;
+        //     file_HM.close();
+        // } else {
+        //     std::cerr << "Unable to open file: " << HMfilename << std::endl;
+        // }
+
 }
-// -----------------------------------------------------------------------------
-
-// Contact formulation type (SMC or NSC)
-// ChContactMethod contact_method = ChContactMethod::NSC;
-ChContactMethod contact_method = ChContactMethod::SMC;
-
-// Run-time visualization system (IRRLICHT or VSG)
-ChVisualSystem::Type vis_type = ChVisualSystem::Type::VSG;
-
-// Tire model
-enum class TireType { RIGID, TMEASY, FIALA, PAC89, PAC02, ANCF4, ANCF8, ANCF_TOROIDAL, REISSNER };
-// TireType tire_type = TireType::TMEASY;
-TireType tire_type = TireType::RIGID;
-
-// Read from JSON specification file?
-bool use_JSON = true;
-
-bool gnuplot_output = true;
-bool blender_output = true;
-
 // -----------------------------------------------------------------------------
 int main(int argc, char *argv[]) {
     
     SetChronoDataPath("/home/swang597/Documents/Research/chrono_fork_radu/build/data/");
     SetDataPath("/home/swang597/Documents/Research/chrono_fork_radu/build/data/vehicle/");
     
-    if (argc != 8) {
+    
+    if (argc != 9) {
         std::cout << "Wrong argv.\nUsage: " << argv[0] 
         << " <dt> <terrain_grid> <time_tot> <dt_HM> <terrain_initX> <terrain_initH> <normal_load>" << std::endl;
         return 1;
     }
     double dt = std::stod(argv[1]); // 1e-4;
     double terrain_grid = std::stod(argv[2]); // 0.1;
-    double time_tot = std::stod(argv[3]); // 3;
-    double dt_HM = std::stod(argv[4]); // 1e-4;
-    double terrain_initX = std::stod(argv[5]); 
-    double terrain_initH = std::stod(argv[6]);
-    double normal_load = std::stod(argv[7]); // 1000;
-    double terrain_initY = 0.3; // Default value by ChTireTestRig.cpp
     // generate initial terrain from bmp file
     double terrain_sizeX = 50, terrain_sizeY = 1;
     double terrain_hMin = 0, terrain_hMax = 0.1; 
     std::string heightmap_file = "/home/swang597/Documents/Research/chrono_fork_radu/build/data/vehicle/terrain/height_maps/terrain_heightmap_smooth_horizontal_terrGrid0.005_wx50_wy1.bmp";
     // std::string heightmap_file = "/home/swang597/Documents/Research/build_chrono/data/vehicle/terrain/height_maps/wave_heightmap_5000-100.bmp";
 
+    double time_tot = std::stod(argv[3]); // 3;
+    double dt_HM = std::stod(argv[4]); // 1e-4;
+    double terrain_initX = std::stod(argv[5]); 
+    double terrain_initH = std::stod(argv[6]);
+    double normal_load = std::stod(argv[7]); // 1000;
+    double fixed_Vx = std::stod(argv[8]); // 0.2;
     double time_delay = sqrt(2 * std::abs(terrain_initH) / 9.81) + 0.5; //sqrt(2*abs(H)/9.81) + 0.5
     time_tot += time_delay;
 
@@ -446,24 +213,24 @@ int main(int argc, char *argv[]) {
     double heightmap_cutoff_x_backward = 0.21; //0.24; // cylinder wheel radius 0.208
     double heightmap_cutoff_x_forward = 0.27; //0.18;
 
-    bool flag_heightmap_save = true;
-    bool flag_vis = true; //false;
-    bool flag_save_vedio = true; //false;
-
+    bool flag_heightmap_save = true; //false; //
+    bool flag_only_phase1 = true; // Only dump hmap for phase 1
+    bool flag_vis = false;
+    
     int num_steps = int(time_tot/dt);
     int ndt_HM = int(dt_HM/dt);
-    int save_vedio_fps = int(num_steps/100.0);
-    int idx_vedio = 0;
-    
-    std::cout << "num_steps: " << num_steps << ", ndt_HM:" << ndt_HM << ", time_delay="<< time_delay<< std::endl;
+    std::cout << "num_steps: " << num_steps << ", ndt_HM:" << ndt_HM << std::endl;
 
     // Output directory
-    // Hybrid_fixW_onlyNNF1Chan_dt
-    // Hybrid_fixW_onlyNNF1Chan_expScale_dt
-    // SCM_fixW_dt
-    const std::string out_dir = GetChronoOutputPath() + "Hybrid_fixW_onlyNNF1Chan_flatHM_dt" + std::to_string(dt) + "_terrGrid" +
+    const std::string out_dir = GetChronoOutputPath() + "TIRE_TEST_RIG_dt" + std::to_string(dt) + "_terrGrid" +
                             std::to_string(terrain_grid) + "terrX" + std::to_string(terrain_initX) + "terrH" + 
-                            std::to_string(terrain_initH)+ "normLoad" + std::to_string(normal_load);
+                            std::to_string(terrain_initH)+ "normLoad" + std::to_string(normal_load)+ "fixed_Vx" + 
+                            std::to_string(fixed_Vx);// + "noHM";
+    // const std::string out_dir = "/home/swang597/Documents/Research/chrono_fork_radu/project_TireTestRig/build/DEMO_OUTPUT_2phase_240211/" +
+    //                         "TIRE_TEST_RIG_dt" + std::to_string(dt) + "_terrGrid" +
+    //                         std::to_string(terrain_grid) + "terrX" + std::to_string(terrain_initX) + "terrH" + 
+    //                         std::to_string(terrain_initH)+ "normLoad" + std::to_string(normal_load);
+
 
     // Create wheel and tire subsystems
     auto wheel = chrono_types::make_shared<hmmwv::HMMWV_Wheel>("Wheel");
@@ -584,59 +351,30 @@ int main(int argc, char *argv[]) {
     rig.SetTireCollisionType(ChTire::CollisionType::FOUR_POINTS);
     rig.SetTireVisualizationType(VisualizationType::MESH);
 
-    // Set terrain
     // rig.SetTerrainRigid(0.8, 0, 2e7);
     rig.SetTerrainSCM(0.82e6, 0.14e4, 1.0, 0.017e4, 35.0, 1.78e-2);
-    
-    // Create the terrain loader ----------------------------------------------
-    float wx=50, wy=4.0, delta=0.005;
-    Heightmap HM = Heightmap::init_flat(wx, wy, delta);
-    // static Heightmap init_bmp(const std::string& heightmap_file, float wx, float wy, float hMin, float hMax, float delta, std::vector<float> crop_times = {});
-    // Heightmap HM = Heightmap::init_bmp(heightmap_file, wx, wy, terrain_hMin, terrain_hMax, delta);
 
-    // torch::Tensor Hloc = HM.get_local_heightmap(torch::tensor({0,0,0}), 120, 96);
-    // std::cout << "Heightmap size: " << HM.get_global_heightmap().sizes() << std::endl;
-    // std::cout << "Hloc size: " << Hloc.sizes() << std::endl;
+    // Set test scenario
+    // -----------------
 
-    // Define NN parameters
-    int img_channel_NN1=1, img_channel_NN2=1;
-    int input_vec_colsize=8, output_vec_colsize=3;
-    int img_rowsize=96, img_colsize=72;
-    int Ksize=5, padding=2, poolSize1=2, poolSize2=3;
-    std::string output_folderpath =    out_dir + "_HMbmp/";
-    
-    //make output folder
-    if(!std::filesystem::exists(output_folderpath))
-        std::filesystem::create_directory(output_folderpath);
+    // Scenario: driven wheel
+    ////rig.SetAngSpeedFunction(chrono_types::make_shared<ChFunction_Const>(10.0));
+    ////rig.Initialize();
 
+    // Scenario: pulled wheel
+    ////rig.SetLongSpeedFunction(chrono_types::make_shared<ChFunction_Const>(1.0));
+    ////rig.Initialize();
 
-    // Load NN model
-    // std::string folderpath_normlized = "/home/swang597/Documents/Research/chrono_fork_radu/project_TireTestRig/build/DEMO_OUTPUT/Dataset_4_ML_train_largerHM_231208/";
-    // std::string model_path = "/home/swang597/Documents/Research/chrono_fork_radu/project_TireTestRig/Model/Model_py2cpp_2stepNN_iDT1_img96by72_varKsize3333_largerHM_231208/";
-    
-    std::string folderpath_normlized = "/home/swang597/Documents/Research/chrono_fork_radu/project_TireTestRig/build_SCM_argVx/DEMO_OUTPUT/Dataset_train_96by72_2phase_varVx_I00V0_I01F0_240227/";
-    std::string model_path_Img0 = "/home/swang597/Documents/Research/Project_heightmap/Code/Pytorch_cpp_model/Model/Model_py2cpp_2stepNN_iDT1_img96by72_varKsize3333_largerHM_2phase_240216/";
-    std::string model_path = "/home/swang597/Documents/Research/Project_heightmap/Code/Pytorch_cpp_model/Model/Model_2stepNN_iDT1_img96by72_varKsize3333_varVx_I00V0_I01F0_240227/";
-    std::string model_path_Img;
-    std::string model_path_F;
-    model_path_Img = model_path_Img0 + "modelImg_cpu.pt";
-    model_path_F =   model_path + "modelF_cpu.pt";
-    TorchModelRunner model_runner_Img(model_path_Img);
-    TorchModelRunner model_runner_F(model_path_F);
-    
-    std::cout << "Load NN model done." << std::endl;
-    // auto terrain = chrono_types::make_shared<TerrainForceLoader>(SCM_filename, wheels);
-    // std::shared_ptr<ChBodyAuxRef> wheel_body = wheel->GetSpindle()->GetBody();
-    // // std::shared_ptr<chrono::ChBodyAuxRef> wheel_body = std::dynamic_pointer_cast<chrono::ChBodyAuxRef>(wheel->GetSpindle());
-    // std::cout << "wheel_body->GetPos()=" << wheel_body->GetPos() << std::endl;
-    ChVector<> terrain_initLoc(terrain_initX + 0.5*wx, terrain_initY + 0.5*wy, terrain_initH);
-    auto terrain_ML = chrono_types::make_shared<TerrainForceLoader>(folderpath_normlized,
-                        output_folderpath, wheel, model_runner_Img, model_runner_F, HM, terrain_initLoc);
-    std::cout << "TerrainForceLoader done." << std::endl;
-    sys->Add(terrain_ML);
-    std::cout << "Add terrain done." << std::endl;
+    // Scenario: imobilized wheel
+    ////rig.SetLongSpeedFunction(chrono_types::make_shared<ChFunction_Const>(0.0));
+    ////rig.SetAngSpeedFunction(chrono_types::make_shared<ChFunction_Const>(0.0));
+    ////rig.Initialize();
 
-    // rig.SetLongSpeedFunction(chrono_types::make_shared<ChFunction_Const>(2)); //Vx
+    // Scenario: prescribe all motion functions
+    //   longitudinal speed: 0.2 m/s
+    //   angular speed: 10 RPM
+    //   slip angle: sinusoidal +- 5 deg with 5 s period
+    rig.SetLongSpeedFunction(chrono_types::make_shared<ChFunction_Const>(fixed_Vx));
     rig.SetAngSpeedFunction(chrono_types::make_shared<ChFunction_Const>(10 * CH_C_RPM_TO_RPS));
     // rig.SetSlipAngleFunction(chrono_types::make_shared<ChFunction_Sine>(0, 0.2, 5 * CH_C_DEG_TO_RAD));
     
@@ -646,29 +384,27 @@ int main(int argc, char *argv[]) {
 
     // Initialize the tire test rig
     rig.SetTimeDelay(time_delay);
-    // std::cout << "Before Initialize tire test rig. line656" << std::endl;
     // rig.Initialize(ChTireTestRig::Mode::TEST);
     // rig.Initialize(ChTireTestRig::Mode::TEST, terrain_grid); //Shu added
     // rig.Initialize(ChTireTestRig::Mode::TEST, terrain_sizeX, terrain_grid); //Shu added
-    rig.Initialize(ChTireTestRig::Mode::TEST, terrain_grid, terrain_initX, terrain_initH); //Shu added
-    // rig.Initialize(ChTireTestRig::Mode::TEST, heightmap_file, terrain_sizeX, terrain_sizeY,
-    //      terrain_hMin, terrain_hMax, terrain_grid, terrain_initX, terrain_initH); //Shu added
+    rig.Initialize(ChTireTestRig::Mode::TEST, heightmap_file, terrain_sizeX, terrain_sizeY,
+         terrain_hMin, terrain_hMax, terrain_grid, terrain_initX, terrain_initH); //Shu added
     // rig.Initialize(ChTireTestRig::Mode::TEST, //heightmap_file, 
     //     terrain_sizeX, terrain_sizeY,
     //      terrain_hMin, terrain_hMax, terrain_grid); //Shu added
-    // std::cout << "After Initialize tire test rig. line665" << std::endl;
+
     // Optionally, modify tire visualization (can be done only after initialization)
     if (auto tire_def = std::dynamic_pointer_cast<ChDeformableTire>(tire)) {
         if (tire_def->GetMeshVisualization())
             tire_def->GetMeshVisualization()->SetColorscaleMinMax(0.0, 5.0);  // range for nodal speed norm
     }
-    // std::cout << "After tire_def->GetMeshVisualization()->SetColorscaleMinMax(0.0, 5.0); line672" << std::endl;
+
     // Initialize output
     if (!filesystem::create_directory(filesystem::path(out_dir))) {
         std::cout << "Error creating directory " << out_dir << std::endl;
         return 1;
     }
-    // std::cout << "line677" << std::endl;
+
     std::shared_ptr<ChVisualSystem> vis;
     if(flag_vis){
 // Create the vehicle run-time visualization interface and the interactive driver
@@ -751,9 +487,7 @@ int main(int argc, char *argv[]) {
 
     double time_offset = 2;
 
-    // auto terrain_SCM = rig.GetTerrain();
-    auto terrain_SCM = std::dynamic_pointer_cast<chrono::vehicle::SCMTerrain>(rig.GetTerrain());
-    
+    auto terrain = rig.GetTerrain();
     // TerrainForce terrain_force;
     // TerrainForce terrain_force_loc;
 
@@ -763,7 +497,7 @@ int main(int argc, char *argv[]) {
     std::ofstream ROVER_states(out_dir + "/ROVER_states_saved.txt", std::ios::trunc);
     
     double time;
-    double nstep_contactable = 0;
+    // double nstep_contactable = 0;
     double pos_x_pre = wheel_state.pos[0];
     double pos_y_pre = wheel_state.pos[1];
     for (int istep = 0; istep < num_steps; istep++) {
@@ -778,10 +512,8 @@ int main(int argc, char *argv[]) {
         //     slip_angle.AddPoint(time, tire->GetSlipAngle() * CH_C_RAD_TO_DEG);
         //     camber_angle.AddPoint(time, tire->GetCamberAngle() * CH_C_RAD_TO_DEG);
         // }
-        // std::cout << "line888" << std::endl;
+
         auto& loc = rig.GetPos();
-        // std::cout << "loc: " << loc << std::endl;
-        // std::cout << "line891" << std::endl;
         if(flag_vis){
             vis->UpdateCamera(loc + ChVector<>(1.0, 2.5, 0.5), loc + ChVector<>(0, 0.25, -0.25));
             vis->BeginScene();
@@ -789,43 +521,8 @@ int main(int argc, char *argv[]) {
             vis->EndScene();
         }
         ////tools::drawAllContactPoints(vis.get(), 1.0, ContactsDrawMode::CONTACT_NORMALS);
-        // std::cout << "vis done." << std::endl;
-        // std::cout << "line957" << std::endl;
-        // Save heightmap
-        if(flag_heightmap_save){
-            // SaveHeightmap(terrain_SCM.get(), pos_x_pre, pos_y_pre, heightmap_grid, 
-            //     heightmap_cutoff_x_backward, heightmap_cutoff_x_forward, heightmap_cutoff_y_left, 
-            //     heightmap_cutoff_y_right, out_dir, istep - ndt_HM, istep, dt);
-            
-            SaveHeightmap(terrain_SCM.get(), wheel_state.pos[0], wheel_state.pos[1], heightmap_grid, 
-                heightmap_cutoff_x_backward, heightmap_cutoff_x_forward, heightmap_cutoff_y_left,
-                heightmap_cutoff_y_right, out_dir, istep, istep, dt);
-                
-            pos_x_pre = wheel_state.pos[0];
-            pos_y_pre = wheel_state.pos[1];
-        }
-
-        // std::cout << "line900" << std::endl;
         rig.Advance(step_size);
-        //Shu
-        // if(istep < 1000){
-        //     rig.Advance(step_size);
-        // }else{
-        //     // std::cout << "rig.Advance_ML." << std::endl;
-        //     rig.Advance_ML(step_size);
-        // }
-        // rig.Advance(step_size);
-        // rig.Advance_ML(step_size);
-        // Synchronize subsystems
-        // m_terrain->Synchronize(time);
-        // m_tire->Synchronize(time, *m_terrain.get());
-        // m_spindle_body->Empty_forces_accumulators();
-        // m_wheel->Synchronize();
-        // Advance state
-        // m_terrain->Advance(step);
-        // m_tire->Advance(step);
-        // m_system->DoStepDynamics(step);
-        // std::cout << "rig.Advance done." << std::endl;
+        
 
         // Save tire forces
         // auto scm = dynamic_cast<SCMTerrain>(terrain.get());
@@ -837,10 +534,8 @@ int main(int argc, char *argv[]) {
 
         // scm->GetContactForceBody(tire_body, force, torque);
         // // terrain.get()->GetContactForceBody(tire, force, torque);
-
-        // std::cout << "line932" << std::endl;
-        auto terrain_force = tire->ReportTireForce(terrain_SCM.get());
-        // std::cout << "line934" << std::endl;
+        auto terrain_force = tire->ReportTireForce(terrain.get());
+        
         // std::cout <<"To txt:" << time << "   " << terrain_force.point << "   " << terrain_force.force << "   " << terrain_force.moment << std::endl;
         if(istep % ndt_HM == 0){
             SCM_forces << time << 
@@ -850,7 +545,7 @@ int main(int argc, char *argv[]) {
             // "   " << force <<     ///< force vector, epxressed in the global frame
             // "   " << torque <<    ///< moment vector, expressed in the global frame
             std::endl;
-            // std::cout << "line944" << std::endl;
+
             // Save vehicle states
             wheel_state = wheel->GetState();
             ROVER_states << time << 
@@ -863,13 +558,23 @@ int main(int argc, char *argv[]) {
 
         }
         
-        if(flag_save_vedio && istep % save_vedio_fps == 0){
-            std::string imgName = output_folderpath + "img_" + std::to_string(idx_vedio) + ".jpg";
-            vis->WriteImageToFile(imgName);
-            idx_vedio++;
+
+        // Save heightmap
+        if(flag_heightmap_save && istep % ndt_HM == 0){
+            if(!flag_only_phase1 || time >= time_delay){
+            SaveHeightmap(terrain.get(), pos_x_pre, pos_y_pre, heightmap_grid, 
+                heightmap_cutoff_x_backward, heightmap_cutoff_x_forward, heightmap_cutoff_y_left, 
+                heightmap_cutoff_y_right, out_dir, istep - ndt_HM, istep, dt);
+            
+            SaveHeightmap(terrain.get(), wheel_state.pos[0], wheel_state.pos[1], heightmap_grid, 
+                heightmap_cutoff_x_backward, heightmap_cutoff_x_forward, heightmap_cutoff_y_left,
+                heightmap_cutoff_y_right, out_dir, istep, istep, dt);
+                
+            pos_x_pre = wheel_state.pos[0];
+            pos_y_pre = wheel_state.pos[1];
+            }
         }
-        
-        // // std::cout << "wheel_state.pos[2]: " << wheel_state.pos[2] << ",wheel_state.lin_vel[2]:"<< wheel_state.lin_vel[2]<< ",nstep_contactable="<< nstep_contactable << std::endl;
+        // std::cout << "wheel_state.pos[2]: " << wheel_state.pos[2] << ",wheel_state.lin_vel[2]:"<< wheel_state.lin_vel[2]<< ",nstep_contactable="<< nstep_contactable << std::endl;
         // if (wheel_state.pos[2] < (terrain_initH + 0.2) && std::fabs(wheel_state.lin_vel[2]) < 0.01){
         //     nstep_contactable += 1;
         //     // std::cout << "nstep_contactable: " << nstep_contactable << std::endl;

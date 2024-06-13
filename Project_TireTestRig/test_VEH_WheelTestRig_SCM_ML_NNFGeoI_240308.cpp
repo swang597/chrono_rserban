@@ -192,11 +192,13 @@ class TerrainForceLoader : public ChLoadContainer {
     TerrainForceLoader(const std::string& input_folderpath, std::string& output_folderpath, 
     std::shared_ptr<hmmwv::HMMWV_Wheel> wheel, 
         TorchModelRunner model_runner_Img, TorchModelRunner model_runner_F, 
-        Heightmap HM, ChVector<> terrain_initLoc, float wheel_radius, float wheel_width, float heightmap_grid)
+        Heightmap HM, ChVector<> terrain_initLoc, float wheel_radius, float wheel_width, float heightmap_grid,
+        double SCM_ML_switch)
         : m_output_folderpath(output_folderpath), m_wheel(wheel), m_num_frames(10000), m_crt_frame(0), 
         m_model_runner_Img(model_runner_Img), m_model_runner_F(model_runner_F), 
         m_HM(HM), m_terrain_initLoc(terrain_initLoc), 
-        m_wheel_radius(wheel_radius), m_wheel_width(wheel_width), m_heightmap_grid(heightmap_grid){
+        m_wheel_radius(wheel_radius), m_wheel_width(wheel_width), m_heightmap_grid(heightmap_grid),
+        m_SCM_ML_switch(SCM_ML_switch){
         // ChVector<> location(terrain_initX, m_terrain_offset, terrain_initH);
         // Read normalized parameters
         std::string fn_dataPT = input_folderpath;
@@ -348,7 +350,10 @@ class TerrainForceLoader : public ChLoadContainer {
 
         
         // Hybrid 
-        if(m_wheel_state.pos[0] > 0.109){
+        // if(m_wheel_state.pos[0] > 0.109){
+        if(ChTime >= m_SCM_ML_switch){
+            std::cout << "ML ChTime=" << ChTime << std::endl;
+                
             // std::cout << "line 285" << std::endl;
             if(inV_ts_nm[0][0].item<double>() > 1.0){
                 F_ts[0][0] = 0;
@@ -388,6 +393,7 @@ class TerrainForceLoader : public ChLoadContainer {
     std::string m_output_folderpath;
     ChVector<> m_terrain_initLoc;
     float m_wheel_width, m_wheel_radius, m_heightmap_grid;
+    double m_SCM_ML_switch;
     // double m_terrain_initX, m_terrain_initY;
     // std::ofstream m_fp_I, m_fp_dI, m_fp_Vec, m_fp_F;
 };
@@ -516,7 +522,7 @@ int main(int argc, char *argv[]) {
     SetChronoDataPath("/home/swang597/Documents/Research/chrono_fork_radu/build/data/");
     SetDataPath("/home/swang597/Documents/Research/chrono_fork_radu/build/data/vehicle/");
     
-    if (argc != 8) {
+    if (argc != 9) {
         std::cout << "Wrong argv.\nUsage: " << argv[0] 
         << " <dt> <terrain_grid> <time_tot> <dt_HM> <terrain_initX> <terrain_initH> <normal_load>" << std::endl;
         return 1;
@@ -528,6 +534,7 @@ int main(int argc, char *argv[]) {
     double terrain_initX = std::stod(argv[5]); 
     double terrain_initH = std::stod(argv[6]);
     double normal_load = std::stod(argv[7]); // 1000;
+    double SCM_ML_switch = std::stod(argv[8]);
     double terrain_initY = 0.3; // Default value by ChTireTestRig.cpp
     // generate initial terrain from bmp file
     double terrain_sizeX = 50, terrain_sizeY = 1;
@@ -563,7 +570,7 @@ int main(int argc, char *argv[]) {
     // SCM_fixW_dt
     const std::string out_dir = GetChronoOutputPath() + "Hybrid_fixW_NNFGeoI_dt" + std::to_string(dt) + "_terrGrid" +
                             std::to_string(terrain_grid) + "terrX" + std::to_string(terrain_initX) + "terrH" + 
-                            std::to_string(terrain_initH)+ "normLoad" + std::to_string(normal_load);
+                            std::to_string(terrain_initH)+ "normLoad" + std::to_string(normal_load) + "_SCM2MLSwitch" + std::to_string(SCM_ML_switch) ;
 
     // Create wheel and tire subsystems
     auto wheel = chrono_types::make_shared<hmmwv::HMMWV_Wheel>("Wheel");
@@ -718,7 +725,12 @@ int main(int argc, char *argv[]) {
     
     std::string folderpath_normlized = "/home/swang597/Documents/Research/chrono_fork_radu/project_TireTestRig/build_SCM_argVx/DEMO_OUTPUT/Dataset_train_96by72_2phase_varVx_I00V0_I01F0_240227/";
     std::string model_path_Img0 = "/home/swang597/Documents/Research/Project_heightmap/Code/Pytorch_cpp_model/Model/Model_2stepNN_iDT1_img96by72_varKsize3333_varVx_I00V0_I01F0_240229/";
-    std::string model_path = "/home/swang597/Documents/Research/Project_heightmap/Code/Pytorch_cpp_model/Model/Model_2stepNN_iDT1_img96by72_varKsize3333_varVx_I00V0_I01F0_240227/";
+    
+    // Wrong small Norm Load training data model
+    // std::string model_path = "/home/swang597/Documents/Research/Project_heightmap/Code/Pytorch_cpp_model/Model/Model_2stepNN_iDT1_img96by72_varKsize3333_varVx_I00V0_I01F0_240227/";
+    // Use correct Norm Load training data model [500, 1350, 2000]
+    std::string model_path = "/home/swang597/Documents/Research/Project_heightmap/Code/Pytorch_cpp_model/Model/Model_2stepNN_iDT1_img96by72_varKsize3333_varVx_I00V0_I01F0_240329/";
+    
     std::string model_path_Img;
     std::string model_path_F;
     model_path_Img = model_path_Img0 + "modelImg_cpu.pt";
@@ -734,7 +746,7 @@ int main(int argc, char *argv[]) {
     ChVector<> terrain_initLoc(-terrain_initX + 0.5*wx, -terrain_initY + 0.5*wy, terrain_initH);
     auto terrain_ML = chrono_types::make_shared<TerrainForceLoader>(folderpath_normlized,
                         output_folderpath, wheel, model_runner_Img, model_runner_F, HM, terrain_initLoc,
-                        wheel_radius, wheel_width, heightmap_grid);
+                        wheel_radius, wheel_width, heightmap_grid, SCM_ML_switch);
     std::cout << "TerrainForceLoader done." << std::endl;
     sys->Add(terrain_ML);
     std::cout << "Add terrain done." << std::endl;
@@ -853,7 +865,10 @@ int main(int argc, char *argv[]) {
 
     double time_offset = 2;
 
-    auto terrain_SCM = rig.GetTerrain();
+    // auto terrain_SCM = rig.GetTerrain();
+    auto terrain_SCM = std::dynamic_pointer_cast<chrono::vehicle::SCMTerrain>(rig.GetTerrain());
+    
+    terrain_SCM->SetMLSwitchTime(SCM_ML_switch);
     // TerrainForce terrain_force;
     // TerrainForce terrain_force_loc;
 
