@@ -269,7 +269,7 @@ int main(int argc, char *argv[]) {
     bool flag_heightmap_save = false; //true; //
     // bool flag_only_phase1 = true; // Only dump hmap for phase 1
     bool flag_vis = true; //false; //
-    bool flag_save_vedio = false; //true; //
+    bool flag_save_vedio = true; //false; //
     // // double time_delay = sqrt(2 * std::abs(terrain_initH) / 9.81) + 0.5; //sqrt(2*abs(H)/9.81) + 0.5
     // // time_tot += time_delay;
     int num_steps = int(time_tot/dt);
@@ -284,7 +284,7 @@ int main(int argc, char *argv[]) {
                             std::to_string(terrain_grid) + "hMax"+std::to_string(terrain_hMax) +
                             "terrX" + std::to_string(terrain_initX) + "terrH" + 
                             std::to_string(terrain_initH)+ "normLoad" + std::to_string(normal_load_wheel1)+ "-"+std::to_string(normal_load_wheel2)+"fixedVx" + 
-                            std::to_string(fixed_Vx) + "_SCMRefreshNRnormal";
+                            std::to_string(fixed_Vx) + "_SCMRefreshNRnormal_timeProf";
     // const std::string out_dir = "/home/swang597/Documents/Research/chrono_fork_radu/project_TireTestRig2Wheels/build/DEMO_OUTPUT_2phase_240211/" +
     //                         "TIRE_TEST_RIG_dt" + std::to_string(dt) + "_terrGrid" +
     //                         std::to_string(terrain_grid) + "terrX" + std::to_string(terrain_initX) + "terrH" + 
@@ -553,7 +553,8 @@ int main(int argc, char *argv[]) {
 
     double time_offset = 2;
 
-    auto terrain = rig.GetTerrain();
+    // auto terrain_SCM = rig.GetTerrain();
+    auto terrain_SCM = std::dynamic_pointer_cast<chrono::vehicle::SCMTerrain>(rig.GetTerrain());
     // TerrainForce terrain_force;
     // TerrainForce terrain_force_loc;
 
@@ -564,7 +565,9 @@ int main(int argc, char *argv[]) {
     std::ofstream SCM_forces_wheel2(out_dir + "/SCM_force_wheel2.txt", std::ios::trunc);
     std::ofstream ROVER_states_wheel2(out_dir + "/ROVER_states_wheel2.txt", std::ios::trunc);
     std::string HMfilename_SCM_wheel1, HMfilename_SCM_wheel2;
-
+    std::ofstream Time_print(out_dir + "/TimeProfiling.txt", std::ios::trunc);
+    Time_print << "# Time, m_duration_all, m_duration_moving_patches, m_duration_ray_casting, m_duration_contact_patches, m_duration_contact_forces" << std::endl;
+    
     double time;
     // double pos_x_pre = wheel_state.pos[0];
     // double pos_y_pre = wheel_state.pos[1];
@@ -607,8 +610,8 @@ int main(int argc, char *argv[]) {
 
         // scm->GetContactForceBody(tire_body, force, torque);
         // // terrain.get()->GetContactForceBody(tire, force, torque);
-        auto terrain_force = tire->ReportTireForce(terrain.get());
-        auto terrain_force_wheel2 = tire2->ReportTireForce(terrain.get());
+        auto terrain_force = tire->ReportTireForce(terrain_SCM.get());
+        auto terrain_force_wheel2 = tire2->ReportTireForce(terrain_SCM.get());
         
         // std::cout <<"To txt:" << time << "   " << terrain_force.point << "   " << terrain_force.force << "   " << terrain_force.moment << std::endl;
         if(istep % ndt_HM == 0){
@@ -660,17 +663,23 @@ int main(int argc, char *argv[]) {
             HMfilename_SCM_wheel1 = out_dir + "/hmap_SCM_wheel1_t" + std::to_string(time) + ".txt";
             HMfilename_SCM_wheel2 = out_dir + "/hmap_SCM_wheel2_t" + std::to_string(time) + ".txt";
 
-            SaveHeightmap(terrain.get(), wheel_state.pos[0], wheel_state.pos[1], heightmap_grid, 
+            SaveHeightmap(terrain_SCM.get(), wheel_state.pos[0], wheel_state.pos[1], heightmap_grid, 
                 heightmap_cutoff_x_backward, heightmap_cutoff_x_forward, heightmap_cutoff_y_left,
                 heightmap_cutoff_y_right, HMfilename_SCM_wheel1, istep, istep, dt);
 
-            SaveHeightmap(terrain.get(), wheel_state_wheel2.pos[0], wheel_state_wheel2.pos[1], heightmap_grid, 
+            SaveHeightmap(terrain_SCM.get(), wheel_state_wheel2.pos[0], wheel_state_wheel2.pos[1], heightmap_grid, 
                 heightmap_cutoff_x_backward, heightmap_cutoff_x_forward, heightmap_cutoff_y_left,
                 heightmap_cutoff_y_right, HMfilename_SCM_wheel2, istep, istep, dt);
                 
             // pos_x_pre = wheel_state.pos[0];
             // pos_y_pre = wheel_state.pos[1];
             }
+        }
+
+        if(istep % 100 == 0){
+            // terrain_SCM << time << "," << std::endl;
+            // terrain_SCM->PrintAccumulateTimeProfiling(std::cout);
+            terrain_SCM->PrintAccumulateTimeProfiling(Time_print);
         }
         // std::cout << "wheel_state.pos[2]: " << wheel_state.pos[2] << ",wheel_state.lin_vel[2]:"<< wheel_state.lin_vel[2]<< ",nstep_contactable="<< nstep_contactable << std::endl;
         // if (wheel_state.pos[2] < (terrain_initH + 0.2) && std::fabs(wheel_state.lin_vel[2]) < 0.01){

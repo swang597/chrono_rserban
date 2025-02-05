@@ -40,8 +40,6 @@
 #include "chrono_sensor/filters/ChFilterAccess.h"
 #include "chrono_sensor/filters/ChFilterVisualize.h"
 
-// #include "chrono_irrlicht/ChVisualSystemIrrlicht.h"
-
 using namespace chrono;
 using namespace chrono::geometry;
 using namespace chrono::sensor;
@@ -105,8 +103,7 @@ float end_time = 20.0f;
 bool save = true;
 
 // Output directories
-// const std::string out_dir = "SENSOR_OUTPUT/";
-const std::string out_dir = "/home/swang597/Documents/Research/chrono_fork_rserban/Project_identify_constraints/build_IMU/Data/";
+const std::string out_dir = "SENSOR_OUTPUT/";
 
 int main(int argc, char* argv[]) {
     GetLog() << "Copyright (c) 2019 projectchrono.org\nChrono version: " << CHRONO_VERSION << "\n\n";
@@ -148,20 +145,6 @@ int main(int argc, char* argv[]) {
     link2->Initialize(pendulum_leg_1, pendulum_leg_2,
                       ChCoordsys<>({0, .4, 1}, chrono::Q_from_AngAxis(CH_C_PI / 2, VECT_Y)));
     sys.AddLink(link2);
-
-    // // Shu: Create the Irrlicht visualization system
-    // ChVisualSystemIrrlicht vis;
-    // vis.SetWindowSize(800, 600);
-    // vis.SetWindowTitle("Double Pendulum Simulation");
-    // vis.Initialize();
-    // vis.AddLogo();
-    // vis.AddSkyBox();
-    // vis.AddTypicalLights();
-    // vis.AddCamera(ChVector<>(2, 2, -5), ChVector<>(0, 1, 0));
-    // vis.AttachSystem(&sys);
-    // // Add global coordinate system to the visualization
-    // // vis.RenderCOGFrames(1.0); // The parameter is the scale of the axes
-
 
     // -----------------------
     // Create a sensor manager
@@ -313,13 +296,6 @@ int main(int argc, char* argv[]) {
     ChVector<double> axis;
 
     while (ch_time < end_time) {
-        // // Shu:Render scene
-        // vis.BeginScene();
-        // vis.Render();
-        // vis.RenderCOGFrames(1.0);
-        // vis.RenderFrame(ChFrame<>(), 10);
-        // vis.EndScene();
-
         plate->SetRot(Q_from_AngZ(rot_rate * ch_time));
         // Get the most recent imu data
         bufferAcc = acc->GetMostRecentBuffer<UserAccelBufferPtr>();
@@ -335,7 +311,6 @@ int main(int argc, char* argv[]) {
             plate->GetRot().Q_to_AngAxis(ang, axis);
 
             imu_csv << std::fixed << std::setprecision(6);
-            imu_csv << ch_time;
             imu_csv << acc_data.X;
             imu_csv << acc_data.Y;
             imu_csv << acc_data.Z;
@@ -355,7 +330,6 @@ int main(int argc, char* argv[]) {
             // Save the gps data to file
             GPSData gps_data = bufferGPS->Buffer[0];
             gps_csv << std::fixed << std::setprecision(6);
-            gps_csv << ch_time;              // Time
             gps_csv << gps_data.Latitude;   // Latitude
             gps_csv << gps_data.Longitude;  // Longitude
             gps_csv << gps_data.Altitude;   // Altitude

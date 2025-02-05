@@ -650,6 +650,38 @@ void ChTireTestRig2Wheels::CreateMechanism(Mode mode) {
                                                 ChVector<>(0, 0, 0),         //
                                                 ChVector<>(0, -3 * dim, 0),  //
                                                 dim / 2);
+    // Shu:241130
+    // Add bar connecting the two spindles
+    // Define the rigid body (bar)
+    auto bar = std::shared_ptr<ChBody>(m_system->NewBody());
+    m_system->AddBody(bar);
+    bar->SetName("connecting_bar");
+    bar->SetIdentifier(9);
+
+    // Set mass and inertia of the bar
+    bar->SetMass(0.001); // Small mass
+    bar->SetInertiaXX(ChVector<>(0.1, 0.1, 0.1)); // Small inertia
+
+    // Set position of the bar (midpoint between the two spindles)
+    bar->SetPos(ChVector<>(
+        (m_spindle_body->GetPos().x() + m_spindle_body2->GetPos().x()) / 2.0,
+        (m_spindle_body->GetPos().y() + m_spindle_body2->GetPos().y()) / 2.0,
+        (m_spindle_body->GetPos().z() + m_spindle_body2->GetPos().z()) / 2.0));
+
+    // Add a visualization shape to the bar (for debugging)
+    auto box_bar_spindles = chrono_types::make_shared<ChBoxShape>(m_dx_2wheels, 0.01, 0.01); // Size matches wheel separation
+    bar->AddVisualShape(box_bar_spindles);
+
+    // Connect the bar to the first spindle using a spherical joint
+    auto joint1 = chrono_types::make_shared<ChLinkLockSpherical>();
+    joint1->Initialize(bar, m_spindle_body, ChCoordsys<>(m_spindle_body->GetPos()));
+    m_system->AddLink(joint1);
+
+    // Connect the bar to the second spindle using a spherical joint
+    auto joint2 = chrono_types::make_shared<ChLinkLockSpherical>();
+    joint2->Initialize(bar, m_spindle_body2, ChCoordsys<>(m_spindle_body2->GetPos()));
+    m_system->AddLink(joint2);
+    // Shu.
 
     // Create joints and motors for the second tire
     if (mode == Mode::TEST && m_ls_actuated) {

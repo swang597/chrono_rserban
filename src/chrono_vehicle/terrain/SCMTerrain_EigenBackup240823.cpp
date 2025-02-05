@@ -39,6 +39,9 @@
 
 #include "chrono_thirdparty/stb/stb.h"
 
+#include <Eigen/Dense>
+#include <vector>
+
 namespace chrono {
 namespace vehicle {
 
@@ -337,13 +340,46 @@ void SCMTerrain::PrintStepStatistics(std::ostream& os) const {
 //Shu:240325 add for time profiling
 /// Print timing and counter information for last step.
 void SCMTerrain::PrintAccumulateTimeProfiling(std::ostream& os) const {
-    // os << " Timers (ms):" << std::endl;
+    // os << " Timers (ms):    "  << m_loader->ChTime << std::endl;
     // os << "m_duration_computeF" << m_loader->m_duration_all.count() << std::endl;
-    os << m_loader->m_duration_all.count()<<","<<m_loader->m_duration_moving_patches.count()<<","<<m_loader->m_duration_ray_casting.count()<<","
+    os << m_loader->ChTime <<"," << m_loader->m_duration_all.count()<<","<<m_loader->m_duration_moving_patches.count()<<","
+        <<m_loader->m_duration_ray_casting.count()<<","
         <<m_loader->m_duration_contact_patches.count()<<","<<m_loader->m_duration_contact_forces.count()<< std::endl;
+
+
 }
 
 void SCMTerrain::SetMLSwitchTime(double time) { m_loader->m_SCM_ML_switch = time; }
+
+void SCMTerrain::SetWheels(std::vector<std::shared_ptr<ChBody>>& wheels) { 
+    m_loader->m_wheels = wheels; 
+}
+
+void SCMTerrain::SetVectorizedSinkage(){
+    const double gridCellSize = m_loader->m_delta; // Size of each grid cell
+    Eigen::MatrixXd wheelSurfaceHeight(m_loader->m_gridSizeX, m_loader->m_gridSizeY);
+    const int cx_idx = 42; // index of center of wheel in X direction in local height map
+    const int cy_idx = 36; // index of center of wheel in Y direction in local height map
+    double cx_loc = cx_idx * gridCellSize, cy_loc = cy_idx * gridCellSize;
+    // Wheel information
+    m_loader->m_wheelRadius = 0.2145; // Wheel radius
+    m_loader->m_wheelWidth = 0.256; // Wheel width
+
+    Eigen::VectorXd x = Eigen::VectorXd::LinSpaced(m_loader->m_gridSizeX, 0, (m_loader->m_gridSizeX - 1) * gridCellSize);
+    Eigen::VectorXd y = Eigen::VectorXd::LinSpaced(m_loader->m_gridSizeY, 0, (m_loader->m_gridSizeY - 1) * gridCellSize);
+
+    Eigen::MatrixXd x2d_loc = x.replicate(1, m_loader->m_gridSizeY);
+    Eigen::MatrixXd y2d_loc = y.transpose().replicate(m_loader->m_gridSizeX, 1);
+
+    Eigen::MatrixXd dy_2d_loc;
+    Eigen::MatrixXd heightMap(m_loader->m_gridSizeX, m_loader->m_gridSizeY); // Initialize this from grid data
+    
+
+    m_loader->m_dx_2d_loc = x2d_loc.array() - cx_loc;
+    dy_2d_loc = y2d_loc.array() - cy_loc;
+    m_loader->m_withinWidth = (dy_2d_loc.array().abs() < m_loader->m_wheelWidth / 2).cast<double>();
+    m_loader->m_withinRadius = (m_loader->m_dx_2d_loc.array().abs() < m_loader->m_wheelRadius).cast<double>();
+}
 //Shu.
 
 // -----------------------------------------------------------------------------
@@ -862,6 +898,43 @@ double SCMLoader::GetInitHeight(const ChVector<>& loc) const {
     return ChWorldFrame::Height(loc_abs);
 }
 
+// // Get the initial terrain height below the specified location.
+// double SCMLoader::GetInitHeight(const ChVector<>& loc) const {
+//     // Express location in the SCM frame
+//     ChVector<> loc_loc = m_plane.TransformPointParentToLocal(loc);
+
+//     // Get the indices of the four nearest grid vertices
+//     double x_index = loc_loc.x() / m_delta;
+//     double y_index = loc_loc.y() / m_delta;
+
+//     int i0 = static_cast<int>(std::floor(x_index));
+//     int i1 = i0 + 1;
+//     int j0 = static_cast<int>(std::floor(y_index));
+//     int j1 = j0 + 1;
+
+//     // Calculate the relative distances to the grid points
+//     double tx = (x_index - i0);
+//     double ty = (y_index - j0);
+
+//     // Get heights at the four nearest grid vertices
+//     double h00 = GetInitHeight(ChVector2<int>(i0, j0));
+//     double h10 = GetInitHeight(ChVector2<int>(i1, j0));
+//     double h01 = GetInitHeight(ChVector2<int>(i0, j1));
+//     double h11 = GetInitHeight(ChVector2<int>(i1, j1));
+
+//     // Perform bilinear interpolation
+//     double h0 = (1 - tx) * h00 + tx * h10;
+//     double h1 = (1 - tx) * h01 + tx * h11;
+//     double height = (1 - ty) * h0 + ty * h1;
+
+//     // Set the interpolated height
+//     loc_loc.z() = height;
+
+//     // Express in global frame
+//     ChVector<> loc_abs = m_plane.TransformPointLocalToParent(loc_loc);
+//     return ChWorldFrame::Height(loc_abs);
+// }
+
 // Get the initial terrain normal at the point below the specified location.
 ChVector<> SCMLoader::GetInitNormal(const ChVector<>& loc) const {
     // Express location in the SCM frame
@@ -876,6 +949,43 @@ ChVector<> SCMLoader::GetInitNormal(const ChVector<>& loc) const {
     auto nrm_abs = m_plane.TransformDirectionLocalToParent(nrm_loc);
     return ChWorldFrame::FromISO(nrm_abs);
 }
+// // Get the initial terrain normal at the point below the specified location.
+// ChVector<> SCMLoader::GetInitNormal(const ChVector<>& loc) const {
+//     // Express location in the SCM frame
+//     ChVector<> loc_loc = m_plane.TransformPointParentToLocal(loc);
+
+//     // Get the indices of the four nearest grid vertices
+//     double x_index = loc_loc.x() / m_delta;
+//     double y_index = loc_loc.y() / m_delta;
+
+//     int i0 = static_cast<int>(std::floor(x_index));
+//     int i1 = i0 + 1;
+//     int j0 = static_cast<int>(std::floor(y_index));
+//     int j1 = j0 + 1;
+
+//     // Calculate the relative distances to the grid points
+//     double tx = (x_index - i0);
+//     double ty = (y_index - j0);
+
+//     // Get normals at the four nearest grid vertices
+//     ChVector<> nrm00 = GetInitNormal(ChVector2<int>(i0, j0));
+//     ChVector<> nrm10 = GetInitNormal(ChVector2<int>(i1, j0));
+//     ChVector<> nrm01 = GetInitNormal(ChVector2<int>(i0, j1));
+//     ChVector<> nrm11 = GetInitNormal(ChVector2<int>(i1, j1));
+
+//     // Perform bilinear interpolation
+//     ChVector<> nrm0 = (1 - tx) * nrm00 + tx * nrm10;
+//     ChVector<> nrm1 = (1 - tx) * nrm01 + tx * nrm11;
+//     ChVector<> nrm_loc = (1 - ty) * nrm0 + ty * nrm1;
+
+//     // Normalize the interpolated normal
+//     nrm_loc.Normalize();
+
+//     // Express in global frame
+//     auto nrm_abs = m_plane.TransformDirectionLocalToParent(nrm_loc);
+//     return ChWorldFrame::FromISO(nrm_abs);
+// }
+
 
 // Get the terrain height below the specified location.
 double SCMLoader::GetHeight(const ChVector<>& loc) const {
@@ -892,6 +1002,43 @@ double SCMLoader::GetHeight(const ChVector<>& loc) const {
     return ChWorldFrame::Height(loc_abs);
 }
 
+// // Get the terrain height below the specified location.
+// double SCMLoader::GetHeight(const ChVector<>& loc) const {
+//     // Express location in the SCM frame
+//     ChVector<> loc_loc = m_plane.TransformPointParentToLocal(loc);
+
+//     // Get the indices of the four nearest grid vertices
+//     double x_index = loc_loc.x() / m_delta;
+//     double y_index = loc_loc.y() / m_delta;
+    
+//     int i0 = static_cast<int>(std::floor(x_index));
+//     int i1 = i0 + 1;
+//     int j0 = static_cast<int>(std::floor(y_index));
+//     int j1 = j0 + 1;
+
+//     // Calculate the relative distances to the grid points
+//     double tx = (x_index - i0);
+//     double ty = (y_index - j0);
+
+//     // Get heights at the four nearest grid vertices
+//     double h00 = GetHeight(ChVector2<int>(i0, j0));
+//     double h10 = GetHeight(ChVector2<int>(i1, j0));
+//     double h01 = GetHeight(ChVector2<int>(i0, j1));
+//     double h11 = GetHeight(ChVector2<int>(i1, j1));
+
+//     // Perform bilinear interpolation
+//     double h0 = (1 - tx) * h00 + tx * h10;
+//     double h1 = (1 - tx) * h01 + tx * h11;
+//     double height = (1 - ty) * h0 + ty * h1;
+
+//     // Set the interpolated height
+//     loc_loc.z() = height;
+
+//     // Express in global frame
+//     ChVector<> loc_abs = m_plane.TransformPointLocalToParent(loc_loc);
+//     return ChWorldFrame::Height(loc_abs);
+// }
+
 // Get the terrain normal at the point below the specified location.
 ChVector<> SCMLoader::GetNormal(const ChVector<>& loc) const {
     // Express location in the SCM frame
@@ -906,6 +1053,43 @@ ChVector<> SCMLoader::GetNormal(const ChVector<>& loc) const {
     auto nrm_abs = m_plane.TransformDirectionLocalToParent(nrm_loc);
     return ChWorldFrame::FromISO(nrm_abs);
 }
+// // Get the terrain normal at the point below the specified location.
+// ChVector<> SCMLoader::GetNormal(const ChVector<>& loc) const {
+//     // Express location in the SCM frame
+//     ChVector<> loc_loc = m_plane.TransformPointParentToLocal(loc);
+
+//     // Get the indices of the four nearest grid vertices
+//     double x_index = loc_loc.x() / m_delta;
+//     double y_index = loc_loc.y() / m_delta;
+
+//     int i0 = static_cast<int>(std::floor(x_index));
+//     int i1 = i0 + 1;
+//     int j0 = static_cast<int>(std::floor(y_index));
+//     int j1 = j0 + 1;
+
+//     // Calculate the relative distances to the grid points
+//     double tx = (x_index - i0);
+//     double ty = (y_index - j0);
+
+//     // Get normals at the four nearest grid vertices
+//     ChVector<> nrm00 = GetNormal(ChVector2<int>(i0, j0));
+//     ChVector<> nrm10 = GetNormal(ChVector2<int>(i1, j0));
+//     ChVector<> nrm01 = GetNormal(ChVector2<int>(i0, j1));
+//     ChVector<> nrm11 = GetNormal(ChVector2<int>(i1, j1));
+
+//     // Perform bilinear interpolation
+//     ChVector<> nrm0 = (1 - tx) * nrm00 + tx * nrm10;
+//     ChVector<> nrm1 = (1 - tx) * nrm01 + tx * nrm11;
+//     ChVector<> nrm_loc = (1 - ty) * nrm0 + ty * nrm1;
+
+//     // Normalize the interpolated normal
+//     nrm_loc.Normalize();
+
+//     // Express in global frame
+//     auto nrm_abs = m_plane.TransformDirectionLocalToParent(nrm_loc);
+//     return ChWorldFrame::FromISO(nrm_abs);
+// }
+
 
 // Synchronize information for a moving patch
 void SCMLoader::UpdateMovingPatch(MovingPatchInfo& p, const ChVector<>& Z) {
@@ -1108,13 +1292,11 @@ void SCMLoader::ComputeInternalForces() {
     auto end_moving_patches = std::chrono::high_resolution_clock::now();
     m_timer_moving_patches.stop();
 
-    // -------------------------
-    // Perform ray casting tests
-    // -------------------------
 
     // Information of vertices with ray-cast hits
     struct HitRecord {
-        ChContactable* contactable;  // pointer to hit object
+        // ChContactable* contactable;  // pointer to hit object
+        ChBody* contactable;  // pointer to hit object
         ChVector<> abs_point;        // hit point, expressed in global frame
         int patch_id;                // index of associated patch id
     };
@@ -1125,140 +1307,154 @@ void SCMLoader::ComputeInternalForces() {
     m_num_ray_casts = 0;
     m_num_ray_hits = 0;
 
+    // -------------------------
+    // Shu: 240612 added v
+    // Efficient grid-based sinkage computation with Eigen
+    // -------------------------
     m_timer_ray_casting.start();
     auto start_ray_casting = std::chrono::high_resolution_clock::now();
-#ifdef RAY_CASTING_WITH_CRITICAL_SECTION
 
-    int nthreads = GetSystem()->GetNumThreadsChrono();
+    // Pre-compute the wheel surface height map
+    const double gridCellSize = m_delta; // Size of each grid cell
+    Eigen::MatrixXd wheelSurfaceHeight(m_gridSizeX, m_gridSizeY);
+    Eigen::MatrixXd heightMap(m_gridSizeX, m_gridSizeY); // Initialize this from grid data
+    double x_grid_global, y_grid_global, z_grid_global;
+    ChVector<> SCM_point_hit_loc, SCM_point_hit_abs;
+    double heightmap_cutoff_y_left = 0.18;
+    double heightmap_cutoff_y_right = 0.18;
+    double heightmap_cutoff_x_backward = 0.21;
+    double heightmap_cutoff_x_forward = 0.27;
+    std::vector<double> xVec, yVec;
+    Eigen::MatrixXd belowCurrentHeight, mask;
+    // std::cout << "m_wheels.size(): " << m_wheels.size() << std::endl;
+    for(int iwheel = 0; iwheel < m_wheels.size(); iwheel++) {
+        // std::cout << "iwheel: " << iwheel << std::endl;
+        ChVector<> wheelCenter = m_wheels[iwheel]->GetPos(); // Wheel center position
+        // std::cout << "line 1181, wheelCenter: " << wheelCenter.x() << ", " << wheelCenter.y() << ", " << wheelCenter.z() << std::endl;
+        // Get heightMap from the grid 
+        for (double x = wheelCenter.x() - heightmap_cutoff_x_backward; 
+                x < wheelCenter.x() + heightmap_cutoff_x_forward; 
+                x += m_delta) { xVec.push_back(x);  }
 
-    // Loop through all moving patches (user-defined or default one)
-    for (auto& p : m_patches) {
-        // Loop through all vertices in the patch range
-        int num_ray_casts = 0;
-    #pragma omp parallel for num_threads(nthreads) reduction(+ : num_ray_casts)
-        for (int k = 0; k < p.m_range.size(); k++) {
-            ChVector2<int> ij = p.m_range[k];
+        for (double y = wheelCenter.y() - heightmap_cutoff_y_left; 
+                y < wheelCenter.y() + heightmap_cutoff_y_right; 
+                y += m_delta) { yVec.push_back(y);  }
 
-            // Move from (i, j) to (x, y, z) representation in the world frame
-            double x = ij.x() * m_delta;
-            double y = ij.y() * m_delta;
-            double z;
-    #pragma omp critical(SCM_ray_casting)
-            z = GetHeight(ij);
-
-            ChVector<> vertex_abs = m_plane.TransformPointLocalToParent(ChVector<>(x, y, z));
-
-            // Create ray at current grid location
-            collision::ChCollisionSystem::ChRayhitResult mrayhit_result;
-            ChVector<> to = vertex_abs + m_Z * m_test_offset_up;
-            ChVector<> from = to - m_Z * m_test_offset_down;
-
-            // Ray-OBB test (quick rejection)
-            if (m_moving_patch && !RayOBBtest(p, from, m_Z))
-                continue;
-
-            // Cast ray into collision system
-            GetSystem()->GetCollisionSystem()->RayHit(from, to, mrayhit_result);
-            num_ray_casts++;
-
-            if (mrayhit_result.hit) {
-    #pragma omp critical(SCM_ray_casting)
-                {
-                    // If this is the first hit from this node, initialize the node record
-                    if (m_grid_map.find(ij) == m_grid_map.end()) {
-                        m_grid_map.insert(std::make_pair(ij, NodeRecord(z, z, GetInitNormal(ij))));
-                    }
-
-                    // Add to our map of hits to process
-                    HitRecord record = {mrayhit_result.hitModel->GetContactable(), mrayhit_result.abs_hitPoint, -1};
-                    hits.insert(std::make_pair(ij, record));
-                    m_num_ray_hits++;
-                }
+        while(xVec.size() > m_gridSizeX){   xVec.pop_back();   }
+        while(yVec.size() > m_gridSizeY){   yVec.pop_back();   }   
+        // Populate the matrix with heights
+        for (size_t ix = 0; ix < xVec.size(); ++ix) {
+            for (size_t iy = 0; iy < yVec.size(); ++iy) {
+                // Assuming GetHeight takes a vector and returns the height.
+                heightMap(ix, iy) = GetHeight(ChVector<>(xVec[ix], yVec[iy], 10));
             }
         }
-        m_num_ray_casts += num_ray_casts;
-    }
-
-#else
-
-    // Map-reduce approach (to eliminate critical section)
-
-    const int nthreads = GetSystem()->GetNumThreadsChrono();
-    std::vector<std::unordered_map<ChVector2<int>, HitRecord, CoordHash>> t_hits(nthreads);
-
-    // Loop through all moving patches (user-defined or default one)
-    for (auto& p : m_patches) {
-        m_timer_ray_testing.start();
-        // auto start_ray_testing = std::chrono::high_resolution_clock::now();
-        // Loop through all vertices in the patch range
-        int num_ray_casts = 0;
-    #pragma omp parallel for num_threads(nthreads) reduction(+ : num_ray_casts)
-        for (int k = 0; k < p.m_range.size(); k++) {
-            int t_num = ChOMP::GetThreadNum();
-            ChVector2<int> ij = p.m_range[k];
-
-            // Move from (i, j) to (x, y, z) representation in the world frame
-            double x = ij.x() * m_delta;
-            double y = ij.y() * m_delta;
-            double z = GetHeight(ij);
-
-            ChVector<> vertex_abs = m_plane.TransformPointLocalToParent(ChVector<>(x, y, z));
-
-            // Create ray at current grid location
-            collision::ChCollisionSystem::ChRayhitResult mrayhit_result;
-            ChVector<> to = vertex_abs + m_Z * m_test_offset_up;
-            ChVector<> from = to - m_Z * m_test_offset_down;
-
-            // Ray-OBB test (quick rejection)
-            if (m_moving_patch && !RayOBBtest(p, from, m_Z))
-                continue;
-
-            // Cast ray into collision system
-            GetSystem()->GetCollisionSystem()->RayHit(from, to, mrayhit_result);
-            num_ray_casts++;
-
-            if (mrayhit_result.hit) {
-                // Add to our map of hits to process
-                HitRecord record = {mrayhit_result.hitModel->GetContactable(), mrayhit_result.abs_hitPoint, -1};
-                t_hits[t_num].insert(std::make_pair(ij, record));
-            }
-        }
-        // auto end_ray_testing = std::chrono::high_resolution_clock::now();
-        m_timer_ray_testing.stop();
-
-        m_num_ray_casts += num_ray_casts;
+        // std::cout << "line 1199" << std::endl;
+        wheelSurfaceHeight = wheelCenter.z() - (m_wheelRadius * m_wheelRadius - m_dx_2d_loc.array().square()).sqrt();
+        // std::cout << "line 1354" << std::endl;
+        // std::cout << "wheelSurfaceHeight.size(): " << wheelSurfaceHeight.size() << std::endl;
+        // belowCurrentHeight = (wheelSurfaceHeight.array() - heightMap.array() < 1e-3).cast<double>();
+        belowCurrentHeight = (wheelSurfaceHeight.array() - heightMap.array() < 0).cast<double>();
+        // std::cout << "line 1357" << std::endl;
+        mask = (m_withinWidth.array() * m_withinRadius.array() * belowCurrentHeight.array()).cast<double>();
+        // std::cout << "line 1359" << std::endl;
+        // heightMap = mask.array() * wheelSurfaceHeight.array() + (1 - mask.array()) * heightMap.array();
+        // print the number of masked cells
         
-        // Sequential insertion in global hits
-        for (int t_num = 0; t_num < nthreads; t_num++) {
-            for (auto& h : t_hits[t_num]) {
-                // If this is the first hit from this node, initialize the node record
-                if (m_grid_map.find(h.first) == m_grid_map.end()) {
-                    double z = GetInitHeight(h.first);
-                    m_grid_map.insert(std::make_pair(h.first, NodeRecord(z, z, GetInitNormal(h.first))));
-                }
-                ////hits.insert(h);
+        // std::cout << "SCM.cpp:time="<<ChTime <<",wheel" << iwheel << ",mask.sum()=" << mask.sum() << std::endl;
 
-                //Shu:240516 added refresh NodeRecord
-                ChVector2<> ij = h.first;
-                auto& nr = m_grid_map.at(ij);      // node record
-                if(ChTime - nr.pre_contact_time > 2) { // if pre_contact_time is too long, reset the pre_contact info.
-                    // nr = NodeRecord(nr.level, nr.level, nr.normal);
-                    nr = NodeRecord(nr.level, nr.level, GetNormal(ij));
-                }
-                nr.pre_contact_time = ChTime;
+            // if(mask.sum() <= 0 && iwheel == 0){
+            //     std::cout << "Front mask=0: time="<<ChTime  << std::endl;    
+            // }
             
-                //Shu.
+            // if(mask.sum() <= 0 && iwheel == 1){
+            //     std::cout << "Rear mask=0: time="<<ChTime << std::endl;    
+            // }
+
+        
+        // Update the terrain height map based on the wheel surface height map
+        // Sequential insertion in global hits
+        // std::unordered_map<ChVector2<int>, HitRecord, CoordHash> hits;
+        // std::cout << "line 1374" << std::endl;
+        for (int i_loc = 0; i_loc < m_gridSizeX; ++i_loc) {
+            for (int j_loc = 0; j_loc < m_gridSizeY; ++j_loc) {
+                if(!mask(i_loc, j_loc)) {
+                    continue;
+                }
+                // std::cout << "i_loc: " << i_loc << " j_loc: " << j_loc << std::endl;
+                // convert i_loc, j_loc to i, j
+                x_grid_global = (i_loc - m_cx_idx) * gridCellSize + wheelCenter.x();
+                y_grid_global = (j_loc - m_cy_idx) * gridCellSize + wheelCenter.y();
+                z_grid_global = wheelSurfaceHeight(i_loc, j_loc);
+                SCM_point_hit_abs = ChVector<>(x_grid_global, y_grid_global, z_grid_global);
+                SCM_point_hit_loc = m_plane.TransformPointParentToLocal(SCM_point_hit_abs);
+                ChVector2<int> ij(std::round(SCM_point_hit_loc.x()/m_delta), std::round(SCM_point_hit_loc.y()/m_delta));
+                // std::cout << "line 1216, SCM_point_hit_abs=" << x_grid_global << ", " << y_grid_global << "," << z_grid_global << 
+                //     "SCM_point_hit_loc=" << SCM_point_hit_loc.x() <<"," << SCM_point_hit_loc.y() <<"," << SCM_point_hit_loc.z() << 
+                //     "ij=" << ij.x()<<","<<ij.y()<< 
+                //     std::endl;
+
+                // std::cout << "line 1221" << std::endl;
+                // If this is the first hit from this node, initialize the node record
+                if (m_grid_map.find(ij) == m_grid_map.end()) {
+                    double z = GetInitHeight(ij);
+                    NodeRecord nr = NodeRecord(z, z, GetInitNormal(ij));
+                    nr.pre_contact_time = ChTime;
+                    m_grid_map.insert(std::make_pair(ij, nr));
+                    // m_grid_map.insert(std::make_pair(ij, NodeRecord(z, z, GetInitNormal(ij))));
+                    // auto& nr = m_grid_map.at(ij);
+                    // nr.pre_contact_time = ChTime;
+                    // std::cout << "New NR: time="<<ChTime <<", pre_contact_time=" << nr.pre_contact_time<<", ij=" << ij.x() << "," << ij.y() << std::endl;
+                }
+                else{
+                    //Shu:240516 added refresh NodeRecord
+                    auto& nr = m_grid_map.at(ij);
+                    if(ChTime - nr.pre_contact_time > 2) { // if pre_contact_time is too long, reset the pre_contact info.
+                        nr.level_initial = nr.level;
+                        nr.hit_level = 1e9;
+                        nr.normal = GetInitNormal(ij);
+                        nr.sinkage = 0;
+                        nr.sinkage_elastic = 0;
+                        nr.sinkage_plastic = 0;
+                        nr.sigma = 0;
+                        nr.sigma_yield = 0;
+                        nr.kshear = 0;
+                        nr.tau = 0;
+                        nr.erosion = false;
+                        nr.massremainder = 0;
+                        nr.step_plastic_flow = 0;
+                        nr.pre_contact_time = ChTime;
+                        // nr = NodeRecord(nr.level, nr.level, GetNormal(ij));
+                        // std::cout << "time="<<ChTime <<", pre_contact_time=" << nr.pre_contact_time<<", ij=" << ij.x() << "," << ij.y() << std::endl;
+                    }
+                    // std::cout << "Found NR: time="<<ChTime <<", pre_contact_time=" << nr.pre_contact_time<<", ij=" << ij.x() << "," << ij.y() << std::endl;
+                    // nr.pre_contact_time = ChTime;
+                    // std::cout << "Updated NR: time="<<ChTime <<", pre_contact_time=" << nr.pre_contact_time<<", ij=" << ij.x() << "," << ij.y() << std::endl;
+                    
+                }
+
+                
+                
+                // std::cout << "line 1234" << std::endl;
+                // ChVector<> SCM_point_hit_abs = m_plane.TransformPointLocalToParent(ChVector<>(x_grid_global, y_grid_global, z_grid_global));
+                HitRecord record = {m_wheels[iwheel].get(), SCM_point_hit_abs, -1};  // Convert shared_ptr to raw pointer
+                // HitRecord record = {m_wheels[iwheel], SCM_point_hit_abs, -1};
+                // std::cout << "line 1237" << std::endl;
+                hits.insert(std::make_pair(ij, record));
+                // std::cout << "line 1239" << std::endl;
             }
-
-            hits.insert(t_hits[t_num].begin(), t_hits[t_num].end());
-            t_hits[t_num].clear();
         }
-        m_num_ray_hits = (int)hits.size();
     }
-
-#endif
+    // std::cout << "line 1444" << std::endl;
+    m_num_ray_casts = m_gridSizeX * m_gridSizeY;
+    m_num_ray_hits = (int)hits.size();
+    // std::cout << "line 1246" << std::endl;
     auto end_ray_casting = std::chrono::high_resolution_clock::now();
+    // std::cout << "line 1248" << std::endl;
     m_timer_ray_casting.stop();
+    // -------------------------
+    // Shu: 240612 added ^.
+    // -------------------------
 
     // --------------------
     // Find contact patches
@@ -1275,7 +1471,7 @@ void SCMLoader::ComputeInternalForces() {
         double oob;                         // approximate value of 1/b
     };
     std::vector<ContactPatchRecord> contact_patches;
-
+    // std::cout << "line 1470" << std::endl;
     // Loop through all hit nodes and determine to which contact patch they belong.
     // Use a queue-based flood-filling algorithm based on the neighbors of each hit node.
     m_num_contact_patches = 0;
@@ -1294,14 +1490,14 @@ void SCMLoader::ComputeInternalForces() {
         // Add current node to the work queue
         std::queue<ChVector2<int>> todo;
         todo.push(ij);
-
+        // std::cout << "line 1428" << std::endl;
         while (!todo.empty()) {
             auto crt = hits.find(todo.front());  // Current hit node is first element in queue
             todo.pop();                          // Remove first element from queue
 
             ChVector2<int> crt_ij = crt->first;
             int crt_patch = crt->second.patch_id;
-
+            // std::cout << "line 1435" << std::endl;
             // Loop through the neighbors of the current hit node
             for (int k = 0; k < 4; k++) {
                 ChVector2<int> nbr_ij = crt_ij + neighbors4[k];
@@ -1323,7 +1519,7 @@ void SCMLoader::ComputeInternalForces() {
         }
         contact_patches.push_back(patch);
     }
-
+    // std::cout << "line 1518" << std::endl;
     // Calculate area and perimeter of each contact patch.
     // Calculate approximation to Beker term 1/b.
     for (auto& p : contact_patches) {
@@ -1338,7 +1534,7 @@ void SCMLoader::ComputeInternalForces() {
     }
     auto end_contact_patches = std::chrono::high_resolution_clock::now();
     m_timer_contact_patches.stop();
-
+    // std::cout << "line 1472" << std::endl;
     // ----------------------
     // Compute contact forces
     // ----------------------
@@ -1354,7 +1550,7 @@ void SCMLoader::ComputeInternalForces() {
     double Janosi_shear = m_Janosi_shear;
     double elastic_K = m_elastic_K;
     double damping_R = m_damping_R;
-
+    // std::cout << "line 1488, hits.size()" << hits.size() << std::endl;
     // Process only hit nodes
     for (auto& h : hits) {
         ChVector2<> ij = h.first;
@@ -1362,10 +1558,11 @@ void SCMLoader::ComputeInternalForces() {
         auto& nr = m_grid_map.at(ij);      // node record
         const double& ca = nr.normal.z();  // cosine of angle between local normal and SCM plane vertical
 
-        ChContactable* contactable = h.second.contactable;
+        // ChContactable* contactable = h.second.contactable;
+        ChBody* contactable = h.second.contactable;
         const ChVector<>& hit_point_abs = h.second.abs_point;
         int patch_id = h.second.patch_id;
-
+        // std::cout << "line 1561" << std::endl;
         auto hit_point_loc = m_plane.TransformPointParentToLocal(hit_point_abs);
 
         if (m_soil_fun) {
@@ -1374,40 +1571,42 @@ void SCMLoader::ComputeInternalForces() {
                             elastic_K, damping_R);
             Mohr_mu = std::tan(Mohr_friction * CH_C_DEG_TO_RAD);
         }
-
+        // std::cout << "line 1508" << std::endl;
         nr.hit_level = hit_point_loc.z();                              // along SCM z axis
         double p_hit_offset = ca * (nr.level_initial - nr.hit_level);  // along local normal direction
-
+        // std::cout << "line 1511" << std::endl;
         // Elastic try (along local normal direction)
         nr.sigma = elastic_K * (p_hit_offset - nr.sinkage_plastic);
-
+        // std::cout << "line 1514" << std::endl;
         // Handle unilaterality
         if (nr.sigma < 0) {
             nr.sigma = 0;
             continue;
         }
-
+        // std::cout << "line 1520" << std::endl;
         // Mark current node as modified
         m_modified_nodes.push_back(ij);
-
+        // std::cout << "line 1523, m_modified_nodes.size()" << m_modified_nodes.size() << std::endl;
         // Calculate velocity at touched grid node
-        ChVector<> point_local(ij.x() * m_delta, ij.y() * m_delta, nr.level);
-        ChVector<> point_abs = m_plane.TransformPointLocalToParent(point_local);
-        ChVector<> speed_abs = contactable->GetContactPointSpeed(point_abs);
-
+        // ChVector<> speed_abs = CalculateContactPointSpeed(contactable, hit_point_abs);
+        ChVector<> m_p1_loc = contactable->TransformPointParentToLocal(hit_point_abs);
+        ChVector<> speed_abs = contactable->PointSpeedLocalToParent(m_p1_loc);
+        ChVector<> point_abs = hit_point_abs;
+        
         // Calculate normal and tangent directions (expressed in absolute frame)
         ChVector<> N = m_plane.TransformDirectionLocalToParent(nr.normal);
+        // std::cout << "line 1533" << std::endl;
         double Vn = Vdot(speed_abs, N);
         ChVector<> T = -(speed_abs - Vn * N);
         T.Normalize();
-
+        // std::cout << "line 1534" << std::endl;
         // Update total sinkage and current level for this hit node
         nr.sinkage = p_hit_offset;
         nr.level = nr.hit_level;
 
         // Accumulate shear for Janosi-Hanamoto (along local tangent direction)
         nr.kshear += Vdot(speed_abs, -T) * GetSystem()->GetStep();
-
+        // std::cout << "line 1541" << std::endl;
         // Plastic correction (along local normal direction)
         if (nr.sigma > nr.sigma_yield) {
             // Bekker formula
@@ -1425,7 +1624,7 @@ void SCMLoader::ComputeInternalForces() {
         ////if (Vn < 0) {
         nr.sigma += -Vn * damping_R;
         ////}
-
+        // std::cout << "sigma=" << nr.sigma << ",sinkage=" << nr.sinkage << ",sinkage_plastic=" << nr.sinkage_plastic << ",sinkage_elastic=" << nr.sinkage_elastic << std::endl;
         // Mohr-Coulomb
         double tau_max = Mohr_cohesion + nr.sigma * Mohr_mu;
 
@@ -1437,83 +1636,29 @@ void SCMLoader::ComputeInternalForces() {
         ChVector<> Fn = N * m_area * nr.sigma;
         ChVector<> Ft;
 
-        //// TODO:  take into account "tread height" (add to SCMContactableData)?
+        Ft = T * m_area * nr.tau;
+        
+        ChBody* body = dynamic_cast<ChBody*>(contactable);
+        ChVector<> force = Fn + Ft;
+        ChVector<> moment = Vcross(point_abs - body->GetPos(), force);
 
-        if (auto cprops = contactable->GetUserData<vehicle::SCMContactableData>()) {
-            // Use weighted sum of soil-contactable and soil-soil parameters
-            double c_tau_max = cprops->Mohr_cohesion + nr.sigma * cprops->Mohr_mu;
-            double c_tau = c_tau_max * (1.0 - exp(-(nr.kshear / cprops->Janosi_shear)));
-            double ratio = cprops->area_ratio;
-            Ft = T * m_area * ((1 - ratio) * nr.tau + ratio * c_tau);
+        auto itr = m_body_forces.find(body);
+        if (itr == m_body_forces.end()) {
+            // Create new entry and initialize generalized force
+            auto frc = std::make_pair(force, moment);
+            m_body_forces.insert(std::make_pair(body, frc));
         } else {
-            // Use only soil-soil parameters
-            Ft = T * m_area * nr.tau;
+            // Update generalized force
+            itr->second.first += force;
+            itr->second.second += moment;
         }
-
-        if (ChBody* body = dynamic_cast<ChBody*>(contactable)) {
-            // Accumulate resultant force and torque (expressed in global frame) for this rigid body.
-            // The resultant force is assumed to be applied at the body COM.
-            ChVector<> force = Fn + Ft;
-            ChVector<> moment = Vcross(point_abs - body->GetPos(), force);
-
-            auto itr = m_body_forces.find(body);
-            if (itr == m_body_forces.end()) {
-                // Create new entry and initialize generalized force
-                auto frc = std::make_pair(force, moment);
-                m_body_forces.insert(std::make_pair(body, frc));
-            } else {
-                // Update generalized force
-                itr->second.first += force;
-                itr->second.second += moment;
-            }
-        } else if (fea::ChContactTriangleXYZ* tri = dynamic_cast<fea::ChContactTriangleXYZ*>(contactable)) {
-            // Accumulate forces (expressed in global frame) for the nodes of this contact triangle.
-            ChVector<> force = Fn + Ft;
-
-            double s[3];
-            tri->ComputeUVfromP(point_abs, s[1], s[2]);
-            s[0] = 1 - s[1] - s[2];
-
-            for (int i = 0; i < 3; i++) {
-                auto node = tri->GetNode(i);
-                auto node_force = s[i] * force;
-                auto itr = m_node_forces.find(node);
-                if (itr == m_node_forces.end()) {
-                    // Create new entry and initialize force
-                    m_node_forces.insert(std::make_pair(node, node_force));
-                } else {
-                    // Update force
-                    itr->second += node_force;
-                }
-            }
-        } else if (ChLoadableUV* surf = dynamic_cast<ChLoadableUV*>(contactable)) {
-            if (!m_cosim_mode) {
-                // [](){} Trick: no deletion for this shared ptr
-                std::shared_ptr<ChLoadableUV> ssurf(surf, [](ChLoadableUV*) {});
-                std::shared_ptr<ChLoad<ChLoaderForceOnSurface>> mload(new ChLoad<ChLoaderForceOnSurface>(ssurf));
-                mload->loader.SetForce(Fn + Ft);
-                mload->loader.SetApplication(0.5, 0.5);  //// TODO set UV, now just in middle
-                this->Add(mload);
-            }
-
-            // Accumulate contact forces for this surface.
-            //// TODO
-        }
-
-        // Update grid node height (in local SCM frame, along SCM z axis)
-        // nr.level = nr.level_initial - nr.sinkage / ca; //Shu: 240502 no need to update level here, which is updated above
-        //Shu:240516 added. Refresh the node record for the next time step
-        // nr = NodeRecord(nr.level, nr.level, nr.normal);
-        // nr.level_initial = nr.level;
-        // nr.sinkage_plastic = 0;
-        // nr.sinkage_elastic = 0;
-        // nr.sigma_yield = 0
-        // Shu:240516.
+        //// TODO:  take into account "tread height" (add to SCMContactableData)?
+        // std::cout << "force=" << force << ",N=" << N << std::endl;
+       
 
     }  // end loop on ray hits
 
     // Create loads for bodies and nodes to apply the accumulated terrain force/torque for each of them
-    // int count = 0; //Shu
     if (!m_cosim_mode) {
         for (const auto& f : m_body_forces) {
             // std::cout << "SCM ChTime =" << ChTime<< ",f.first->GetId():" << f.first->GetId() <<","<< f.first->GetPos() << std::endl;
@@ -1521,40 +1666,22 @@ void SCMLoader::ComputeInternalForces() {
             auto force_load =
                 chrono_types::make_shared<ChLoadBodyForce>(sbody, f.second.first, false, sbody->GetPos(), false);
             auto torque_load = chrono_types::make_shared<ChLoadBodyTorque>(sbody, f.second.second, false);
-            //Shu:20240221: 
-            // if(std::abs(sbody->GetPos_dt()[0]) < 1e-3){
             
-            // if(std::abs(sbody->GetPos()[0]) < 1.09){ 
-                // fix Vx & Wy when t=1.5, x=1.097 
-            // std::cout << "ChTime =" << ChTime << std::endl;
-            // double SCM_ML_switch = 4.0;
-            // if(ChTime < SCM_ML_switch){ 
             if(ChTime < m_SCM_ML_switch){
-                // fix Wy time =  1.5 x= 0.109764; time =  1.495 x= 0.10869
                 Add(force_load); //Shu
                 Add(torque_load); //Shu
-                // std::cout << "SCM ChTime =" << ChTime << std::endl;
-                // std::cout << count <<",pos:"<< sbody->GetPos() << ",vx:" << sbody->GetPos_dt() << ",m_body_forces=" << f.second.first << std::endl; //Shu
+                // std::cout << "line 1669: time="<< ChTime <<", body_id"<< f.first->GetId() <<", Fz=" << f.second.first[2] << std::endl;//Shu
             }
-            // else{ // Use SCM force for rear wheels
-            //     if(f.first->GetId() > 5){
-            //         Add(force_load); //Shu
-            //         Add(torque_load); //Shu
-            //         std::cout << "Rear wheels: f.first->GetId():" << f.first->GetId() << std::endl;
-            //     }
-            // }
-            // count++; //Shu
 
-            // Add(force_load); //Shu
-            // Add(torque_load); //Shu
-            //Shu:20240221.
+            // if(f.first->GetId() > 4){
+            //     std::cout << "line 1489: time="<< ChTime <<", id"<< f.first->GetId() <<", Fz=" << f.second.first[2] << std::endl;//Shu
+            // }
         }
 
         for (const auto& f : m_node_forces) {
             std::cout << f.second << std::endl;
             auto force_load = chrono_types::make_shared<ChLoadXYZnode>(f.first, f.second);
             Add(force_load); //Shu
-            // std::cout << "m_node_forces=" << f.second << std::endl;//Shu
         }
     }
     auto end_contact_forces = std::chrono::high_resolution_clock::now();
@@ -1568,140 +1695,140 @@ void SCMLoader::ComputeInternalForces() {
 
     m_num_erosion_nodes = 0;
 
-    if (m_bulldozing) {
-        typedef std::unordered_set<ChVector2<int>, CoordHash> NodeSet;
+    // if (m_bulldozing) {
+    //     typedef std::unordered_set<ChVector2<int>, CoordHash> NodeSet;
 
-        // Maximum level change between neighboring nodes (smoothing phase)
-        double dy_lim = m_delta * m_erosion_slope;
+    //     // Maximum level change between neighboring nodes (smoothing phase)
+    //     double dy_lim = m_delta * m_erosion_slope;
 
-        // (1) Raise boundaries of each contact patch
-        m_timer_bulldozing_boundary.start();
+    //     // (1) Raise boundaries of each contact patch
+    //     m_timer_bulldozing_boundary.start();
 
-        NodeSet boundary;  // union of contact patch boundaries
-        for (auto p : contact_patches) {
-            NodeSet p_boundary;  // boundary of effective contact patch
+    //     NodeSet boundary;  // union of contact patch boundaries
+    //     for (auto p : contact_patches) {
+    //         NodeSet p_boundary;  // boundary of effective contact patch
 
-            // Calculate the displaced material from all touched nodes and identify boundary
-            double tot_step_flow = 0;
-            for (const auto& ij : p.nodes) {                     // for each node in contact patch
-                const auto& nr = m_grid_map.at(ij);              //   get node record
-                if (nr.sigma <= 0)                               //   if node not touched
-                    continue;                                    //     skip (not in effective patch)
-                tot_step_flow += nr.step_plastic_flow;           //   accumulate displaced material
-                for (int k = 0; k < 4; k++) {                    //   check each node neighbor
-                    ChVector2<int> nbr_ij = ij + neighbors4[k];  //     neighbor node coordinates
-                    ////if (!CheckMeshBounds(nbr_ij))                     //     if neighbor out of bounds
-                    ////    continue;                                     //       skip neighbor
-                    if (m_grid_map.find(nbr_ij) == m_grid_map.end())  //     if neighbor not yet recorded
-                        p_boundary.insert(nbr_ij);                    //       set neighbor as boundary
-                    else if (m_grid_map.at(nbr_ij).sigma <= 0)        //     if neighbor not touched
-                        p_boundary.insert(nbr_ij);                    //       set neighbor as boundary
-                }
-            }
-            tot_step_flow *= GetSystem()->GetStep();
+    //         // Calculate the displaced material from all touched nodes and identify boundary
+    //         double tot_step_flow = 0;
+    //         for (const auto& ij : p.nodes) {                     // for each node in contact patch
+    //             const auto& nr = m_grid_map.at(ij);              //   get node record
+    //             if (nr.sigma <= 0)                               //   if node not touched
+    //                 continue;                                    //     skip (not in effective patch)
+    //             tot_step_flow += nr.step_plastic_flow;           //   accumulate displaced material
+    //             for (int k = 0; k < 4; k++) {                    //   check each node neighbor
+    //                 ChVector2<int> nbr_ij = ij + neighbors4[k];  //     neighbor node coordinates
+    //                 ////if (!CheckMeshBounds(nbr_ij))                     //     if neighbor out of bounds
+    //                 ////    continue;                                     //       skip neighbor
+    //                 if (m_grid_map.find(nbr_ij) == m_grid_map.end())  //     if neighbor not yet recorded
+    //                     p_boundary.insert(nbr_ij);                    //       set neighbor as boundary
+    //                 else if (m_grid_map.at(nbr_ij).sigma <= 0)        //     if neighbor not touched
+    //                     p_boundary.insert(nbr_ij);                    //       set neighbor as boundary
+    //             }
+    //         }
+    //         tot_step_flow *= GetSystem()->GetStep();
 
-            // Target raise amount for each boundary node (unless clamped)
-            double diff = m_flow_factor * tot_step_flow / p_boundary.size();
+    //         // Target raise amount for each boundary node (unless clamped)
+    //         double diff = m_flow_factor * tot_step_flow / p_boundary.size();
 
-            // Raise boundary (create a sharp spike which will be later smoothed out with erosion)
-            for (const auto& ij : p_boundary) {                                  // for each node in bndry
-                m_modified_nodes.push_back(ij);                                  //   mark as modified
-                if (m_grid_map.find(ij) == m_grid_map.end()) {                   //   if not yet recorded
-                    double z = GetInitHeight(ij);                                //     undeformed height
-                    const ChVector<>& n = GetInitNormal(ij);                     //     terrain normal
-                    m_grid_map.insert(std::make_pair(ij, NodeRecord(z, z, n)));  //     add new node record
-                    m_modified_nodes.push_back(ij);                              //     mark as modified
-                }                                                                //
-                auto& nr = m_grid_map.at(ij);                                    //   node record
-                nr.erosion = true;                                               //   add to erosion domain
-                AddMaterialToNode(diff, nr);                                     //   add raise amount
-            }
+    //         // Raise boundary (create a sharp spike which will be later smoothed out with erosion)
+    //         for (const auto& ij : p_boundary) {                                  // for each node in bndry
+    //             m_modified_nodes.push_back(ij);                                  //   mark as modified
+    //             if (m_grid_map.find(ij) == m_grid_map.end()) {                   //   if not yet recorded
+    //                 double z = GetInitHeight(ij);                                //     undeformed height
+    //                 const ChVector<>& n = GetInitNormal(ij);                     //     terrain normal
+    //                 m_grid_map.insert(std::make_pair(ij, NodeRecord(z, z, n)));  //     add new node record
+    //                 m_modified_nodes.push_back(ij);                              //     mark as modified
+    //             }                                                                //
+    //             auto& nr = m_grid_map.at(ij);                                    //   node record
+    //             nr.erosion = true;                                               //   add to erosion domain
+    //             AddMaterialToNode(diff, nr);                                     //   add raise amount
+    //         }
 
-            // Accumulate boundary
-            boundary.insert(p_boundary.begin(), p_boundary.end());
+    //         // Accumulate boundary
+    //         boundary.insert(p_boundary.begin(), p_boundary.end());
 
-        }  // end for contact_patches
+    //     }  // end for contact_patches
 
-        m_timer_bulldozing_boundary.stop();
+    //     m_timer_bulldozing_boundary.stop();
 
-        // (2) Calculate erosion domain (dilate boundary)
-        m_timer_bulldozing_domain.start();
+    //     // (2) Calculate erosion domain (dilate boundary)
+    //     m_timer_bulldozing_domain.start();
 
-        NodeSet erosion_domain = boundary;
-        NodeSet erosion_front = boundary;  // initialize erosion front to boundary nodes
-        for (int i = 0; i < m_erosion_propagations; i++) {
-            NodeSet front;                                       // new erosion front
-            for (const auto& ij : erosion_front) {               // for each node in current erosion front
-                for (int k = 0; k < 4; k++) {                    // check each of its neighbors
-                    ChVector2<int> nbr_ij = ij + neighbors4[k];  //   neighbor node coordinates
-                    ////if (!CheckMeshBounds(nbr_ij))                       //   if out of bounds
-                    ////    continue;                                       //     ignore neighbor
-                    if (m_grid_map.find(nbr_ij) == m_grid_map.end()) {  //   if neighbor not yet recorded
-                        double z = GetInitHeight(nbr_ij);               //     undeformed height at neighbor location
-                        const ChVector<>& n = GetInitNormal(nbr_ij);    //     terrain normal at neighbor location
-                        NodeRecord nr(z, z, n);                         //     create new record
-                        nr.erosion = true;                              //     include in erosion domain
-                        m_grid_map.insert(std::make_pair(nbr_ij, nr));  //     add new node record
-                        front.insert(nbr_ij);                           //     add neighbor to new front
-                        m_modified_nodes.push_back(nbr_ij);             //     mark as modified
-                    } else {                                            //   if neighbor previously recorded
-                        NodeRecord& nr = m_grid_map.at(nbr_ij);         //     get existing record
-                        if (!nr.erosion && nr.sigma <= 0) {             //     if neighbor not touched
-                            nr.erosion = true;                          //       include in erosion domain
-                            front.insert(nbr_ij);                       //       add neighbor to new front
-                            m_modified_nodes.push_back(nbr_ij);         //       mark as modified
-                        }
-                    }
-                }
-            }
-            erosion_domain.insert(front.begin(), front.end());  // add current front to erosion domain
-            erosion_front = front;                              // advance erosion front
-        }
+    //     NodeSet erosion_domain = boundary;
+    //     NodeSet erosion_front = boundary;  // initialize erosion front to boundary nodes
+    //     for (int i = 0; i < m_erosion_propagations; i++) {
+    //         NodeSet front;                                       // new erosion front
+    //         for (const auto& ij : erosion_front) {               // for each node in current erosion front
+    //             for (int k = 0; k < 4; k++) {                    // check each of its neighbors
+    //                 ChVector2<int> nbr_ij = ij + neighbors4[k];  //   neighbor node coordinates
+    //                 ////if (!CheckMeshBounds(nbr_ij))                       //   if out of bounds
+    //                 ////    continue;                                       //     ignore neighbor
+    //                 if (m_grid_map.find(nbr_ij) == m_grid_map.end()) {  //   if neighbor not yet recorded
+    //                     double z = GetInitHeight(nbr_ij);               //     undeformed height at neighbor location
+    //                     const ChVector<>& n = GetInitNormal(nbr_ij);    //     terrain normal at neighbor location
+    //                     NodeRecord nr(z, z, n);                         //     create new record
+    //                     nr.erosion = true;                              //     include in erosion domain
+    //                     m_grid_map.insert(std::make_pair(nbr_ij, nr));  //     add new node record
+    //                     front.insert(nbr_ij);                           //     add neighbor to new front
+    //                     m_modified_nodes.push_back(nbr_ij);             //     mark as modified
+    //                 } else {                                            //   if neighbor previously recorded
+    //                     NodeRecord& nr = m_grid_map.at(nbr_ij);         //     get existing record
+    //                     if (!nr.erosion && nr.sigma <= 0) {             //     if neighbor not touched
+    //                         nr.erosion = true;                          //       include in erosion domain
+    //                         front.insert(nbr_ij);                       //       add neighbor to new front
+    //                         m_modified_nodes.push_back(nbr_ij);         //       mark as modified
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //         erosion_domain.insert(front.begin(), front.end());  // add current front to erosion domain
+    //         erosion_front = front;                              // advance erosion front
+    //     }
 
-        m_num_erosion_nodes = static_cast<int>(erosion_domain.size());
-        m_timer_bulldozing_domain.stop();
+    //     m_num_erosion_nodes = static_cast<int>(erosion_domain.size());
+    //     m_timer_bulldozing_domain.stop();
 
-        // (3) Erosion algorithm on domain
-        m_timer_bulldozing_erosion.start();
+    //     // (3) Erosion algorithm on domain
+    //     m_timer_bulldozing_erosion.start();
 
-        for (int iter = 0; iter < m_erosion_iterations; iter++) {
-            for (const auto& ij : erosion_domain) {
-                auto& nr = m_grid_map.at(ij);
-                for (int k = 0; k < 4; k++) {
-                    ChVector2<int> nbr_ij = ij + neighbors4[k];
-                    auto rec = m_grid_map.find(nbr_ij);
-                    if (rec == m_grid_map.end())
-                        continue;
-                    auto& nbr_nr = rec->second;
+    //     for (int iter = 0; iter < m_erosion_iterations; iter++) {
+    //         for (const auto& ij : erosion_domain) {
+    //             auto& nr = m_grid_map.at(ij);
+    //             for (int k = 0; k < 4; k++) {
+    //                 ChVector2<int> nbr_ij = ij + neighbors4[k];
+    //                 auto rec = m_grid_map.find(nbr_ij);
+    //                 if (rec == m_grid_map.end())
+    //                     continue;
+    //                 auto& nbr_nr = rec->second;
 
-                    // (3.1) Flow remaining material to neighbor
-                    double diff = 0.5 * (nr.massremainder - nbr_nr.massremainder) / 4;  //// TODO: rethink this!
-                    if (diff > 0) {
-                        RemoveMaterialFromNode(diff, nr);
-                        AddMaterialToNode(diff, nbr_nr);
-                    }
+    //                 // (3.1) Flow remaining material to neighbor
+    //                 double diff = 0.5 * (nr.massremainder - nbr_nr.massremainder) / 4;  //// TODO: rethink this!
+    //                 if (diff > 0) {
+    //                     RemoveMaterialFromNode(diff, nr);
+    //                     AddMaterialToNode(diff, nbr_nr);
+    //                 }
 
-                    // (3.2) Smoothing
-                    if (nbr_nr.sigma == 0) {
-                        double dy = (nr.level + nr.massremainder) - (nbr_nr.level + nbr_nr.massremainder);
-                        diff = 0.5 * (std::abs(dy) - dy_lim) / 4;  //// TODO: rethink this!
-                        if (diff > 0) {
-                            if (dy > 0) {
-                                RemoveMaterialFromNode(diff, nr);
-                                AddMaterialToNode(diff, nbr_nr);
-                            } else {
-                                RemoveMaterialFromNode(diff, nbr_nr);
-                                AddMaterialToNode(diff, nr);
-                            }
-                        }
-                    }
-                }
-            }
-        }
+    //                 // (3.2) Smoothing
+    //                 if (nbr_nr.sigma == 0) {
+    //                     double dy = (nr.level + nr.massremainder) - (nbr_nr.level + nbr_nr.massremainder);
+    //                     diff = 0.5 * (std::abs(dy) - dy_lim) / 4;  //// TODO: rethink this!
+    //                     if (diff > 0) {
+    //                         if (dy > 0) {
+    //                             RemoveMaterialFromNode(diff, nr);
+    //                             AddMaterialToNode(diff, nbr_nr);
+    //                         } else {
+    //                             RemoveMaterialFromNode(diff, nbr_nr);
+    //                             AddMaterialToNode(diff, nr);
+    //                         }
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
 
-        m_timer_bulldozing_erosion.stop();
+    //     m_timer_bulldozing_erosion.stop();
 
-    }  // end do_bulldozing
+    // }  // end do_bulldozing
 
     m_timer_bulldozing.stop();
 
@@ -1714,12 +1841,14 @@ void SCMLoader::ComputeInternalForces() {
     if (m_trimesh_shape) {
         // Loop over list of modified nodes and adjust corresponding mesh vertices.
         // If not rendering a wireframe mesh, also update normals.
+        // std::cout << "line 1876, m_modified_nodes.size()=" << m_modified_nodes.size() << std::endl;
         for (const auto& ij : m_modified_nodes) {
             if (!CheckMeshBounds(ij))                 // if node outside mesh
                 continue;                             //   do nothing
             const auto& nr = m_grid_map.at(ij);       // grid node record
             int iv = GetMeshVertexIndex(ij);          // mesh vertex index
             UpdateMeshVertexCoordinates(ij, iv, nr);  // update vertex coordinates and color
+            // std::cout << "line 1883, iv=" << iv << ", ij=" << ij.x()<<","<<ij.y()<<",xy="<<ij.x()*m_delta<<","<<ij.y()*m_delta<< std::endl;
             modified_vertices.push_back(iv);          // cache in list of modified mesh vertices
             if (!m_trimesh_shape->IsWireframe())      // if not wireframe
                 UpdateMeshVertexNormal(ij, iv);       // update vertex normal
@@ -1771,8 +1900,10 @@ void SCMLoader::UpdateMeshVertexCoordinates(const ChVector2<int> ij, int iv, con
     std::vector<ChColor>& colors = trimesh.getCoordsColors();
 
     // Update visualization mesh vertex position
+    // Shu: 240613
     vertices[iv] = m_plane.TransformPointLocalToParent(ChVector<>(ij.x() * m_delta, ij.y() * m_delta, nr.level));
-
+    // vertices[iv] = ChVector<>(ij.x() * m_delta, ij.y() * m_delta, nr.level);
+    // std::cout << "line 1937, Local" << ChVector<>(ij.x() * m_delta, ij.y() * m_delta, nr.level)<< ",Parent:" << vertices[iv] << std::endl;
     // Update visualization mesh vertex color
     if (m_plot_type != SCMTerrain::PLOT_NONE) {
         ChColor mcolor;

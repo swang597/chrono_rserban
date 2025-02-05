@@ -140,7 +140,8 @@ torch::Tensor loadFromTxt(const std::string& filePath) {
 
 // Shu-----------------------------------------------------------------------------
 torch::Tensor applyWheelSinkageOnGHM(torch::Tensor& heightMap, torch::Tensor wheelCenter, 
-                                torch::Tensor gridOrigin, float radius, float width, float gridSize, 
+                                torch::Tensor gridOrigin, int nx, int ny,
+                                float radius, float width, float gridSize, 
                                 double threshold = 1e-3) {
     // Extract wheel center coordinates
     float cx = wheelCenter[0].item<float>();
@@ -150,9 +151,6 @@ torch::Tensor applyWheelSinkageOnGHM(torch::Tensor& heightMap, torch::Tensor whe
     // Extract grid origin coordinates
     float ox = gridOrigin[0].item<float>();
     float oy = gridOrigin[1].item<float>();
-    
-    int nx = heightMap.size(2);
-    int ny = heightMap.size(3);
 
     // Create meshgrid for x and y coordinates in real-world space
     auto x = torch::arange(0, nx, 1, torch::kFloat32) * gridSize + ox;
@@ -172,8 +170,6 @@ torch::Tensor applyWheelSinkageOnGHM(torch::Tensor& heightMap, torch::Tensor whe
 
     // Calculate wheel surface height
     auto wheel_surface_height = cz - torch::sqrt(radius * radius - distance_x.pow(2));
-    // Compute the element-wise minimum between wheel_surface_height and the heightMap at index {0, 0}
-    auto min_heights = torch::min(wheel_surface_height, heightMap.index({0, 0}));
 
     // Mask for points where the wheel surface is below the current height
     auto below_current_height = (wheel_surface_height - heightMap.index({0, 0})) < threshold;
@@ -186,7 +182,7 @@ torch::Tensor applyWheelSinkageOnGHM(torch::Tensor& heightMap, torch::Tensor whe
     }
 
     // Update heights
-    auto updated_heights = torch::where(mask, min_heights, heightMap.index({0, 0}));
+    auto updated_heights = torch::where(mask, wheel_surface_height, heightMap.index({0, 0}));
 
     // Apply updated heights to heightMap
     heightMap.index_put_({0, 0}, updated_heights);
@@ -195,85 +191,85 @@ torch::Tensor applyWheelSinkageOnGHM(torch::Tensor& heightMap, torch::Tensor whe
 }
 
 // Shu-----------------------------------------------------------------------------
-// torch::Tensor applyWheelSinkage(torch::Tensor& heightMap, torch::Tensor wheelCenter, 
-//     int cx_idx, int cy_idx, float radius, float width, float gridSize, double threshold = 1e-3) {
-//     auto nx = heightMap.size(2);
-//     auto ny = heightMap.size(3);
-//     auto cx = cx_idx * gridSize;
-//     auto cy = cy_idx * gridSize;
-//     auto cz = wheelCenter[2].item<float>();
+torch::Tensor applyWheelSinkage(torch::Tensor& heightMap, torch::Tensor wheelCenter, 
+    int cx_idx, int cy_idx, float radius, float width, float gridSize, double threshold = 1e-3) {
+    auto nx = heightMap.size(2);
+    auto ny = heightMap.size(3);
+    auto cx = cx_idx * gridSize;
+    auto cy = cy_idx * gridSize;
+    auto cz = wheelCenter[2].item<float>();
 
-//     // Create meshgrid for x and y coordinates
-//     auto x = torch::arange(0, nx, 1, torch::kFloat32) * gridSize;
-//     auto y = torch::arange(0, ny, 1, torch::kFloat32) * gridSize;
-//     auto xv = x.unsqueeze(1).expand({nx, ny});
-//     auto yv = y.unsqueeze(0).expand({nx, ny});
+    // Create meshgrid for x and y coordinates
+    auto x = torch::arange(0, nx, 1, torch::kFloat32) * gridSize;
+    auto y = torch::arange(0, ny, 1, torch::kFloat32) * gridSize;
+    auto xv = x.unsqueeze(1).expand({nx, ny});
+    auto yv = y.unsqueeze(0).expand({nx, ny});
 
-//     // Calculate distances from the wheel center
-//     auto distance_x = torch::abs(xv - cx);
-//     auto distance_y = torch::abs(yv - cy);
+    // Calculate distances from the wheel center
+    auto distance_x = torch::abs(xv - cx);
+    auto distance_y = torch::abs(yv - cy);
 
-//     // Mask for points within the wheel's width
-//     auto within_width = distance_y < (width / 2);
+    // Mask for points within the wheel's width
+    auto within_width = distance_y < (width / 2);
 
-//     // Mask for points within the wheel's radius
-//     auto within_radius = distance_x < radius;
-//     // std::cout << "within_width.sum()"<< within_width.sum().item()<< "within_radius.sum()=" << within_radius.sum().item<float>() << std::endl;
+    // Mask for points within the wheel's radius
+    auto within_radius = distance_x < radius;
+    // std::cout << "within_width.sum()"<< within_width.sum().item()<< "within_radius.sum()=" << within_radius.sum().item<float>() << std::endl;
     
-//     // Calculate wheel surface height
-//     auto wheel_surface_height = cz - torch::sqrt(radius * radius - distance_x.pow(2));
+    // Calculate wheel surface height
+    auto wheel_surface_height = cz - torch::sqrt(radius * radius - distance_x.pow(2));
 
-//     // Mask for points where the wheel surface is below the current height
-//     auto below_current_height = (wheel_surface_height - heightMap.index({0, 0})) < threshold;
-//     // std::cout << "below_current_height.sum()=" << below_current_height.sum().item<float>() << "below_current_height.sizes()"<< below_current_height.sizes()<< std::endl;
-//     // Combine masks
-//     auto mask = within_width & within_radius & below_current_height;
+    // Mask for points where the wheel surface is below the current height
+    auto below_current_height = (wheel_surface_height - heightMap.index({0, 0})) < threshold;
+    // std::cout << "below_current_height.sum()=" << below_current_height.sum().item<float>() << "below_current_height.sizes()"<< below_current_height.sizes()<< std::endl;
+    // Combine masks
+    auto mask = within_width & within_radius & below_current_height;
 
-//     if(mask.sum().item<float>() == 0){
-//         std::cout << "mask.sum()=0" << std::endl;    
-//     }
-//     // else{
-//     //     std::cout << "--> mask.sum()=" << mask.sum().item<float>() << std::endl;
-//     // }
+    if(mask.sum().item<float>() == 0){
+        std::cout << "mask.sum()=0" << std::endl;    
+    }
+    // else{
+    //     std::cout << "--> mask.sum()=" << mask.sum().item<float>() << std::endl;
+    // }
     
     
-//     // std::cout <<"applyWheelSinkage: mask.sum()=" << mask.sum().item<float>() << std::endl;
+    // std::cout <<"applyWheelSinkage: mask.sum()=" << mask.sum().item<float>() << std::endl;
 
-//     // std::cout << "***cz=" << cz << std::endl;
-//     // // if(ChTime == 1.5){
-//     //     int slice_num_x = 12;
-//     //     int slice_num_y = 12;
-//     //     torch::Tensor submatrix;
-//     //     submatrix = mask.index({torch::indexing::Slice(0, torch::indexing::None, slice_num_x), torch::indexing::Slice(0, torch::indexing::None, slice_num_y)});
-//     //     std::cout << "mask=\n" << submatrix << std::endl;
+    // std::cout << "***cz=" << cz << std::endl;
+    // // if(ChTime == 1.5){
+    //     int slice_num_x = 12;
+    //     int slice_num_y = 12;
+    //     torch::Tensor submatrix;
+    //     submatrix = mask.index({torch::indexing::Slice(0, torch::indexing::None, slice_num_x), torch::indexing::Slice(0, torch::indexing::None, slice_num_y)});
+    //     std::cout << "mask=\n" << submatrix << std::endl;
 
-//     //     submatrix = wheel_surface_height.index({torch::indexing::Slice(0, torch::indexing::None, slice_num_x), torch::indexing::Slice(0, torch::indexing::None, slice_num_y)});
-//     //     std::cout << "wheel_surface_height=\n" << submatrix << std::endl;
+    //     submatrix = wheel_surface_height.index({torch::indexing::Slice(0, torch::indexing::None, slice_num_x), torch::indexing::Slice(0, torch::indexing::None, slice_num_y)});
+    //     std::cout << "wheel_surface_height=\n" << submatrix << std::endl;
 
-//     //     submatrix = heightMap.index({0, 0, torch::indexing::Slice(0, torch::indexing::None, slice_num_x), torch::indexing::Slice(0, torch::indexing::None, slice_num_y)});
-//     //     std::cout << "heightMap=\n" << submatrix << std::endl;
+    //     submatrix = heightMap.index({0, 0, torch::indexing::Slice(0, torch::indexing::None, slice_num_x), torch::indexing::Slice(0, torch::indexing::None, slice_num_y)});
+    //     std::cout << "heightMap=\n" << submatrix << std::endl;
 
-//         // submatrix = below_current_height.index({torch::indexing::Slice(0, torch::indexing::None, slice_num_x), torch::indexing::Slice(0, torch::indexing::None, slice_num_y)});
-//         // std::cout << "below_current_height=\n" << submatrix << std::endl;
-//         // submatrix = within_width.index({torch::indexing::Slice(0, torch::indexing::None, slice_num_x), torch::indexing::Slice(0, torch::indexing::None, slice_num_y)});
-//         // std::cout << "within_width=\n" << submatrix << std::endl;
-//         // submatrix = within_radius.index({torch::indexing::Slice(0, torch::indexing::None, slice_num_x), torch::indexing::Slice(0, torch::indexing::None, slice_num_y)});
-//         // std::cout << "within_radius=\n" << submatrix << std::endl;
-//     // }
+        // submatrix = below_current_height.index({torch::indexing::Slice(0, torch::indexing::None, slice_num_x), torch::indexing::Slice(0, torch::indexing::None, slice_num_y)});
+        // std::cout << "below_current_height=\n" << submatrix << std::endl;
+        // submatrix = within_width.index({torch::indexing::Slice(0, torch::indexing::None, slice_num_x), torch::indexing::Slice(0, torch::indexing::None, slice_num_y)});
+        // std::cout << "within_width=\n" << submatrix << std::endl;
+        // submatrix = within_radius.index({torch::indexing::Slice(0, torch::indexing::None, slice_num_x), torch::indexing::Slice(0, torch::indexing::None, slice_num_y)});
+        // std::cout << "within_radius=\n" << submatrix << std::endl;
+    // }
 
-//     // Update heights
-//     auto updated_heights = torch::where(mask, wheel_surface_height, heightMap.index({0, 0}));
-//     // if(updated_heights.sum().item<float>() == 0){
-//     //     std::cout << "updated_heights.sum()=0" << std::endl;
-//     // }
-//         // submatrix = updated_heights.index({torch::indexing::Slice(0, torch::indexing::None, slice_num_x), torch::indexing::Slice(0, torch::indexing::None, slice_num_y)});
-//         // std::cout << "updated_heights=\n" << submatrix << std::endl;
+    // Update heights
+    auto updated_heights = torch::where(mask, wheel_surface_height, heightMap.index({0, 0}));
+    // if(updated_heights.sum().item<float>() == 0){
+    //     std::cout << "updated_heights.sum()=0" << std::endl;
+    // }
+        // submatrix = updated_heights.index({torch::indexing::Slice(0, torch::indexing::None, slice_num_x), torch::indexing::Slice(0, torch::indexing::None, slice_num_y)});
+        // std::cout << "updated_heights=\n" << submatrix << std::endl;
 
-//     // Apply updated heights to heightMap
-//     heightMap.index_put_({0, 0}, updated_heights);
+    // Apply updated heights to heightMap
+    heightMap.index_put_({0, 0}, updated_heights);
 
-//     return mask;
-// }
+    return mask;
+}
 
 // auto terrain_ML = chrono_types::make_shared<TerrainForceLoader>(folderpath_normlized,
 //                         output_folderpath, wheel, wheel2, model_runner_wheel1, model_runner_wheel2, GHM_0, terrain_initLoc,
@@ -288,46 +284,24 @@ class TerrainForceLoader : public ChLoadContainer {
         TorchModelRunner model_runner_wheel1_Fz, TorchModelRunner model_runner_wheel2_Fz, 
         Heightmap GHM_0, Heightmap GHM_1, Heightmap GHM_2, 
         ChVector<> terrain_initLoc, float wheel_radius, float wheel_width, float heightmap_grid,
-        double SCM_ML_switch, double dt_dump, double HM_cutoff_y_left, double HM_cutoff_y_right,
-        double HM_cutoff_x_backward, double HM_cutoff_x_forward, int cx_idx, int cy_idx)
+        double SCM_ML_switch, double dt_dump)
         : m_output_folderpath(output_folderpath), m_wheel1(wheel1), m_wheel2(wheel2), m_num_frames(10000), m_crt_frame(0), 
         m_model_runner_wheel1_FxTy(model_runner_wheel1_FxTy), m_model_runner_wheel2_FxTy(model_runner_wheel2_FxTy), 
         m_model_runner_wheel1_Fz(model_runner_wheel1_Fz), m_model_runner_wheel2_Fz(model_runner_wheel2_Fz), 
         m_GHM_0(GHM_0), m_GHM_1(GHM_1), m_GHM_2(GHM_2), m_terrain_initLoc(terrain_initLoc), 
         m_wheel_radius(wheel_radius), m_wheel_width(wheel_width), m_heightmap_grid(heightmap_grid),
         m_duration_Img(0), m_duration_F(0), m_duration_all(0), m_SCM_ML_switch(SCM_ML_switch), m_dt_dump(dt_dump),
-        m_cx_idx(cx_idx), m_cy_idx(cy_idx),
-        m_HM_cutoff_y_left(HM_cutoff_y_left), m_HM_cutoff_y_right(HM_cutoff_y_right), m_HM_cutoff_x_backward(HM_cutoff_x_backward), m_HM_cutoff_x_forward(HM_cutoff_x_forward){
+        m_cx_idx(42), m_cy_idx(36){
         // ChVector<> location(terrain_initX, m_terrain_offset, terrain_initH);
         // Read normalized parameters
         std::string fn_dataPT = input_folderpath;
         std::cout << "fn_dataPT=" << fn_dataPT << std::endl;
         
-        //check if all files are exist
-        if (!filesystem::path(fn_dataPT + "Iskg_min_max_wheel1.txt").exists()) {
-            std::cerr << "Error: file not found: " << fn_dataPT + "Iskg_min_max_wheel1.txt" << std::endl;
-        }
-        if (!filesystem::path(fn_dataPT + "F_min_max_wheel1.txt").exists()) {
-            std::cerr << "Error: file not found: " << fn_dataPT + "F_min_max_wheel1.txt" << std::endl;
-        }
-        if (!filesystem::path(fn_dataPT + "Vec_min_max_wheel1.txt").exists()) {
-            std::cerr << "Error: file not found: " << fn_dataPT + "Vec_min_max_wheel1.txt" << std::endl;
-        }
-        if (!filesystem::path(fn_dataPT + "Iskg_min_max_wheel2.txt").exists()) {
-            std::cerr << "Error: file not found: " << fn_dataPT + "Iskg_min_max_wheel2.txt" << std::endl;
-        }
-        if (!filesystem::path(fn_dataPT + "F_min_max_wheel2.txt").exists()) {
-            std::cerr << "Error: file not found: " << fn_dataPT + "F_min_max_wheel2.txt" << std::endl;
-        }
-        if (!filesystem::path(fn_dataPT + "Vec_min_max_wheel2.txt").exists()) {
-            std::cerr << "Error: file not found: " << fn_dataPT + "Vec_min_max_wheel2.txt" << std::endl;
-        }
-
-        m_I_min_max_wheel1 = loadFromTxt(fn_dataPT + "Iskg_min_max_wheel1.txt");
+        m_I_min_max_wheel1 = loadFromTxt(fn_dataPT + "I_min_max_wheel1.txt");
         m_F_min_max_wheel1 = loadFromTxt(fn_dataPT + "F_min_max_wheel1.txt");
         m_Vec_min_max_wheel1 = loadFromTxt(fn_dataPT + "Vec_min_max_wheel1.txt");
 
-        m_I_min_max_wheel2 = loadFromTxt(fn_dataPT + "Iskg_min_max_wheel2.txt");
+        m_I_min_max_wheel2 = loadFromTxt(fn_dataPT + "I_min_max_wheel2.txt");
         m_F_min_max_wheel2 = loadFromTxt(fn_dataPT + "F_min_max_wheel2.txt");
         m_Vec_min_max_wheel2 = loadFromTxt(fn_dataPT + "Vec_min_max_wheel2.txt");
         
@@ -344,45 +318,11 @@ class TerrainForceLoader : public ChLoadContainer {
             std::filesystem::create_directory(m_output_folderpath);
         }
         std::cout << "m_output_folderpath=" << m_output_folderpath << std::endl;
-
-        m_HM_nx = static_cast<int>(std::round((m_HM_cutoff_x_backward + m_HM_cutoff_x_forward) / m_heightmap_grid));
-        m_HM_ny = static_cast<int>(std::round((m_HM_cutoff_y_left + m_HM_cutoff_y_right) / m_heightmap_grid));
-
-        m_fp_Vec_wheel1.open(m_output_folderpath + "/Vec_wheel1.txt", std::ios::trunc);
-        m_fp_F_wheel1.open(m_output_folderpath + "/F_wheel1.txt", std::ios::trunc);
-        m_fp_Vec_wheel2.open(m_output_folderpath + "/Vec_wheel2.txt", std::ios::trunc);
-        m_fp_F_wheel2.open(m_output_folderpath + "/F_wheel2.txt", std::ios::trunc);
-
-        if (!m_fp_Vec_wheel1.is_open()) {
-            std::cerr << "Error opening file: " << m_output_folderpath + "/Vec_wheel1.txt" << std::endl;
-        }
-        if (!m_fp_F_wheel1.is_open()) {
-            std::cerr << "Error opening file: " << m_output_folderpath + "/F_wheel1.txt" << std::endl;
-        }
-        if (!m_fp_Vec_wheel2.is_open()) {
-            std::cerr << "Error opening file: " << m_output_folderpath + "/Vec_wheel2.txt" << std::endl;
-        }
-        if (!m_fp_F_wheel2.is_open()) {
-            std::cerr << "Error opening file: " << m_output_folderpath + "/F_wheel2.txt" << std::endl;
-        }
-
-        std::cout << "open files line 333" << std::endl;
+        
     }
 
     ~TerrainForceLoader() { 
-        if (m_fp_Vec_wheel1.is_open()) {
-            m_fp_Vec_wheel1.close();
-        }
-        if (m_fp_F_wheel1.is_open()) {
-            m_fp_F_wheel1.close();
-        }
-        if (m_fp_Vec_wheel2.is_open()) {
-            m_fp_Vec_wheel2.close();
-        }
-        if (m_fp_F_wheel2.is_open()) {
-            m_fp_F_wheel2.close();
-        }
-    
+        // m_fstream.close(); 
     }
 
 
@@ -393,147 +333,69 @@ class TerrainForceLoader : public ChLoadContainer {
         GetLoadList().clear();
         torch::Tensor HM_wheel1_cur, HM_wheel2_cur, Vec_ts_wheel1, Vec_ts_wheel2, F_ts_wheel1, F_ts_wheel2; 
         torch::Tensor HM_wheel1_org, HM_wheel2_org;
-        torch::Tensor I_sinkage_wheel1, I_sinkage_wheel2;
+        torch::Tensor HM_sinkage_wheel1, HM_sinkage_wheel2;
         torch::Tensor HM_sinkage_nm_wheel1, HM_sinkage_nm_wheel2, Vec_ts_nm_wheel1, Vec_ts_nm_wheel2, F_ts_nm_wheel1, F_ts_nm_wheel2; 
         torch::Tensor F_ts_nm_wheel1_FxTy, F_ts_nm_wheel1_Fz, F_ts_nm_wheel2_FxTy, F_ts_nm_wheel2_Fz;
         torch::Tensor mask_contact_wheel1, mask_contact_wheel2;
         std::vector<float> positions_wheel1, positions_wheel2;
         m_wheel1_state = m_wheel1->GetState();
         m_wheel2_state = m_wheel2->GetState();
-
-        double cx_wheel1 = m_wheel1_state.pos[0] + m_terrain_initLoc[0];
-        double cy_wheel1 = m_wheel1_state.pos[1] + m_terrain_initLoc[1];
-        double cz_wheel1 = m_wheel1_state.pos[2] - m_terrain_initLoc[2];
-
-        double cx_wheel2 = m_wheel2_state.pos[0] + m_terrain_initLoc[0];
-        double cy_wheel2 = m_wheel2_state.pos[1] + m_terrain_initLoc[1];
-        double cz_wheel2 = m_wheel2_state.pos[2] - m_terrain_initLoc[2];
-
-        torch::Tensor position_ts_wheel1 = torch::tensor({static_cast<float>(cx_wheel1), static_cast<float>(cy_wheel1), static_cast<float>(cz_wheel1)});
-        torch::Tensor position_ts_wheel2 = torch::tensor({static_cast<float>(cx_wheel2), static_cast<float>(cy_wheel2), static_cast<float>(cz_wheel2)});
-
-        // Calculate the fractional part of the wheel position
-        double fx_wheel1 = cx_wheel1 / m_heightmap_grid - static_cast<int>(std::floor(cx_wheel1 / m_heightmap_grid));
-        double fy_wheel1 = cy_wheel1 / m_heightmap_grid - static_cast<int>(std::floor(cy_wheel1 / m_heightmap_grid));
-        double fx_wheel2 = cx_wheel2 / m_heightmap_grid - static_cast<int>(std::floor(cx_wheel2 / m_heightmap_grid));
-        double fy_wheel2 = cy_wheel2 / m_heightmap_grid - static_cast<int>(std::floor(cy_wheel2 / m_heightmap_grid));
-        double w00_wheel1 = (1 - fx_wheel1) * (1 - fy_wheel1);
-        double w01_wheel1 = fx_wheel1 * (1 - fy_wheel1);
-        double w10_wheel1 = (1 - fx_wheel1) * fy_wheel1;
-        double w11_wheel1 = fx_wheel1 * fy_wheel1;
-        double w00_wheel2 = (1 - fx_wheel2) * (1 - fy_wheel2);
-        double w01_wheel2 = fx_wheel2 * (1 - fy_wheel2);
-        double w10_wheel2 = (1 - fx_wheel2) * fy_wheel2;
-        double w11_wheel2 = fx_wheel2 * fy_wheel2;
-        
-
-        // // *********** NN_I save HM to check HM:**********
-        // positions_wheel1 = {static_cast<float>(cx), 
-        //             static_cast<float>(cy), 
-        //             static_cast<float>(cz)};
-        // positions_wheel2 = {static_cast<float>(m_wheel2_state.pos[0] + m_terrain_initLoc[0]),
-        //             static_cast<float>(m_wheel2_state.pos[1] + m_terrain_initLoc[1]), 
-        //             static_cast<float>(m_wheel2_state.pos[2] - m_terrain_initLoc[2])};
-        // torch::Tensor position_ts_wheel1 = torch::tensor(positions_wheel1);
-        // torch::Tensor position_ts_wheel2 = torch::tensor(positions_wheel2);
-        
-        // torch::Tensor gridOrigin_wheel1 = torch::tensor({0, 0});
-        // torch::Tensor gridOrigin_wheel2 = torch::tensor({0, 0});
-        // gridOrigin_wheel1[0] = m_wheel1_state.pos[0] + m_terrain_initLoc[0] - m_HM_cutoff_x_forward;
-        // gridOrigin_wheel1[1] = m_wheel1_state.pos[1] + m_terrain_initLoc[1] - m_HM_cutoff_y_left;
-        // gridOrigin_wheel2[0] = m_wheel2_state.pos[0] + m_terrain_initLoc[0] - m_HM_cutoff_x_forward;
-        // gridOrigin_wheel2[1] = m_wheel2_state.pos[1] + m_terrain_initLoc[1] - m_HM_cutoff_y_left;
-
-        torch::Tensor gridOrigin_wheel1 = torch::tensor({static_cast<float>(cx_wheel1- m_HM_cutoff_x_forward), static_cast<float>(cy_wheel1- m_HM_cutoff_y_left)});
-        torch::Tensor gridOrigin_wheel2 = torch::tensor({static_cast<float>(cx_wheel2- m_HM_cutoff_x_forward), static_cast<float>(cy_wheel2- m_HM_cutoff_y_left)});
-
-        // std::cout << "gridOrigin_wheel1=" << gridOrigin_wheel1 <<", position_ts_wheel1 =" << position_ts_wheel1 << std::endl;
+    
+        // *********** NN_I save HM to check HM:**********
+        positions_wheel1 = {static_cast<float>(m_wheel1_state.pos[0] + m_terrain_initLoc[0]), 
+                    static_cast<float>(m_wheel1_state.pos[1] + m_terrain_initLoc[1]), 
+                    static_cast<float>(m_wheel1_state.pos[2] - m_terrain_initLoc[2])};
+        positions_wheel2 = {static_cast<float>(m_wheel2_state.pos[0] + m_terrain_initLoc[0]),
+                    static_cast<float>(m_wheel2_state.pos[1] + m_terrain_initLoc[1]), 
+                    static_cast<float>(m_wheel2_state.pos[2] - m_terrain_initLoc[2])};
+        torch::Tensor position_ts_wheel1 = torch::tensor(positions_wheel1);
+        torch::Tensor position_ts_wheel2 = torch::tensor(positions_wheel2);
         // std::cout << "line257" << std::endl;
-        // Load HM from current global Heightmap
-        HM_wheel1_cur = m_GHM_1.get_local_heightmap_by_origin(gridOrigin_wheel1, m_HM_nx+1, m_HM_ny+1);
-        HM_wheel2_cur = m_GHM_2.get_local_heightmap_by_origin(gridOrigin_wheel2, m_HM_nx+1, m_HM_ny+1);
-        
+        // Load HM from Heightmap
+        HM_wheel1_cur = m_GHM_1.get_local_heightmap(position_ts_wheel1, 96, 72);
+        HM_wheel2_cur = m_GHM_2.get_local_heightmap(position_ts_wheel2, 96, 72);
         // std::cout << "line261" << std::endl;
         // Update HM by Geometry compute applyWheelSinkage
         auto start_I = std::chrono::high_resolution_clock::now();
-        double threshold = 1e-3; //m_heightmap_grid;
-        mask_contact_wheel1 = applyWheelSinkageOnGHM(HM_wheel1_cur, position_ts_wheel1, gridOrigin_wheel1, 
-                                m_wheel_radius, m_wheel_width, m_heightmap_grid, threshold);
-        mask_contact_wheel2 = applyWheelSinkageOnGHM(HM_wheel2_cur, position_ts_wheel2, gridOrigin_wheel2,
-                                m_wheel_radius, m_wheel_width, m_heightmap_grid, threshold);
-
-        // mask_contact_wheel1 = applyWheelSinkage(HM_wheel1_cur, position_ts_wheel1, m_cx_idx, m_cy_idx, m_wheel_radius, m_wheel_width, m_heightmap_grid, threshold);
-        // mask_contact_wheel2 = applyWheelSinkage(HM_wheel2_cur, position_ts_wheel2, m_cx_idx, m_cy_idx, m_wheel_radius, m_wheel_width, m_heightmap_grid, threshold);
+        double threshold = 1e-6;
+        mask_contact_wheel1 = applyWheelSinkage(HM_wheel1_cur, position_ts_wheel1, m_cx_idx, m_cy_idx, m_wheel_radius, m_wheel_width, m_heightmap_grid, threshold);
+        mask_contact_wheel2 = applyWheelSinkage(HM_wheel2_cur, position_ts_wheel2, m_cx_idx, m_cy_idx, m_wheel_radius, m_wheel_width, m_heightmap_grid, threshold);
         auto end_I = std::chrono::high_resolution_clock::now();
         // std::cout << "mask_contact_wheel1.sum()=" << mask_contact_wheel1.sum().item<float>() << std::endl;
         // std::cout << "mask_contact_wheel2.sum()=" << mask_contact_wheel2.sum().item<float>() << std::endl;
 
         // std::cout << "line266" << std::endl;
-        // Load HM from original global Heightmap
-        HM_wheel1_org = m_GHM_0.get_local_heightmap_by_origin(gridOrigin_wheel1, m_HM_nx+1, m_HM_ny+1);
-        HM_wheel2_org = m_GHM_1.get_local_heightmap_by_origin(gridOrigin_wheel2, m_HM_nx+1, m_HM_ny+1);
-        // HM_wheel1_org = m_GHM_0.get_local_heightmap(position_ts_wheel1, m_HM_nx, m_HM_ny);
-        // HM_wheel2_org = m_GHM_1.get_local_heightmap(position_ts_wheel2, m_HM_nx, m_HM_ny);
+        HM_wheel1_org = m_GHM_0.get_local_heightmap(position_ts_wheel1, 96, 72);
+        HM_wheel2_org = m_GHM_1.get_local_heightmap(position_ts_wheel2, 96, 72);
         // std::cout << "HM_wheel1_org.size" << HM_wheel1_org.sizes() << std::endl;
         // std::cout << "HM_wheel2_org.size" << HM_wheel2_org.sizes() << std::endl;
         
-        // Compute the HM diff between org and cur global HM
+        HM_sinkage_wheel1 = torch::zeros({1, 1, 96, 72});
+        HM_sinkage_wheel2 = torch::zeros({1, 1, 96, 72});
+        
+        // Update sinkage maps
         auto HM_wheel1_diff = HM_wheel1_org.index({0, 0}) - HM_wheel1_cur.index({0, 0});
         auto HM_wheel2_diff = HM_wheel2_org.index({0, 0}) - HM_wheel2_cur.index({0, 0});
-        // Update global sinkage maps
-        torch::Tensor HM_sinkage_wheel1 = torch::zeros({m_HM_nx+1, m_HM_ny+1});
-        torch::Tensor HM_sinkage_wheel2 = torch::zeros({m_HM_nx+1, m_HM_ny+1});
-        HM_sinkage_wheel1.index_put_({mask_contact_wheel1}, HM_wheel1_diff.index({mask_contact_wheel1}));
-        HM_sinkage_wheel2.index_put_({mask_contact_wheel2}, HM_wheel2_diff.index({mask_contact_wheel2}));
 
-        // Compute I_sinkage using intropolation of HM_sinkage
-        // I_sinkage_wheel1 = torch::zeros({1, 1, m_HM_nx, m_HM_ny});
-        // I_sinkage_wheel2 = torch::zeros({1, 1, m_HM_nx, m_HM_ny});
-        
-        // Calculate the interpolated region
-        I_sinkage_wheel1 = w00_wheel1 * HM_sinkage_wheel1.index({torch::indexing::Slice(0, m_HM_nx), torch::indexing::Slice(0, m_HM_ny)}) +
-                                        w01_wheel1 * HM_sinkage_wheel1.index({torch::indexing::Slice(0, m_HM_nx), torch::indexing::Slice(1, m_HM_ny+1)}) +
-                                        w10_wheel1 * HM_sinkage_wheel1.index({torch::indexing::Slice(1, m_HM_nx+1), torch::indexing::Slice(0, m_HM_ny)}) +
-                                        w11_wheel1 * HM_sinkage_wheel1.index({torch::indexing::Slice(1, m_HM_nx+1), torch::indexing::Slice(1, m_HM_ny+1)});
+        HM_sinkage_wheel1.index_put_({0, 0, mask_contact_wheel1}, HM_wheel1_diff.index({mask_contact_wheel1}));
+        HM_sinkage_wheel2.index_put_({0, 0, mask_contact_wheel2}, HM_wheel2_diff.index({mask_contact_wheel2}));
 
-        I_sinkage_wheel2 = w00_wheel2 * HM_sinkage_wheel2.index({torch::indexing::Slice(0, m_HM_nx), torch::indexing::Slice(0, m_HM_ny)}) +
-                                        w01_wheel2 * HM_sinkage_wheel2.index({torch::indexing::Slice(0, m_HM_nx), torch::indexing::Slice(1, m_HM_ny+1)}) +
-                                        w10_wheel2 * HM_sinkage_wheel2.index({torch::indexing::Slice(1, m_HM_nx+1), torch::indexing::Slice(0, m_HM_ny)}) +
-                                        w11_wheel2 * HM_sinkage_wheel2.index({torch::indexing::Slice(1, m_HM_nx+1), torch::indexing::Slice(1, m_HM_ny+1)});
-        
-        I_sinkage_wheel1 = I_sinkage_wheel1.unsqueeze(0).unsqueeze(0);
-        I_sinkage_wheel2 = I_sinkage_wheel2.unsqueeze(0).unsqueeze(0);
-        // std::cout << "I_sinkage_wheel1.size" << I_sinkage_wheel1.sizes() << std::endl;
-        // std::cout << "I_sinkage_wheel2.size" << I_sinkage_wheel2.sizes() << std::endl;
+        // HM_sinkage_wheel1 = HM_wheel1_org - HM_wheel1;
+        // HM_sinkage_wheel2 = HM_wheel2_org - HM_wheel2;
 
-        m_GHM_1.update_heightmap_by_origin(gridOrigin_wheel1, HM_wheel1_cur);
-        m_GHM_2.update_heightmap_by_origin(gridOrigin_wheel1, HM_wheel1_cur);
+        m_GHM_1.update_heightmap(position_ts_wheel1, HM_wheel1_cur);
+        m_GHM_2.update_heightmap(position_ts_wheel1, HM_wheel1_cur);
 
-        m_GHM_2.update_heightmap_by_origin(gridOrigin_wheel2, HM_wheel2_cur);
-        
-
-        // Calculate the interpolated region
-        // torch::Tensor local_overlap = H_patch.index({torch::indexing::Slice(0, 1), torch::indexing::Slice(0, 1),
-        //                                                    torch::indexing::Slice(1, x_end - x_start + 1), torch::indexing::Slice(1, y_end - y_start + 1)});
-                                    
-        // std::cout << "H_patch: x_start=" << x_start << ", x_end=" << x_end + 1 << ", y_start=" << y_start << ", y_end=" << y_end + 1 << std::endl;
-        
-        // I_sinkage_wheel1 = HM_wheel1_org - HM_wheel1;
-        // I_sinkage_wheel2 = HM_wheel2_org - HM_wheel2;
-
-        // m_GHM_1.update_heightmap(position_ts_wheel1, HM_wheel1_cur);
-        // m_GHM_2.update_heightmap(position_ts_wheel1, HM_wheel1_cur);
-
-        // m_GHM_2.update_heightmap(position_ts_wheel2, HM_wheel2_cur);
+        m_GHM_2.update_heightmap(position_ts_wheel2, HM_wheel2_cur);
             
         auto start_F = std::chrono::high_resolution_clock::now();
-        Vec_ts_wheel1 = torch::tensor({m_wheel1_state.lin_vel[0]}).to(torch::kFloat32);
+        Vec_ts_wheel1 = torch::tensor({m_wheel1_state.lin_vel[0], m_wheel1_state.lin_vel[2]}).to(torch::kFloat32);
         Vec_ts_wheel1 = Vec_ts_wheel1.unsqueeze(0);
-        Vec_ts_wheel2 = torch::tensor({m_wheel2_state.lin_vel[0]}).to(torch::kFloat32);
+        Vec_ts_wheel2 = torch::tensor({m_wheel2_state.lin_vel[0], m_wheel2_state.lin_vel[2]}).to(torch::kFloat32);
         Vec_ts_wheel2 = Vec_ts_wheel2.unsqueeze(0);
             
-        // If I_sinkage_wheel1 is all zeros, then F = {0, 0, 0}
-        if (torch::allclose(I_sinkage_wheel1, torch::zeros_like(I_sinkage_wheel1))){
+        // If HM_sinkage_wheel1 is all zeros, then F = {0, 0, 0}
+        if (torch::allclose(HM_sinkage_wheel1, torch::zeros_like(HM_sinkage_wheel1))){
             // std::cout << "ML.cpp: ChTime="<< ChTime<<", Wheel_1, sinkage=0, z=" << position_ts_wheel1[2].item()
             //     <<"wheel_x=" << m_wheel1_state.pos[0] 
             //     <<"HM_center=" << HM_wheel1_cur[0][0][m_cx_idx][m_cy_idx].item()
@@ -543,7 +405,7 @@ class TerrainForceLoader : public ChLoadContainer {
             F_ts_wheel1 = torch::zeros({1, 3});
             // F_ts_wheel1[0][1] = -1000;
         }else{
-            HM_sinkage_nm_wheel1 = (I_sinkage_wheel1 - m_I_min_max_wheel1[0]) / (m_I_min_max_wheel1[1] - m_I_min_max_wheel1[0]);
+            HM_sinkage_nm_wheel1 = (HM_sinkage_wheel1 - m_I_min_max_wheel1[0]) / (m_I_min_max_wheel1[1] - m_I_min_max_wheel1[0]);
             
             Vec_ts_nm_wheel1 = (Vec_ts_wheel1 - m_Vec_min_max_wheel1[0]) / (m_Vec_min_max_wheel1[1] - m_Vec_min_max_wheel1[0]);
             
@@ -574,13 +436,13 @@ class TerrainForceLoader : public ChLoadContainer {
             
              
         }
-        if (torch::allclose(I_sinkage_wheel2, torch::zeros_like(I_sinkage_wheel2))){
-            // std::cout << "ChTime="<< ChTime<<", Wheel_2, sinkage=0, z=" << position_ts_wheel2[2].item() 
-            //     <<"wheel_x=" << m_wheel2_state.pos[0] <<"HM_center=" << HM_wheel2_cur[0][0][m_cx_idx][m_cy_idx].item() << std::endl;
+        if (torch::allclose(HM_sinkage_wheel2, torch::zeros_like(HM_sinkage_wheel2))){
+            std::cout << "ChTime="<< ChTime<<", Wheel_2, sinkage=0, z=" << position_ts_wheel2[2].item() 
+                <<"wheel_x=" << m_wheel2_state.pos[0] <<"HM_center=" << HM_wheel2_cur[0][0][m_cx_idx][m_cy_idx].item() << std::endl;
             F_ts_wheel2 = torch::zeros({1, 3});
             // F_ts_wheel2[0][1] = -1000;
         }else{
-            HM_sinkage_nm_wheel2 = (I_sinkage_wheel2 - m_I_min_max_wheel2[0]) / (m_I_min_max_wheel2[1] - m_I_min_max_wheel2[0]);
+            HM_sinkage_nm_wheel2 = (HM_sinkage_wheel2 - m_I_min_max_wheel2[0]) / (m_I_min_max_wheel2[1] - m_I_min_max_wheel2[0]);
             Vec_ts_nm_wheel2 = (Vec_ts_wheel2 - m_Vec_min_max_wheel2[0]) / (m_Vec_min_max_wheel2[1] - m_Vec_min_max_wheel2[0]);
             
             F_ts_nm_wheel2_FxTy = m_model_runner_wheel2_FxTy.runModel(HM_sinkage_nm_wheel2, Vec_ts_nm_wheel2);
@@ -616,72 +478,30 @@ class TerrainForceLoader : public ChLoadContainer {
 
         double remainder = std::fmod(ChTime, m_dt_dump);
         if (remainder < 1e-6 || (m_dt_dump - remainder) < 1e-6) {
-            // auto HM_wheel1_cur_large  = m_GHM_1.get_local_heightmap(position_ts_wheel1, 96+100, 72+100);
-            // auto HM_wheel2_cur_large  = m_GHM_2.get_local_heightmap(position_ts_wheel2, 96+100, 72+100);
-            // write_output(m_output_folderpath + "Iext_wheel1_t" + std::to_string(ChTime) + ".txt", HM_wheel1_cur_large[0][0]);
-            // write_output(m_output_folderpath + "Iext_wheel2_t" + std::to_string(ChTime) + ".txt", HM_wheel2_cur_large[0][0]);
-            
-            write_output(m_output_folderpath + "I_wheel1_t" + std::to_string(ChTime) + ".txt", HM_wheel1_cur[0][0]);
-            write_output(m_output_folderpath + "I_wheel2_t" + std::to_string(ChTime) + ".txt", HM_wheel2_cur[0][0]);
-
-            write_output(m_output_folderpath + "Iskg_wheel1_t" + std::to_string(ChTime) + ".txt", I_sinkage_wheel1[0][0]);
-            write_output(m_output_folderpath + "Iskg_wheel2_t" + std::to_string(ChTime) + ".txt", I_sinkage_wheel2[0][0]);
-            
-            // std::cout << "before write_output line575" << std::endl;
-            // if (!m_fp_Vec_wheel1.is_open()){
-            //     std::cerr << "Error opening file: m_fp_Vec_wheel1!" << std::endl;
-            // }else{
-            //     m_fp_Vec_wheel1 << ChTime << " " << Vec_ts_wheel1[0][0].item<float>() << " " << Vec_ts_wheel1[0][1].item<float>() 
-            //         << " " << Vec_ts_wheel1[0][2].item<float>() << std::endl;
-            // }
-            // std::cout << "line582" << std::endl;
-            // if(!m_fp_F_wheel1.is_open()){
-            //     std::cerr << "Error opening file: m_fp_F_wheel1!" << std::endl;
-            // }else{
-            //     m_fp_F_wheel1 << ChTime << " " << F_ts_wheel1[0][0].item<float>() << " " << F_ts_wheel1[0][1].item<float>() 
-            //         << " " << F_ts_wheel1[0][2].item<float>() << std::endl;
-            // }
-            // std::cout << "line589" << std::endl;
-            // if (!m_fp_Vec_wheel2.is_open()){
-            //     std::cerr << "Error opening file: m_fp_Vec_wheel2!" << std::endl;
-            // }else{
-            //     m_fp_Vec_wheel2 << ChTime << " " << Vec_ts_wheel2[0][0].item<float>() << " " << Vec_ts_wheel2[0][1].item<float>() 
-            //         << " " << Vec_ts_wheel2[0][2].item<float>() << std::endl;
-            // }
-            // std::cout << "line596" << std::endl;
-            // if (!m_fp_F_wheel2.is_open()){
-            //     std::cerr << "Error opening file: m_fp_F_wheel2!" << std::endl;
-            // }else{
-            //     m_fp_F_wheel2 << ChTime << " " << F_ts_wheel2[0][0].item<float>() << " " << F_ts_wheel2[0][1].item<float>() 
-            //         << " " << F_ts_wheel2[0][2].item<float>() << std::endl;
-            // }
-            // std::cout << "af write_output line603" << std::endl;
-
-            
-            
-            // std::cout << "before write_output line577" << std::endl;
-            // m_fp_F_wheel1 << ChTime << " " << F_ts_wheel1[0][0].item<float>() << " " << F_ts_wheel1[0][1].item<float>() << " " << F_ts_wheel1[0][2].item<float>() << std::endl;
-            // m_fp_Vec_wheel2 << ChTime << " " << Vec_ts_wheel2[0][0].item<float>() << " " << Vec_ts_wheel2[0][1].item<float>() << " " << Vec_ts_wheel2[0][2].item<float>() << std::endl;
-            // m_fp_F_wheel2 << ChTime << " " << F_ts_wheel2[0][0].item<float>() << " " << F_ts_wheel2[0][1].item<float>() << " " << F_ts_wheel2[0][2].item<float>() << std::endl;
-            // std::cout << "af write_output line581" << std::endl;
+            auto HM_wheel1_cur_large  = m_GHM_1.get_local_heightmap(position_ts_wheel1, 96+10, 72+10);
+            auto HM_wheel2_cur_large  = m_GHM_2.get_local_heightmap(position_ts_wheel2, 96+10, 72+10);
+            write_output(m_output_folderpath + "I_wheel1_t" + std::to_string(ChTime) + ".txt", HM_wheel1_cur_large[0][0]);
+            write_output(m_output_folderpath + "I_wheel2_t" + std::to_string(ChTime) + ".txt", HM_wheel2_cur_large[0][0]);
 
             // write_output(m_output_folderpath + "I_wheel1_t" + std::to_string(ChTime) + ".txt", HM_wheel1_cur[0][0]);
+            write_output(m_output_folderpath + "Iskg_wheel1_t" + std::to_string(ChTime) + ".txt", HM_sinkage_wheel1[0][0]);
             write_output(m_output_folderpath + "Vec_wheel1_t" + std::to_string(ChTime) + ".txt", Vec_ts_wheel1);
             write_output(m_output_folderpath + "F_wheel1_t" + std::to_string(ChTime) + ".txt", F_ts_wheel1);
         
             // write_output(m_output_folderpath + "I_wheel2_t" + std::to_string(ChTime) + ".txt", HM_wheel2_cur[0][0]);
+            write_output(m_output_folderpath + "Iskg_wheel2_t" + std::to_string(ChTime) + ".txt", HM_sinkage_wheel2[0][0]);
             write_output(m_output_folderpath + "Vec_wheel2_t" + std::to_string(ChTime) + ".txt", Vec_ts_wheel2);
             write_output(m_output_folderpath + "F_wheel2_t" + std::to_string(ChTime) + ".txt", F_ts_wheel2);
         }
-        // if (torch::allclose(I_sinkage_wheel1, torch::zeros_like(I_sinkage_wheel1)) && 
-        //     torch::allclose(I_sinkage_wheel2, torch::zeros_like(I_sinkage_wheel2))){
+        // if (torch::allclose(HM_sinkage_wheel1, torch::zeros_like(HM_sinkage_wheel1)) && 
+        //     torch::allclose(HM_sinkage_wheel2, torch::zeros_like(HM_sinkage_wheel2))){
         //     return;
         // }
-        // std::cout << "I_sinkage_wheel1.size" << I_sinkage_wheel1.sizes() << std::endl;
-        // std::cout << "I_sinkage_wheel2.size" << I_sinkage_wheel2.sizes() << std::endl;
+        // std::cout << "HM_sinkage_wheel1.size" << HM_sinkage_wheel1.sizes() << std::endl;
+        // std::cout << "HM_sinkage_wheel2.size" << HM_sinkage_wheel2.sizes() << std::endl;
 
         // std::cout << "line269" << std::endl;
-        // HM_sinkage_nm_wheel2 = (I_sinkage_wheel2 - m_I_min_max_wheel2[0]) / (m_I_min_max_wheel2[1] - m_I_min_max_wheel2[0]);
+        // HM_sinkage_nm_wheel2 = (HM_sinkage_wheel2 - m_I_min_max_wheel2[0]) / (m_I_min_max_wheel2[1] - m_I_min_max_wheel2[0]);
         // std::cout << "line272" << std::endl;
         // Use wheel1's sinkage to update m_GHM_1 and m_GHM_2
         
@@ -772,10 +592,8 @@ class TerrainForceLoader : public ChLoadContainer {
     std::chrono::duration<double, std::milli> m_duration_Img, m_duration_F, m_duration_all;
     double m_SCM_ML_switch, m_dt_dump;
     int m_cx_idx, m_cy_idx;
-    double m_HM_cutoff_y_left, m_HM_cutoff_y_right, m_HM_cutoff_x_backward, m_HM_cutoff_x_forward;
-    int m_HM_nx, m_HM_ny;
     // double m_terrain_initX, m_terrain_initY;
-    std::ofstream m_fp_Vec_wheel1, m_fp_F_wheel1, m_fp_Vec_wheel2, m_fp_F_wheel2;
+    // std::ofstream m_fp_I, m_fp_dI, m_fp_Vec, m_fp_F;
 };
 
 // -----------------------------------------------------------------------------            
@@ -929,12 +747,11 @@ int main(int argc, char *argv[]) {
     time_tot += time_delay;
 
     double heightmap_grid = terrain_grid;
-    
-    double HM_cutoff_y_left = 0.18; //0.15; // cylinder wheel width 0.128*2
-    double HM_cutoff_y_right = 0.18; //0.15; 
-    double HM_cutoff_x_backward = 0.24; // 0.21; //0.24; // cylinder wheel radius 0.208
-    double HM_cutoff_x_forward = 0.24; //0.27; //0.18;
-    int cx_idx = 48, cy_idx = 36;
+    double heightmap_cutoff_y_left = 0.18; //0.15; // cylinder wheel width 0.128*2
+    double heightmap_cutoff_y_right = 0.18; //0.15; 
+    double heightmap_cutoff_x_backward = 0.21; //0.24; // cylinder wheel radius 0.208
+    double heightmap_cutoff_x_forward = 0.27; //0.18;
+    int cx_idx = 42, cy_idx = 36;
     
     float wheel_radius = 0.2145; //0.208, 
     float wheel_width = 0.256;
@@ -942,7 +759,7 @@ int main(int argc, char *argv[]) {
     bool flag_heightmap_save = true; //false; //
     bool flag_vis = true; //false;
     bool flag_save_vedio = true; //false;
-    bool flag_flat = false; //true; //
+    bool flag_flat = false; //true;
     int num_steps = int(time_tot/dt);
     int ndt_HM = int(dt_HM/dt);
     int save_vedio_fps = int(num_steps/100.0);
@@ -955,7 +772,7 @@ int main(int argc, char *argv[]) {
     // Hybrid_fixW_onlyNNF1Chan_dt
     // Hybrid_fixW_onlyNNF1Chan_expScale_dt
     // SCM_fixW_dt
-    int flag_fixVx = 0;
+    bool flag_varVx = false;
     
     // Create wheel and tire subsystems
     auto wheel = chrono_types::make_shared<hmmwv::HMMWV_Wheel>("Wheel");
@@ -1094,9 +911,8 @@ int main(int argc, char *argv[]) {
     const std::string out_dir = GetChronoOutputPath() + "Hybrid_fixW_dt" + std::to_string(dt) + "_terrGrid" +
             std::to_string(terrain_grid) + "terrX" + std::to_string(terrain_initX) + "terrH" + 
             std::to_string(terrain_initH)+ "normLoad" + std::to_string(normal_load_wheel1)+"-" +
-            std::to_string(normal_load_wheel2)+ "_SCM2ML"+ std::to_string(SCM_ML_switch) +
-            "_fixVx"+std::to_string(flag_fixVx)+"_fixW_hMax" + 
-            std::to_string(terrain_hMax) + "_updataGHM";
+            std::to_string(normal_load_wheel2)+ "_SCM2ML"+ std::to_string(SCM_ML_switch) +"_varVx_fixW_hMax" + 
+            std::to_string(terrain_hMax) + "SCM_nofreshRN";
     std::string output_folderpath;
     Heightmap GHM_0, GHM_1, GHM_2;
     if(flag_flat){
@@ -1134,12 +950,12 @@ int main(int argc, char *argv[]) {
     // std::string folderpath_normlized = "/home/swang597/Documents/Research/chrono_fork_radu/project_TireTestRig/build/DEMO_OUTPUT/Dataset_4_ML_train_largerHM_231208/";
     // std::string model_path = "/home/swang597/Documents/Research/chrono_fork_radu/project_TireTestRig/Model/Model_py2cpp_2stepNN_iDT1_img96by72_varKsize3333_largerHM_231208/";
     
-    std::string folderpath_normlized = "/home/swang597/Documents/Research/chrono_fork_rserban/Project_TireTestRig2Wheels/build_SCM_ML_genData/DEMO_OUTPUT/Data_raw_updataGHM_HMbump_varLoad_Dataset_normFiles/";
+    std::string folderpath_normlized = "/home/swang597/Documents/Research/chrono_fork_rserban/Project_TireTestRig2Wheels/build_SCM_argVx/DEMO_OUTPUT/Data_raw_var_Vx_Load_initX_Dataset_collectDataWheel2x0.5_train_240608/";
     
-    std::string model_path0_wheel1_FxTy = "/home/swang597/Documents/Research/Project_heightmap/Code/Pytorch_cpp_model/Model/Model_MyDatasetRig2Wheels_IskgVxVz_FxTy_240903/";
-    std::string model_path0_wheel2_FxTy = "/home/swang597/Documents/Research/Project_heightmap/Code/Pytorch_cpp_model/Model/Model_MyDatasetRig2Wheels_IskgVxVz_FxTy_240903/";
-    std::string model_path0_wheel1_Fz = "/home/swang597/Documents/Research/Project_heightmap/Code/Pytorch_cpp_model/Model/Model_MyDatasetRig2Wheels_Iskg_Fz_240903/";
-    std::string model_path0_wheel2_Fz = "/home/swang597/Documents/Research/Project_heightmap/Code/Pytorch_cpp_model/Model/Model_MyDatasetRig2Wheels_Iskg_Fz_240903/";
+    std::string model_path0_wheel1_FxTy = "/home/swang597/Documents/Research/Project_heightmap/Code/Pytorch_cpp_model/Model/Model_MyDatasetRig2Wheels_IskgVxVz_FxTy_240623/";
+    std::string model_path0_wheel2_FxTy = "/home/swang597/Documents/Research/Project_heightmap/Code/Pytorch_cpp_model/Model/Model_MyDatasetRig2Wheels_IskgVxVz_FxTy_240623/";
+    std::string model_path0_wheel1_Fz = "/home/swang597/Documents/Research/Project_heightmap/Code/Pytorch_cpp_model/Model/Model_MyDatasetRig2Wheels_Iskg_Fz_240623/";
+    std::string model_path0_wheel2_Fz = "/home/swang597/Documents/Research/Project_heightmap/Code/Pytorch_cpp_model/Model/Model_MyDatasetRig2Wheels_Iskg_Fz_240623/";
     std::string model_path_wheel1_FxTy, model_path_wheel1_Fz;
     std::string model_path_wheel2_FxTy, model_path_wheel2_Fz;
     model_path_wheel1_FxTy = model_path0_wheel1_FxTy + "modelF_wheel1_cpu.pt";
@@ -1162,16 +978,13 @@ int main(int argc, char *argv[]) {
                         model_runner_wheel1_FxTy, model_runner_wheel2_FxTy,
                         model_runner_wheel1_Fz, model_runner_wheel2_Fz,
                         GHM_0, GHM_1, GHM_2, terrain_initLoc,
-                        wheel_radius, wheel_width, heightmap_grid, SCM_ML_switch, dt_HM,
-                        HM_cutoff_y_left, HM_cutoff_y_right, HM_cutoff_x_backward, HM_cutoff_x_forward, 
-                        cx_idx, cy_idx
-                        );
+                        wheel_radius, wheel_width, heightmap_grid, SCM_ML_switch, dt_HM);
 
     std::cout << "TerrainForceLoader done." << std::endl;
     sys->Add(terrain_ML);
     std::cout << "Add terrain done." << std::endl;
 
-    if(flag_fixVx){
+    if(!flag_varVx){
         rig.SetLongSpeedFunction(chrono_types::make_shared<ChFunction_Const>(fixed_Vx));
     }
     rig.SetAngSpeedFunction(chrono_types::make_shared<ChFunction_Const>(10 * CH_C_RPM_TO_RPS));
@@ -1409,12 +1222,16 @@ int main(int argc, char *argv[]) {
             HMfilename_SCM_wheel2 = output_folderpath + "hmap_SCM_wheel2_t" + std::to_string(time) + ".txt";
 
             SaveHeightmap(terrain_SCM.get(), wheel_state.pos[0], wheel_state.pos[1], heightmap_grid, 
-                HM_cutoff_x_backward, HM_cutoff_x_forward, HM_cutoff_y_left, HM_cutoff_y_right,
-                HMfilename_SCM_wheel1, istep, istep, dt);
+                heightmap_cutoff_x_backward, heightmap_cutoff_x_forward, heightmap_cutoff_y_left,
+                heightmap_cutoff_y_right, HMfilename_SCM_wheel1, istep, istep, dt);
 
             SaveHeightmap(terrain_SCM.get(), wheel_state_wheel2.pos[0], wheel_state_wheel2.pos[1], heightmap_grid, 
-                HM_cutoff_x_backward, HM_cutoff_x_forward, HM_cutoff_y_left, HM_cutoff_y_right,
-                HMfilename_SCM_wheel2, istep, istep, dt);
+                heightmap_cutoff_x_backward, heightmap_cutoff_x_forward, heightmap_cutoff_y_left,
+                heightmap_cutoff_y_right, HMfilename_SCM_wheel2, istep, istep, dt);
+                
+            // pos_x_pre = wheel_state.pos[0];
+            // pos_y_pre = wheel_state.pos[1];
+            // }
         }
 
         if(istep % 100 == 0){

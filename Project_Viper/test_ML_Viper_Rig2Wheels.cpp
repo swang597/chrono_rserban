@@ -220,6 +220,9 @@ class TerrainForceLoaderML : public ChLoadContainer {
         m_F_min_max_wheel2 = loadFromTxt(fn_dataPT + "F_min_max_wheel2.txt");
         m_Vec_min_max_wheel2 = loadFromTxt(fn_dataPT + "Vec_min_max_wheel2.txt");
         
+        m_F_min_max_wheel1 = m_F_min_max_wheel1[:,1]; // only compputer the Fz
+        m_F_min_max_wheel2 = m_F_min_max_wheel2[:,1]; // only compputer the Fz
+
         std::cout << "Load normalized files, done." << std::endl;
         std::cout << "m_I_min_max_wheel1=" << m_I_min_max_wheel1 << ",m_Vec_min_max_wheel1="<<m_Vec_min_max_wheel1 
             <<", m_F_min_max_wheel1="<< m_F_min_max_wheel1<< std::endl;
@@ -308,7 +311,7 @@ class TerrainForceLoaderML : public ChLoadContainer {
                     << ",mask_contact" << mask_contact.sum().item<double>() 
                     << std::endl;
                 F_ts = torch::zeros({1, 3});
-                F_ts[0][1] = -1000;
+                // F_ts[0][1] = -1000;
             }else{
                 // std::cout << "line 342" << std::endl;    
                 HM_sinkage_nm = (HM_sinkage - m_I_min_max[0]) / (m_I_min_max[1] - m_I_min_max[0]);
@@ -322,7 +325,10 @@ class TerrainForceLoaderML : public ChLoadContainer {
                 }
                 // std::cout << "line 353" << std::endl;    
                 F_ts_nm = F_ts_nm.clamp(0, 1); // make F_ts_nm in the range of [0,1]
-                F_ts = F_ts_nm * (m_F_min_max[1] - m_F_min_max[0]) + m_F_min_max[0];
+                F_ts = torch::zeros({1, 3});
+                F_ts[1] = F_ts_nm * (m_F_min_max[1] - m_F_min_max[0]) + m_F_min_max[0];
+                F_ts[0] = 100;
+                F_ts[2] = 0;
             }
 
             // std::cout << "line 358" << std::endl;    

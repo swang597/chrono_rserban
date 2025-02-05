@@ -228,13 +228,14 @@ std::shared_ptr<vehicle::SCMTerrain> CreateTerrain(double resolution, bool enabl
 
     // Set some visualization parameters
     terrain->SetPlotType(vehicle::SCMTerrain::PLOT_PRESSURE, 0, 20000);
-    terrain->SetMeshWireframe(true);
+    // terrain->SetMeshWireframe(true);
 
     return terrain;
 }
 
 std::shared_ptr<ChVisualSystem> CreateVisualization(ChVisualSystem::Type vis_type, bool add_grid, ChSystem& sys,
-     ChVector<> cam_loc=ChVector<>(0.0, 2.0*2, 1.4)) {
+    //  ChVector<> cam_loc=ChVector<>(0.0, 2.0*2, 1.4)) {
+        ChVector<> cam_loc=ChVector<>(0.0, 5, 4)) {
     // Create the run-time visualization interface
 #ifndef CHRONO_IRRLICHT
     if (vis_type == ChVisualSystem::Type::IRRLICHT)

@@ -175,17 +175,41 @@ find_package(OpenCV REQUIRED)
 # target_link_options(SCM_WheelTestRig2Wheels_argVx PUBLIC ${CHRONO_LINKER_FLAGS})
 # target_link_libraries(SCM_WheelTestRig2Wheels_argVx ${CHRONO_LIBRARIES} cnpy torch c10 torch_cpu ${OpenCV_LIBS}) # Shu
 
-add_executable(SCMegn_WheelTestRig2Wheels_argVx SCMegn_WheelTestRig2Wheels_argVx.cpp ${ML_UTILITY_PATH}TorchModelRunner.cpp ${ML_UTILITY_PATH}Heightmap.cpp)
-target_compile_definitions(SCMegn_WheelTestRig2Wheels_argVx PUBLIC "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\"") 
-target_compile_options(SCMegn_WheelTestRig2Wheels_argVx PUBLIC ${CHRONO_CXX_FLAGS})
-target_link_options(SCMegn_WheelTestRig2Wheels_argVx PUBLIC ${CHRONO_LINKER_FLAGS})
-target_link_libraries(SCMegn_WheelTestRig2Wheels_argVx ${CHRONO_LIBRARIES} cnpy torch c10 torch_cpu ${OpenCV_LIBS}) # Shu
+# add_executable(SCMegn_WheelTestRig2Wheels_argVx SCMegn_WheelTestRig2Wheels_argVx.cpp ${ML_UTILITY_PATH}TorchModelRunner.cpp ${ML_UTILITY_PATH}Heightmap.cpp)
+# target_compile_definitions(SCMegn_WheelTestRig2Wheels_argVx PUBLIC "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\"") 
+# target_compile_options(SCMegn_WheelTestRig2Wheels_argVx PUBLIC ${CHRONO_CXX_FLAGS})
+# target_link_options(SCMegn_WheelTestRig2Wheels_argVx PUBLIC ${CHRONO_LINKER_FLAGS})
+# target_link_libraries(SCMegn_WheelTestRig2Wheels_argVx ${CHRONO_LIBRARIES} cnpy torch c10 torch_cpu ${OpenCV_LIBS}) # Shu
 
 # add_executable(ML_WheelTestRig2Wheels_argVx ML_WheelTestRig2Wheels_argVx.cpp ${ML_UTILITY_PATH}TorchModelRunner.cpp ${ML_UTILITY_PATH}Heightmap.cpp)
 # target_compile_definitions(ML_WheelTestRig2Wheels_argVx PUBLIC "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\"") 
 # target_compile_options(ML_WheelTestRig2Wheels_argVx PUBLIC ${CHRONO_CXX_FLAGS})
 # target_link_options(ML_WheelTestRig2Wheels_argVx PUBLIC ${CHRONO_LINKER_FLAGS})
 # target_link_libraries(ML_WheelTestRig2Wheels_argVx ${CHRONO_LIBRARIES} cnpy torch c10 torch_cpu ${OpenCV_LIBS}) # Shu
+
+# add_executable(ML_WheelTestRig2Wheels_argVx_genData_smthTerr ML_WheelTestRig2Wheels_argVx_genData_smthTerr.cpp ${ML_UTILITY_PATH}TorchModelRunner.cpp ${ML_UTILITY_PATH}Heightmap.cpp)
+# target_compile_definitions(ML_WheelTestRig2Wheels_argVx_genData_smthTerr PUBLIC "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\"") 
+# target_compile_options(ML_WheelTestRig2Wheels_argVx_genData_smthTerr PUBLIC ${CHRONO_CXX_FLAGS})
+# target_link_options(ML_WheelTestRig2Wheels_argVx_genData_smthTerr PUBLIC ${CHRONO_LINKER_FLAGS})
+# target_link_libraries(ML_WheelTestRig2Wheels_argVx_genData_smthTerr ${CHRONO_LIBRARIES} cnpy torch c10 torch_cpu ${OpenCV_LIBS}) # Shu
+
+add_executable(ML_WheelTestRig2Wheels_argVx_genData_inclineTerr ML_WheelTestRig2Wheels_argVx_genData_inclineTerr.cpp ${ML_UTILITY_PATH}TorchModelRunner.cpp ${ML_UTILITY_PATH}Heightmap.cpp)
+target_compile_definitions(ML_WheelTestRig2Wheels_argVx_genData_inclineTerr PUBLIC "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\"") 
+target_compile_options(ML_WheelTestRig2Wheels_argVx_genData_inclineTerr PUBLIC ${CHRONO_CXX_FLAGS})
+target_link_options(ML_WheelTestRig2Wheels_argVx_genData_inclineTerr PUBLIC ${CHRONO_LINKER_FLAGS})
+target_link_libraries(ML_WheelTestRig2Wheels_argVx_genData_inclineTerr ${CHRONO_LIBRARIES} cnpy torch c10 torch_cpu ${OpenCV_LIBS}) # Shu
+
+add_executable(ML_WheelTestRig2Wheels_argVx_3GHM_inclineTerr ML_WheelTestRig2Wheels_argVx_3GHM_inclineTerr.cpp ${ML_UTILITY_PATH}TorchModelRunner.cpp ${ML_UTILITY_PATH}Heightmap.cpp)
+target_compile_definitions(ML_WheelTestRig2Wheels_argVx_3GHM_inclineTerr PUBLIC "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\"") 
+target_compile_options(ML_WheelTestRig2Wheels_argVx_3GHM_inclineTerr PUBLIC ${CHRONO_CXX_FLAGS})
+target_link_options(ML_WheelTestRig2Wheels_argVx_3GHM_inclineTerr PUBLIC ${CHRONO_LINKER_FLAGS})
+target_link_libraries(ML_WheelTestRig2Wheels_argVx_3GHM_inclineTerr ${CHRONO_LIBRARIES} cnpy torch c10 torch_cpu ${OpenCV_LIBS}) # Shu
+
+# add_executable(ML_WheelTestRig2Wheels_argVx_genData_flatTerr ML_WheelTestRig2Wheels_argVx_genData_flatTerr.cpp ${ML_UTILITY_PATH}TorchModelRunner.cpp ${ML_UTILITY_PATH}Heightmap.cpp)
+# target_compile_definitions(ML_WheelTestRig2Wheels_argVx_genData_flatTerr PUBLIC "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\"") 
+# target_compile_options(ML_WheelTestRig2Wheels_argVx_genData_flatTerr PUBLIC ${CHRONO_CXX_FLAGS})
+# target_link_options(ML_WheelTestRig2Wheels_argVx_genData_flatTerr PUBLIC ${CHRONO_LINKER_FLAGS})
+# target_link_libraries(ML_WheelTestRig2Wheels_argVx_genData_flatTerr ${CHRONO_LIBRARIES} cnpy torch c10 torch_cpu ${OpenCV_LIBS}) # Shu
 
 #--------------------------------------------------------------
 # add_executable(test_SCM_force_save test_SCM_force_save.cpp)

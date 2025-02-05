@@ -319,8 +319,6 @@ class CH_VEHICLE_API SCMTerrain : public ChTerrain {
     /// Print timing and counter information for last step.
     void PrintAccumulateTimeProfiling(std::ostream& os) const;
     void SetMLSwitchTime(double time);
-    void SetWheels(std::vector<std::shared_ptr<ChBody>>& wheels);
-    void SetVectorizedSinkage();
     //Shu.
     
     std::shared_ptr<SCMLoader> GetSCMLoader() const { return m_loader; }
@@ -394,11 +392,6 @@ class CH_VEHICLE_API SCMLoader : public ChLoadContainer {
     std::chrono::duration<double, std::milli> m_duration_contact_forces = std::chrono::duration<double, std::milli>::zero();
     
     double m_SCM_ML_switch = std::numeric_limits<double>::infinity();
-    // Vectorized Wheel Sinkage Computation
-    std::vector<std::shared_ptr<ChBody>> m_wheels;
-    Eigen::MatrixXd m_withinWidth, m_withinRadius, m_dx_2d_loc;
-    const int m_gridSizeX=96, m_gridSizeY=72, m_cx_idx=42, m_cy_idx=36;
-    double m_wheelRadius, m_wheelWidth;
     //Shu.
 
   private:
@@ -635,6 +628,8 @@ class CH_VEHICLE_API SCMLoader : public ChLoadContainer {
     int m_num_erosion_nodes;
 
     
+    // std::vector<std::shared_ptr<ChBodyAuxRef>> m_wheels;  //Shu
+
     friend class SCMTerrain;
 };
 

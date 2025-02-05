@@ -193,11 +193,23 @@ find_package(OpenCV REQUIRED)
 # target_link_libraries(test_ML_force ${CHRONO_LIBRARIES} cnpy torch c10 torch_cpu ${OpenCV_LIBS}) # Shu
 
 #--------------------------------------------------------------
-add_executable(test_ML_Viper_Rig2Wheels test_ML_Viper_Rig2Wheels.cpp ${ML_UTILITY_PATH}TorchModelRunner.cpp ${ML_UTILITY_PATH}Heightmap.cpp)
-target_compile_definitions(test_ML_Viper_Rig2Wheels PUBLIC "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\"") 
-target_compile_options(test_ML_Viper_Rig2Wheels PUBLIC ${CHRONO_CXX_FLAGS})
-target_link_options(test_ML_Viper_Rig2Wheels PUBLIC ${CHRONO_LINKER_FLAGS})
-target_link_libraries(test_ML_Viper_Rig2Wheels ${CHRONO_LIBRARIES} cnpy torch c10 torch_cpu ${OpenCV_LIBS}) # Shu
+add_executable(test_ML_Viper_Rig2Wheels_4Model test_ML_Viper_Rig2Wheels_4Model.cpp ${ML_UTILITY_PATH}TorchModelRunner.cpp ${ML_UTILITY_PATH}Heightmap.cpp)
+target_compile_definitions(test_ML_Viper_Rig2Wheels_4Model PUBLIC "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\"") 
+target_compile_options(test_ML_Viper_Rig2Wheels_4Model PUBLIC ${CHRONO_CXX_FLAGS})
+target_link_options(test_ML_Viper_Rig2Wheels_4Model PUBLIC ${CHRONO_LINKER_FLAGS})
+target_link_libraries(test_ML_Viper_Rig2Wheels_4Model ${CHRONO_LIBRARIES} cnpy torch c10 torch_cpu ${OpenCV_LIBS}) # Shu
+
+# add_executable(test_SCMvskg_genDate_bump test_SCMvskg_genDate_bump.cpp ${ML_UTILITY_PATH}TorchModelRunner.cpp ${ML_UTILITY_PATH}Heightmap.cpp)
+# target_compile_definitions(test_SCMvskg_genDate_bump PUBLIC "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\"") 
+# target_compile_options(test_SCMvskg_genDate_bump PUBLIC ${CHRONO_CXX_FLAGS})
+# target_link_options(test_SCMvskg_genDate_bump PUBLIC ${CHRONO_LINKER_FLAGS})
+# target_link_libraries(test_SCMvskg_genDate_bump ${CHRONO_LIBRARIES} cnpy torch c10 torch_cpu ${OpenCV_LIBS}) # Shu
+
+# add_executable(test_ML_Viper_Rig2Wheels test_ML_Viper_Rig2Wheels.cpp ${ML_UTILITY_PATH}TorchModelRunner.cpp ${ML_UTILITY_PATH}Heightmap.cpp)
+# target_compile_definitions(test_ML_Viper_Rig2Wheels PUBLIC "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\"") 
+# target_compile_options(test_ML_Viper_Rig2Wheels PUBLIC ${CHRONO_CXX_FLAGS})
+# target_link_options(test_ML_Viper_Rig2Wheels PUBLIC ${CHRONO_LINKER_FLAGS})
+# target_link_libraries(test_ML_Viper_Rig2Wheels ${CHRONO_LIBRARIES} cnpy torch c10 torch_cpu ${OpenCV_LIBS}) # Shu
 
 # add_executable(test_ML_force_HMinitbySCMTerr test_ML_force_HMinitbySCMTerr.cpp ${ML_UTILITY_PATH}TorchModelRunner.cpp ${ML_UTILITY_PATH}Heightmap.cpp)
 # target_compile_definitions(test_ML_force_HMinitbySCMTerr PUBLIC "CHRONO_DATA_DIR=\"${CHRONO_DATA_DIR}\"") 
